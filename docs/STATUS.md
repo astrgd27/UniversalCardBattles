@@ -38,11 +38,24 @@ Known simplifications:
 - Replacement order is module order plus timestamp, not the affected player's choice.
 - An `instead` lineage is exempt from that same replacement.
 
-## Next: M3, module SDK
-- ZIP package loader: manifest validation, path-traversal, zip-bomb and size limits, content hashes, `engineApiRange` check.
-- JSON schema for each file, and a validator CLI (`npm run validate <dir|zip>`) with line-precise errors.
-- Sandboxed, gas-limited, deterministic custom scripts (an interpreter over immutable views that returns effect lists). Pin the runtime version for replay.
-- Optional: the affected player chooses replacement order (resumable `@ev` frames).
+## Done: M3, module SDK
+- `packages/module-sdk`: a browser-safe ZIP reader and writer with hostile-archive defences, a strict JSON parser with positions, and a package loader. The loader checks layout, engine range, capabilities, sha256 content hashes and assets, and supports expansions.
+- Validator issues are JSON pointers, mapped to `file:line:col`. It also checks structure (field types).
+- Scripts: data-only functions and procedures with gas and depth limits (no JS eval). Extra expression ops for scripting.
+- Saves are pinned to a hash of the rules and cards.
+- CLI: `validate`, `pack`.
+- 33 tests. The new ones cover hostile ZIPs, package rules, line:col errors, scripts, expansions and save pinning.
+
+Deferred: save migrations (`saveMigrationVersion`); the affected player choosing replacement order.
+
+## Next: M4, compatibility
+Add the four remaining reference games (Tri-Lane, Relic Chain, Tidewardens, Ember Council) plus a regression suite. Each will likely need new engine primitives, so add them generically:
+- simultaneous sealed commitments
+- spatial lanes and adjacency
+- face-down objects
+- multiple decks per player
+- N-player voting
+- dice
 
 ## Planned reference games (each one exercises mechanics the others lack)
 | Game | Milestone | Unique stressors |
@@ -55,7 +68,6 @@ Known simplifications:
 | Ember Council | M4 | 3–4 players; voting/politics; directed elimination; shared market row (draft); alternating actions with initiative; dice as objects with faces; quest-score victory |
 
 ## Later
-- M3: ZIP loader, manifest hashes, sandboxed gas-limited scripts, schema docs.
 - M5: browser UI.
 - M6: AI.
 - M7: campaigns.

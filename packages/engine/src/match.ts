@@ -28,7 +28,7 @@ export function createMatch(m: Mod, opts: MatchOpts): Match {
     if (errs.length) throw new EngineError(`Deck ${i}: ${errs.join('; ')}`);
   });
   const s: State = {
-    moduleId: m.manifest.moduleId, version: m.manifest.semanticVersion, opts: structuredClone(opts),
+    moduleId: m.manifest.moduleId, version: m.manifest.semanticVersion, rulesHash: m.hash, opts: structuredClone(opts),
     rng: seedRng(opts.seed), players: [], objects: {}, zones: {}, turn: { n: 1, active: 0, phase: 0 },
     phaseState: 'enter', priority: null, holder: null, passes: 0, resolving: false, stack: [], effects: [], exec: [],
     triggers: [], nextTrig: null, dirty: false, pending: null, events: [], cmds: [], nextId: 1, nextDecision: 1, result: null,
@@ -348,6 +348,7 @@ export function restore(m: Mod, json: string): Match {
   if (s.moduleId !== m.manifest.moduleId || s.version !== m.manifest.semanticVersion) {
     throw new EngineError(`Save is for ${s.moduleId}@${s.version}, module is ${m.manifest.moduleId}@${m.manifest.semanticVersion}`);
   }
+  if (s.rulesHash !== m.hash) throw new EngineError('Save was made with different rules or cards (hash mismatch)');
   return { m, s };
 }
 export function applyCmd(match: Match, c: Cmd): Match {

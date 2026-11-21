@@ -10,7 +10,7 @@ A universal, fully automated TCG simulator. The headless deterministic TypeScrip
 
 1. **Orient from docs, not code.** Read `STATUS.md`, then only what the task needs. Use `grep -n` and line ranges instead of whole-file reads. Never re-read a file you just wrote.
 2. **No build step.** Node 22 runs `.ts` directly (type stripping). Use only erasable TS: no `enum`, `namespace` or parameter properties, and use `import type` for types.
-3. **Quiet tooling.** Use `npm run -s check` (typecheck plus tests, dot reporter, failures only) and `npm run -s sim <game> -- --games=200` (a one-line summary). Pipe anything long through `tail`/`grep`.
+3. **Quiet tooling.** Use `npm run -s check` (typecheck plus tests, dot reporter, failures only), `npm run -s sim <game> -- --games=200` (a one-line summary) and `npm run -s validate <dir|zip>` (`file:line:col` errors). Pipe anything long through `tail`/`grep`.
 4. **Content is data.** Games, cards, decks and campaigns are compact JSON using the S-expression DSL, never TS code. Adding a game must not touch `packages/engine`.
 5. **Write whole files in one pass.** Plan the design in your head first, then write. Avoid edit-and-rerun churn.
 6. **No subagents, and no screenshots before M5.**
@@ -20,9 +20,10 @@ A universal, fully automated TCG simulator. The headless deterministic TypeScrip
 
 - `packages/engine/src`: the kernel (types, util, rng, expr, effects, match, view, validate, module). It is browser-safe and has no node imports.
 - `packages/ai/src`: agents that see only `observe()` views and `listActions()`.
+- `packages/module-sdk/src`: ZIP/JSON/package loading (browser-safe), plus `node.ts` (disk) and `cli.ts`.
 - `packages/reference-games/<id>/`: `manifest.json`, `rules.json`, `cards.json`, `decks.json`.
 - `packages/test-harness`: the node module loader, match runner, sim CLI, and tests (`tests/*.test.ts`).
-- Imports go through `#engine`, `#ai` and `#harness` (package.json `imports`).
+- Imports go through `#engine`, `#ai`, `#sdk`, `#sdk/node` and `#harness` (package.json `imports`).
 
 ## Non-negotiables (from the spec)
 

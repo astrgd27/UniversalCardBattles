@@ -1,13 +1,27 @@
 // Expression evaluator for the S-expression DSL. See docs/DSL.md.
 import type { Ctx, Mod, State } from './types.ts';
 import { chars } from './layers.ts';
-import { EngineError, list, nextPlayer, num, one, player, zoneIdOf } from './util.ts';
+import { EngineError, ScriptError, list, nextPlayer, num, one, player, zoneIdOf } from './util.ts';
 
 export const EXPR_OPS = new Set([
   'lit', '+', '-', '*', '/', 'neg', 'min', 'max', '=', '!=', '<', '<=', '>', '>=', 'and', 'or', 'not', '?',
   'get', 'has', 'players', 'opp', 'cards', 'top', 'count', 'concat', 'list', 'first', 'filter', 'any', 'all',
-  'sum', 'in', 'isPlayer', 'isObj', 'stack', 'linked',
+  'sum', 'in', 'isPlayer', 'isObj', 'stack', 'linked', 'call', 'let', 'map', 'range', 'mod', 'abs', 'sortBy', 'maxBy', 'minBy',
+  'slice', 'reverse', 'nth',
 ]);
+
+/** Script limits: evaluation steps per outermost function call, and call depth. */
+export const GAS = 100_000;
+export const MAX_DEPTH = 64;
+let depth = 0;
+let gas = 0;
+/** Context visible inside scripts: the caller's $me/$opp/$self/$e plus the declared parameters. */
+export function scriptCtx(ctx: Ctx, params: string[], args: unknown[]): Ctx {
+  const c: Ctx = {};
+  for (const k of ['$me', '$opp', '$self', '$e']) if (k in ctx) c[k] = ctx[k];
+  params.forEach((p, i) => { c[p] = args[i]; });
+  return c;
+}
 
 export function lookup(s: State, ctx: Ctx, name: string): any {
   const parts = name.split('.');
@@ -60,6 +74,7 @@ export function cardsIn(m: Mod, s: State, who: any, zone: string): string[] {
 }
 
 export function ev(m: Mod, s: State, e: any, ctx: Ctx): any {
+  if (depth > 0 && --gas < 0) throw new ScriptError(`Script gas limit (${GAS} steps) exceeded`);
   if (typeof e === 'string') return e.charCodeAt(0) === 36 ? lookup(s, ctx, e) : e;
   if (!Array.isArray(e) || typeof e[0] !== 'string') return e;
   const A = (i: number) => ev(m, s, e[i], ctx);
@@ -110,6 +125,46 @@ export function ev(m: Mod, s: State, e: any, ctx: Ctx): any {
     case 'isObj': return one(A(1)) in s.objects;
     case 'stack': return s.stack.map((x) => x.id).reverse(); // top first
     case 'linked': { const t = one(A(1)); const n = A(2); return Object.values(s.objects).filter((o) => o.rel?.[n] === t).map((o) => o.id); }
+    case 'call': {
+      const fn = m.rules.functions?.[e[1]];
+      if (!fn) throw new EngineError(`Unknown function ${e[1]}`);
+      const args = e.slice(2).map((_: any, i: number) => A(i + 2));
+      if (depth === 0) gas = GAS;
+      if (depth >= MAX_DEPTH) throw new ScriptError(`Script recursion deeper than ${MAX_DEPTH}`);
+      depth++;
+      try {
+        return ev(m, s, fn.body, scriptCtx(ctx, fn.params, args));
+      } finally {
+        depth--;
+      }
+    }
+    case 'let': return ev(m, s, e[3], { ...ctx, [e[1]]: A(2) });
+    case 'map': return list(A(1)).map((it) => ev(m, s, e[2], { ...ctx, $it: it }));
+    case 'range': {
+      const n = num(A(1));
+      if (n > 10_000) throw new ScriptError('range larger than 10000');
+      return Array.from({ length: Math.max(0, n) }, (_, i) => i);
+    }
+    case 'mod': { const b = num(A(2)); return b ? ((num(A(1)) % b) + b) % b : 0; }
+    case 'abs': return Math.abs(num(A(1)));
+    case 'sortBy': {
+      const keyed = list(A(1)).map((it, i) => ({ it, i, k: ev(m, s, e[2], { ...ctx, $it: it }) }));
+      keyed.sort((a, b) => (a.k < b.k ? -1 : a.k > b.k ? 1 : a.i - b.i));
+      return keyed.map((x) => x.it);
+    }
+    case 'maxBy':
+    case 'minBy': {
+      let best: any = null;
+      let bk: any;
+      for (const it of list(A(1))) {
+        const k = ev(m, s, e[2], { ...ctx, $it: it });
+        if (best === null || (e[0] === 'maxBy' ? k > bk : k < bk)) { best = it; bk = k; }
+      }
+      return best;
+    }
+    case 'slice': return list(A(1)).slice(num(A(2)), e.length > 3 ? num(A(3)) : undefined);
+    case 'reverse': return [...list(A(1))].reverse();
+    case 'nth': return list(A(1))[num(A(2))] ?? null;
   }
   throw new EngineError(`Unknown expression op ${e[0]}`);
 }

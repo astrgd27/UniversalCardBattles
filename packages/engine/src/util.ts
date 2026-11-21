@@ -3,6 +3,8 @@ import type { Ctx, Mask, Mod, Player, State } from './types.ts';
 export class EngineError extends Error {}
 /** Thrown when a cost cannot be paid; the action is rejected and nothing changes. */
 export class CostError extends EngineError {}
+/** A module script exceeded its gas or recursion budget. */
+export class ScriptError extends EngineError {}
 
 export const one = (x: any): any => (Array.isArray(x) ? x[0] : x);
 export const list = (x: any): any[] => (x == null ? [] : Array.isArray(x) ? x : [x]);

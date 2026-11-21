@@ -1,6 +1,6 @@
-# Rules DSL (engine API 0.2)
+# Rules DSL (engine API 0.3)
 
-A module is a folder (a ZIP from M3 on) holding `manifest.json`, `rules.json`, `cards.json` and `decks.json`. All logic is JSON S-expressions: `["op", arg, ...]`. The reference module is `packages/reference-games/spark-duel`.
+A module is a folder or ZIP package (see **Packages** below). All logic is JSON S-expressions: `["op", arg, ...]`. The reference module is `packages/reference-games/spark-duel`.
 
 ## Values and variables
 - Strings that start with `$` are variables. Other strings are literals.
@@ -30,6 +30,10 @@ A module is a folder (a ZIP from M3 on) holding `manifest.json`, `rules.json`, `
 | `filter l pred`, `any l pred`, `all l pred`, `sum l expr` | uses `$it` |
 | `isPlayer x`, `isObj x` | type tests |
 | `stack` | stack item ids, top first |
+| `call fn args...` | calls a script function (`rules.functions`) |
+| `let $v value body` | local binding |
+| `map l expr`, `sortBy l key`, `maxBy l key`, `minBy l key` | list helpers that use `$it` |
+| `range n` (n ≤ 10000), `slice l a b?`, `reverse l`, `nth l i`, `mod a b`, `abs a` | more helpers |
 | `linked target rel` | objects whose relationship `rel` points at target |
 
 ## Effects
@@ -51,6 +55,7 @@ Effects run in effect lists `[[op...], [op...]]`.
 | `counter items` | removes stack items and runs their action's `countered` effects |
 | `modify objs {layer, mods, until?: "turn"}` | a temporary continuous effect. Values are fixed when it's created, and it applies only to those object ids |
 | `link objs rel target`, `unlink objs rel` | relationships (attachments and so on). A zone change clears them |
+| `call proc args...` | runs a script procedure (`rules.procedures`) |
 
 `choose` also takes `required: true`: if fewer options than `min` exist (typically during a cost), the whole action is rejected and nothing changes.
 
@@ -102,6 +107,39 @@ Effects run in effect lists `[[op...], [op...]]`.
 ## Events
 - Every event has `seq` and `type`. Types: `moved`, `changed`, `damage`, `destroyed`, `drawFail`, `shuffled`, `lost`, `phase`, `pass`, `action`, `chose`, `gameOver`, plus custom ones.
 - `masks: [[viewers], [fields]]` removes fields for everyone else. Use `eventsFor(match, p)`.
+
+## Scripts
+- **Functions** are pure expressions: `rules.functions{name: {params: ["$a", ...], body: expr}}`.
+- **Procedures** are effect lists: `rules.procedures{name: {params, do}}`.
+- Both can also live in `scripts/*.json` as `{functions?, procedures?}`.
+- A script sees only its parameters plus the caller's `$me`, `$opp`, `$self` and `$e`. It can't touch engine state except through effect primitives.
+- Scripts are JSON data, not JavaScript, so they have no DOM, network or filesystem access and are deterministic by construction.
+- Limits: 100,000 evaluation steps per outermost function call and a call depth of 64. Breaking either raises `ScriptError`, and the command is rejected with the match unchanged.
+- Arity and names are checked statically.
+
+## Packages (module SDK)
+- **Layout:**
+  - Required: `manifest.json`, plus `rules.json` (unless the package is an expansion).
+  - Cards: `cards.json` and/or `cards/*.json` (arrays).
+  - Decks: `decks.json` and/or `decks/*.json` (objects).
+  - Optional: `scripts/*.json`, `assets/*` (png, jpg, webp, gif, mp3, ogg, wav, woff2, txt, json; 4 MB each).
+  - Reserved for later: `ai/`, `campaign/`, `tests/`. `LICENSE` and `README` are allowed.
+  - Anything else is rejected.
+- **Manifest:**
+  - Required: `moduleId` (2–64 of `[a-z0-9-]`), `displayName`, `semanticVersion`, `engineApiRange` (must include the engine's version, currently 0.3.0).
+  - Optional: `requiredCapabilities` (from `CAPABILITIES`), `contentHashes {path: sha256}` (if present, it must cover every file), `extends {moduleId, range}`, `licensing`.
+- **Expansions** (`extends`) add cards and decks to a base module passed as `opts.base`. They can't contain rules or scripts.
+- **ZIP safety:**
+  - No traversal, absolute or backslash paths, symlinks, encrypted entries, or methods other than stored/deflate.
+  - CRC checked. Output can't exceed the declared size.
+  - Compression ratio ≤ 100 for files over 1 MB.
+  - At most 8 MB per file, 64 MB total and 2000 entries.
+- **JSON** is parsed strictly: duplicate keys and `__proto__`, `constructor` and `prototype` keys are rejected, and nesting is capped at 256 levels.
+- **Errors** read `file:line:col: message`.
+- **Saves:** a save stores `rulesHash`, a hash of the rules and cards, and `restore` refuses a mismatch.
+- **CLI:**
+  - `npm run -s validate <dir|zip> [--base <dir|zip>]`
+  - `npm run -s pack <dir> [out.zip]` writes `contentHashes` and re-validates the archive.
 
 ## Engine order
 1. Run the effect frames.

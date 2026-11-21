@@ -1,6 +1,6 @@
 // Effect primitives, the replacement pipeline, event emission and trigger detection. See docs/DSL.md.
 import type { Ability, Ctx, Effect, EffectList, Frame, GEvent, Mod, Replacement, SlotDef, State } from './types.ts';
-import { ev } from './expr.ts';
+import { ev, scriptCtx } from './expr.ts';
 import { rawVal, tsOf } from './layers.ts';
 import { shuffle } from './rng.ts';
 import {
@@ -10,7 +10,7 @@ import {
 
 export const EFFECT_OPS = new Set([
   'draw', 'move', 'shuffle', 'set', 'inc', 'damage', 'destroy', 'lose', 'win', 'if', 'each', 'let', 'choose', 'run',
-  'endPhase', 'emit', 'log', 'counter', 'modify', 'link', 'unlink',
+  'endPhase', 'emit', 'log', 'counter', 'modify', 'link', 'unlink', 'call',
 ]);
 
 export function emit(m: Mod, s: State, e: { type: string; [k: string]: any }): GEvent {
@@ -312,6 +312,14 @@ export function apply(m: Mod, s: State, eff: Effect, f: Frame) {
         if (target === null) { if (!o.rel?.[name]) return; delete o.rel[name]; } else o.rel = { ...o.rel, [name]: target };
         emit(m, s, { type: eff[0] === 'link' ? 'linked' : 'unlinked', obj: id, name, target, ...masks([viewers(m, o.zone), ['obj', 'target']]) });
       });
+      return;
+    }
+    case 'call': {
+      const pr = m.rules.procedures?.[eff[1] as string];
+      if (!pr) throw new EngineError(`Unknown procedure ${eff[1]}`);
+      const c = scriptCtx(ctx, pr.params, eff.slice(2).map((_, i) => A(i + 2)));
+      if (ctx.$$applied) c.$$applied = ctx.$$applied;
+      push(s, pr.do, c);
       return;
     }
     case '@stack': stackAction(m, s, eff, ctx); return;

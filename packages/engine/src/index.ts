@@ -1,10 +1,14 @@
 import type { Mod, ModuleDef } from './types.ts';
+import { hash } from './rng.ts';
 import { EngineError } from './util.ts';
 import { validateModule } from './validate.ts';
 
 export * from './types.ts';
-export { EngineError, CostError } from './util.ts';
-export { validateModule, deckErrors, ENGINE_API } from './validate.ts';
+export { EngineError, CostError, ScriptError } from './util.ts';
+export { validateModule, validateIssues, issueText, deckErrors, ENGINE_API, CAPABILITIES } from './validate.ts';
+export type { Issue } from './validate.ts';
+export { satisfies, isSemver, isRange } from './semver.ts';
+export { GAS, MAX_DEPTH } from './expr.ts';
 export {
   createMatch, listActions, proposeAction, explainLegality, commitAction, submitDecision, serialize, restore, replay,
   applyCmd, eventHash, IllegalAction,
@@ -19,5 +23,8 @@ export { seedRng, rand, randInt, sample, shuffle, hash } from './rng.ts';
 export function compileModule(def: ModuleDef): Mod {
   const errs = validateModule(def);
   if (errs.length) throw new EngineError(`Invalid module ${def.manifest?.moduleId}:\n  ${errs.join('\n  ')}`);
-  return { ...def, card: new Map(def.cards.map((c) => [c.id, c])), zone: new Map(def.rules.zones.map((z) => [z.id, z])) };
+  return {
+    ...def, card: new Map(def.cards.map((c) => [c.id, c])), zone: new Map(def.rules.zones.map((z) => [z.id, z])),
+    hash: hash(JSON.stringify([def.rules, def.cards])),
+  };
 }

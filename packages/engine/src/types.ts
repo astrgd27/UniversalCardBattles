@@ -11,6 +11,8 @@ export interface Manifest {
   engineApiRange: string;
   requiredCapabilities?: string[];
   licensing?: string;
+  contentHashes?: Record<string, string>; // path -> sha256 hex
+  extends?: { moduleId: string; range: string }; // expansion of a base module
 }
 export interface ZoneDef {
   id: string;
@@ -53,6 +55,8 @@ export interface CardDef {
   statics?: StaticDef[];
   [k: string]: unknown;
 }
+export interface FunctionDef { params: string[]; body: Expr }
+export interface ProcedureDef { params: string[]; do: EffectList }
 export interface PhaseDef { id: string; auto?: boolean; do?: EffectList; timing?: Timing }
 export interface Rules {
   players: { min: number; max: number };
@@ -75,9 +79,11 @@ export interface Rules {
   replacements?: Replacement[];
   statics?: StaticDef[];
   stateChecks?: EffectList;
+  functions?: Record<string, FunctionDef>; // pure expression scripts: ["call", name, ...args]
+  procedures?: Record<string, ProcedureDef>; // effect scripts: ["call", name, ...args]
 }
 export interface ModuleDef { manifest: Manifest; rules: Rules; cards: CardDef[]; decks?: Record<string, string[]> }
-export interface Mod extends ModuleDef { card: Map<string, CardDef>; zone: Map<string, ZoneDef> }
+export interface Mod extends ModuleDef { card: Map<string, CardDef>; zone: Map<string, ZoneDef>; hash: string }
 
 export interface Obj {
   id: string; // game-object id: new on every zone change; numeric part is its timestamp
@@ -130,6 +136,7 @@ export interface MatchOpts { decks: string[][]; seed: number }
 export interface State {
   moduleId: string;
   version: string;
+  rulesHash: string; // pins the ruleset + card database this state was played with
   opts: MatchOpts;
   rng: number[];
   players: Player[];

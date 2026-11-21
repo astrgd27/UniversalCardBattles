@@ -5,13 +5,17 @@
   "imports": {
     "#engine": "./packages/engine/src/index.ts",
     "#ai": "./packages/ai/src/index.ts",
-    "#harness": "./packages/test-harness/src/index.ts"
+    "#harness": "./packages/test-harness/src/index.ts",
+    "#sdk": "./packages/module-sdk/src/index.ts",
+    "#sdk/node": "./packages/module-sdk/src/node.ts"
   },
   "scripts": {
     "test": "node --test --test-reporter=dot \"packages/*/tests/*.test.ts\"",
     "typecheck": "tsc -p . --pretty false",
     "sim": "node packages/test-harness/src/sim.ts",
-    "check": "npm run -s typecheck && npm test -s"
+    "check": "npm run -s typecheck && npm test -s",
+    "validate": "node packages/module-sdk/src/cli.ts validate",
+    "pack": "node packages/module-sdk/src/cli.ts pack"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
