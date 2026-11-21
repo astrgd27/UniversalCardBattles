@@ -16,7 +16,7 @@ try {
   page.on('dialog', (d) => d.accept());
   await page.goto(`http://localhost:${port}/`);
   const ids = await page.$$eval('[data-module]', (t) => t.map((x) => x.dataset.module));
-  ok(ids.length === 8, `expected 8 game tiles, got ${ids.length}`);
+  ok(ids.length === 9, `expected 9 game tiles, got ${ids.length}`);
   const open = async (id) => { await page.click('text=← Library').catch(() => {}); await page.click(`[data-module="${id}"]`); };
   const seat = (i, label) => page.click(`[data-seat="${i}"] .seg button:text-is("${label}")`);
 

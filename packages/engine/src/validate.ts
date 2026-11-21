@@ -273,7 +273,7 @@ export function validateIssues(def: ModuleDef): Issue[] {
   };
   const timing = (t: any, ptr: string) => {
     if (t !== undefined && !(isRec(t) && ['immediate', 'stack', 'chain', 'alternate'].includes(t.mode))) eR(ptr, 'timing.mode must be immediate, stack, chain or alternate');
-    else if (t?.first !== undefined) expr(t.first, `${ptr}/first`, eR);
+    else { if (t?.first !== undefined) expr(t.first, `${ptr}/first`, eR); if (t?.who !== undefined) expr(t.who, `${ptr}/who`, eR); }
   };
   const statics = (l: unknown, ptr: string, err: Err) => {
     if (l === undefined) return;

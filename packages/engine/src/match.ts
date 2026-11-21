@@ -22,6 +22,13 @@ export const timingOf = (m: Mod, s: State): Timing => {
   return curPhase(m, s).timing ?? (w ? m.rules.windows![w.id].timing : undefined) ?? m.rules.timing ?? IMMEDIATE;
 };
 const alive = (s: State) => s.players.filter((p) => !p.lost);
+/** Players taking part under this timing: `who` (alternate timing) or everyone still in the game. */
+function parts(m: Mod, s: State, tm: Timing): string[] {
+  if (tm.mode !== 'alternate' || tm.who === undefined) return alive(s).map((p) => p.id);
+  const w = list(ev(m, s, tm.who, baseCtx(s, activeId(s))));
+  return alive(s).map((p) => p.id).filter((id) => w.includes(id));
+}
+const nextIn = (ids: string[], p: string) => (ids.length ? ids[(ids.indexOf(p) + 1) % ids.length] : p);
 
 export function createMatch(m: Mod, opts: MatchOpts): Match {
   const R = m.rules;
@@ -271,6 +278,11 @@ export function settle(m: Mod, s: State, budget = SETTLE_BUDGET) {
       continue;
     }
     if (s.phaseState === 'ended' || (ph.auto && !s.stack.length)) { nextPhase(m, s); continue; }
+    if (tm.who !== undefined && tm.mode === 'alternate') {
+      const ps = parts(m, s, tm);
+      if (!ps.length) { nextPhase(m, s); continue; } // nobody takes part: the step ends
+      if (!s.holder || !ps.includes(s.holder)) s.holder = tm.first !== undefined && ps.includes(one(ev(m, s, tm.first, baseCtx(s, activeId(s))))) ? one(ev(m, s, tm.first, baseCtx(s, activeId(s)))) : ps[0];
+    }
     if (!s.holder && tm.first !== undefined) s.holder = one(ev(m, s, tm.first, baseCtx(s, activeId(s))));
     const h = s.holder && player(s, s.holder) && !player(s, s.holder)!.lost ? s.holder : activeId(s);
     s.priority = tm.mode === 'immediate' ? activeId(s) : h;
@@ -419,12 +431,12 @@ export function commitAction(match: Match, p: string, cmd: ActionCmd): Match {
   if (cmd.action === 'pass') {
     emit(m, s, { type: 'pass', player: p });
     if (tm.mode === 'immediate') s.phaseState = 'ended';
-    else if (++s.passes >= alive(s).length) {
+    else if (++s.passes >= parts(m, s, tm).length) {
       s.passes = 0;
       if (!s.stack.length) s.phaseState = 'ended';
       else if (tm.mode === 'chain') s.resolving = true;
       else resolveTop(m, s, tm);
-    } else s.holder = nextPlayer(s, p);
+    } else s.holder = tm.mode === 'alternate' ? nextIn(parts(m, s, tm), p) : nextPlayer(s, p);
   } else {
     bindSlots(ctx, slots, cmd.targets);
     const a = actionDef(m, s, cmd.action, source)!;
@@ -437,7 +449,7 @@ export function commitAction(match: Match, p: string, cmd: ActionCmd): Match {
     });
     const stacked = (tm.mode === 'stack' || tm.mode === 'chain') && a.stack !== false;
     s.passes = 0;
-    s.holder = tm.mode === 'alternate' || (stacked && !(tm.retain ?? tm.mode === 'stack')) ? nextPlayer(s, p) : p;
+    s.holder = tm.mode === 'alternate' ? nextIn(parts(m, s, tm), p) : stacked && !(tm.retain ?? tm.mode === 'stack') ? nextPlayer(s, p) : p;
     const tail = stacked ? [['@stack', cmd.action, slotDefs(m, s, cmd.action, source)]] : a.do;
     s.exec.push({ list: [...(a.cost ?? []), ...tail], i: 0, ctx });
   }

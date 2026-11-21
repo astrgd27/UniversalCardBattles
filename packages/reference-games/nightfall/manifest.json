@@ -1,0 +1,185 @@
+{
+ "moduleId": "nightfall",
+ "displayName": "NIGHTFALL",
+ "semanticVersion": "0.1.0",
+ "engineApiRange": "^0.3.1",
+ "official": true,
+ "requiredCapabilities": [
+  "grid",
+  "windows",
+  "slots",
+  "faceDown",
+  "multiDeck",
+  "sharedDecks",
+  "gameVars",
+  "scripts",
+  "deckRules",
+  "limits",
+  "targeting",
+  "control",
+  "identity",
+  "relationships"
+ ],
+ "licensing": "Original game by @Astral. NIGHTFALL is a working title.",
+ "tagline": "The City Will Fall. Two monstrous factions race to claim five districts before Dawn.",
+ "theme": {
+  "accent": "#dc2626",
+  "accent2": "#a78bfa",
+  "glyph": "☾",
+  "tapVar": "ex",
+  "hideStats": [
+   "num",
+   "fno",
+   "startRes",
+   "giftCost",
+   "gm",
+   "ge",
+   "gg",
+   "awaken",
+   "ripen",
+   "yield",
+   "gest",
+   "souls",
+   "population",
+   "inf",
+   "dominion"
+  ],
+  "hideVars": [
+   "fresh",
+   "hunted",
+   "moves",
+   "last",
+   "amb",
+   "hz",
+   "shield",
+   "saved",
+   "stun",
+   "xprey",
+   "mayPrey",
+   "ended",
+   "claim",
+   "ex",
+   "faction",
+   "infPlayed",
+   "plantPlayed",
+   "lurks",
+   "velvet",
+   "extraLurk",
+   "grim",
+   "tunnel",
+   "morgue",
+   "sqA",
+   "sqB",
+   "sqC",
+   "sqD"
+  ],
+  "labels": {
+   "dmg": "wounds",
+   "cit": "citizens",
+   "growth": "growth",
+   "sc": "sequel in",
+   "plus": "+1/+1",
+   "essence": "Essence",
+   "claims": "districts",
+   "trophies": "trophies",
+   "bodycount": "Body Count",
+   "gestation": "Gestation",
+   "barrow": "Offerings",
+   "season": "season",
+   "thralls": "Thralls",
+   "souls": "Souls",
+   "pacts": "Pacts"
+  }
+ },
+ "presentation": {
+  "templates": {
+   "unit": {
+    "base": "skirmisher",
+    "stats": [
+     {
+      "field": "menace",
+      "pos": "bl",
+      "icon": "🗡"
+     },
+     {
+      "field": "endurance",
+      "pos": "br",
+      "icon": "♥"
+     }
+    ],
+    "label": "Unit — Menace and Endurance"
+   },
+   "structure": {
+    "base": "vital",
+    "stats": [
+     {
+      "field": "endurance",
+      "pos": "tr",
+      "label": "END"
+     },
+     {
+      "field": "dominion",
+      "pos": "bl",
+      "label": "DOM"
+     },
+     {
+      "field": "inf",
+      "pos": "br",
+      "label": "INF"
+     }
+    ],
+    "label": "Structure"
+   },
+   "master": {
+    "base": "leader",
+    "stats": [
+     {
+      "field": "essence",
+      "pos": "tr",
+      "icon": "☾"
+     }
+    ],
+    "label": "Master — Essence"
+   },
+   "district": {
+    "base": "location",
+    "stats": [
+     {
+      "field": "population",
+      "pos": "tl",
+      "icon": "👤"
+     }
+    ],
+    "label": "District — Population"
+   }
+  },
+  "byType": {
+   "horror": "unit",
+   "hunter": "unit",
+   "puppet": "unit",
+   "folk": "unit",
+   "disciple": "unit",
+   "killer": "unit",
+   "oldone": "unit",
+   "child": "unit",
+   "influence": "structure",
+   "effigy": "structure",
+   "master": "master",
+   "district": "district",
+   "event": "spell",
+   "scheme": "spell",
+   "rite": "spell",
+   "outbreak": "spell",
+   "scene": "spell",
+   "bargain": "spell",
+   "omen": "spell",
+   "mutation": "spell",
+   "weapon": "spell",
+   "relic": "spell",
+   "possession": "spell",
+   "strain": "spell",
+   "planting": "resource",
+   "trap": "spell"
+  }
+ }
+}

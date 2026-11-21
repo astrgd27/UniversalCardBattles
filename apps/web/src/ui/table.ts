@@ -165,7 +165,7 @@ function seat(c: C, p: string, me: boolean) {
       'aria-label': `${pname(p)}${targets.has(p) ? ', can be chosen' : ''}`, onclick: () => (c.ui.sel ? A.pick(p) : A.view(p)),
     }, String(+p.slice(1) + 1), c.fx.hit.has(p) && h('span', { class: 'dmg-float', 'aria-hidden': 'true' }, `-${c.fx.hit.get(p)}`)),
     h('span', { class: 'seat-name' }, `${pname(p)}${me ? ' (you)' : ''}`, v.active === p ? h('span', { class: 'turn-dot', title: 'Active player' }, ' ●') : null, pl.lost ? ' — out' : ''),
-    h('span', { class: 'vars' }, Object.entries(pl.vars).map(([k, n]) => h('span', { class: cls('chip', c.fx.pulse.get(p)?.has(k) && 'fx-pulse') }, h('b', {}, String(n)), ` ${k}`))),
+    h('span', { class: 'vars' }, Object.entries(pl.vars).filter(([k]) => !mod.manifest.theme?.hideVars?.includes(k)).map(([k, n]) => h('span', { class: cls('chip', c.fx.pulse.get(p)?.has(k) && 'fx-pulse') }, h('b', {}, String(n)), ` ${mod.manifest.theme?.labels?.[k] ?? k}`))),
     h('span', { class: 'piles' }, L.piles.map((z) => pile(c, `${p}:${z.id}`, z))));
   const field = h('div', { class: 'field' }, L.field.map((z) => zoneBlock(c, `${p}:${z.id}`, z)));
   const hand = L.hand ? handRow(c, `${p}:${L.hand.id}`, me) : null;
@@ -203,6 +203,7 @@ function zoneBlock(c: C, key: string, z: ZoneDef) {
   const zv = c.v.zones[key];
   if (!zv) return null;
   if (!zv.cards) return pile(c, key, z);
+  if (z.hideEmpty && !zv.cards.length) return null;
   if (z.slots?.length) return slotted(c, key, z, zv.cards);
   if (!zv.cards.length && !z.abilities) return null;
   return h('div', { class: 'zone' }, h('span', { class: 'zone-l' }, title(z.id)),

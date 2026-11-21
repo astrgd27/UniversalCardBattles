@@ -79,7 +79,10 @@ export function cardFace(m: Mod, cardId: string, o: FaceOpts = {}): HTMLElement 
   const onFrame = new Set([...placed.map((s) => s.field), ...(tpl.level ? [tpl.level] : [])]);
   const chips = cardStats(def, o.stats).filter(([k]) => !hidden.has(k) && !onFrame.has(k));
   const kw = o.keywords ?? def.keywords ?? [];
-  const badges = Object.entries(o.vars ?? {}).filter(([k, n]) => n !== (o.baseVars?.[k] ?? 0) && !(m.rules.grid && (k === 'x' || k === 'y' || k === 'z')));
+  const th = m.manifest.theme;
+  const hideV = new Set(th?.hideVars ?? []);
+  const badges = Object.entries(o.vars ?? {}).filter(([k, n]) => n !== (o.baseVars?.[k] ?? 0) && !hideV.has(k) && !(m.rules.grid && (k === 'x' || k === 'y' || k === 'z')));
+  const tapped = !!th?.tapVar && (o.vars?.[th.tapVar] ?? 0) > 0;
   const art = customArt(m.manifest.moduleId, def.id) ?? (typeof def.art === 'string' ? ASSETS.get(m.manifest.moduleId)?.get(def.art) : undefined) ?? procArt(def, GLYPH[def.type] ?? '◆');
   const corners = new Map<string, StatSlot[]>();
   for (const s of placed) if (s.pos !== 'line') corners.set(s.pos, [...(corners.get(s.pos) ?? []), s]);
@@ -88,7 +91,7 @@ export function cardFace(m: Mod, cardId: string, o: FaceOpts = {}): HTMLElement 
   const statText = (s: StatSlot) => (s.icon ? `${s.icon} ${val(s.field)}` : String(val(s.field)));
   const aria = [...placed.map((s) => `${s.label ?? s.field} ${val(s.field)}`), ...chips.map(([a, b]) => `${a} ${b}`)].join(', ');
   return h('button', {
-    class: cls('card', `tpl-${tpl.base}`, `layout-${tpl.layout}`, `size-${o.size ?? 'md'}`, `t-${def.type}`, o.faceDown && 'fd', o.state),
+    class: cls('card', `tpl-${tpl.base}`, `layout-${tpl.layout}`, `size-${o.size ?? 'md'}`, `t-${def.type}`, o.faceDown && 'fd', tapped && 'tapped', o.state),
     style: `--h:${hue(def.id)}`, onclick: o.onclick, title: def.text ?? def.name, 'data-template': tpl.base,
     'aria-label': o.label ?? `${def.name}, ${def.type}${def.cost !== undefined ? `, cost ${costText(def.cost)}` : ''}${aria ? `, ${aria}` : ''}`,
   },
@@ -106,7 +109,7 @@ export function cardFace(m: Mod, cardId: string, o: FaceOpts = {}): HTMLElement 
     tpl.text && def.text && h('span', { class: 'text' }, def.text),
     chips.length > 0 && h('span', { class: 'stats' }, chips.map(([k, v]) => h('span', { class: cls('stat', `s-${k}`), title: k }, ICON[k] ? `${ICON[k]} ${v}` : `${k} ${v}`))),
     line.length > 0 && h('span', { class: 'statline' }, line.map((s) => `${s.label ?? s.field} ${val(s.field)}`).join(' / ')),
-    badges.length > 0 && h('span', { class: 'badges' }, badges.map(([k, v]) => h('span', { class: 'chip' }, `${k} ${v}`)))),
+    badges.length > 0 && h('span', { class: 'badges' }, badges.map(([k, v]) => h('span', { class: 'chip' }, `${th?.labels?.[k] ?? k} ${v}`)))),
   [...corners].map(([pos, slots]) => h('span', { class: `statbox pos-${pos}` }, slots.map(statText).join(tpl.base === 'classic' ? '/' : ' '))));
 }
 

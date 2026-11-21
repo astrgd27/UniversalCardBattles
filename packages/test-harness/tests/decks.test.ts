@@ -30,7 +30,8 @@ test('every game enforces its own deck rules in the builder (engine deckErrors)'
     if (token) {
       const t = structuredClone(secs);
       t[main][0] = token.id;
-      assert.match(deckErrors(m, t).join(), new RegExp(`1 copies of "${token.id}" \\(max 0\\)`), `${id}: token-only cards rejected`);
+      const tk = F.copiesBy ? String((token as any)[F.copiesBy]) : token.id;
+      assert.match(deckErrors(m, t).join(), new RegExp(`1 copies of "${tk}" \\(max 0\\)`), `${id}: token-only cards rejected`);
     }
     if (F.zones?.some((z) => z.types)) {
       const z = F.zones.find((x) => x.types)!;

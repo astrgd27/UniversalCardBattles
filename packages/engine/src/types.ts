@@ -14,7 +14,9 @@ export interface Manifest {
   contentHashes?: Record<string, string>; // path -> sha256 hex
   extends?: { moduleId: string; range: string }; // expansion of a base module
   tagline?: string; // presentation only
-  theme?: { accent?: string; accent2?: string; glyph?: string; hideStats?: string[] }; // presentation only: colours, emblem, card fields not to print
+  /** Presentation only: colours, emblem, card fields and object vars not to print, display names for vars, the var that turns a card sideways. */
+  theme?: { accent?: string; accent2?: string; glyph?: string; hideStats?: string[]; hideVars?: string[]; labels?: Record<string, string>; tapVar?: string };
+  official?: boolean; // presentation: an official game (listed first in the library)
   /** Presentation only: card templates (see apps/web templates). byType maps card types to template names. */
   presentation?: { templates?: Record<string, { base?: string; layout?: 'portrait' | 'landscape'; cost?: 'tl' | 'tr' | 'none'; stats?: { field: string; pos: string; icon?: string; label?: string }[]; level?: string; text?: boolean; label?: string }>; byType?: Record<string, string> };
 }
@@ -26,6 +28,7 @@ export interface ZoneDef {
   abilities?: boolean; // card abilities function here by default
   /** Named positions inside the zone (equipment, circles, provinces): objects occupy one via `slot`. */
   slots?: SlotPos[];
+  hideEmpty?: boolean; // presentation: the table leaves the zone out while it is empty
 }
 /** types/kinds limit what may occupy the slot (card type / card field `kind`); cap = objects per slot (default 1). */
 export interface SlotPos { id: string; types?: string[]; kinds?: string[]; cap?: number; tags?: string[]; adj?: string[] }
@@ -41,7 +44,8 @@ export interface SlotDef { as: string; from: Expr; min?: Expr; max?: Expr; promp
 export interface ActivatedDef { label?: string; phases?: string[]; speed?: number; stack?: boolean; req?: Req[]; targets?: SlotDef[]; check?: Req[]; cost?: EffectList; do: EffectList; countered?: EffectList; limit?: Limit; text?: string }
 export interface Req { if: Expr; why: string }
 /** alternate: players take turns acting (one action each), all passing in a row ends the phase; `first` picks who starts. */
-export interface Timing { mode: 'immediate' | 'stack' | 'chain' | 'alternate'; retain?: boolean; minResponse?: number; first?: Expr }
+/** who (alternate only): the players taking part, in seat order; the others never get priority, and their passes are not needed. */
+export interface Timing { mode: 'immediate' | 'stack' | 'chain' | 'alternate'; retain?: boolean; minResponse?: number; first?: Expr; who?: Expr }
 export interface ActionDef {
   label?: string;
   /** Card field holding a list of activated abilities: each becomes its own action "<name>#<index>" for that card. */

@@ -93,6 +93,7 @@ Effects run in effect lists `[[op...], [op...]]`.
 ## rules.json
 - `players {min,max}`, `playerVars`, `objectVars` (reset on every zone change).
 - `zones[] {id, vis: public|owner|hidden, shared?, ordered?, abilities?, slots?}`. Card abilities function in zones with `abilities: true` unless the ability lists `zones`.
+  - `hideEmpty: true` (presentation): the table leaves the zone out while it is empty (faction-only zones in asymmetric games).
   - `slots [{id, types?, kinds?, cap?=1, tags?, adj?}]` makes a **slotted zone** (equipment slots, front/back rows, circles, provinces). `types` limits card types, `kinds` the card field `kind` (string or list), `tags` group slots (the UI draws one row per first tag), `adj` lists neighbours. Objects carry their slot; it is cleared by a zone change.
 - `deckZone`, `handZone`, `graveZone`, `format {deckMin, deckMax, maxCopies, zones?}`, `damage?`, `turnLimit?`.
   - `format.zones [{zone, min, max, types?}]` declares deck sections. A deck is then `{zone: [ids]}`; a plain list is always the main deck.
@@ -118,7 +119,7 @@ Effects run in effect lists `[[op...], [op...]]`.
 - `timing {mode: immediate|stack|chain, retain?, minResponse?=2}`, also overridable per phase. Each mode works as follows (a code sketch follows this list):
   - **immediate**: actions resolve at once, and only the active player acts.
   - **stack**: costs are paid, then the action goes on the stack. The caster keeps priority (`retain` defaults to true). When all players pass in a row, the top item resolves and the active player gets priority again. All players passing on an empty stack ends the phase. Auto phases advance once the stack is empty.
-  - **alternate**: every player may act; after each action (always resolved at once) priority moves to the next player. All passing in a row ends the phase. `first` (an expression) picks who starts, e.g. an initiative holder.
+  - **alternate**: every player may act; after each action (always resolved at once) priority moves to the next player. All passing in a row ends the phase. `first` (an expression) picks who starts, e.g. an initiative holder. `who` (an expression giving a list of players) limits the step to those players: the others never get priority and their passes are not needed, and with nobody listed the step ends at once (e.g. "only the defender may respond": `{"mode": "alternate", "who": "$win.who"}`).
   - **chain**: priority goes to the next player after each action (`retain` defaults to false). A response needs speed ≥ max(minResponse, the top item's speed). When all pass, the whole chain resolves back to back, and triggers raised meanwhile form a new chain.
 - Actions: `speed` (default 1) works like this:
   - With an empty stack, speed below `minResponse` is only allowed for the active player.
@@ -220,7 +221,7 @@ Effects run in effect lists `[[op...], [op...]]`.
   - At most 8 MB per file, 64 MB total and 2000 entries.
 - **JSON** is parsed strictly: duplicate keys and `__proto__`, `constructor` and `prototype` keys are rejected, and nesting is capped at 256 levels.
 - **Errors** read `file:line:col: message`.
-- **Presentation** (optional manifest fields, no effect on rules): `tagline`, `theme {accent, accent2, glyph, hideStats}` and `presentation {templates, byType}`.
+- **Presentation** (optional manifest fields, no effect on rules): `tagline`, `official` (listed first, with a badge), `theme {accent, accent2, glyph, hideStats, hideVars, labels, tapVar}` and `presentation {templates, byType}`. `hideVars` keeps bookkeeping vars off card badges and player chips, `labels` renames vars for display (`{"dmg": "wounds"}`), and `tapVar` turns a card sideways while that object var is above 0 (exhausted, tapped).
   - **Card templates.** The built-in families, generic layouts based on common TCG card anatomy:
     - `classic`: cost top-right, stat box bottom-right
     - `skirmisher`: attack and health in the bottom corners

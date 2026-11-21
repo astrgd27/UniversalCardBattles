@@ -384,3 +384,8 @@ h1, h2, h3 { margin: 0; letter-spacing: .02em; }
 .storage-line { font-size: 12px; }
 .sync-ctl { display: inline-flex; align-items: center; gap: 4px; }
 .chip.good { border-color: #22c55e; color: #22c55e; }
+
+.card.tapped { transform: rotate(90deg) scale(.86); transition: transform .25s; }
+.tile.official { outline: 2px solid var(--accent); }
+.tile-badge { position: absolute; top: 8px; right: 10px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 999px; }
+.tile { position: relative; }

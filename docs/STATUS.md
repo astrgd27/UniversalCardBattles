@@ -223,8 +223,15 @@ A survey of about 30 published TCG rulebooks (`docs/COVERAGE.md`, second table) 
 - **Sync file** (Chrome/Edge, File System Access API): link a file in a Dropbox, OneDrive, iCloud or Google Drive folder and every change is written to it (debounced). On a new device, link the same file and choose to load its saves. Permission is re-requested with a "Reconnect" button after a restart. Other browsers keep export/import.
 - Backups include slots; e2e covers slots, autosave, IndexedDB and survival across reloads.
 
+## Done: NIGHTFALL, the first official module
+- @Astral's NIGHTFALL (GDD v0.1) is fully playable. See `docs/NIGHTFALL.md` for what is in and where the digital version interprets the document.
+- The module is generated from `tools/nightfall/build.py`.
+- Engine: `timing.who` (a step only some players take part in, e.g. only the defender responds). Presentation: zone `hideEmpty`, theme `hideVars`/`labels`/`tapVar` (exhausted cards turn sideways), manifest `official` (listed first with a badge).
+- 12 focused tests plus the integrity suite; all 10 faction pairings run clean under random play; the strategic AI beats random.
+
 ## Possible next steps
-- Campaigns for the other reference games, an art pipeline, online multiplayer.
+- NIGHTFALL: art from the document's prompts (art pipeline), the advanced District draft, playtest-driven balance.
+- Campaigns for the other reference games, online multiplayer.
 - Campaigns for the other reference games.
 - IndexedDB storage (localStorage today) and cloud sync of backups.
 - Card art pipeline: an asset browser in the gallery, using art in reference games.
