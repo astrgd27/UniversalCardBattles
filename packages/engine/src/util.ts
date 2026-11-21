@@ -1,4 +1,4 @@
-import type { Ctx, Limit, Mask, Mod, Obj, PhaseDef, Player, SlotPos, State, Win } from './types.ts';
+import type { ActionDef, ActivatedDef, Ctx, Limit, Mask, Mod, Obj, PhaseDef, Player, SlotPos, State, Win } from './types.ts';
 
 export class EngineError extends Error {}
 /** Thrown when a cost cannot be paid; the action is rejected and nothing changes. */
@@ -44,7 +44,35 @@ export function nextPlayer(s: State, id: string): string {
   }
   return id;
 }
-export const baseCtx = (s: State, me: string): Ctx => ({ $me: me, $opp: nextPlayer(s, me) });
+/** $opp: the next living player, or with teams (player var `team`) the next living player on another team. */
+export function baseCtx(s: State, me: string): Ctx {
+  const mine = player(s, me)?.vars.team;
+  if (mine === undefined) return { $me: me, $opp: nextPlayer(s, me) };
+  let o = nextPlayer(s, me);
+  for (let k = 0; k < s.players.length && player(s, o)!.vars.team === mine && o !== me; k++) o = nextPlayer(s, o);
+  return { $me: me, $opp: o };
+}
+
+/**
+ * The definition behind an action name. "<base>#<i>" is the i-th activated ability listed in the source card's
+ * `activated` field, merged over the base action: lists concatenate (base first), scalars come from the ability.
+ */
+export function actionDef(m: Mod, s: State, name: string, src: string | null): ActionDef | undefined {
+  const h = name.indexOf('#');
+  if (h < 0) return m.rules.actions[name];
+  const a = m.rules.actions[name.slice(0, h)];
+  const o = src ? s.objects[src] : undefined;
+  if (!a?.activated || !o) return undefined;
+  const i = Number(name.slice(h + 1));
+  const ab = ((m.card.get(o.card) as any)?.[a.activated] as ActivatedDef[] | undefined)?.[i];
+  if (!ab || !Number.isInteger(i)) return undefined;
+  const cat = <T>(x?: T[], y?: T[]) => [...(x ?? []), ...(y ?? [])];
+  return {
+    ...a, label: ab.label ?? `${a.label ?? name.slice(0, h)} ${i + 1}`, phases: ab.phases ?? a.phases, speed: ab.speed ?? a.speed, stack: ab.stack ?? a.stack,
+    req: cat(a.req, ab.req), targets: cat(a.targets, ab.targets), check: cat(a.check, ab.check), cost: cat(a.cost, ab.cost), do: cat(a.do, ab.do),
+    countered: ab.countered ?? a.countered, limit: ab.limit ? { ...ab.limit, group: ab.limit.group ?? `ab:${o.card}#${i}` } : a.limit,
+  };
+}
 
 // ---------- timing windows ----------
 export const topWin = (s: State): Win | undefined => s.windows[s.windows.length - 1];

@@ -36,12 +36,16 @@ export interface ResourceDef { types: string[]; generic?: string; expire?: 'phas
 /** A timing window opened mid-turn (combat, showdown): its steps run like phases, then the opening effect resumes. */
 export interface WindowDef { steps: PhaseDef[]; timing?: Timing }
 /** recheck at resolution: true = target must still be in `from`; 'exists' = must still exist; false = cost choice. */
-export interface SlotDef { as: string; from: Expr; min?: Expr; max?: Expr; prompt?: string; recheck?: boolean | 'exists' }
+export interface SlotDef { as: string; from: Expr; min?: Expr; max?: Expr; prompt?: string; recheck?: boolean | 'exists'; untargeted?: boolean }
+/** An activated ability printed on a card (see ActionDef.activated); merged over the base action. */
+export interface ActivatedDef { label?: string; phases?: string[]; speed?: number; stack?: boolean; req?: Req[]; targets?: SlotDef[]; check?: Req[]; cost?: EffectList; do: EffectList; countered?: EffectList; limit?: Limit; text?: string }
 export interface Req { if: Expr; why: string }
 /** alternate: players take turns acting (one action each), all passing in a row ends the phase; `first` picks who starts. */
 export interface Timing { mode: 'immediate' | 'stack' | 'chain' | 'alternate'; retain?: boolean; minResponse?: number; first?: Expr }
 export interface ActionDef {
   label?: string;
+  /** Card field holding a list of activated abilities: each becomes its own action "<name>#<index>" for that card. */
+  activated?: string;
   phases?: string[];
   speed?: number; // 1 = own turn, empty stack; >= minResponse = may respond
   stack?: boolean; // false: resolves at once even under stack/chain timing
@@ -105,6 +109,10 @@ export interface Rules {
   stateChecks?: EffectList;
   grid?: { cols: number; rows: number; zones?: string[] }; // 2D board: objects in `zones` sit at cells via vars x, y
   resources?: Record<string, ResourceDef>;
+  /** Engine-wide targeting rule: target slots never offer options where deny is true ($it = option, $me = actor, $self = source). */
+  targeting?: { deny: Expr };
+  /** Teams: players share the player var `team`; the game ends when one team is left, and its members all win. */
+  teams?: boolean;
   windows?: Record<string, WindowDef>;
   external?: Record<string, (string | number)[]>; // inputs from outside the game (sensors, toys, the host): name -> allowed values
   functions?: Record<string, FunctionDef>; // pure expression scripts: ["call", name, ...args]

@@ -4,14 +4,14 @@ import { ev, payPlan, scriptCtx } from './expr.ts';
 import { rawVal, tsOf } from './layers.ts';
 import { randInt, sample, shuffle } from './rng.ts';
 import {
-  CostError, EngineError, activeId, baseCtx, freeSlots, list, masks, num, objViewers, one, player, slotAccepts, slotsOf, topWin,
+  CostError, EngineError, actionDef, activeId, baseCtx, freeSlots, list, masks, num, objViewers, one, player, slotAccepts, slotsOf, topWin,
   unionViewers, uniq, useKey, viewers, zkey, zoneIdOf, zoneOwnerOf,
 } from './util.ts';
 
 export const EFFECT_OPS = new Set([
   'draw', 'move', 'shuffle', 'set', 'inc', 'damage', 'destroy', 'lose', 'win', 'if', 'each', 'let', 'choose', 'run',
   'endPhase', 'emit', 'log', 'counter', 'modify', 'link', 'unlink', 'call', 'commit', 'random', 'flip', 'create', 'gotoPhase',
-  'openWindow', 'closeWindow', 'winSet', 'pay', 'gain', 'empty', 'setSlot',
+  'openWindow', 'closeWindow', 'winSet', 'pay', 'gain', 'empty', 'setSlot', 'control',
 ]);
 const MAX_WINDOWS = 8;
 
@@ -240,8 +240,8 @@ function choose(m: Mod, s: State, o: any, ctx: Ctx) {
 
 /** Internal: puts an announced action on the stack (cost already paid). */
 function stackAction(m: Mod, s: State, eff: Effect, ctx: Ctx) {
-  const a = m.rules.actions[eff[1] as string];
   const src = ctx.$self && s.objects[ctx.$self] ? ctx.$self : null;
+  const a = actionDef(m, s, eff[1] as string, src)!;
   const card = src ? s.objects[src].card : null;
   const id = `k${s.nextId++}`;
   s.stack.push({
@@ -499,6 +499,33 @@ export function apply(m: Mod, s: State, eff: Effect, f: Frame) {
       }
       o.slot = to;
       emit(m, s, { type: 'slotted', obj: o.id, slot: to, from, ...masks([viewers(m, o.zone), ['obj']]) });
+      return;
+    }
+    case 'control': {
+      // Gain control: the same object (no zone change, same id) moves to the new controller's side of its zone.
+      const p = one(A(2));
+      if (!player(s, p) || player(s, p)!.lost) return;
+      each(1, (id) => {
+        const o = s.objects[id];
+        if (!o || o.controller === p) return;
+        const zid = zoneIdOf(o.zone);
+        const from = o.controller;
+        if (!m.zone.get(zid)!.shared) {
+          const toKey = zkey(m, p, zid);
+          let at: string | undefined;
+          if (slotsOf(m, zid).length) {
+            at = freeSlots(m, s, toKey, o.card)[0];
+            if (!at) { emit(m, s, { type: 'slotFull', obj: id, zone: zid, slot: null }); return; }
+          }
+          const arr = s.zones[o.zone];
+          arr.splice(arr.indexOf(id), 1);
+          s.zones[toKey].push(id);
+          o.zone = toKey;
+          if (at) o.slot = at;
+        }
+        o.controller = p;
+        emit(m, s, { type: 'controlled', obj: id, from, to: p, ...masks([viewers(m, o.zone), ['obj']]) });
+      });
       return;
     }
     case '@stack': stackAction(m, s, eff, ctx); return;

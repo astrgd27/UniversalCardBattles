@@ -10,7 +10,7 @@ export const ENGINE_API = '0.3.1';
 export const CAPABILITIES = [
   'timing.immediate', 'timing.stack', 'timing.chain', 'timing.alternate', 'replacements', 'layers', 'relationships', 'decisions',
   'scripts', 'commit', 'faceDown', 'random', 'multiDeck', 'sharedDecks', 'gameVars', 'grid', 'external',
-  'windows', 'slots', 'resources', 'deckRules', 'limits',
+  'windows', 'slots', 'resources', 'deckRules', 'limits', 'activated', 'targeting', 'control', 'teams',
 ];
 const REPLACEABLE = ['draw', 'move', 'destroy', 'damage', 'lose'];
 /** Built-in card template families a module may use or extend (presentation; rendered by apps/web). */
@@ -312,6 +312,7 @@ export function validateIssues(def: ModuleDef): Issue[] {
     if (!Array.isArray(x) || !x.every(isVar) || new Set(x).size !== x.length) eR(ptr, 'params must be unique "$name" strings');
   };
 
+  const activatedFields = new Set<string>();
   // ---- rules content ----
   timing(R.timing, '/timing');
   for (const [name, fn] of Object.entries(fns)) { params(fn?.params, `/functions/${esc(name)}/params`); expr(fn?.body, `/functions/${esc(name)}/body`, eR); }
@@ -330,6 +331,7 @@ export function validateIssues(def: ModuleDef): Issue[] {
   for (const [name, a] of Object.entries<any>(R.actions)) {
     const p = `/actions/${esc(name)}`;
     if (name === 'pass') eR(p, '"pass" is reserved');
+    if (name.includes('#')) eR(p, '"#" is reserved for activated abilities (name#index)');
     if (!isRec(a)) { eR(p, 'must be an object'); continue; }
     (a.phases ?? []).forEach((ph: string, j: number) => { if (!phases.has(ph) && !steps.has(ph)) eR(`${p}/phases/${j}`, `unknown phase or window step "${ph}"`); });
     limit(a.limit, `${p}/limit`, eR);
@@ -339,7 +341,13 @@ export function validateIssues(def: ModuleDef): Issue[] {
     slots(a.targets, `${p}/targets`, eR);
     for (const k of ['cost', 'do', 'countered']) effects(a[k], `${p}/${k}`, eR);
     if (!Array.isArray(a.do)) eR(`${p}/do`, 'required');
+    if (a.activated !== undefined) {
+      if (typeof a.activated !== 'string' || ['targets', 'abilities', 'statics', 'replacements'].includes(a.activated)) eR(`${p}/activated`, 'must name a card field holding a list of abilities');
+      else activatedFields.add(a.activated);
+    }
   }
+  if (R.targeting !== undefined) { if (!isRec(R.targeting) || R.targeting.deny === undefined) eR('/targeting', 'needs {deny: expr}'); else expr(R.targeting.deny, '/targeting/deny', eR); }
+  if (R.teams !== undefined && typeof R.teams !== 'boolean') eR('/teams', 'must be true or false');
 
   // ---- cards ----
   const ids = new Set<string>();
@@ -355,7 +363,18 @@ export function validateIssues(def: ModuleDef): Issue[] {
     statics(c.statics, '/statics', err);
     repls(c.replacements, '/replacements', err);
     for (const [k, v] of Object.entries(c)) {
-      if (Array.isArray(v) && Array.isArray(v[0]) && !['targets', 'abilities', 'statics', 'replacements'].includes(k)) effects(v, `/${esc(k)}`, err);
+      if (activatedFields.has(k)) {
+        if (!Array.isArray(v) || !v.every(isRec)) { err(`/${esc(k)}`, 'activated abilities must be an array of {label?, req?, targets?, cost?, do, limit?}'); continue; }
+        v.forEach((ab: any, j: number) => {
+          const q = `/${esc(k)}/${j}`;
+          if (!Array.isArray(ab.do)) err(`${q}/do`, 'required');
+          (ab.phases ?? []).forEach((ph: string, n: number) => { if (!phases.has(ph) && !steps.has(ph)) err(`${q}/phases/${n}`, `unknown phase or window step "${ph}"`); });
+          for (const kk of ['req', 'check']) (ab[kk] ?? []).forEach((r: any, n: number) => expr(r?.if, `${q}/${kk}/${n}/if`, err));
+          slots(ab.targets, `${q}/targets`, err);
+          limit(ab.limit, `${q}/limit`, err);
+          for (const kk of ['cost', 'do', 'countered']) effects(ab[kk], `${q}/${kk}`, err);
+        });
+      } else if (Array.isArray(v) && Array.isArray(v[0]) && !['targets', 'abilities', 'statics', 'replacements'].includes(k)) effects(v, `/${esc(k)}`, err);
     }
   });
 

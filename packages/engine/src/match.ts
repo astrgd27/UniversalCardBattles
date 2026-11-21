@@ -6,7 +6,7 @@ import type {
 import { apply, emit, triggerList } from './effects.ts';
 import { ev } from './expr.ts';
 import { hash, seedRng } from './rng.ts';
-import { CostError, EngineError, activeId, baseCtx, curPhase, list, masks, nextPlayer, num, objViewers, one, player, resetUses, topWin, uniq, useKey } from './util.ts';
+import { CostError, EngineError, actionDef, activeId, baseCtx, curPhase, list, masks, nextPlayer, num, objViewers, one, player, resetUses, topWin, uniq, useKey } from './util.ts';
 import { setVar } from './effects.ts';
 import { deckErrors, deckSections } from './validate.ts';
 
@@ -96,6 +96,14 @@ export function setExternal(match: Match, name: string, value: string | number):
 function endCheck(m: Mod, s: State): boolean {
   if (s.result) return true;
   const a = alive(s);
+  if (m.rules.teams) {
+    const teams = new Set(a.map((p) => p.vars.team ?? 0));
+    if (teams.size > 1) return false;
+    const t = [...teams][0];
+    s.result = { winners: t === undefined ? [] : s.players.filter((p) => (p.vars.team ?? 0) === t).map((p) => p.id), reason: t === undefined ? 'draw' : 'lastTeam' };
+    emit(m, s, { type: 'gameOver', ...s.result });
+    return true;
+  }
   if (s.players.length > 1 && a.length <= 1) {
     s.result = { winners: a.map((p) => p.id), reason: a.length ? 'lastStanding' : 'draw' };
     emit(m, s, { type: 'gameOver', ...s.result });
@@ -191,7 +199,7 @@ function resolveTop(m: Mod, s: State, tm: Timing) {
     const bound = list(it.ctx[sl.as]);
     if (rc === false || !bound.length) continue;
     const opts: string[] = rc === 'exists' ? [] : list(ev(m, s, sl.from, it.ctx)).map(String);
-    const legal = bound.filter((t) => (rc === 'exists' ? t in s.objects || (player(s, t) && !player(s, t)!.lost) : opts.includes(t)));
+    const legal = bound.filter((t) => (rc === 'exists' ? t in s.objects || (player(s, t) && !player(s, t)!.lost) : opts.includes(t)) && !denied(m, s, sl, t, it.ctx));
     if (!legal.length) {
       emit(m, s, { type: 'fizzled', item: it.id, card: it.card });
       if (it.countered?.length) s.exec.push({ list: it.countered, i: 0, ctx: it.ctx });
@@ -269,9 +277,13 @@ function gate(s: State, p: string): Reason | null {
 }
 
 function slotDefs(m: Mod, s: State, name: string, src: string | null): SlotDef[] {
-  const a = m.rules.actions[name];
+  const a = actionDef(m, s, name, src)!;
   return [...(a.targets ?? []), ...(a.cardTargets && src ? (m.card.get(s.objects[src].card)?.targets ?? []) : [])];
 }
+
+/** rules.targeting.deny: options no target slot may offer (untargeted slots are exempt). */
+const denied = (m: Mod, s: State, sl: SlotDef, t: string, ctx: Ctx) =>
+  !!m.rules.targeting && !sl.untargeted && !!ev(m, s, m.rules.targeting.deny, { ...ctx, $it: t });
 
 function evalAction(m: Mod, s: State, p: string, name: string, src: string | null): { r: Reason; slots: SlotOpts[]; ctx: Ctx } {
   const base = baseCtx(s, p);
@@ -279,8 +291,8 @@ function evalAction(m: Mod, s: State, p: string, name: string, src: string | nul
   const g = gate(s, p);
   if (g) return fail(g);
   if (name === 'pass') return { r: ok('Pass'), slots: [], ctx: base };
-  const a = m.rules.actions[name];
-  if (!a) return fail(no('unknown', `Unknown action "${name}".`));
+  const a = actionDef(m, s, name, src);
+  if (!a || (a.activated && !name.includes('#'))) return fail(no('unknown', `Unknown action "${name}".`));
   const label = a.label ?? name;
   const phase = curPhase(m, s).id;
   if (a.phases && !a.phases.includes(phase)) return fail(no('phase', `${label} is not allowed during the ${phase} ${topWin(s) ? 'step' : 'phase'}.`));
@@ -305,7 +317,7 @@ function evalAction(m: Mod, s: State, p: string, name: string, src: string | nul
   if (checks.some((c) => !c.ok)) return fail(no('req', `${label}: requirements not met.`, checks));
   const slots: SlotOpts[] = [];
   for (const d of slotDefs(m, s, name, src)) {
-    const options = uniq(list(ev(m, s, d.from, ctx)).map(String));
+    const options = uniq(list(ev(m, s, d.from, ctx)).map(String)).filter((t) => !denied(m, s, d, t, ctx));
     const min = num(ev(m, s, d.min ?? 1, ctx));
     const prompt = d.prompt ?? 'target';
     if (options.length < min) return fail(no('targets', `${label}: no legal ${prompt}.`));
@@ -320,8 +332,12 @@ export function listActions({ m, s }: Match, p: string): Template[] {
   for (const [name, a] of Object.entries(m.rules.actions)) {
     const srcs: (string | null)[] = a.source ? list(ev(m, s, a.source, baseCtx(s, p))) : [null];
     for (const src of srcs) {
-      const { r, slots } = evalAction(m, s, p, name, src);
-      if (r.ok) out.push({ action: name, label: a.label ?? name, source: src, slots });
+      // Activated-ability actions expand to one action per ability printed on the source card.
+      const names = a.activated ? (((src ? (m.card.get(s.objects[src]?.card) as any)?.[a.activated] : null) ?? []) as unknown[]).map((_, i) => `${name}#${i}`) : [name];
+      for (const n of names) {
+        const { r, slots } = evalAction(m, s, p, n, src);
+        if (r.ok) out.push({ action: n, label: r.msg, source: src, slots });
+      }
     }
   }
   const tm = timingOf(m, s);
@@ -347,7 +363,7 @@ export function proposeAction({ m, s }: Match, p: string, cmd: ActionCmd): Reaso
     if (sel.length < sl.min || sel.length > sl.max) return no('targets', `Choose ${sl.min === sl.max ? sl.min : `${sl.min}-${sl.max}`} ${sl.prompt}.`);
     if (sel.some((t) => !sl.options.includes(t))) return no('targets', `Illegal ${sl.prompt}.`);
   }
-  const a = m.rules.actions[cmd.action];
+  const a = actionDef(m, s, cmd.action, cmd.source ?? null);
   if (a?.check?.length) {
     const c = { ...ctx };
     bindSlots(c, slots, cmd.targets);
@@ -389,7 +405,7 @@ export function commitAction(match: Match, p: string, cmd: ActionCmd): Match {
     } else s.holder = nextPlayer(s, p);
   } else {
     bindSlots(ctx, slots, cmd.targets);
-    const a = m.rules.actions[cmd.action];
+    const a = actionDef(m, s, cmd.action, source)!;
     if (a.limit) { const k = useKey(m, s, a.limit, `act:${cmd.action}`, p, source); s.uses[k] = (s.uses[k] ?? 0) + 1; }
     const vis = source ? objViewers(m, s.objects[source]) : null;
     emit(m, s, {

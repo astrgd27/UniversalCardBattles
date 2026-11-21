@@ -311,7 +311,13 @@ function fmt(e: Record<string, any>, mod: Mod, label: (x: string) => string): st
     case 'moved': return `${cn(e.card) ?? 'A card'}: ${e.from} → ${e.to}${e.toPlayer && e.toPlayer !== 'shared' ? ` (${pname(e.toPlayer)})` : ''}`;
     case 'damage': return `${e.source ? label(e.source) : 'Damage'} → ${label(e.target)}: ${e.amount}`;
     case 'changed': return /^p\d+$/.test(e.ref) ? `${pname(e.ref)} ${e.name}: ${e.from} → ${e.to}` : null;
-    case 'action': return `${pname(e.player)}: ${mod.rules.actions[e.action]?.label ?? e.action}${e.card ? ` ${cn(e.card)}` : ''}`;
+    case 'action': {
+      const [base, i] = String(e.action).split('#');
+      const d = mod.rules.actions[base];
+      const ab = i !== undefined && d?.activated && e.card ? (mod.card.get(e.card) as any)?.[d.activated]?.[+i]?.label : undefined;
+      return `${pname(e.player)}: ${ab ?? d?.label ?? base}${e.card ? ` ${cn(e.card)}` : ''}`;
+    }
+    case 'controlled': return `${label(e.obj)} changes sides (${pname(e.from)} → ${pname(e.to)})`;
     case 'phase': return `— Turn ${e.turn}, ${e.phase} (${pname(e.active)})`;
     case 'pass': return `${pname(e.player)} passes`;
     case 'chose': return `${pname(e.player)} chose ${e.sel ? e.sel.map(label).join(', ') || 'nothing' : 'secretly'}`;

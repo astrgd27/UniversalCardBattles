@@ -1,6 +1,1 @@
-{"moduleId": "bastion-clash", "displayName": "Bastion Clash", "semanticVersion": "0.1.0", "engineApiRange": "^0.3.1",
- "requiredCapabilities": ["windows", "slots", "resources", "deckRules", "limits", "multiDeck", "scripts"],
- "licensing": "Original reference content, same license as this repository.",
- "tagline": "Hold the line, raise the wells, and meet every charge with steel.",
- "theme": {"accent": "#f59e0b", "accent2": "#818cf8", "glyph": "⛨", "hideStats": ["guard", "armor"]},
- "presentation": {"byType": {"hero": "leader", "unit": "skirmisher", "guard": "spell", "gear": "spell", "well": "resource"}}}
+{"moduleId": "bastion-clash", "displayName": "Bastion Clash", "semanticVersion": "0.1.0", "engineApiRange": "^0.3.1", "requiredCapabilities": ["windows", "slots", "resources", "deckRules", "limits", "multiDeck", "scripts", "activated", "targeting", "control", "teams"], "licensing": "Original reference content, same license as this repository.", "tagline": "Hold the line, raise the wells, and meet every charge with steel.", "theme": {"accent": "#f59e0b", "accent2": "#818cf8", "glyph": "\u26e8", "hideStats": ["guard", "armor"]}, "presentation": {"byType": {"hero": "leader", "unit": "skirmisher", "guard": "spell", "gear": "spell", "well": "resource"}}}

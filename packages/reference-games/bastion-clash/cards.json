@@ -1,24 +1,503 @@
 [
-  {"id": "dawn-warden", "name": "Dawn Warden", "type": "hero", "aspects": ["sun"], "life": 20, "powerCost": {"any": 1}, "text": "Hero power (once per turn, 1): a unit you control gets +2 power this turn. Usable while blocking.",
-   "targets": [{"as": "$t", "from": ["cards", "$me", "field"], "prompt": "unit to rally"}], "power": [["inc", "$t", "boost", 2]]},
-  {"id": "tide-seer", "name": "Tide Seer", "type": "hero", "aspects": ["moon", "sun"], "life": 20, "powerCost": {"moon": 1}, "text": "Hero power (once per turn, moon): draw a card.",
-   "power": [["draw", "$me", 1]]},
-  {"id": "sun-well", "name": "Sun Well", "type": "well", "aspect": "sun", "yields": {"sun": 1}, "maxCopies": 8, "text": "Yields 1 sun each turn."},
-  {"id": "sun-well-gilded", "name": "Sun Well", "type": "well", "aspect": "sun", "yields": {"sun": 1}, "maxCopies": 8, "text": "Yields 1 sun each turn. (Gilded printing: counts as Sun Well.)"},
-  {"id": "moon-well", "name": "Moon Well", "type": "well", "aspect": "moon", "yields": {"moon": 1}, "maxCopies": 8, "text": "Yields 1 moon each turn."},
-  {"id": "twilight-well", "name": "Twilight Well", "type": "well", "aspect": "moon", "yields": {"sun": 1, "moon": 1}, "maxCopies": 1, "text": "Legendary. Yields 1 sun and 1 moon each turn."},
-  {"id": "ember-squire", "name": "Ember Squire", "type": "unit", "aspect": "sun", "cost": {"sun": 1}, "power": 2, "health": 2},
-  {"id": "bannerbearer", "name": "Bannerbearer", "type": "unit", "aspect": "sun", "cost": {"sun": 2}, "power": 3, "health": 2},
-  {"id": "sunlance-knight", "name": "Sunlance Knight", "type": "unit", "aspect": "sun", "cost": {"sun": 1, "any": 2}, "power": 4, "health": 3},
-  {"id": "moonlit-archer", "name": "Moonlit Archer", "type": "unit", "aspect": "moon", "cost": {"moon": 1, "any": 1}, "power": 2, "health": 2, "keywords": ["reach"], "text": "Reach (attacks from the back row)."},
-  {"id": "tide-golem", "name": "Tide Golem", "type": "unit", "aspect": "moon", "cost": {"moon": 2, "any": 2}, "needs": {"moon": 2}, "power": 5, "health": 5, "text": "Needs 2 moon wells in play."},
-  {"id": "twin-star-paladin", "name": "Twin-Star Paladin", "type": "unit", "aspect": "sun", "cost": {"sun": 1, "moon": 1, "any": 1}, "power": 3, "health": 4, "maxCopies": 1, "text": "Legendary."},
-  {"id": "lantern-page", "name": "Lantern Page", "type": "unit", "aspect": "neutral", "cost": {"any": 1}, "power": 1, "health": 1, "text": "When this enters, draw a card (once per turn).",
-   "abilities": [{"on": "enter", "zones": ["field"], "limit": {"per": "turn"}, "text": "draw a card", "do": [["draw", "$me", 1]]}]},
-  {"id": "shield-wall", "name": "Shield Wall", "type": "guard", "aspect": "sun", "cost": {"sun": 1}, "guard": 3, "text": "Block step: prevent 3 combat damage."},
-  {"id": "mist-veil", "name": "Mist Veil", "type": "guard", "aspect": "moon", "cost": {"moon": 1}, "guard": 2, "text": "Block step: prevent 2 combat damage and draw a card.", "onGuard": [["draw", "$me", 1]]},
-  {"id": "parry", "name": "Parry", "type": "guard", "aspect": "neutral", "cost": {}, "guard": 1, "text": "Block step: prevent 1 combat damage. Free."},
-  {"id": "iron-helm", "name": "Iron Helm", "type": "gear", "aspect": "neutral", "kind": "head", "cost": {"any": 1}, "armor": 1, "text": "Head. Armor 1 against attacks on your hero."},
-  {"id": "moonsilver-gauntlets", "name": "Moonsilver Gauntlets", "type": "gear", "aspect": "moon", "kind": "arms", "cost": {"moon": 1}, "armor": 1, "text": "Arms. Armor 1."},
-  {"id": "sunplate", "name": "Sunplate", "type": "gear", "aspect": "sun", "kind": "body", "cost": {"sun": 1, "any": 1}, "armor": 2, "text": "Body. Armor 2."}
+ {
+  "id": "dawn-warden",
+  "name": "Dawn Warden",
+  "type": "hero",
+  "aspects": [
+   "sun"
+  ],
+  "life": 20,
+  "powerCost": {
+   "any": 1
+  },
+  "text": "Hero power (once per turn, 1): a unit you control gets +2 power this turn. Usable while blocking.",
+  "targets": [
+   {
+    "as": "$t",
+    "from": [
+     "cards",
+     "$me",
+     "field"
+    ],
+    "prompt": "unit to rally"
+   }
+  ],
+  "power": [
+   [
+    "inc",
+    "$t",
+    "boost",
+    2
+   ]
+  ]
+ },
+ {
+  "id": "tide-seer",
+  "name": "Tide Seer",
+  "type": "hero",
+  "aspects": [
+   "moon",
+   "sun"
+  ],
+  "life": 20,
+  "powerCost": {
+   "moon": 1
+  },
+  "text": "Hero power (once per turn, moon): draw a card.",
+  "power": [
+   [
+    "draw",
+    "$me",
+    1
+   ]
+  ]
+ },
+ {
+  "id": "sun-well",
+  "name": "Sun Well",
+  "type": "well",
+  "aspect": "sun",
+  "yields": {
+   "sun": 1
+  },
+  "maxCopies": 8,
+  "text": "Yields 1 sun each turn."
+ },
+ {
+  "id": "sun-well-gilded",
+  "name": "Sun Well",
+  "type": "well",
+  "aspect": "sun",
+  "yields": {
+   "sun": 1
+  },
+  "maxCopies": 8,
+  "text": "Yields 1 sun each turn. (Gilded printing: counts as Sun Well.)"
+ },
+ {
+  "id": "moon-well",
+  "name": "Moon Well",
+  "type": "well",
+  "aspect": "moon",
+  "yields": {
+   "moon": 1
+  },
+  "maxCopies": 8,
+  "text": "Yields 1 moon each turn."
+ },
+ {
+  "id": "twilight-well",
+  "name": "Twilight Well",
+  "type": "well",
+  "aspect": "moon",
+  "yields": {
+   "sun": 1,
+   "moon": 1
+  },
+  "maxCopies": 1,
+  "text": "Legendary. Yields 1 sun and 1 moon each turn."
+ },
+ {
+  "id": "ember-squire",
+  "name": "Ember Squire",
+  "type": "unit",
+  "aspect": "sun",
+  "cost": {
+   "sun": 1
+  },
+  "power": 2,
+  "health": 2
+ },
+ {
+  "id": "bannerbearer",
+  "name": "Bannerbearer",
+  "type": "unit",
+  "aspect": "sun",
+  "cost": {
+   "sun": 2
+  },
+  "power": 3,
+  "health": 2
+ },
+ {
+  "id": "sunlance-knight",
+  "name": "Sunlance Knight",
+  "type": "unit",
+  "aspect": "sun",
+  "cost": {
+   "sun": 1,
+   "any": 2
+  },
+  "power": 4,
+  "health": 3
+ },
+ {
+  "id": "moonlit-archer",
+  "name": "Moonlit Archer",
+  "type": "unit",
+  "aspect": "moon",
+  "cost": {
+   "moon": 1,
+   "any": 1
+  },
+  "power": 2,
+  "health": 2,
+  "keywords": [
+   "reach"
+  ],
+  "text": "Reach (attacks from the back row)."
+ },
+ {
+  "id": "tide-golem",
+  "name": "Tide Golem",
+  "type": "unit",
+  "aspect": "moon",
+  "cost": {
+   "moon": 2,
+   "any": 2
+  },
+  "needs": {
+   "moon": 2
+  },
+  "power": 5,
+  "health": 5,
+  "text": "Needs 2 moon wells in play."
+ },
+ {
+  "id": "twin-star-paladin",
+  "name": "Twin-Star Paladin",
+  "type": "unit",
+  "aspect": "sun",
+  "cost": {
+   "sun": 1,
+   "moon": 1,
+   "any": 1
+  },
+  "power": 3,
+  "health": 4,
+  "maxCopies": 1,
+  "text": "Legendary."
+ },
+ {
+  "id": "lantern-page",
+  "name": "Lantern Page",
+  "type": "unit",
+  "aspect": "neutral",
+  "cost": {
+   "any": 1
+  },
+  "power": 1,
+  "health": 1,
+  "text": "When this enters, draw a card (once per turn).",
+  "abilities": [
+   {
+    "on": "enter",
+    "zones": [
+     "field"
+    ],
+    "limit": {
+     "per": "turn"
+    },
+    "text": "draw a card",
+    "do": [
+     [
+      "draw",
+      "$me",
+      1
+     ]
+    ]
+   }
+  ]
+ },
+ {
+  "id": "shield-wall",
+  "name": "Shield Wall",
+  "type": "guard",
+  "aspect": "sun",
+  "cost": {
+   "sun": 1
+  },
+  "guard": 3,
+  "text": "Block step: prevent 3 combat damage."
+ },
+ {
+  "id": "mist-veil",
+  "name": "Mist Veil",
+  "type": "guard",
+  "aspect": "moon",
+  "cost": {
+   "moon": 1
+  },
+  "guard": 2,
+  "text": "Block step: prevent 2 combat damage and draw a card.",
+  "onGuard": [
+   [
+    "draw",
+    "$me",
+    1
+   ]
+  ]
+ },
+ {
+  "id": "parry",
+  "name": "Parry",
+  "type": "guard",
+  "aspect": "neutral",
+  "cost": {},
+  "guard": 1,
+  "text": "Block step: prevent 1 combat damage. Free."
+ },
+ {
+  "id": "iron-helm",
+  "name": "Iron Helm",
+  "type": "gear",
+  "aspect": "neutral",
+  "kind": "head",
+  "cost": {
+   "any": 1
+  },
+  "armor": 1,
+  "text": "Head. Armor 1. Brace (block step, 1, once per turn): +1 guard.",
+  "activated": [
+   {
+    "label": "Brace",
+    "phases": [
+     "block"
+    ],
+    "req": [
+     {
+      "if": [
+       "=",
+       "$win.defender",
+       "$me"
+      ],
+      "why": "Only while defending"
+     },
+     {
+      "if": [
+       "canPay",
+       "$me",
+       "aether",
+       {
+        "any": 1
+       }
+      ],
+      "why": "You need the aether"
+     }
+    ],
+    "cost": [
+     [
+      "pay",
+      "$me",
+      "aether",
+      {
+       "any": 1
+      }
+     ]
+    ],
+    "do": [
+     [
+      "winSet",
+      "guard",
+      [
+       "+",
+       "$win.guard",
+       1
+      ]
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ]
+ },
+ {
+  "id": "moonsilver-gauntlets",
+  "name": "Moonsilver Gauntlets",
+  "type": "gear",
+  "aspect": "moon",
+  "kind": "arms",
+  "cost": {
+   "moon": 1
+  },
+  "armor": 1,
+  "text": "Arms. Armor 1. Hone (moon, once per turn): a unit gets +1 power this turn. Shed: put this in the grave and gain 1 moon.",
+  "activated": [
+   {
+    "label": "Hone",
+    "phases": [
+     "main"
+    ],
+    "req": [
+     {
+      "if": [
+       "canPay",
+       "$me",
+       "aether",
+       {
+        "moon": 1
+       }
+      ],
+      "why": "You need the aether"
+     }
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "cards",
+       "$me",
+       "field"
+      ],
+      "prompt": "unit to hone"
+     }
+    ],
+    "cost": [
+     [
+      "pay",
+      "$me",
+      "aether",
+      {
+       "moon": 1
+      }
+     ]
+    ],
+    "do": [
+     [
+      "inc",
+      "$t",
+      "boost",
+      1
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   },
+   {
+    "label": "Shed",
+    "phases": [
+     "main"
+    ],
+    "do": [
+     [
+      "gain",
+      "$me",
+      "aether",
+      {
+       "moon": 1
+      }
+     ],
+     [
+      "move",
+      "$self",
+      "grave"
+     ]
+    ]
+   }
+  ]
+ },
+ {
+  "id": "sunplate",
+  "name": "Sunplate",
+  "type": "gear",
+  "aspect": "sun",
+  "kind": "body",
+  "cost": {
+   "sun": 1,
+   "any": 1
+  },
+  "armor": 2,
+  "text": "Body. Armor 2."
+ },
+ {
+  "id": "mistwalker",
+  "name": "Mistwalker",
+  "type": "unit",
+  "aspect": "moon",
+  "cost": {
+   "moon": 1,
+   "any": 1
+  },
+  "power": 2,
+  "health": 1,
+  "keywords": [
+   "veiled"
+  ],
+  "text": "Veiled (enemies cannot target it)."
+ },
+ {
+  "id": "silver-tongue-envoy",
+  "name": "Silver-Tongue Envoy",
+  "type": "unit",
+  "aspect": "sun",
+  "cost": {
+   "sun": 2,
+   "any": 1
+  },
+  "power": 1,
+  "health": 2,
+  "maxCopies": 1,
+  "text": "When this enters, take control of an enemy unit with power 2 or less.",
+  "abilities": [
+   {
+    "on": "enter",
+    "zones": [
+     "field"
+    ],
+    "text": "win over an enemy unit",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "filter",
+        [
+         "cards",
+         "*",
+         "field"
+        ],
+        [
+         "and",
+         [
+          "in",
+          [
+           "get",
+           "$it",
+           "controller"
+          ],
+          [
+           "enemies",
+           "$me"
+          ]
+         ],
+         [
+          "<=",
+          [
+           "get",
+           "$it",
+           "power"
+          ],
+          2
+         ]
+        ]
+       ],
+       "min": 0,
+       "max": 1,
+       "as": "$v",
+       "prompt": "unit to win over"
+      }
+     ],
+     [
+      "control",
+      "$v",
+      "$me"
+     ]
+    ]
+   }
+  ]
+ }
 ]

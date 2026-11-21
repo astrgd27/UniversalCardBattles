@@ -8,7 +8,7 @@ export const EXPR_OPS = new Set([
   'get', 'has', 'players', 'opp', 'cards', 'top', 'count', 'concat', 'list', 'first', 'filter', 'any', 'all',
   'sum', 'in', 'isPlayer', 'isObj', 'stack', 'linked', 'call', 'let', 'map', 'range', 'mod', 'abs', 'sortBy', 'maxBy', 'minBy',
   'slice', 'reverse', 'nth', 'at', 'keys', 'values', 'same', 'cell', 'cx', 'cy', 'cellOf', 'dist', 'near', 'ext',
-  'def', 'tally', 'distinct', 'meets', 'canPay', 'pool', 'slots', 'inSlot', 'freeSlots', 'adjSlots', 'adjacent', 'uses',
+  'allies', 'enemies', 'def', 'tally', 'distinct', 'meets', 'canPay', 'pool', 'slots', 'inSlot', 'freeSlots', 'adjSlots', 'adjacent', 'uses',
 ]);
 
 /** Script limits: evaluation steps per outermost function call, and call depth. */
@@ -48,7 +48,7 @@ export function getProp(m: Mod, s: State, ref: any, name: string): any {
   if (r == null) return undefined;
   if (r === 'game') return s.vars[name] ?? 0;
   const p = player(s, r);
-  if (p) return name === 'id' ? p.id : name === 'lost' ? p.lost : (p.vars[name] ?? 0);
+  if (p) return name === 'id' ? p.id : name === 'lost' ? p.lost : name === 'seat' ? s.players.indexOf(p) : (p.vars[name] ?? 0);
   const o = s.objects[r];
   if (!o) {
     const it = s.stack.find((x) => x.id === r);
@@ -194,6 +194,13 @@ export function ev(m: Mod, s: State, e: any, ctx: Ctx): any {
       return out;
     }
     case 'ext': return s.ext[String(A(1))] ?? null;
+    case 'allies':
+    case 'enemies': {
+      // Living players on the same / another team (player var `team`); without teams: yourself / everyone else.
+      const me = player(s, one(A(1)));
+      const same = (q: { id: string; vars: Record<string, number> }) => (me?.vars.team === undefined ? q.id === me?.id : q.vars.team === me.vars.team);
+      return s.players.filter((q) => !q.lost && same(q) === (e[0] === 'allies')).map((q) => q.id);
+    }
     case 'def': { const r = one(A(1)); const c = s.objects?.[r]?.card ?? r; return (m.card.get(c) as any)?.[A(2)] ?? null; }
     case 'tally': {
       const out: Record<string, number> = {};

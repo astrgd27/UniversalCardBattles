@@ -39,6 +39,7 @@ A module is a folder or ZIP package (see **Packages** below). All logic is JSON 
 | `ext name` | current value of an external input |
 | `at x key`, `keys x`, `values x`, `same a b` | map and list access; `same` is deep equality (`=` compares single values) |
 | `linked target rel` | objects whose relationship `rel` points at target |
+| `allies p`, `enemies p` | living players on p's team / other teams (player var `team`); without teams: p itself / everyone else. `get p seat` is a player's seat index |
 | `def cardOrObj field` | a card definition field, by card id or object (works in deck rules, where there are no objects) |
 | `tally list keyExpr?` | counts into a map: each item's key (`$it`) is counted once; a list counts each element; a map adds its values (e.g. summing `yields`) |
 | `distinct l` | unique items |
@@ -77,6 +78,7 @@ Effects run in effect lists `[[op...], [op...]]`.
 | `winSet key expr`, `closeWindow` | change the innermost window's data; close it early (when the current effects finish; leftover window stack items are dropped). `endPhase`/`gotoPhase` move between steps while a window is open |
 | `pay p res cost` | pays a typed cost: specific types first, then the generic key (default `any`) from the largest pools. Unpayable = the whole action is rejected. A number is an all-generic cost. Emits `paid` |
 | `gain ps res {type: n}`, `empty ps res` | add to / clear typed pools |
+| `control objs p` | gain control: the same object (same id, no zone change events) moves to p's side of its zone, taking a free slot in slotted zones. Owner is unchanged, so it still goes to its owner's grave. Emits `controlled` |
 | `setSlot obj slot` | repositions an object inside its slotted zone; a full one-object slot swaps the two. Emits `slotted` |
 | `flip objs up?` | turns face up (default) or face down. Emits `flipped` (with `card` when turned face up) |
 
@@ -106,6 +108,7 @@ Effects run in effect lists `[[op...], [op...]]`.
   - `cost` and `do` run in one frame.
   - `check [{if, why}]` runs after targets are chosen (targets bound) and rejects bad combinations, e.g. fusion recipes. Slot `min`/`max` may be expressions.
   - `limit {per: turn|phase|game, n?=1, by?: player|source|card|name|inst, group?}`: an **engine-tracked usage limit**. Counts are kept per player (default), per game object (`source`: resets when it changes zones), per physical card (`inst`), or per player and card id / card name. `group` shares one counter between actions ("one well per turn" across several actions). Over the limit the action is not offered, and proposing it explains why (code `limit`).
+  - `activated: "field"`: **activated abilities printed on cards**. Each entry of the source card's `field` list (`{label?, phases?, speed?, req?, targets?, check?, cost?, do, limit?, countered?}`) becomes its own action named `"<action>#<index>"`, merged over the base action (lists concatenate with the base first; label, phases, speed and limit come from the ability). A limit on an ability counts per card ability by default. The base name alone is not playable. `#` is reserved in action names.
   - `pass` is built in and reserved.
 - `triggers[] {on: eventType, if?, do, limit?}`: rule triggers, controlled by the active player. They always resolve immediately and before card triggers.
 - `timing {mode: immediate|stack|chain, retain?, minResponse?=2}`, also overridable per phase. Each mode works as follows (a code sketch follows this list):
@@ -118,6 +121,8 @@ Effects run in effect lists `[[op...], [op...]]`.
   - With a non-empty stack, it needs speed ≥ `minResponse`.
   - `stack: false` resolves at once.
   - `countered` effects run when the item is countered or fizzles.
+- `targeting {deny: expr}`: an **engine-wide targeting rule** (untargetable, "can't be targeted by opponents"). Target slots never offer an option where `deny` holds (`$it` = the option, `$me` = the actor, `$self` = the source), and a target that becomes denied before resolution counts as gone. Slots with `untargeted: true` and `choose` decisions are not targeting and ignore it.
+- `teams: true`: players carry the player var `team` (set it in `setup`). The game ends when only one team has living players; all its members win, including fallen ones (reason `lastTeam`). `$opp` becomes the next living enemy.
 - Slots: `recheck` decides what happens at resolution:
   - `true` (default): the target must still be in `from`.
   - `"exists"`: it only has to still exist.

@@ -75,12 +75,12 @@ A second pass read the published rules of about 30 commercial and historical gam
 | 1 | Usage limits: once per turn/game, per card, name or object | 7 | ✚ | action/ability `limit`, `uses` (Bastion Clash wells, attacks, hero power, enter draw) |
 | 7 | Typed resources: payment, generic costs, thresholds, expiring pools | 7 | ✚ | `rules.resources`, `pay`/`gain`/`canPay`/`meets`/`tally` (Bastion Clash aether) |
 | 9 | Deck construction as rules: colours, singleton, group limits, leader identity, copies by name | 5 | ✚ | `format.rules`, `copiesBy`, section `maxCopies` (Bastion Clash aspects, gear cap, well floor) |
-| 2 | Lists of activated abilities printed on cards | 3 | ◐ | an action with `source` + `run obj field` per card; no list primitive yet |
-| 8 | Engine-wide targeting restrictions (untargetable, "only by X") | 2 | ◐ | slot `from` filters by convention; not enforced globally |
-| 11 | Teams | 2 | ◐ | role vars; no shared-win team primitive |
+| 2 | Lists of activated abilities printed on cards | 3 | ✚ | action `activated: field` → one `name#i` action per printed ability (Bastion Clash gear) |
+| 8 | Engine-wide targeting restrictions (untargetable, "only by X") | 2 | ✚ | `rules.targeting.deny`, enforced on offer and at resolution (Bastion Clash "veiled") |
+| 11 | Teams | 2 | ✚ | `rules.teams`, `allies`/`enemies`, team-aware `$opp` (Bastion Clash 2v2) |
 | 12 | Helpers: combat damage splitting, rotated (tapped) cards | 2 | ◐ | decisions and vars |
 | 3 | Responses anchored to a specific event, "missing the timing" | 1 | ◐ | triggers plus windows |
-| 4 | Gain control | 1 | ◐ | needs a `control` effect |
+| 4 | Gain control | 1 | ✚ | `control` effect, same object id (Bastion Clash envoy) |
 | 5 | Copy effects, "loses all abilities" | 1 | ◐ | layers cover stats and keywords, not ability lists |
 | 13 | Grids with vertical layers (surface/underground/air) | 1 | ◐ | grid plus a layer var |
 

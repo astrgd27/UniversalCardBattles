@@ -162,9 +162,11 @@ export function current(sel: Selection): { options: string[]; min: number; max: 
 
 /** Why can't this card be used? The engine's explanations for every action. */
 function explain(m: Match, id: string): UI['note'] {
-  const reasons = Object.keys(m.m.rules.actions)
+  const card = m.m.card.get(m.s.objects[id].card) as any;
+  const names = Object.entries(m.m.rules.actions).flatMap(([a, d]) => (d.activated ? ((card?.[d.activated] ?? []) as unknown[]).map((_, i) => `${a}#${i}`) : [a]));
+  const reasons = names
     .map((a) => proposeAction(m, ui.viewer, { action: a, source: id }))
-    .filter((r) => r.code !== 'source');
+    .filter((r) => r.code !== 'source' && r.code !== 'unknown');
   if (!reasons.length) return { title: m.m.card.get(m.s.objects[id].card)?.name ?? 'Card', text: 'No action can use this card right now.' };
   return { title: 'Why not?', reason: { ok: false, code: 'why', msg: 'This card cannot be used right now:', children: reasons } };
 }

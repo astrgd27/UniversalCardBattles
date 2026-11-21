@@ -205,10 +205,15 @@ A survey of about 30 published TCG rulebooks (`docs/COVERAGE.md`, second table) 
 - **Deck rules** (`format.rules`, `copiesBy`, section `maxCopies`, `def`/`distinct`): colour/aspect identity, group limits, copies counted by name across printings.
 - **Usage limits** (action and ability `limit`, `uses`): per turn, phase or game, by player, object, physical card, card id or name, with shared groups. Rejections explain themselves (code `limit`).
 - New test game **Bastion Clash** (disposable, no balance work) uses all five: a combat window with a defender's guard step, front/back rows with support from behind, gear slots, sun/moon aether from wells, aspect deck rules and once-per-turn limits.
-- 88 tests (6 focused ones in `gaps.test.ts`); golden hashes for the 7 earlier games are unchanged; e2e covers the slot board.
+- Second tier, also generic and in Bastion Clash:
+  - **Activated abilities printed on cards** (action `activated`): one `name#i` action per ability, so commands, replays, AI and UI need nothing new.
+  - **Engine-wide targeting rules** (`rules.targeting.deny`), checked when options are offered and again at resolution.
+  - **Gain control** (`control`): same object id, the new controller's side, a free slot.
+  - **Teams** (`rules.teams`, `allies`/`enemies`, `get p seat`): Bastion Clash plays 2–4 as 2v2.
+- 92 tests (10 in `gaps.test.ts`); golden hashes for the 7 earlier games are unchanged; e2e covers the slot board.
 
 ## Possible next steps
-- The remaining smaller gaps from the survey: activated-ability lists on cards, engine-wide targeting restrictions, gain control, teams, copy/"loses abilities" layers, layered grids.
+- The remaining single-game gaps from the survey: copy and "loses all abilities" layers, combat damage splitting as a decision, event-anchored responses ("missing the timing"), layered grids.
 - Campaigns for the other reference games.
 - IndexedDB storage (localStorage today) and cloud sync of backups.
 - Card art pipeline: an asset browser in the gallery, using art in reference games.

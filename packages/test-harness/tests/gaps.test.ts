@@ -2,8 +2,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Deck, Match, ModuleDef } from '#engine';
-import { applyCmd, commitAction, createMatch, deckErrors, eventHash, invalidate, listActions, observe, proposeAction, restore, serialize, validateModule } from '#engine';
-import { deckOpts, loadRef } from '#harness';
+import { applyCmd, commitAction, createMatch, deckErrors, eventHash, invalidate, listActions, observe, proposeAction, replay, restore, serialize, submitDecision, validateModule } from '#engine';
+import { randomAgent } from '#ai';
+import { deckOpts, loadRef, playMatch } from '#harness';
 import { place } from './helpers.ts';
 
 const B = loadRef('bastion-clash');
@@ -161,4 +162,78 @@ test('validation catches bad windows, slots, resources and limits', () => {
   const errs = validateModule(def).join('\n');
   for (const want of ['step ids must be unique', 'unknown slot "nowhere"', 'limit needs {per', 'unknown resource "mana"', 'unknown window "duel"',
     'unknown phase or window step "parley"', 'cannot also be a type', 'unknown expression op "bogus"']) assert.match(errs, new RegExp(want.replace(/[{(]/g, '\\$&')));
+});
+
+test('activated abilities: each ability printed on a card is its own action with merged rules', () => {
+  let g = fresh();
+  pool(g, 'p0', 0, 3);
+  const gl = slotted(g, 'p0', 'moonsilver-gauntlets', 'gear', 'arms');
+  const u = slotted(g, 'p0', 'ember-squire', 'field', 'front-left');
+  const abs = listActions(g, 'p0').filter((x) => x.source === gl).map((x) => [x.action, x.label]);
+  assert.deepEqual(abs, [['activate#0', 'Hone'], ['activate#1', 'Shed']]);
+  assert.equal(proposeAction(g, 'p0', { action: 'activate', source: gl }).code, 'unknown', 'the base action is only reachable through a card ability');
+  g = act(g, 'p0', 'activate#0', gl, { $t: [u] });
+  assert.equal(g.s.objects[u].vars.boost, 1);
+  assert.equal(proposeAction(g, 'p0', { action: 'activate#0', source: gl, targets: { $t: [u] } }).code, 'limit', 'Hone: once per turn');
+  g = act(g, 'p0', 'activate#1', gl);
+  assert.equal(g.s.zones['p0:gear'].length, 0);
+  assert.equal(g.s.players[0].vars['aether:moon'], 3, '3 - 1 for Hone + 1 from Shed');
+
+  let b = fresh();
+  const a = slotted(b, 'p0', 'ember-squire', 'field', 'front-mid');
+  const helm = slotted(b, 'p1', 'iron-helm', 'gear', 'head');
+  pool(b, 'p1', 2, 0);
+  assert.ok(!tpl(b, 'p1', 'activate#0'), 'not outside the block step');
+  b = act(b, 'p0', 'attack', a, { $t: ['p1'] });
+  b = act(b, 'p1', 'activate#0', helm);
+  assert.equal(b.s.windows[0].data.guard, 1);
+});
+
+test('targeting rules: veiled units are never offered to enemy targeting, but non-targeting choices still see them', () => {
+  let g = pass(fresh());
+  const veiled = slotted(g, 'p0', 'mistwalker', 'field', 'front-mid');
+  const plain = slotted(g, 'p0', 'ember-squire', 'field', 'front-left');
+  const a = slotted(g, 'p1', 'ember-squire', 'field', 'front-mid');
+  assert.deepEqual(tpl(g, 'p1', 'attack', a)!.slots[0].options, ['p0', plain]);
+  assert.equal(proposeAction(g, 'p1', { action: 'attack', source: a, targets: { $t: [veiled] } }).code, 'targets');
+  pool(g, 'p1', 3, 0);
+  const env = place(g, 'p1', 'silver-tongue-envoy', 'hand');
+  g = act(g, 'p1', 'deploy', env, { $pos: ['back-mid'] });
+  assert.deepEqual(g.s.pending?.options.sort(), [plain, veiled].sort(), 'a choice is not targeting');
+});
+
+test('gain control: same object, new controller, a free slot on the new side; it still dies to its owner', () => {
+  let g = pass(fresh());
+  const s = slotted(g, 'p0', 'ember-squire', 'field', 'front-mid');
+  slotted(g, 'p1', 'ember-squire', 'field', 'front-left');
+  pool(g, 'p1', 3, 0);
+  g = act(g, 'p1', 'deploy', place(g, 'p1', 'silver-tongue-envoy', 'hand'), { $pos: ['back-mid'] });
+  g = submitDecision(g, 'p1', g.s.pending!.id, [s]);
+  const o = g.s.objects[s];
+  assert.deepEqual([o.zone, o.controller, o.owner, o.slot], ['p1:field', 'p1', 'p0', 'front-mid'], 'first free slot on the new side');
+  assert.ok(g.s.events.some((e) => e.type === 'controlled' && e.obj === s));
+  assert.ok(tpl(g, 'p1', 'reposition', s), 'the new controller uses it');
+  o.vars.dmg = 9;
+  g.s.dirty = true;
+  g = act(g, 'p1', 'reposition', s, { $to: ['back-right'] });
+  assert.ok(g.s.zones['p0:grave'].some((id) => g.s.objects[id].card === 'ember-squire'), "destroyed: to its owner's grave");
+});
+
+test('teams: 2v2 seating, enemies and $opp skip allies, and the surviving team wins together', () => {
+  const decks = ['dawn-vanguard', 'dusk-tide', 'dawn-vanguard', 'dusk-tide'];
+  const g = createMatch(B, deckOpts(B, decks, 9));
+  assert.deepEqual(g.s.players.map((p) => p.vars.team), [0, 1, 0, 1]);
+  const a = slotted(g, 'p0', 'ember-squire', 'field', 'front-mid');
+  assert.deepEqual(tpl(g, 'p0', 'attack', a)!.slots[0].options, ['p1', 'p3']);
+  let seen = 0;
+  for (let seed = 1; seed <= 12 && seen < 2; seed++) {
+    const end = playMatch(createMatch(B, deckOpts(B, decks, seed)), decks.map((_, i) => randomAgent(seed * 7 + i)));
+    const r = end.s.result!;
+    if (r.reason !== 'lastTeam') continue;
+    seen++;
+    assert.equal(r.winners.length, 2);
+    assert.equal(new Set(r.winners.map((w) => end.s.players[+w.slice(1)].vars.team)).size, 1, 'winners share a team');
+    assert.equal(replay(B, end.s.opts, end.s.cmds).hash, eventHash(end.s));
+  }
+  assert.ok(seen > 0, 'some 2v2 game ended by team elimination');
 });
