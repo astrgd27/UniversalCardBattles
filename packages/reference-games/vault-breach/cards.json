@@ -1,0 +1,18 @@
+[
+  {"id": "runner", "name": "Runner", "type": "unit", "role": 1, "cost": 1, "power": 1, "health": 2, "speed": 1, "text": "Raider crew."},
+  {"id": "sprinter", "name": "Sprinter", "type": "unit", "role": 1, "cost": 2, "power": 1, "health": 1, "speed": 2, "text": "Raider crew. Moves 2."},
+  {"id": "bruiser", "name": "Bruiser", "type": "unit", "role": 1, "cost": 3, "power": 2, "health": 4, "speed": 1, "text": "Raider crew. Tough."},
+  {"id": "cracker-kit", "name": "Cracker Kit", "type": "tool", "role": 1, "cost": 1, "text": "Gain 2 tools.", "effects": [["inc", "$me", "tools", 2]]},
+  {"id": "skeleton-key", "name": "Skeleton Key", "type": "tool", "role": 1, "cost": 2, "text": "Gain 4 tools.", "effects": [["inc", "$me", "tools", 4]]},
+  {"id": "smoke-bomb", "name": "Smoke Bomb", "type": "trick", "role": 1, "cost": 1, "text": "Lower the alarm by 3.", "effects": [["set", "game", "alarm", ["max", 0, ["-", ["get", "game", "alarm"], 3]]]]},
+  {"id": "decoy", "name": "Decoy", "type": "trick", "role": 1, "cost": 1, "text": "Exhaust a warden unit.",
+    "targets": [{"as": "$t", "prompt": "warden unit", "from": ["call", "units", "$opp"]}], "effects": [["set", "$t", "ready", 0]]},
+  {"id": "sentry", "name": "Sentry", "type": "unit", "role": 2, "cost": 2, "power": 1, "health": 2, "speed": 1, "keywords": ["sentry"], "text": "Zap: 1 damage within range 2 (1 when the lights are off)."},
+  {"id": "patroller", "name": "Patroller", "type": "unit", "role": 2, "cost": 2, "power": 2, "health": 3, "speed": 2, "text": "Moves 2. Strikes adjacent intruders."},
+  {"id": "barrier-wall", "name": "Barrier: Wall", "type": "barrier", "role": 2, "strength": 2, "text": "Breaching it costs 2 tools."},
+  {"id": "barrier-maze", "name": "Barrier: Maze", "type": "barrier", "role": 2, "strength": 3, "text": "Breaching it costs 3 tools."},
+  {"id": "barrier-trap", "name": "Barrier: Trap", "type": "barrier", "role": 2, "strength": 1, "keywords": ["trap"], "text": "Costs 1 tool. Deals 2 damage to the breaching unit."},
+  {"id": "lockdown", "name": "Lockdown", "type": "trick", "role": 2, "cost": 2, "text": "Raise the alarm by 3.", "effects": [["inc", "game", "alarm", 3]]},
+  {"id": "wall", "name": "Wall", "type": "terrain", "maxCopies": 0, "text": "Terrain. Blocks the cell."},
+  {"id": "vault", "name": "Vault", "type": "vault", "maxCopies": 0, "text": "Breach every barrier in it to steal it."}
+]

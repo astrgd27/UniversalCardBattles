@@ -23,6 +23,7 @@ export interface View {
   priority: string | null;
   players: { id: string; vars: Record<string, number>; lost: boolean }[];
   vars: Record<string, number>; // game vars
+  ext: Record<string, string | number>; // external inputs
   zones: Record<string, { count: number; cards?: ObjView[] }>;
   stack: StackView[]; // bottom -> top
   pending: Pending | { player: string; prompt: string } | null;
@@ -56,7 +57,7 @@ export function observe({ m, s }: Match, p: string): View {
   const pd = s.pending;
   return {
     me: p, turn: s.turn.n, active: activeId(s), phase: m.rules.phases[s.turn.phase].id, priority: s.priority,
-    players: s.players.map((pl) => ({ id: pl.id, vars: { ...pl.vars }, lost: pl.lost })), vars: { ...s.vars }, zones,
+    players: s.players.map((pl) => ({ id: pl.id, vars: { ...pl.vars }, lost: pl.lost })), vars: { ...s.vars }, ext: { ...s.ext }, zones,
     stack: s.stack.map((it) => ({
       id: it.id, kind: it.kind, ctrl: it.ctrl, label: it.label, card: it.card, source: it.source && canSee(it.source) ? it.source : null,
       targets: it.slots.flatMap((sl) => list(it.ctx[sl.as])).filter(canSee),

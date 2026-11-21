@@ -11,7 +11,7 @@ export { satisfies, isSemver, isRange } from './semver.ts';
 export { GAS, MAX_DEPTH } from './expr.ts';
 export {
   createMatch, listActions, proposeAction, explainLegality, commitAction, submitDecision, serialize, restore, replay,
-  applyCmd, eventHash, IllegalAction,
+  applyCmd, eventHash, IllegalAction, setExternal,
 } from './match.ts';
 export { observe, eventsFor, redact } from './view.ts';
 export type { View, ObjView, StackView } from './view.ts';

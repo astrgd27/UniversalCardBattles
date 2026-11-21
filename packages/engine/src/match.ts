@@ -29,7 +29,7 @@ export function createMatch(m: Mod, opts: MatchOpts): Match {
   });
   const s: State = {
     moduleId: m.manifest.moduleId, version: m.manifest.semanticVersion, rulesHash: m.hash, opts: structuredClone(opts),
-    rng: seedRng(opts.seed), players: [], vars: { ...(R.gameVars ?? {}) }, objects: {}, zones: {}, turn: { n: 1, active: 0, phase: 0 },
+    rng: seedRng(opts.seed), players: [], vars: { ...(R.gameVars ?? {}) }, ext: externalInit(m, opts), objects: {}, zones: {}, turn: { n: 1, active: 0, phase: 0 },
     phaseState: 'enter', priority: null, holder: null, passes: 0, resolving: false, stack: [], effects: [], exec: [],
     triggers: [], nextTrig: null, dirty: false, pending: null, events: [], cmds: [], nextId: 1, nextDecision: 1, result: null,
   };
@@ -53,6 +53,37 @@ export function createMatch(m: Mod, opts: MatchOpts): Match {
   if (opts.scenario?.setup?.length) s.exec.push({ list: opts.scenario.setup, i: 0, ctx: baseCtx(s, 'p0') });
   if (R.setup?.length) s.exec.push({ list: R.setup, i: 0, ctx: baseCtx(s, 'p0') });
   settle(m, s);
+  return { m, s };
+}
+
+function externalInit(m: Mod, opts: MatchOpts): Record<string, string | number> {
+  const out: Record<string, string | number> = {};
+  for (const [k, dom] of Object.entries(m.rules.external ?? {})) {
+    const v = opts.external?.[k] ?? dom[0];
+    if (!dom.includes(v)) throw new EngineError(`External input ${k}=${v} is not one of ${dom.join(', ')}`);
+    out[k] = v;
+  }
+  for (const k of Object.keys(opts.external ?? {})) if (!(k in out)) throw new EngineError(`Unknown external input ${k}`);
+  return out;
+}
+
+/**
+ * Changes an external input (a sensor, a physical toy, a host setting). Not a player action: it is allowed at any
+ * time, logged as a command (so replays reproduce it), emits a public `external` event and lets triggers react.
+ */
+export function setExternal(match: Match, name: string, value: string | number): Match {
+  const dom = match.m.rules.external?.[name];
+  if (!dom) throw new IllegalAction(no('external', `Unknown external input "${name}".`));
+  if (!dom.includes(value)) throw new IllegalAction(no('external', `${name} must be one of ${dom.join(', ')}.`));
+  const { m } = match;
+  const s = structuredClone(match.s);
+  if (s.result) throw new IllegalAction(no('over', 'The game is over.'));
+  s.cmds.push({ t: 'ext', name, value });
+  if (s.ext[name] !== value) {
+    s.ext[name] = value;
+    emit(m, s, { type: 'external', name, value });
+  }
+  settleOrReject(m, s);
   return { m, s };
 }
 
@@ -369,7 +400,7 @@ export function restore(m: Mod, json: string): Match {
   return { m, s };
 }
 export function applyCmd(match: Match, c: Cmd): Match {
-  return c.t === 'act' ? commitAction(match, c.p, c) : submitDecision(match, c.p, c.id, c.sel);
+  return c.t === 'act' ? commitAction(match, c.p, c) : c.t === 'ext' ? setExternal(match, c.name, c.value) : submitDecision(match, c.p, c.id, c.sel);
 }
 export function replay(m: Mod, opts: MatchOpts, cmds: Cmd[]): { match: Match; hash: string } {
   let match = createMatch(m, opts);

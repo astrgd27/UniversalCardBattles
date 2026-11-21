@@ -10,7 +10,7 @@ import {
 
 export const EFFECT_OPS = new Set([
   'draw', 'move', 'shuffle', 'set', 'inc', 'damage', 'destroy', 'lose', 'win', 'if', 'each', 'let', 'choose', 'run',
-  'endPhase', 'emit', 'log', 'counter', 'modify', 'link', 'unlink', 'call', 'commit', 'random', 'flip', 'create',
+  'endPhase', 'emit', 'log', 'counter', 'modify', 'link', 'unlink', 'call', 'commit', 'random', 'flip', 'create', 'gotoPhase',
 ]);
 
 export function emit(m: Mod, s: State, e: { type: string; [k: string]: any }): GEvent {
@@ -294,6 +294,14 @@ export function apply(m: Mod, s: State, eff: Effect, f: Frame) {
       return;
     }
     case 'endPhase': s.phaseState = 'ended'; return;
+    case 'gotoPhase': {
+      // Ends the current phase and continues at the named phase (the last phase ends the turn after it runs).
+      const idx = m.rules.phases.findIndex((p) => p.id === A(1));
+      if (idx < 0) throw new EngineError(`gotoPhase: unknown phase ${A(1)}`);
+      s.turn.phase = idx - 1;
+      s.phaseState = 'ended';
+      return;
+    }
     case 'emit': {
       const data: Record<string, any> = {};
       for (const [k, v] of Object.entries((eff[2] ?? {}) as object)) data[k] = ev(m, s, v, ctx);

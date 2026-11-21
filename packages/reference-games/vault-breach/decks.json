@@ -1,0 +1,4 @@
+{
+  "raider-crew": ["runner","runner","runner","sprinter","sprinter","sprinter","bruiser","bruiser","cracker-kit","cracker-kit","cracker-kit","skeleton-key","skeleton-key","smoke-bomb","decoy"],
+  "warden-garrison": ["sentry","sentry","sentry","patroller","patroller","patroller","barrier-wall","barrier-wall","barrier-wall","barrier-maze","barrier-maze","barrier-trap","barrier-trap","lockdown","lockdown"]
+}

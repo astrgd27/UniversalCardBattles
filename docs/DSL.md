@@ -35,6 +35,8 @@ A module is a folder or ZIP package (see **Packages** below). All logic is JSON 
 | `let $v value body` | local binding |
 | `map l expr`, `sortBy l key`, `maxBy l key`, `minBy l key` | list helpers that use `$it` |
 | `range n` (n ≤ 10000), `slice l a b?`, `reverse l`, `nth l i`, `mod a b`, `abs a` | more helpers |
+| `cell x y`, `cx c`, `cy c`, `cellOf obj`, `dist a b`, `near c r` | grid geometry (`rules.grid {cols, rows, zones}`): cells are `"x,y"` strings, objects use vars `x`/`y`, `dist` is Manhattan, `near` lists in-bounds cells at distance 1..r |
+| `ext name` | current value of an external input |
 | `at x key`, `keys x`, `values x`, `same a b` | map and list access; `same` is deep equality (`=` compares single values) |
 | `linked target rel` | objects whose relationship `rel` points at target |
 
@@ -61,6 +63,7 @@ Effects run in effect lists `[[op...], [op...]]`.
 | `commit {who?, from, min?, max?, as, prompt?, reveal?}` | simultaneous secret choice. Each player in `who` (default: all living players) picks from `from`, evaluated with `$p` set to them. Picks are masked from everyone else, then bound as `{playerId: pick}`. A public `revealed` event follows unless `reveal: false`, which keeps the picks secret for a later commit. Note: it binds `$p` |
 | `random {min?, max, as}` / `random {from, n?, as}` | seeded integer, or a random pick (a list when `n` is given). Emits `random`; picks of hidden objects are masked |
 | `create card player zone {as?, faceDown?}` | creates a new object (a token) from a card definition. Emits `created`. Mark token-only cards with `maxCopies: 0` |
+| `gotoPhase id` | ends the current phase and continues at phase `id`. Jumping to the last phase ends the turn after it runs, e.g. when a shared meter crosses a threshold |
 | `flip objs up?` | turns face up (default) or face down. Emits `flipped` (with `card` when turned face up) |
 
 `choose` also takes `secret: true` (masks the pick from others) and `required: true`: if fewer options than `min` exist (typically during a cost), the whole action is rejected and nothing changes.
@@ -128,6 +131,11 @@ Effects run in effect lists `[[op...], [op...]]`.
 - Scripts are JSON data, not JavaScript, so they have no DOM, network or filesystem access and are deterministic by construction.
 - Limits: 100,000 evaluation steps per outermost function call and a call depth of 64. Breaking either raises `ScriptError`, and the command is rejected with the match unchanged.
 - Arity and names are checked statically.
+
+## External inputs
+- `rules.external {name: [allowed values]}` declares inputs from outside the game: a sensor, a physical toy, a host setting.
+- `MatchOpts.external` sets initial values. The default is the first allowed value.
+- `setExternal(match, name, value)` changes one at any time. It is not a player action: it is logged as a command (replays include it), emits a public `external` event that triggers can react to, and is read with `["ext", name]`.
 
 ## Scenarios (`MatchOpts.scenario`)
 - `{setup?, vars?, triggers?}` are validated additions to a normal match (`validateScenario`), used by campaign encounters and puzzles.

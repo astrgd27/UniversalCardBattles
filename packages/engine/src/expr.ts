@@ -7,7 +7,7 @@ export const EXPR_OPS = new Set([
   'lit', '+', '-', '*', '/', 'neg', 'min', 'max', '=', '!=', '<', '<=', '>', '>=', 'and', 'or', 'not', '?',
   'get', 'has', 'players', 'opp', 'cards', 'top', 'count', 'concat', 'list', 'first', 'filter', 'any', 'all',
   'sum', 'in', 'isPlayer', 'isObj', 'stack', 'linked', 'call', 'let', 'map', 'range', 'mod', 'abs', 'sortBy', 'maxBy', 'minBy',
-  'slice', 'reverse', 'nth', 'at', 'keys', 'values', 'same',
+  'slice', 'reverse', 'nth', 'at', 'keys', 'values', 'same', 'cell', 'cx', 'cy', 'cellOf', 'dist', 'near', 'ext',
 ]);
 
 /** Script limits: evaluation steps per outermost function call, and call depth. */
@@ -172,6 +172,31 @@ export function ev(m: Mod, s: State, e: any, ctx: Ctx): any {
     case 'keys': { const x = A(1); return x && typeof x === 'object' ? Object.keys(x) : []; }
     case 'values': { const x = A(1); return x && typeof x === 'object' ? Object.values(x) : []; }
     case 'same': return JSON.stringify(A(1)) === JSON.stringify(A(2));
+    case 'cell': return `${num(A(1))},${num(A(2))}`;
+    case 'cx': return xy(m, s, A(1))[0];
+    case 'cy': return xy(m, s, A(1))[1];
+    case 'cellOf': { const [x, y] = xy(m, s, A(1)); return `${x},${y}`; }
+    case 'dist': { const a = xy(m, s, A(1)); const b = xy(m, s, A(2)); return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]); }
+    case 'near': {
+      const g = m.rules.grid;
+      if (!g) throw new EngineError('near needs rules.grid');
+      const [x, y] = xy(m, s, A(1));
+      const r = num(A(2));
+      const out: string[] = [];
+      for (let j = 0; j < g.rows; j++) for (let i = 0; i < g.cols; i++) {
+        const d = Math.abs(i - x) + Math.abs(j - y);
+        if (d >= 1 && d <= r) out.push(`${i},${j}`);
+      }
+      return out;
+    }
+    case 'ext': return s.ext[String(A(1))] ?? null;
   }
   throw new EngineError(`Unknown expression op ${e[0]}`);
+}
+
+/** Grid coordinates of a "x,y" cell string or of an object (its vars x, y). */
+function xy(m: Mod, s: State, v: any): [number, number] {
+  const r = one(v);
+  if (typeof r === 'string' && r.includes(',')) { const [a, b] = r.split(','); return [Number(a) || 0, Number(b) || 0]; }
+  return [num(getProp(m, s, r, 'x')), num(getProp(m, s, r, 'y'))];
 }

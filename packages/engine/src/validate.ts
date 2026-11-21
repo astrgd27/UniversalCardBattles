@@ -9,7 +9,7 @@ export const ENGINE_API = '0.3.0';
 /** Engine features a module may list in manifest.requiredCapabilities. */
 export const CAPABILITIES = [
   'timing.immediate', 'timing.stack', 'timing.chain', 'timing.alternate', 'replacements', 'layers', 'relationships', 'decisions',
-  'scripts', 'commit', 'faceDown', 'random', 'multiDeck', 'sharedDecks', 'gameVars',
+  'scripts', 'commit', 'faceDown', 'random', 'multiDeck', 'sharedDecks', 'gameVars', 'grid', 'external',
 ];
 const REPLACEABLE = ['draw', 'move', 'destroy', 'damage', 'lose'];
 
@@ -59,6 +59,8 @@ export function validateIssues(def: ModuleDef): Issue[] {
   numMap(R.playerVars, '/playerVars', true);
   numMap(R.objectVars, '/objectVars', false);
   numMap(R.gameVars, '/gameVars', false);
+  if (R.grid !== undefined && !(isRec(R.grid) && Number.isInteger(R.grid.cols) && Number.isInteger(R.grid.rows) && R.grid.cols > 0 && R.grid.rows > 0 && R.grid.cols * R.grid.rows <= 400)) eR('/grid', 'needs integers {cols, rows} (at most 400 cells)');
+  if (R.external !== undefined && !(isRec(R.external) && Object.values(R.external).every((d) => Array.isArray(d) && d.length > 0 && d.every((v) => typeof v === 'string' || typeof v === 'number')))) eR('/external', 'must map names to non-empty lists of allowed values');
   const F = R.format;
   if (!isRec(F) || ![F.deckMin, F.deckMax, F.maxCopies].every(Number.isInteger) || F.deckMin > F.deckMax) eR('/format', 'needs integers {deckMin, deckMax, maxCopies}');
   const strList = (x: unknown, ptr: string) => {
@@ -79,6 +81,7 @@ export function validateIssues(def: ModuleDef): Issue[] {
   });
   for (const k of ['deckZone', 'handZone', 'graveZone']) if (!zones.has(R[k])) eR(`/${k}`, `unknown zone "${R[k]}"`);
   const phases = new Set<string>();
+  if (isRec(R.grid)) (R.grid.zones ?? []).forEach((z: unknown, i: number) => { if (typeof z !== 'string' || !zones.has(z)) eR(`/grid/zones/${i}`, `unknown zone "${z}"`); });
   R.phases.forEach((ph: any, i: number) => {
     if (typeof ph.id !== 'string' || phases.has(ph.id)) eR(`/phases/${i}/id`, 'phase ids must be unique strings');
     phases.add(ph.id);
@@ -108,6 +111,8 @@ export function validateIssues(def: ModuleDef): Issue[] {
     if (op === 'lit') return;
     if (!EXPR_OPS.has(op)) { err(`${ptr}/0`, `unknown expression op "${op}"`); return; }
     if ((op === 'cards' || op === 'top') && typeof e[2] === 'string') zoneLit(e[2], `${ptr}/2`, err);
+    if (op === 'near' && !isRec(R.grid)) err(`${ptr}/0`, 'near needs rules.grid');
+    if (op === 'ext' && typeof e[1] === 'string' && !(isRec(R.external) && e[1] in R.external)) err(`${ptr}/1`, `unknown external input "${e[1]}"`);
     if (op === 'call') callCheck(e, ptr, err, fns, 'function');
     if (op === 'let' && !isVar(e[1])) err(`${ptr}/1`, 'let needs a $variable name');
     e.forEach((x, i) => { if (i > 0 && !(op === 'call' && i === 1)) expr(x, `${ptr}/${i}`, err); });
@@ -162,6 +167,7 @@ export function validateIssues(def: ModuleDef): Issue[] {
           for (const k of ['who', 'from', 'min', 'max']) expr(o[k], `${p}/1/${k}`, err);
           return;
         }
+        case 'gotoPhase': if (typeof eff[1] === 'string' && !phases.has(eff[1])) err(`${p}/1`, `unknown phase "${eff[1]}"`); return;
         case 'create':
           X(1); X(2); zoneLit(eff[3], `${p}/3`, err);
           if (typeof eff[1] === 'string' && eff[1][0] !== '$' && !cardIds.has(eff[1])) err(`${p}/1`, `unknown card "${eff[1]}"`);

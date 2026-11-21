@@ -1,0 +1,1 @@
+{"eval": ["*", ["?", ["=", ["get", "$me", "role"], 1], 1, -1], ["call", "raiderValue"]]}

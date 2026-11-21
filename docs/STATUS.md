@@ -163,6 +163,16 @@ Security notes:
 - Module packages, backup files and saves are all treated as untrusted. Their limits are documented in `DSL.md` (Packages) and `apps/web/src/backup.ts`.
 - A tampered saved-match state that passes the module/version/hash check can still fail when continued. It only affects the user's own browser data and surfaces as an error note.
 
+## Done: mechanics coverage pass
+- `docs/COVERAGE.md` maps all 50 corpus stressors to engine capabilities: ✓ demonstrated, ◐ expressible, ✚ gap closed now.
+- New primitives:
+  - 2D grid geometry (`rules.grid`, `cell`/`cx`/`cy`/`cellOf`/`dist`/`near`)
+  - `gotoPhase` (a shared meter ending the turn)
+  - external inputs (`rules.external`, `setExternal`, `ext`; logged and replayable)
+- Asymmetric roles and nested encounters are expressed with existing primitives: role vars with role-gated actions and wins, and a run through barriers using `each` + `flip` + game-var flags.
+- **Vault Breach** (a test game) exercises all of these. 77 tests.
+- **Test games are disposable.** The reference games exist to prove mechanics, not to be balanced or kept, so don't spend effort tuning them.
+
 ## Possible next steps
 - Campaigns for the other reference games.
 - IndexedDB storage (localStorage today) and cloud sync of backups.

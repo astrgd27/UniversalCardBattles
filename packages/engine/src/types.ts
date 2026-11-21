@@ -85,6 +85,8 @@ export interface Rules {
   replacements?: Replacement[];
   statics?: StaticDef[];
   stateChecks?: EffectList;
+  grid?: { cols: number; rows: number; zones?: string[] }; // 2D board: objects in `zones` sit at cells via vars x, y
+  external?: Record<string, (string | number)[]>; // inputs from outside the game (sensors, toys, the host): name -> allowed values
   functions?: Record<string, FunctionDef>; // pure expression scripts: ["call", name, ...args]
   procedures?: Record<string, ProcedureDef>; // effect scripts: ["call", name, ...args]
 }
@@ -142,7 +144,8 @@ export interface GEvent { seq: number; type: string; masks?: Mask[]; [k: string]
 export interface ActionCmd { action: string; source?: string | null; targets?: Record<string, string[]> }
 export type Cmd =
   | ({ t: 'act'; p: string } & ActionCmd)
-  | { t: 'dec'; p: string; id: string; sel: string[] };
+  | { t: 'dec'; p: string; id: string; sel: string[] }
+  | { t: 'ext'; name: string; value: string | number };
 export interface Result { winners: string[]; reason: string }
 /** A deck is a card list (main deck) or sections by zone, e.g. {deck: [...], extra: [...]}. */
 export type Deck = string[] | Record<string, string[]>;
@@ -151,7 +154,7 @@ export type Deck = string[] | Record<string, string[]>;
  * ($me = p0, $opp = p1); `vars` seed game vars; `triggers` behave like rule triggers (once = fire at most once per match).
  */
 export interface Scenario { setup?: EffectList; vars?: Record<string, number>; triggers?: Ability[] }
-export interface MatchOpts { decks: Deck[]; seed: number; scenario?: Scenario }
+export interface MatchOpts { decks: Deck[]; seed: number; scenario?: Scenario; external?: Record<string, string | number> }
 export interface State {
   moduleId: string;
   version: string;
@@ -160,6 +163,7 @@ export interface State {
   rng: number[];
   players: Player[];
   vars: Record<string, number>; // game vars
+  ext: Record<string, string | number>; // external inputs (rules.external)
   objects: Record<string, Obj>;
   zones: Record<string, string[]>;
   turn: { n: number; active: number; phase: number };

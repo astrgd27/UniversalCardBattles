@@ -1,0 +1,138 @@
+{
+  "players": {"min": 2, "max": 2},
+  "playerVars": {"role": 0, "energy": 0, "tools": 2, "score": 0, "crew": 5},
+  "gameVars": {"alarm": 0, "breaching": 0},
+  "objectVars": {"x": 0, "y": 0, "ready": 0, "dmg": 0},
+  "grid": {"cols": 5, "rows": 5, "zones": ["field", "terrain"]},
+  "external": {"lights": ["on", "off"]},
+  "zones": [
+    {"id": "deck", "vis": "hidden", "ordered": true},
+    {"id": "hand", "vis": "owner"},
+    {"id": "field", "vis": "public", "abilities": true},
+    {"id": "vaultcore", "vis": "public"},
+    {"id": "loot", "vis": "public"},
+    {"id": "terrain", "vis": "public", "shared": true},
+    {"id": "grave", "vis": "public", "ordered": true}
+  ],
+  "deckZone": "deck", "handZone": "hand", "graveZone": "grave",
+  "format": {"deckMin": 15, "deckMax": 15, "maxCopies": 3},
+  "turnLimit": 40,
+  "setup": [
+    ["set", "p0", "role", 1], ["set", "p1", "role", 2],
+    ["each", ["list", "1,2", "3,2"], "$c", [["create", "wall", "p0", "terrain", {"as": "$w"}], ["set", "$w", "x", ["cx", "$c"]], ["set", "$w", "y", ["cy", "$c"]]]],
+    ["each", ["list", "0,4", "2,4", "4,4"], "$c", [
+      ["create", "vault", "p1", "field", {"as": "$v"}], ["set", "$v", "x", ["cx", "$c"]], ["set", "$v", "y", ["cy", "$c"]],
+      ["random", {"from": ["list", "barrier-wall", "barrier-maze", "barrier-trap"], "as": "$b"}],
+      ["create", "$b", "p1", "vaultcore", {"faceDown": true, "as": "$bo"}], ["link", "$bo", "vault", "$v"]]],
+    ["each", ["players"], "$p", [["shuffle", "$p", "deck"], ["draw", "$p", 4]]]
+  ],
+  "functions": {
+    "occupied": {"params": ["$c"], "body": ["any", ["concat", ["cards", "*", "field"], ["cards", "p0", "terrain"]], ["=", ["cellOf", "$it"], "$c"]]},
+    "free": {"params": ["$cells"], "body": ["filter", "$cells", ["not", ["call", "occupied", "$it"]]]},
+    "entry": {"params": ["$p"], "body": ["call", "free", ["?", ["=", ["get", "$p", "role"], 1],
+      ["map", ["range", 5], ["cell", "$it", 0]],
+      ["concat", ["map", ["range", 5], ["cell", "$it", 3]], ["map", ["range", 5], ["cell", "$it", 4]]]]]},
+    "units": {"params": ["$p"], "body": ["filter", ["cards", "$p", "field"], ["=", ["get", "$it", "type"], "unit"]]},
+    "vaults": {"params": [], "body": ["filter", ["cards", "p1", "field"], ["=", ["get", "$it", "type"], "vault"]]},
+    "vaultDist": {"params": ["$u"], "body": ["dist", "$u", ["minBy", ["call", "vaults"], ["dist", "$it", "$u"]]]},
+    "range": {"params": [], "body": ["?", ["=", ["ext", "lights"], "on"], 2, 1]},
+    "raiderValue": {"params": [], "body": ["+",
+      ["*", 25, ["get", "p0", "score"]], ["*", 4, ["get", "p0", "crew"]], ["*", 0.5, ["get", "p0", "tools"]],
+      ["*", 1.5, ["count", ["call", "units", "p0"]]], ["neg", ["*", 0.4, ["get", "game", "alarm"]]],
+      ["sum", ["call", "units", "p0"], ["-", 6, ["min", 6, ["call", "vaultDist", "$it"]]]],
+      ["neg", ["*", 1.5, ["count", ["call", "units", "p1"]]]]]}
+  },
+  "procedures": {
+    "place": {"params": ["$o", "$c"], "do": [["set", "$o", "x", ["cx", "$c"]], ["set", "$o", "y", ["cy", "$c"]]]},
+    "noise": {"params": ["$n"], "do": [["if", ["=", ["get", "$me", "role"], 1], [["inc", "game", "alarm", "$n"]]]]},
+    "runVault": {"params": ["$u", "$v"], "do": [
+      ["set", "game", "breaching", 1],
+      ["each", ["sortBy", ["linked", "$v", "vault"], "$it"], "$b", [
+        ["if", ["=", ["get", "game", "breaching"], 1], [
+          ["flip", "$b"],
+          ["if", ["has", "$b", "trap"], [["damage", "$u", 2, "$b"]]],
+          ["if", [">=", ["get", "$me", "tools"], ["get", "$b", "strength"]],
+            [["inc", "$me", "tools", ["neg", ["get", "$b", "strength"]]]],
+            [["set", "game", "breaching", 0], ["emit", "repelled", {"vault": "$v", "by": "$b"}]]]]]]],
+      ["if", ["=", ["get", "game", "breaching"], 1], [
+        ["move", ["linked", "$v", "vault"], "grave"],
+        ["move", "$v", "loot", {"player": "$me"}],
+        ["inc", "$me", "score", 1],
+        ["emit", "breached", {"player": "$me"}]]],
+      ["set", "game", "breaching", 0]]}
+  },
+  "phases": [
+    {"id": "start", "auto": true, "do": [
+      ["if", [">", "$turn", 24], [["win", "p1"]]],
+      ["set", "$active", "energy", ["?", ["=", ["get", "$active", "role"], 1], 4, 3]],
+      ["if", ["=", ["get", "$active", "role"], 1], [["set", "game", "alarm", 0]]],
+      ["each", ["call", "units", "$active"], "$u", [["set", "$u", "ready", 1]]],
+      ["if", ["!=", "$turn", 1], [["draw", "$active", 1]]]]},
+    {"id": "main"},
+    {"id": "end", "auto": true}
+  ],
+  "actions": {
+    "deploy": {
+      "label": "Deploy", "phases": ["main"],
+      "source": ["filter", ["cards", "$me", "hand"], ["and", ["=", ["get", "$it", "type"], "unit"], ["=", ["get", "$it", "role"], ["get", "$me", "role"]]]],
+      "req": [{"if": ["<=", ["get", "$self", "cost"], ["get", "$me", "energy"]], "why": "Not enough energy."}],
+      "targets": [{"as": "$c", "prompt": "entry cell", "from": ["call", "entry", "$me"]}],
+      "cost": [["inc", "$me", "energy", ["neg", ["get", "$self", "cost"]]]],
+      "do": [["move", "$self", "field", {"as": "$self"}], ["call", "place", "$self", "$c"], ["call", "noise", 1]]
+    },
+    "move": {
+      "label": "Move", "phases": ["main"],
+      "source": ["filter", ["call", "units", "$me"], ["=", ["get", "$it", "ready"], 1]],
+      "targets": [{"as": "$c", "prompt": "cell", "from": ["call", "free", ["near", ["cellOf", "$self"], ["get", "$self", "speed"]]]}],
+      "cost": [["set", "$self", "ready", 0]],
+      "do": [["call", "place", "$self", "$c"], ["call", "noise", 1]]
+    },
+    "breach": {
+      "label": "Breach vault", "phases": ["main"],
+      "source": ["filter", ["call", "units", "$me"], ["and", ["=", ["get", "$me", "role"], 1], ["=", ["get", "$it", "ready"], 1]]],
+      "targets": [{"as": "$v", "prompt": "adjacent vault", "from": ["filter", ["call", "vaults"], ["=", ["dist", "$it", "$self"], 1]]}],
+      "cost": [["set", "$self", "ready", 0]],
+      "do": [["call", "noise", 2], ["call", "runVault", "$self", "$v"]]
+    },
+    "zap": {
+      "label": "Zap (range)", "phases": ["main"],
+      "source": ["filter", ["call", "units", "$me"], ["and", ["has", "$it", "sentry"], ["=", ["get", "$it", "ready"], 1]]],
+      "targets": [{"as": "$t", "prompt": "intruder in range", "from": ["filter", ["call", "units", "$opp"], ["<=", ["dist", "$it", "$self"], ["call", "range"]]]}],
+      "cost": [["set", "$self", "ready", 0]],
+      "do": [["damage", "$t", ["get", "$self", "power"], "$self"]]
+    },
+    "strike": {
+      "label": "Strike (adjacent)", "phases": ["main"],
+      "source": ["filter", ["call", "units", "$me"], ["and", ["=", ["get", "$me", "role"], 2], ["=", ["get", "$it", "ready"], 1]]],
+      "targets": [{"as": "$t", "prompt": "adjacent intruder", "from": ["filter", ["call", "units", "$opp"], ["=", ["dist", "$it", "$self"], 1]]}],
+      "cost": [["set", "$self", "ready", 0]],
+      "do": [["damage", "$t", ["get", "$self", "power"], "$self"]]
+    },
+    "fortify": {
+      "label": "Fortify a vault", "phases": ["main"],
+      "source": ["filter", ["cards", "$me", "hand"], ["=", ["get", "$it", "type"], "barrier"]],
+      "req": [{"if": ["<=", 1, ["get", "$me", "energy"]], "why": "Not enough energy."}],
+      "targets": [{"as": "$v", "prompt": "your vault", "from": ["call", "vaults"]}],
+      "cost": [["inc", "$me", "energy", -1]],
+      "do": [["move", "$self", "vaultcore", {"faceDown": true, "as": "$b"}], ["link", "$b", "vault", "$v"]]
+    },
+    "play": {
+      "label": "Play", "phases": ["main"], "cardTargets": true,
+      "source": ["filter", ["cards", "$me", "hand"], ["and", ["in", ["get", "$it", "type"], ["list", "tool", "trick"]], ["=", ["get", "$it", "role"], ["get", "$me", "role"]]]],
+      "req": [{"if": ["<=", ["get", "$self", "cost"], ["get", "$me", "energy"]], "why": "Not enough energy."}],
+      "cost": [["inc", "$me", "energy", ["neg", ["get", "$self", "cost"]]], ["move", "$self", "grave", {"as": "$self"}]],
+      "do": [["run", "$self", "effects"], ["call", "noise", 1]]
+    }
+  },
+  "triggers": [
+    {"on": "changed", "text": "Alarm",
+      "if": ["and", ["=", "$e.ref", "game"], ["=", "$e.name", "alarm"], [">=", "$e.to", 8], ["=", ["get", "$active", "role"], 1]],
+      "do": [["emit", "alarm", {"level": "$e.to"}], ["gotoPhase", "end"]]},
+    {"on": "destroyed", "if": ["=", ["get", "$e.owner", "role"], 1], "do": [["inc", "$e.owner", "crew", -1]]}
+  ],
+  "stateChecks": [
+    ["each", ["concat", ["call", "units", "p0"], ["call", "units", "p1"]], "$u", [["if", [">=", ["get", "$u", "dmg"], ["get", "$u", "health"]], [["destroy", "$u"]]]]],
+    ["if", [">=", ["get", "p0", "score"], 2], [["win", "p0"]]],
+    ["if", ["<=", ["get", "p0", "crew"], 0], [["lose", "p0"]]]
+  ]
+}
