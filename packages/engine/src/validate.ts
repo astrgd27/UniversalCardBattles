@@ -10,7 +10,7 @@ export const ENGINE_API = '0.3.1';
 export const CAPABILITIES = [
   'timing.immediate', 'timing.stack', 'timing.chain', 'timing.alternate', 'replacements', 'layers', 'relationships', 'decisions',
   'scripts', 'commit', 'faceDown', 'random', 'multiDeck', 'sharedDecks', 'gameVars', 'grid', 'external',
-  'windows', 'slots', 'resources', 'deckRules', 'limits', 'activated', 'targeting', 'control', 'teams',
+  'windows', 'slots', 'resources', 'deckRules', 'limits', 'activated', 'targeting', 'control', 'teams', 'identity', 'divide', 'timing.last', 'gridLayers',
 ];
 const REPLACEABLE = ['draw', 'move', 'destroy', 'damage', 'lose'];
 /** Built-in card template families a module may use or extend (presentation; rendered by apps/web). */
@@ -82,6 +82,7 @@ export function validateIssues(def: ModuleDef): Issue[] {
   numMap(R.objectVars, '/objectVars', false);
   numMap(R.gameVars, '/gameVars', false);
   if (R.grid !== undefined && !(isRec(R.grid) && Number.isInteger(R.grid.cols) && Number.isInteger(R.grid.rows) && R.grid.cols > 0 && R.grid.rows > 0 && R.grid.cols * R.grid.rows <= 400)) eR('/grid', 'needs integers {cols, rows} (at most 400 cells)');
+  if (isRec(R.grid) && R.grid.layers !== undefined && !(Array.isArray(R.grid.layers) && R.grid.layers.length > 0 && R.grid.layers.every((x: unknown) => typeof x === 'string'))) eR('/grid/layers', 'must be a non-empty array of layer names (objects use var z as the index)');
   if (R.external !== undefined && !(isRec(R.external) && Object.values(R.external).every((d) => Array.isArray(d) && d.length > 0 && d.every((v) => typeof v === 'string' || typeof v === 'number')))) eR('/external', 'must map names to non-empty lists of allowed values');
   const F = R.format;
   if (!isRec(F) || ![F.deckMin, F.deckMax, F.maxCopies].every(Number.isInteger) || F.deckMin > F.deckMax) eR('/format', 'needs integers {deckMin, deckMax, maxCopies}');
@@ -174,6 +175,7 @@ export function validateIssues(def: ModuleDef): Issue[] {
     if (!EXPR_OPS.has(op)) { err(`${ptr}/0`, `unknown expression op "${op}"`); return; }
     if ((op === 'cards' || op === 'top') && typeof e[2] === 'string') zoneLit(e[2], `${ptr}/2`, err);
     if (op === 'near' && !isRec(R.grid)) err(`${ptr}/0`, 'near needs rules.grid');
+    if (op === 'layer' && !(isRec(R.grid) && Array.isArray(R.grid.layers))) err(`${ptr}/0`, 'layer needs rules.grid.layers');
     if (op === 'ext' && typeof e[1] === 'string' && !(isRec(R.external) && e[1] in R.external)) err(`${ptr}/1`, `unknown external input "${e[1]}"`);
     if (op === 'call') callCheck(e, ptr, err, fns, 'function');
     if ((op === 'canPay' || op === 'pool') && typeof e[2] === 'string' && !(e[2] in res)) err(`${ptr}/2`, `unknown resource "${e[2]}"`);
@@ -214,6 +216,21 @@ export function validateIssues(def: ModuleDef): Issue[] {
           if (eff[2] !== undefined && !(isRec(eff[2]) && (eff[2].data === undefined || isRec(eff[2].data)))) err(`${p}/2`, 'options must be {data?: {key: expr}}');
           else if (isRec(eff[2]?.data)) for (const [k, v] of Object.entries(eff[2].data)) expr(v, `${p}/2/data/${esc(k)}`, err);
           return;
+        case 'become': {
+          X(1);
+          const o = eff[2] as any;
+          if (!isRec(o) || (o.copy === undefined && o.blank !== true)) { err(`${p}/2`, 'become needs {copy?: card or object, blank?: true, until?: "turn"}'); return; }
+          expr(o.copy, `${p}/2/copy`, err);
+          if (typeof o.copy === 'string' && o.copy[0] !== '$' && !cardIds.has(o.copy)) err(`${p}/2/copy`, `unknown card "${o.copy}"`);
+          if (o.until !== undefined && o.until !== 'turn' && o.until !== null) err(`${p}/2/until`, 'until must be "turn" or null');
+          return;
+        }
+        case 'divide': {
+          const o = eff[1] as any;
+          if (!isRec(o) || o.among === undefined || o.amount === undefined || !isVar(o.as)) { err(`${p}/1`, 'divide needs {among, amount, as: "$name", each?, who?, prompt?}'); return; }
+          for (const k of ['among', 'amount', 'each', 'who']) expr(o[k], `${p}/1/${k}`, err);
+          return;
+        }
         case 'winSet': if (typeof eff[1] !== 'string') err(`${p}/1`, 'winSet needs a key'); X(2); return;
         case 'pay': case 'gain': case 'empty': X(1); resLit(eff[2], `${p}/2`, err); X(3); return;
         case 'shuffle': X(1); zoneLit(eff[2], `${p}/2`, err); return;
@@ -263,6 +280,13 @@ export function validateIssues(def: ModuleDef): Issue[] {
     if (!Array.isArray(l)) { err(ptr, 'must be an array'); return; }
     l.forEach((d: any, i: number) => {
       const p = `${ptr}/${i}`;
+      if (isRec(d?.identity)) {
+        expr(d.affects, `${p}/affects`, err);
+        expr(d.if, `${p}/if`, err);
+        expr(d.identity.copy, `${p}/identity/copy`, err);
+        if (d.identity.copy === undefined && d.identity.blank !== true) err(`${p}/identity`, 'needs copy and/or blank: true');
+        return;
+      }
       if (!layers.has(d?.layer)) err(`${p}/layer`, `unknown layer "${d?.layer}"`);
       expr(d?.affects, `${p}/affects`, err);
       expr(d?.if, `${p}/if`, err);
@@ -305,6 +329,7 @@ export function validateIssues(def: ModuleDef): Issue[] {
       (ab?.zones ?? []).forEach((z: unknown, j: number) => zoneLit(z, `${p}/zones/${j}`, err));
       expr(ab?.if, `${p}/if`, err);
       limit(ab?.limit, `${p}/limit`, err);
+      for (const k of ['optional', 'last']) if (ab?.[k] !== undefined && typeof ab[k] !== 'boolean') err(`${p}/${k}`, 'must be true or false');
       effects(ab?.do, `${p}/do`, err);
     });
   };

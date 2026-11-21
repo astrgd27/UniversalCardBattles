@@ -1,6 +1,7 @@
 // Player-specific projections. The only way UI and AI read match state.
 import type { GEvent, Match, Pending } from './types.ts';
 import { chars } from './layers.ts';
+import { cardNow, isBlank } from './identity.ts';
 import { activeId, curPhase, list, topWin, viewers } from './util.ts';
 
 export interface ObjView {
@@ -14,6 +15,8 @@ export interface ObjView {
   rel?: Record<string, string>;
   faceDown?: boolean; // card is "" unless you control it
   slot?: string; // position in a slotted zone
+  printed?: string; // the printed card when it is currently a copy of another
+  blank?: boolean; // has lost all abilities
 }
 export interface StackView { id: string; kind: string; ctrl: string; label: string; card: string | null; source: string | null; targets: string[] }
 export interface View {
@@ -44,11 +47,14 @@ export function observe({ m, s }: Match, p: string): View {
     if (v === null || v.includes(p)) {
       zones[key].cards = ids.map((id) => {
         const o = s.objects[id];
-        const v: ObjView = { id, card: o.card, owner: o.owner, controller: o.controller, vars: { ...o.vars } };
+        const now = cardNow(m, s, o);
+        const v: ObjView = { id, card: now, owner: o.owner, controller: o.controller, vars: { ...o.vars } };
+        if (now !== o.card) v.printed = o.card;
+        if (isBlank(m, s, o)) v.blank = true;
         if (o.fd) {
           v.faceDown = true;
           if (o.slot) v.slot = o.slot;
-          if (o.controller !== p) { v.card = ''; return v; }
+          if (o.controller !== p) { v.card = ''; delete v.printed; delete v.blank; return v; }
         }
         const c = ch?.get(id);
         if (c) { v.stats = { ...c.stats }; v.keywords = [...c.kw].sort(); }

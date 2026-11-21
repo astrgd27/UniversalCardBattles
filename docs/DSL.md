@@ -40,6 +40,8 @@ A module is a folder or ZIP package (see **Packages** below). All logic is JSON 
 | `at x key`, `keys x`, `values x`, `same a b` | map and list access; `same` is deep equality (`=` compares single values) |
 | `linked target rel` | objects whose relationship `rel` points at target |
 | `allies p`, `enemies p` | living players on p's team / other teams (player var `team`); without teams: p itself / everyone else. `get p seat` is a player's seat index |
+| `layer obj` | the object's grid layer name (`rules.grid.layers[z]`, var `z`) |
+| `$last` | the most recent meaningful event (bookkeeping such as logs, `stacked`, `chose`, steps and phases is skipped), redacted for `$me`. Use it in `req` for "respond right after X" actions |
 | `def cardOrObj field` | a card definition field, by card id or object (works in deck rules, where there are no objects) |
 | `tally list keyExpr?` | counts into a map: each item's key (`$it`) is counted once; a list counts each element; a map adds its values (e.g. summing `yields`) |
 | `distinct l` | unique items |
@@ -78,6 +80,8 @@ Effects run in effect lists `[[op...], [op...]]`.
 | `winSet key expr`, `closeWindow` | change the innermost window's data; close it early (when the current effects finish; leftover window stack items are dropped). `endPhase`/`gotoPhase` move between steps while a window is open |
 | `pay p res cost` | pays a typed cost: specific types first, then the generic key (default `any`) from the largest pools. Unpayable = the whole action is rejected. A number is an all-generic cost. Emits `paid` |
 | `gain ps res {type: n}`, `empty ps res` | add to / clear typed pools |
+| `become objs {copy?, blank?, until?: "turn"}` | **identity change**: the objects become a copy of a card (a card id, or an object's current card) and/or lose all abilities (abilities, statics, replacements, keywords and activated abilities). Copies apply first, then ability loss, whatever the order. `get obj card` is the current card and `get obj printed` the printed one; views show `printed` and `blank`. Emits `became` |
+| `divide {among, amount, as, each?, who?, prompt?}` | a **division decision**: the player splits `amount` among `among` (each recipient gets at least `each`), bound as `{recipient: points}`. The answer repeats an id once per point. One recipient resolves on its own |
 | `control objs p` | gain control: the same object (same id, no zone change events) moves to p's side of its zone, taking a free slot in slotted zones. Owner is unchanged, so it still goes to its owner's grave. Emits `controlled` |
 | `setSlot obj slot` | repositions an object inside its slotted zone; a full one-object slot swaps the two. Emits `slotted` |
 | `flip objs up?` | turns face up (default) or face down. Emits `flipped` (with `card` when turned face up) |
@@ -122,6 +126,7 @@ Effects run in effect lists `[[op...], [op...]]`.
   - `stack: false` resolves at once.
   - `countered` effects run when the item is countered or fizzles.
 - `targeting {deny: expr}`: an **engine-wide targeting rule** (untargetable, "can't be targeted by opponents"). Target slots never offer an option where `deny` holds (`$it` = the option, `$me` = the actor, `$self` = the source), and a target that becomes denied before resolution counts as gone. Slots with `untargeted: true` and `choose` decisions are not targeting and ignore it.
+- `grid.layers [names]`: a grid with vertical layers (surface, underground, air…). Objects use var `z` as the layer index; `layer obj` names it. Interaction between layers is up to the module (filters on `layer`); the board labels each card's layer.
 - `teams: true`: players carry the player var `team` (set it in `setup`). The game ends when only one team has living players; all its members win, including fallen ones (reason `lastTeam`). `$opp` becomes the next living enemy.
 - Slots: `recheck` decides what happens at resolution:
   - `true` (default): the target must still be in `from`.
@@ -141,6 +146,9 @@ Effects run in effect lists `[[op...], [op...]]`.
   - `leave`: left an ability zone (last-known info).
   - `destroyed`: last-known info.
 - Ability options: `stack` (default true for cards; under stack/chain timing the trigger uses the stack), `speed`, `text` (used in labels), `once` (once per match), `limit` (like action limits; counted when it triggers, by its controller and `$self`).
+  - `optional: true`: a "may" ability; its controller chooses use or decline when it resolves.
+  - `last: true`: **missing the timing**. When resolution finishes, the trigger is dropped (a `missed` event) unless its event was the last meaningful thing to happen; "when X, you can" abilities miss if X happened mid-resolution.
+- Identity statics: `statics [{affects, identity: {copy?, blank?}, if?}]` change identity instead of characteristics (e.g. "other units lose all abilities"). They are read from the source's printed card, so identity statics never depend on each other.
 - Card `statics` and `replacements` work in ability zones, the same as abilities.
 - In leave and destroyed abilities, `$self` is the new object (for example in the grave), `$me` is the last controller, and `$e` carries the old id.
 

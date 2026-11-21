@@ -4,7 +4,7 @@ import type {
   ActionCmd, Cmd, Ctx, Match, MatchOpts, Mod, Reason, SlotDef, SlotOpts, State, Template, Timing,
 } from './types.ts';
 import { apply, emit, triggerList } from './effects.ts';
-import { ev } from './expr.ts';
+import { QUIET, ev } from './expr.ts';
 import { hash, seedRng } from './rng.ts';
 import { CostError, EngineError, actionDef, activeId, baseCtx, curPhase, list, masks, nextPlayer, num, objViewers, one, player, resetUses, topWin, uniq, useKey } from './util.ts';
 import { setVar } from './effects.ts';
@@ -36,7 +36,7 @@ export function createMatch(m: Mod, opts: MatchOpts): Match {
     rng: seedRng(opts.seed), players: [], vars: { ...(R.gameVars ?? {}) }, ext: externalInit(m, opts), objects: {}, zones: {}, turn: { n: 1, active: 0, phase: 0 },
     phaseState: 'enter', priority: null, holder: null, passes: 0, resolving: false, stack: [], effects: [], exec: [],
     triggers: [], nextTrig: null, dirty: false, pending: null, events: [], cmds: [], nextId: 1, nextDecision: 1, result: null,
-    windows: [], uses: {},
+    windows: [], uses: {}, idfx: [],
   };
   for (let i = 0; i < n; i++) s.players.push({ id: `p${i}`, vars: { ...R.playerVars }, lost: false });
   for (const z of R.zones) {
@@ -140,14 +140,31 @@ function nextPhase(m: Mod, s: State) {
   s.turn.n++;
   s.turn.active = s.players.findIndex((p) => p.id === nextPlayer(s, activeId(s)));
   const keep = s.effects.filter((e) => e.until !== 'turn' && e.targets.some((t) => s.objects[t]));
-  if (keep.length !== s.effects.length) {
+  const keepId = s.idfx.filter((e) => e.until !== 'turn' && e.targets.some((t) => s.objects[t]));
+  if (keep.length !== s.effects.length || keepId.length !== s.idfx.length) {
     s.effects = keep;
+    s.idfx = keepId;
     emit(m, s, { type: 'expired' });
   }
   if (m.rules.turnLimit && s.turn.n > m.rules.turnLimit) {
     s.result = { winners: [], reason: 'turnLimit' };
     emit(m, s, { type: 'gameOver', ...s.result });
   }
+}
+
+/**
+ * "Missing the timing": once resolution has finished, a `last` trigger survives only if no meaningful event
+ * happened after its own. Survivors lose the flag (later events no longer matter). True if any trigger was dropped.
+ */
+function missTiming(m: Mod, s: State): boolean {
+  let lastSeq = -1;
+  for (let i = s.events.length - 1; i >= 0; i--) if (!QUIET.has(s.events[i].type)) { lastSeq = s.events[i].seq; break; }
+  const missed = s.triggers.filter((t) => t.last && t.seq! < lastSeq);
+  for (const t of s.triggers) delete t.last;
+  if (!missed.length) return false;
+  s.triggers = s.triggers.filter((t) => !missed.includes(t));
+  for (const t of missed) emit(m, s, { type: 'missed', label: t.label, player: t.ctrl });
+  return true;
 }
 
 /** Takes the next trigger (rules first, then APNAP; a player orders their own). False = waiting on a decision. */
@@ -174,7 +191,11 @@ function takeTrigger(m: Mod, s: State, tm: Timing): boolean {
   }
   s.nextTrig = null;
   s.triggers.splice(s.triggers.indexOf(t), 1);
-  const effects = triggerList(m, t.ref, s);
+  const printed = triggerList(m, t.ref, s);
+  // Optional ("may") triggers ask their controller when they resolve.
+  const effects = t.optional
+    ? [['choose', { who: ['lit', t.ctrl], from: ['lit', ['use', 'decline']], as: '$$may', prompt: `Use ${t.label}?` }], ['if', ['=', '$$may', 'use'], printed]]
+    : printed;
   if (tm.mode === 'immediate' || !t.stack) {
     s.exec.push({ list: effects, i: 0, ctx: t.ctx });
     return true;
@@ -229,6 +250,7 @@ export function settle(m: Mod, s: State, budget = SETTLE_BUDGET) {
     if (endCheck(m, s)) return;
     const tm = timingOf(m, s);
     if (s.triggers.length && !(s.resolving && tm.mode === 'chain')) {
+      if (s.triggers.some((t) => t.last) && missTiming(m, s)) continue;
       if (takeTrigger(m, s, tm)) continue;
       return;
     }
@@ -428,14 +450,21 @@ export function submitDecision(match: Match, p: string, id: string, sel: string[
   const fail = (msg: string): never => { throw new IllegalAction(no('decision', msg)); };
   if (!pd || pd.id !== id) return fail('There is no such pending decision.');
   if (pd.player !== p) fail('This decision belongs to another player.');
-  if (new Set(sel).size !== sel.length || sel.length < pd.min || sel.length > pd.max) fail(`Choose ${pd.min}-${pd.max}.`);
+  if (pd.kind === 'divide') {
+    if (sel.length !== pd.min) fail(`Assign exactly ${pd.min}.`);
+    if (pd.each && pd.options.some((o) => sel.filter((x) => x === o).length < pd.each!)) fail(`Each must get at least ${pd.each}.`);
+  } else if (new Set(sel).size !== sel.length || sel.length < pd.min || sel.length > pd.max) fail(`Choose ${pd.min}-${pd.max}.`);
   if (sel.some((x) => !pd.options.includes(x))) fail('Illegal choice.');
   const { m } = match;
   const s = structuredClone(match.s);
   s.cmds.push({ t: 'dec', p, id, sel });
   s.pending = null;
   if (pd.kind === 'order') s.nextTrig = sel[0];
-  else s.exec[s.exec.length - 1].ctx[pd.as] = pd.single ? sel[0] : sel;
+  else if (pd.kind === 'divide') {
+    const split: Record<string, number> = {};
+    for (const x of sel) split[x] = (split[x] ?? 0) + 1;
+    s.exec[s.exec.length - 1].ctx[pd.as] = split;
+  } else s.exec[s.exec.length - 1].ctx[pd.as] = pd.single ? sel[0] : sel;
   const hidden = !!pd.secret || pd.options.some((o) => s.objects[o] && objViewers(m, s.objects[o]) !== null);
   emit(m, s, { type: 'chose', player: p, decision: id, sel, ...masks([hidden ? [p] : null, ['sel']]) });
   settleOrReject(m, s);
@@ -453,6 +482,7 @@ export function restore(m: Mod, json: string): Match {
   if (s.rulesHash !== m.hash) throw new EngineError('Save was made with different rules or cards (hash mismatch)');
   s.windows ??= [];
   s.uses ??= {};
+  s.idfx ??= [];
   return { m, s };
 }
 export function applyCmd(match: Match, c: Cmd): Match {

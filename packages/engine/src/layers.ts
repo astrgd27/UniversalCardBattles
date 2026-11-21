@@ -2,6 +2,7 @@
 import type { Ctx, Mod, State, StaticDef } from './types.ts';
 import { ev } from './expr.ts';
 import { EngineError, activeId, baseCtx, list, num, zoneIdOf } from './util.ts';
+import { cardNow, defNow } from './identity.ts';
 
 export interface Chars { stats: Record<string, any>; kw: Set<string> }
 type CMap = Map<string, Chars>;
@@ -17,12 +18,12 @@ function scan(e: unknown, out: Set<string>) {
   else if (e[0] === 'has' || e[0] === 'get' || e[0] === 'call') out.add('*');
   for (const x of e) scan(x, out);
 }
-const writesOf = (mods: { op: string; stat?: string; kw?: string }[]) => new Set(mods.map((md) => (md.kw !== undefined ? `kw:${md.kw}` : md.stat!)));
+const writesOf = (mods: { op: string; stat?: string; kw?: string }[] = []) => new Set(mods.map((md) => (md.kw !== undefined ? `kw:${md.kw}` : md.stat!)));
 function rwStatic(def: StaticDef): RW {
   let rw = rwCache.get(def);
   if (!rw) {
     const reads = new Set<string>();
-    scan(def.affects, reads); scan(def.if, reads); def.mods.forEach((md) => scan(md.value, reads));
+    scan(def.affects, reads); scan(def.if, reads); (def.mods ?? []).forEach((md) => scan(md.value, reads));
     rw = { reads, writes: writesOf(def.mods) };
     rwCache.set(def, rw);
   }
@@ -43,7 +44,7 @@ export function rawVal(m: Mod, s: State, ref: string, name: string): number {
   if (p) return p.vars[name] ?? 0;
   const o = s.objects[ref];
   if (!o) return 0;
-  return name in o.vars ? o.vars[name] : num((m.card.get(o.card) as any)?.[name]);
+  return name in o.vars ? o.vars[name] : num((m.card.get(cardNow(m, s, o)) as any)?.[name]);
 }
 
 function collect(m: Mod, s: State): CE[] {
@@ -54,16 +55,16 @@ function collect(m: Mod, s: State): CE[] {
     return i;
   };
   const out: CE[] = [];
-  (m.rules.statics ?? []).forEach((def, i) => out.push({ key: `rule:${i}`, ts: 0, layer: li(def.layer), st: { def, ctx: baseCtx(s, activeId(s)) }, rw: rwStatic(def) }));
+  (m.rules.statics ?? []).forEach((def, i) => def.identity || out.push({ key: `rule:${i}`, ts: 0, layer: li(def.layer!), st: { def, ctx: baseCtx(s, activeId(s)) }, rw: rwStatic(def) }));
   for (const key in s.zones) {
     const zid = zoneIdOf(key);
     const zd = m.zone.get(zid)!;
     for (const id of s.zones[key]) {
       const o = s.objects[id];
       if (o.fd) continue;
-      m.card.get(o.card)?.statics?.forEach((def, i) => {
-        if (!(def.zones ? def.zones.includes(zid) : zd.abilities)) return;
-        out.push({ key: `${id}:${i}`, ts: tsOf(id), layer: li(def.layer), st: { def, ctx: { ...baseCtx(s, o.controller), $self: id } }, rw: rwStatic(def) });
+      defNow(m, s, o)?.statics?.forEach((def, i) => {
+        if (def.identity || !(def.zones ? def.zones.includes(zid) : zd.abilities)) return;
+        out.push({ key: `${id}:${i}`, ts: tsOf(id), layer: li(def.layer!), st: { def, ctx: { ...baseCtx(s, o.controller), $self: id } }, rw: rwStatic(def) });
       });
     }
   }
@@ -77,7 +78,7 @@ function resolve(m: Mod, s: State, ce: CE): Res {
   if (def.if !== undefined && !ev(m, s, def.if, ctx)) return [];
   return list(ev(m, s, def.affects, ctx))
     .filter((t) => s.objects[t])
-    .map((t) => [t, def.mods.map((md) => ({ ...md, value: md.value === undefined ? undefined : ev(m, s, md.value, { ...ctx, $it: t }) }))]);
+    .map((t) => [t, def.mods!.map((md) => ({ ...md, value: md.value === undefined ? undefined : ev(m, s, md.value, { ...ctx, $it: t }) }))]);
 }
 
 function applyRes(map: CMap, res: Res) {
@@ -125,7 +126,7 @@ export function chars(m: Mod, s: State): CMap | null {
     const o = s.objects[id];
     const stats: Record<string, any> = {};
     for (const st of m.rules.stats ?? []) stats[st] = rawVal(m, s, id, st);
-    const kw = new Set(m.card.get(o.card)?.keywords ?? []);
+    const kw = new Set(defNow(m, s, o)?.keywords ?? []);
     for (const k in o.vars) if (k.startsWith('kw:') && o.vars[k] > 0) kw.add(k.slice(3));
     map.set(id, { stats, kw });
   }

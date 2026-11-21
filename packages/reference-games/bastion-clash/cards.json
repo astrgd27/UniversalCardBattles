@@ -499,5 +499,180 @@
     ]
    }
   ]
+ },
+ {
+  "id": "mirror-adept",
+  "name": "Mirror Adept",
+  "type": "unit",
+  "aspect": "moon",
+  "cost": {
+   "moon": 1,
+   "any": 2
+  },
+  "power": 0,
+  "health": 1,
+  "maxCopies": 1,
+  "text": "When this enters, it may become a copy of another unit (it keeps its position).",
+  "abilities": [
+   {
+    "on": "enter",
+    "zones": [
+     "field"
+    ],
+    "text": "become a copy",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "filter",
+        [
+         "cards",
+         "*",
+         "field"
+        ],
+        [
+         "!=",
+         "$it",
+         "$self"
+        ]
+       ],
+       "min": 0,
+       "max": 1,
+       "as": "$c",
+       "prompt": "unit to copy"
+      }
+     ],
+     [
+      "become",
+      "$self",
+      {
+       "copy": "$c"
+      }
+     ]
+    ]
+   }
+  ]
+ },
+ {
+  "id": "hush",
+  "name": "Hush",
+  "type": "guard",
+  "aspect": "moon",
+  "cost": {
+   "moon": 1
+  },
+  "guard": 1,
+  "text": "Block step: prevent 1, and the attacker loses all abilities this turn.",
+  "onGuard": [
+   [
+    "become",
+    "$win.attacker",
+    {
+     "blank": true,
+     "until": "turn"
+    }
+   ]
+  ]
+ },
+ {
+  "id": "sunburst",
+  "name": "Sunburst",
+  "type": "tactic",
+  "aspect": "sun",
+  "cost": {
+   "sun": 2
+  },
+  "text": "Divide 3 damage among enemy units and enemy heroes.",
+  "effect": [
+   [
+    "divide",
+    {
+     "among": [
+      "concat",
+      [
+       "enemies",
+       "$me"
+      ],
+      [
+       "filter",
+       [
+        "cards",
+        "*",
+        "field"
+       ],
+       [
+        "in",
+        [
+         "get",
+         "$it",
+         "controller"
+        ],
+        [
+         "enemies",
+         "$me"
+        ]
+       ]
+      ]
+     ],
+     "amount": 3,
+     "as": "$split",
+     "prompt": "Divide 3 damage"
+    }
+   ],
+   [
+    "each",
+    [
+     "keys",
+     "$split"
+    ],
+    "$t",
+    [
+     [
+      "damage",
+      "$t",
+      [
+       "at",
+       "$split",
+       "$t"
+      ],
+      "$self"
+     ]
+    ]
+   ]
+  ]
+ },
+ {
+  "id": "watchful-sentry",
+  "name": "Watchful Sentry",
+  "type": "unit",
+  "aspect": "sun",
+  "cost": {
+   "sun": 1,
+   "any": 1
+  },
+  "power": 1,
+  "health": 3,
+  "text": "When you are attacked, you may draw a card (only if nothing else happened first).",
+  "abilities": [
+   {
+    "on": "windowOpened",
+    "if": [
+     "=",
+     "$win.defender",
+     "$me"
+    ],
+    "optional": true,
+    "last": true,
+    "text": "draw when attacked",
+    "do": [
+     [
+      "draw",
+      "$me",
+      1
+     ]
+    ]
+   }
+  ]
  }
 ]

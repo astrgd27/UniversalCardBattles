@@ -13,7 +13,7 @@ export interface Agent {
   act(view: View, actions: Template[], info?: AgentInfo): ActionCmd;
   decide(view: View, info?: AgentInfo): string[];
 }
-type Pending = { id: string; options: string[]; min: number; max: number; player: string };
+type Pending = { id: string; options: string[]; min: number; max: number; player: string; kind?: string; each?: number };
 
 /** Uniformly random legal play; passes with probability `passRate` when anything else is legal. */
 export function randomAgent(seed: number, passRate = 0.15): Agent {
@@ -30,6 +30,7 @@ export function randomAgent(seed: number, passRate = 0.15): Agent {
     },
     decide(view) {
       const pd = view.pending as Pending;
+      if (pd.kind === 'divide') return divisions(pd, st, 1)[0];
       return sample(st, pd.options, between(pd.min, pd.max));
     },
   };
@@ -126,7 +127,7 @@ export function heuristicAgent(seed: number, opts: HeuristicOpts = {}): Agent {
       const pd = view.pending as Pending;
       if (!info || pd.options.length <= 1) return fallback.decide(view);
       const n = opts.samples ?? info.mod.ai?.samples ?? 2;
-      return pickBest(selections(pd.options, pd.min, pd.max, 10), (sel, base) =>
+      return pickBest(pd.kind === 'divide' ? divisions(pd, st, 10) : selections(pd.options, pd.min, pd.max, 10), (sel, base) =>
         evaluate(info, (g) => submitDecision(g, info.player, pd.id, sel), n, base));
     },
   };
@@ -158,4 +159,19 @@ export function makeAgent(kind: string, seed: number): Agent {
   if (kind === 'random') return randomAgent(seed);
   if (kind === 'heuristic') return heuristicAgent(seed);
   throw new Error(`Unknown agent "${kind}" (random, heuristic)`);
+}
+
+/**
+ * Candidate answers to a `divide` decision (sel repeats an id once per point): everything on one recipient (after
+ * each recipient's minimum), then random spreads. The first candidate for a random agent is a random spread.
+ */
+export function divisions(pd: Pending, st: number[], limit: number): string[][] {
+  const base = pd.options.flatMap((o) => Array(pd.each ?? 0).fill(o));
+  const rest = pd.min - base.length;
+  const spread = () => [...base, ...Array.from({ length: rest }, () => pd.options[randInt(st, pd.options.length)])].sort();
+  if (limit === 1) return [spread()];
+  const out = pd.options.map((o) => [...base, ...Array(rest).fill(o)].sort());
+  const seen = new Set(out.map((x) => x.join()));
+  for (let i = 0; i < limit * 3 && out.length < limit; i++) { const x = spread(); if (!seen.has(x.join())) { seen.add(x.join()); out.push(x); } }
+  return out.slice(0, Math.max(limit, pd.options.length));
 }

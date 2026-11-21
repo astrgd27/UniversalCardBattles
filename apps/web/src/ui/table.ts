@@ -104,10 +104,20 @@ function obj(c: C, o: ObjView, size: 'sm' | 'md') {
     c.fx.entered.has(o.id) && 'fx-enter', !!hit && 'fx-hit', c.fx.flipped.has(o.id) && 'fx-flip', o.controller === c.ui.viewer ? 'own' : 'foe');
   const onclick = () => c.A.pick(o.id);
   const el = o.card
-    ? cardFace(c.mod, o.card, { size, state, onclick, stats: o.stats, vars: o.vars, baseVars: c.mod.rules.objectVars, keywords: o.keywords, faceDown: o.faceDown })
+    ? cardFace(c.mod, o.card, { size, state, onclick, stats: o.stats, vars: o.vars, baseVars: c.mod.rules.objectVars, keywords: o.blank ? [] : o.keywords, faceDown: o.faceDown, note: noteOf(c.mod, o) })
     : cardBack(c.mod, { size, state, onclick });
   if (hit) el.append(h('span', { class: 'dmg-float', 'aria-hidden': 'true' }, `-${hit}`));
   return el;
+}
+
+/** Identity and position notes for a card on the table. */
+function noteOf(mod: Mod, o: ObjView): string | undefined {
+  const parts = [
+    o.printed && `copy (printed: ${mod.card.get(o.printed)?.name ?? o.printed})`,
+    o.blank && 'no abilities',
+    mod.rules.grid?.layers && o.vars.z !== undefined && mod.rules.grid.layers[o.vars.z],
+  ].filter(Boolean);
+  return parts.length ? parts.join(' · ') : undefined;
 }
 
 function gridBoard(c: C) {
@@ -229,7 +239,16 @@ function prompt(c: C, step: ReturnType<typeof current>) {
   const picks = ui.sel!.picks[step.key] ?? [];
   const pd = ui.match!.s.pending;
   const objectish = (x: string) => /^(o|k)\d+$/.test(x) || /^p\d+$/.test(x) || (!!c.mod.rules.grid && /^\d+,\d+$/.test(x));
-  const inline = step.options.filter((x) => !objectish(x) || (!ui.sel!.tpl && pd?.labels));
+  const inline = step.options.filter((x) => !objectish(x) || (!ui.sel!.tpl && pd?.labels) || step.divide);
+  const n = (x: string) => picks.filter((y) => y === x).length;
+  if (step.divide) {
+    return h('div', { class: 'dock-body' },
+      h('div', { class: 'prompt-title' }, h('strong', {}, title(step.prompt)), h('span', { class: 'muted' }, ` · tap to assign, ${step.max - picks.length} left`)),
+      h('div', { class: 'opts' }, inline.map((x) => h('button', { class: cls('opt', n(x) > 0 && 'picked'), onclick: () => A.choose(x) }, `${label(x)}${n(x) ? ` ×${n(x)}` : ''}`))),
+      h('div', { class: 'opts end' },
+        h('button', { class: 'ghost', disabled: !picks.length, onclick: A.undoPick }, 'Undo'),
+        h('button', { class: 'cta small', disabled: picks.length !== step.max, onclick: A.confirm }, 'Confirm')));
+  }
   const ok = picks.length >= step.min && picks.length <= step.max;
   return h('div', { class: 'dock-body' },
     h('div', { class: 'prompt-title' }, h('strong', {}, title(step.prompt)), h('span', { class: 'muted' },
@@ -264,7 +283,7 @@ function drawer(c: C) {
   } else if (ui.drawer === 'card') {
     const o = ui.inspect ? Object.values(v.zones).flatMap((z) => z.cards ?? []).find((x) => x.id === ui.inspect) : null;
     body = o?.card
-      ? [cardFace(mod, o.card, { size: 'lg', stats: o.stats, vars: o.vars, baseVars: mod.rules.objectVars, keywords: o.keywords, faceDown: o.faceDown }),
+      ? [cardFace(mod, o.card, { size: 'lg', stats: o.stats, vars: o.vars, baseVars: mod.rules.objectVars, keywords: o.blank ? [] : o.keywords, faceDown: o.faceDown, note: noteOf(mod, o) }),
         o.rel && h('p', { class: 'muted' }, Object.entries(o.rel).map(([a, b]) => `${a} → ${c.label(b)}`).join(', '))]
       : h('p', { class: 'muted' }, 'Tap a card on the table to see it here.');
   } else body = log(c);
@@ -317,6 +336,8 @@ function fmt(e: Record<string, any>, mod: Mod, label: (x: string) => string): st
       const ab = i !== undefined && d?.activated && e.card ? (mod.card.get(e.card) as any)?.[d.activated]?.[+i]?.label : undefined;
       return `${pname(e.player)}: ${ab ?? d?.label ?? base}${e.card ? ` ${cn(e.card)}` : ''}`;
     }
+    case 'became': return e.targets ? `${e.targets.map(label).join(', ')} ${e.copy ? `becomes a copy of ${cn(e.copy)}` : ''}${e.copy && e.blank ? ' and ' : ''}${e.blank ? 'loses all abilities' : ''}` : null;
+    case 'missed': return `${e.label} missed its timing`;
     case 'controlled': return `${label(e.obj)} changes sides (${pname(e.from)} → ${pname(e.to)})`;
     case 'phase': return `— Turn ${e.turn}, ${e.phase} (${pname(e.active)})`;
     case 'pass': return `${pname(e.player)} passes`;

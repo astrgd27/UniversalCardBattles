@@ -2,8 +2,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Deck, Match, ModuleDef } from '#engine';
-import { applyCmd, commitAction, createMatch, deckErrors, eventHash, invalidate, listActions, observe, proposeAction, replay, restore, serialize, submitDecision, validateModule } from '#engine';
-import { randomAgent } from '#ai';
+import { applyCmd, commitAction, compileModule, createMatch, deckErrors, eventHash, invalidate, listActions, observe, proposeAction, replay, restore, serialize, submitDecision, validateModule } from '#engine';
+import { randomAgent, divisions } from '#ai';
 import { deckOpts, loadRef, playMatch } from '#harness';
 import { place } from './helpers.ts';
 
@@ -236,4 +236,99 @@ test('teams: 2v2 seating, enemies and $opp skip allies, and the surviving team w
     assert.equal(replay(B, end.s.opts, end.s.cmds).hash, eventHash(end.s));
   }
   assert.ok(seen > 0, 'some 2v2 game ended by team elimination');
+});
+
+test('identity: a copy takes the copied card\'s stats, keywords and rules; "loses all abilities" strips them for a turn', () => {
+  let g = fresh();
+  pool(g, 'p0', 5, 5);
+  const mw = slotted(g, 'p0', 'mistwalker', 'field', 'front-left');
+  g = act(g, 'p0', 'deploy', place(g, 'p0', 'mirror-adept', 'hand'), { $pos: ['front-mid'] });
+  g = submitDecision(g, 'p0', g.s.pending!.id, [mw]);
+  const ad = newest(g, 'mirror-adept', 'p0:field');
+  const v = observe(g, 'p1').zones['p0:field'].cards!.find((o) => o.id === ad)!;
+  assert.deepEqual([v.card, v.printed, v.slot], ['mistwalker', 'mirror-adept', 'front-mid']);
+  g = pass(g);
+  const atk = slotted(g, 'p1', 'ember-squire', 'field', 'front-mid');
+  assert.ok(!tpl(g, 'p1', 'attack', atk)!.slots[0].options.includes(ad), 'the copy is veiled too');
+
+  let b = fresh(['dusk-tide', 'dusk-tide']);
+  const archer = slotted(b, 'p0', 'moonlit-archer', 'field', 'back-left');
+  pool(b, 'p1', 0, 2);
+  place(b, 'p1', 'hush', 'hand');
+  b = act(b, 'p0', 'attack', archer, { $t: ['p1'] });
+  b = act(b, 'p1', 'guard', b.s.zones['p1:hand'].find((id) => b.s.objects[id].card === 'hush'));
+  assert.equal(observe(b, 'p0').zones['p0:field'].cards!.find((o) => o.id === archer)!.blank, true);
+  b = pass(pass(b));
+  assert.ok(!tpl(b, 'p0', 'attack', archer), 'lost reach: cannot attack from the back row');
+  b = pass(pass(b));
+  assert.equal(b.s.idfx.length, 0, 'until end of turn');
+});
+
+test('divide: damage split by the player, validated, and answered by the AIs', () => {
+  let g = createMatch(B, deckOpts(B, ['dawn-vanguard', 'dusk-tide'], 5));
+  pool(g, 'p0', 2, 0);
+  const golem = slotted(g, 'p1', 'tide-golem', 'field', 'back-left');
+  g = act(g, 'p0', 'cast', place(g, 'p0', 'sunburst', 'hand'));
+  const pd = g.s.pending!;
+  assert.deepEqual([pd.kind, pd.options, pd.min], ['divide', ['p1', golem], 3]);
+  assert.throws(() => submitDecision(g, 'p0', pd.id, ['p1', golem]), /exactly 3/);
+  assert.equal(divisions(pd as any, [1, 2, 3, 4], 1)[0].length, 3);
+  g = submitDecision(g, 'p0', pd.id, [golem, 'p1', golem]);
+  assert.deepEqual([g.s.players[1].vars.life, g.s.objects[golem].vars.dmg], [19, 2]);
+});
+
+test('optional trigger with "last" timing: offered when attacked; declining does nothing', () => {
+  let g = fresh();
+  const a = slotted(g, 'p0', 'ember-squire', 'field', 'front-mid');
+  slotted(g, 'p1', 'watchful-sentry', 'field', 'back-mid');
+  g = act(g, 'p0', 'attack', a, { $t: ['p1'] });
+  assert.deepEqual([g.s.pending?.player, g.s.pending?.options], ['p1', ['use', 'decline']]);
+  const n = g.s.zones['p1:hand'].length;
+  const used = submitDecision(g, 'p1', g.s.pending!.id, ['use']);
+  assert.equal(used.s.zones['p1:hand'].length, n + 1);
+  assert.equal(submitDecision(g, 'p1', g.s.pending!.id, ['decline']).s.zones['p1:hand'].length, n);
+});
+
+const LAB = compileModule({
+  manifest: { moduleId: 'lab', displayName: 'Lab', semanticVersion: '0.1.0', engineApiRange: '^0.3.1' },
+  rules: {
+    players: { min: 2, max: 2 }, playerVars: { n: 0 }, objectVars: { x: 0, y: 0, z: 0 },
+    grid: { cols: 3, rows: 3, zones: ['field'], layers: ['ground', 'air'] },
+    zones: [{ id: 'deck', vis: 'hidden', ordered: true }, { id: 'hand', vis: 'owner' }, { id: 'field', vis: 'public', abilities: true }, { id: 'grave', vis: 'public' }],
+    deckZone: 'deck', handZone: 'hand', graveZone: 'grave', format: { deckMin: 0, deckMax: 10, maxCopies: 10 },
+    phases: [{ id: 'main' }],
+    actions: {
+      ping: { do: [['emit', 'ping', {}]] },
+      pingPong: { do: [['emit', 'ping', {}], ['emit', 'pong', {}]] },
+      afterPong: { req: [{ if: ['=', '$last.type', 'pong'], why: 'only right after a pong' }], do: [] },
+      shoot: { targets: [{ as: '$t', from: ['filter', ['cards', '*', 'field'], ['=', ['layer', '$it'], 'air']] }], do: [['destroy', '$t']] },
+      hush: { do: [['create', 'null', '$me', 'field']] },
+    },
+  },
+  cards: [
+    { id: 'bell', name: 'Bell', type: 'unit', abilities: [{ on: 'ping', last: true, do: [['inc', '$me', 'n', 1]] }] },
+    { id: 'null', name: 'Null Field', type: 'unit', statics: [{ affects: ['filter', ['cards', '*', 'field'], ['!=', '$it', '$self']], identity: { blank: true } }] },
+    { id: 'kite', name: 'Kite', type: 'unit' },
+  ],
+});
+
+test('lab: missing the timing, $last responses, grid layers and identity statics', () => {
+  let g = createMatch(LAB, { decks: [[], []], seed: 1, scenario: { setup: [
+    ['create', 'bell', 'p0', 'field'], ['create', 'kite', 'p1', 'field', { as: '$k' }], ['set', '$k', 'z', 1], ['create', 'kite', 'p1', 'field'],
+  ] } });
+  g = act(g, 'p0', 'ping');
+  assert.equal(g.s.players[0].vars.n, 1, 'ping was the last thing to happen');
+  assert.ok(!tpl(g, 'p0', 'afterPong'));
+  g = act(g, 'p0', 'pingPong');
+  assert.equal(g.s.players[0].vars.n, 1, 'a pong followed the ping: the bell misses its timing');
+  assert.ok(g.s.events.some((e) => e.type === 'missed'));
+  assert.ok(tpl(g, 'p0', 'afterPong'), '$last is the pong');
+  const kites = g.s.zones['p1:field'];
+  assert.deepEqual(tpl(g, 'p0', 'shoot')!.slots[0].options, [kites[0]], 'only the kite on the air layer');
+  g = act(g, 'p0', 'hush');
+  const bell = g.s.zones['p0:field'][0];
+  assert.equal(observe(g, 'p1').zones['p0:field'].cards!.find((o) => o.id === bell)!.blank, true, 'a card static blanks every other unit');
+  g = act(g, 'p0', 'ping');
+  assert.equal(g.s.players[0].vars.n, 1, 'a blank bell does not ring');
+  assert.match(validateModule({ ...LAB, rules: { ...LAB.rules, grid: { cols: 3, rows: 3, layers: [] } } }).join(), /layer names/);
 });

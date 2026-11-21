@@ -186,7 +186,8 @@
      "unit",
      "guard",
      "gear",
-     "well"
+     "well",
+     "tactic"
     ]
    }
   ],
@@ -1139,6 +1140,61 @@
     ]
    ],
    "do": []
+  },
+  "cast": {
+   "label": "Cast",
+   "phases": [
+    "main"
+   ],
+   "source": [
+    "filter",
+    [
+     "cards",
+     "$me",
+     "hand"
+    ],
+    [
+     "and",
+     [
+      "=",
+      [
+       "get",
+       "$it",
+       "type"
+      ],
+      "tactic"
+     ],
+     [
+      "call",
+      "payable",
+      "$it"
+     ]
+    ]
+   ],
+   "cost": [
+    [
+     "pay",
+     "$me",
+     "aether",
+     [
+      "def",
+      "$self",
+      "cost"
+     ]
+    ]
+   ],
+   "do": [
+    [
+     "run",
+     "$self",
+     "effect"
+    ],
+    [
+     "move",
+     "$self",
+     "grave"
+    ]
+   ]
   }
  },
  "stateChecks": [

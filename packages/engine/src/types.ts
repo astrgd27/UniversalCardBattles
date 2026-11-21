@@ -59,10 +59,12 @@ export interface ActionDef {
   do: EffectList;
   countered?: EffectList; // runs if the stack item is countered or fizzles
 }
-export interface Ability { on: string; if?: Expr; do: EffectList; zones?: string[]; stack?: boolean; speed?: number; text?: string; once?: boolean; limit?: Limit }
+/** optional: the controller may decline when it resolves. last: misses (never fires) unless its event was the last thing to happen before resolution finished. */
+export interface Ability { on: string; if?: Expr; do: EffectList; zones?: string[]; stack?: boolean; speed?: number; text?: string; once?: boolean; limit?: Limit; optional?: boolean; last?: boolean }
 export interface Replacement { replace: string; if?: Expr; instead?: EffectList; modify?: Record<string, Expr>; zones?: string[]; order?: number; text?: string }
 export interface ModDef { op: 'set' | 'add' | 'grant' | 'remove'; stat?: string; kw?: string; value?: Expr }
-export interface StaticDef { layer: string; affects: Expr; mods: ModDef[]; if?: Expr; zones?: string[]; text?: string }
+/** A static is either a layered characteristic change (layer + mods) or an identity change (copy / lose all abilities). */
+export interface StaticDef { layer?: string; affects: Expr; mods?: ModDef[]; identity?: { copy?: Expr; blank?: boolean }; if?: Expr; zones?: string[]; text?: string }
 export interface CardDef {
   id: string;
   name: string;
@@ -107,7 +109,7 @@ export interface Rules {
   replacements?: Replacement[];
   statics?: StaticDef[];
   stateChecks?: EffectList;
-  grid?: { cols: number; rows: number; zones?: string[] }; // 2D board: objects in `zones` sit at cells via vars x, y
+  grid?: { cols: number; rows: number; zones?: string[]; layers?: string[] }; // 2D board: objects in `zones` sit at cells via vars x, y (and layer index z)
   resources?: Record<string, ResourceDef>;
   /** Engine-wide targeting rule: target slots never offer options where deny is true ($it = option, $me = actor, $self = source). */
   targeting?: { deny: Expr };
@@ -122,7 +124,7 @@ export interface Rules {
 export interface AiDef { eval?: Expr; bias?: Record<string, number>; samples?: number }
 /** campaign: single-player campaign data (validated by packages/campaign; opaque to the engine). */
 export interface ModuleDef { manifest: Manifest; rules: Rules; cards: CardDef[]; decks?: Record<string, Deck>; ai?: AiDef; campaign?: unknown }
-export interface Mod extends ModuleDef { card: Map<string, CardDef>; zone: Map<string, ZoneDef>; hash: string }
+export interface Mod extends ModuleDef { card: Map<string, CardDef>; zone: Map<string, ZoneDef>; hash: string; idStatics?: boolean }
 
 export interface Obj {
   id: string; // game-object id: new on every zone change; numeric part is its timestamp
@@ -138,7 +140,7 @@ export interface Obj {
 }
 export interface Player { id: string; vars: Record<string, number>; lost: boolean }
 export interface Frame { list: EffectList; i: number; ctx: Ctx }
-export interface Trig { id: string; ref: string; ctrl: string; ctx: Ctx; label: string; stack: boolean; speed: number }
+export interface Trig { id: string; ref: string; ctrl: string; ctx: Ctx; label: string; stack: boolean; speed: number; seq?: number; optional?: boolean; last?: boolean }
 export interface StackItem {
   id: string;
   kind: 'action' | 'trigger';
@@ -156,7 +158,7 @@ export interface StackItem {
 export interface TempEffect { id: string; ts: number; layer: string; targets: string[]; mods: { op: string; stat?: string; kw?: string; value?: any }[]; until: 'turn' | null }
 export interface Pending {
   id: string;
-  kind: 'choose' | 'order';
+  kind: 'choose' | 'order' | 'divide'; // divide: sel repeats ids, one entry per point (min = max = amount)
   player: string;
   options: string[];
   min: number;
@@ -166,7 +168,10 @@ export interface Pending {
   prompt: string;
   labels?: Record<string, string>;
   secret?: boolean; // the selection is hidden from other players
+  each?: number; // divide: every option must receive at least this many points
 }
+/** An identity change from `become`: the objects copy a card, or lose all abilities. */
+export interface IdFx { id: string; ts: number; targets: string[]; copy?: string; blank?: boolean; until: 'turn' | null }
 /** masks: [viewers, fields]: players not in viewers get those fields deleted. */
 export type Mask = [string[], string[]];
 export interface GEvent { seq: number; type: string; masks?: Mask[]; [k: string]: any }
@@ -214,6 +219,7 @@ export interface State {
   nextDecision: number;
   result: Result | null;
   windows: Win[]; // open timing windows, innermost last
+  idfx: IdFx[]; // identity changes (copy / lose all abilities)
   uses: Record<string, number>; // usage-limit counters "scope|group|key" (turn and phase scopes reset)
 }
 /** An open timing window; `saved` holds the interrupted turn state, restored when the window closes. */

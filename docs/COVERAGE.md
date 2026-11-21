@@ -78,10 +78,10 @@ A second pass read the published rules of about 30 commercial and historical gam
 | 2 | Lists of activated abilities printed on cards | 3 | ✚ | action `activated: field` → one `name#i` action per printed ability (Bastion Clash gear) |
 | 8 | Engine-wide targeting restrictions (untargetable, "only by X") | 2 | ✚ | `rules.targeting.deny`, enforced on offer and at resolution (Bastion Clash "veiled") |
 | 11 | Teams | 2 | ✚ | `rules.teams`, `allies`/`enemies`, team-aware `$opp` (Bastion Clash 2v2) |
-| 12 | Helpers: combat damage splitting, rotated (tapped) cards | 2 | ◐ | decisions and vars |
-| 3 | Responses anchored to a specific event, "missing the timing" | 1 | ◐ | triggers plus windows |
+| 12 | Helpers: combat damage splitting, rotated (tapped) cards | 2 | ✚ | `divide` decision (Bastion Clash Sunburst); tapping stays a var |
+| 3 | Responses anchored to a specific event, "missing the timing" | 1 | ✚ | trigger `last`/`optional`, `$last` (Bastion Clash Sentry, lab test) |
 | 4 | Gain control | 1 | ✚ | `control` effect, same object id (Bastion Clash envoy) |
-| 5 | Copy effects, "loses all abilities" | 1 | ◐ | layers cover stats and keywords, not ability lists |
-| 13 | Grids with vertical layers (surface/underground/air) | 1 | ◐ | grid plus a layer var |
+| 5 | Copy effects, "loses all abilities" | 1 | ✚ | `become` + identity statics (Bastion Clash Mirror Adept, Hush) |
+| 13 | Grids with vertical layers (surface/underground/air) | 1 | ✚ | `grid.layers`, `layer` (lab test) |
 
 Already covered across the surveyed games: damage dealt as cards (life cards, shields, clocks, prizes, deck as life), resource decks and pitching, evolution and level-up stacks, per-turn role swaps, secret bids and votes, multiplayer seating.

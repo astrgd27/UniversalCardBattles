@@ -1,6 +1,8 @@
 // Expression evaluator for the S-expression DSL. See docs/DSL.md.
 import type { Ctx, Mod, State } from './types.ts';
 import { chars } from './layers.ts';
+import { cardNow, defNow } from './identity.ts';
+import { redact } from './view.ts';
 import { EngineError, ScriptError, curPhase, freeSlots, inSlot, list, nextPlayer, num, one, player, slotsOf, topWin, zkey, zoneIdOf } from './util.ts';
 
 export const EXPR_OPS = new Set([
@@ -8,7 +10,7 @@ export const EXPR_OPS = new Set([
   'get', 'has', 'players', 'opp', 'cards', 'top', 'count', 'concat', 'list', 'first', 'filter', 'any', 'all',
   'sum', 'in', 'isPlayer', 'isObj', 'stack', 'linked', 'call', 'let', 'map', 'range', 'mod', 'abs', 'sortBy', 'maxBy', 'minBy',
   'slice', 'reverse', 'nth', 'at', 'keys', 'values', 'same', 'cell', 'cx', 'cy', 'cellOf', 'dist', 'near', 'ext',
-  'allies', 'enemies', 'def', 'tally', 'distinct', 'meets', 'canPay', 'pool', 'slots', 'inSlot', 'freeSlots', 'adjSlots', 'adjacent', 'uses',
+  'allies', 'enemies', 'layer', 'def', 'tally', 'distinct', 'meets', 'canPay', 'pool', 'slots', 'inSlot', 'freeSlots', 'adjSlots', 'adjacent', 'uses',
 ]);
 
 /** Script limits: evaluation steps per outermost function call, and call depth. */
@@ -32,6 +34,7 @@ export function lookup(m: Mod, s: State, ctx: Ctx, name: string): any {
   else if (h === '$turn') v = s.turn.n;
   else if (h === '$active') v = s.players[s.turn.active].id;
   else if (h === '$phase') v = curPhase(m, s).id;
+  else if (h === '$last') v = lastEvent(s, ctx.$me);
   else if (h === '$win') v = topWin(s)?.data ?? null;
   else if (h === '$window') v = topWin(s)?.id ?? null;
   else throw new EngineError(`Unbound variable ${h}`);
@@ -60,14 +63,15 @@ export function getProp(m: Mod, s: State, ref: any, name: string): any {
     case 'owner': return o.owner;
     case 'controller': return o.controller;
     case 'zone': return zoneIdOf(o.zone);
-    case 'card': return o.card;
+    case 'card': return cardNow(m, s, o);
+    case 'printed': return o.card;
     case 'faceDown': return !!o.fd;
     case 'slot': return o.slot ?? null;
   }
   if (o.rel && name in o.rel) return o.rel[name];
   if (m.rules.stats?.includes(name)) return chars(m, s)!.get(r)!.stats[name];
   if (name in o.vars) return o.vars[name];
-  return (m.card.get(o.card) as any)?.[name] ?? 0;
+  return (defNow(m, s, o) as any)?.[name] ?? 0;
 }
 
 const eq = (a: any, b: any) => (a === b ? true : JSON.stringify(a) === JSON.stringify(b));
@@ -113,7 +117,7 @@ export function ev(m: Mod, s: State, e: any, ctx: Ctx): any {
       const k = A(2);
       const ch = chars(m, s);
       if (ch) return ch.get(o.id)!.kw.has(k);
-      return (m.card.get(o.card)?.keywords ?? []).includes(k) || (o.vars[`kw:${k}`] ?? 0) > 0;
+      return (defNow(m, s, o)?.keywords ?? []).includes(k) || (o.vars[`kw:${k}`] ?? 0) > 0;
     }
     case 'players': return s.players.filter((p) => !p.lost).map((p) => p.id);
     case 'opp': return nextPlayer(s, one(A(1)));
@@ -201,7 +205,8 @@ export function ev(m: Mod, s: State, e: any, ctx: Ctx): any {
       const same = (q: { id: string; vars: Record<string, number> }) => (me?.vars.team === undefined ? q.id === me?.id : q.vars.team === me.vars.team);
       return s.players.filter((q) => !q.lost && same(q) === (e[0] === 'allies')).map((q) => q.id);
     }
-    case 'def': { const r = one(A(1)); const c = s.objects?.[r]?.card ?? r; return (m.card.get(c) as any)?.[A(2)] ?? null; }
+    case 'layer': { const ls = m.rules.grid?.layers ?? []; return ls[num(getProp(m, s, A(1), 'z'))] ?? null; }
+    case 'def': { const r = one(A(1)); const c = s.objects?.[r] ? cardNow(m, s, s.objects[r]) : r; return (m.card.get(c) as any)?.[A(2)] ?? null; }
     case 'tally': {
       const out: Record<string, number> = {};
       for (const it of list(A(1))) {
@@ -271,4 +276,15 @@ export function payPlan(m: Mod, s: State, p: string, res: string, cost: any): Re
     paid[best]++;
   }
   return paid;
+}
+
+/** Event types that never count as "something happening" ($last, and `last` triggers missing their timing). */
+export const QUIET = new Set(['log', 'stacked', 'chose', 'replaced', 'step', 'windowOpened', 'phase', 'pass', 'missed', 'expired']);
+/** The most recent meaningful event, redacted for the viewer (legality must not leak hidden information). */
+function lastEvent(s: State, me: unknown): any {
+  for (let i = s.events.length - 1; i >= 0; i--) {
+    const e = s.events[i];
+    if (!QUIET.has(e.type)) return typeof me === 'string' ? redact(e, me) : e;
+  }
+  return null;
 }

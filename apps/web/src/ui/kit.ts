@@ -56,6 +56,7 @@ export function cardStats(def: CardDef, stats?: Record<string, any>): [string, u
 }
 
 export interface FaceOpts {
+  note?: string; // extra state on the type line (copy of…, no abilities, grid layer)
   stats?: Record<string, any>;
   vars?: Record<string, number>;
   baseVars?: Record<string, number>;
@@ -78,7 +79,7 @@ export function cardFace(m: Mod, cardId: string, o: FaceOpts = {}): HTMLElement 
   const onFrame = new Set([...placed.map((s) => s.field), ...(tpl.level ? [tpl.level] : [])]);
   const chips = cardStats(def, o.stats).filter(([k]) => !hidden.has(k) && !onFrame.has(k));
   const kw = o.keywords ?? def.keywords ?? [];
-  const badges = Object.entries(o.vars ?? {}).filter(([k, n]) => n !== (o.baseVars?.[k] ?? 0) && !(m.rules.grid && (k === 'x' || k === 'y')));
+  const badges = Object.entries(o.vars ?? {}).filter(([k, n]) => n !== (o.baseVars?.[k] ?? 0) && !(m.rules.grid && (k === 'x' || k === 'y' || k === 'z')));
   const art = customArt(m.manifest.moduleId, def.id) ?? (typeof def.art === 'string' ? ASSETS.get(m.manifest.moduleId)?.get(def.art) : undefined) ?? procArt(def, GLYPH[def.type] ?? '◆');
   const corners = new Map<string, StatSlot[]>();
   for (const s of placed) if (s.pos !== 'line') corners.set(s.pos, [...(corners.get(s.pos) ?? []), s]);
@@ -101,7 +102,7 @@ export function cardFace(m: Mod, cardId: string, o: FaceOpts = {}): HTMLElement 
   h('span', { class: 'body' },
     h('span', { class: 'name' }, def.name),
     level > 0 && h('span', { class: 'stars', 'aria-label': `level ${level}` }, '★'.repeat(Math.min(12, level))),
-    h('span', { class: 'type' }, title(def.type), kw.length ? ` · ${kw.map(title).join(', ')}` : '', o.faceDown ? ' · face down' : ''),
+    h('span', { class: 'type' }, title(def.type), kw.length ? ` · ${kw.map(title).join(', ')}` : '', o.faceDown ? ' · face down' : '', o.note ? ` · ${o.note}` : ''),
     tpl.text && def.text && h('span', { class: 'text' }, def.text),
     chips.length > 0 && h('span', { class: 'stats' }, chips.map(([k, v]) => h('span', { class: cls('stat', `s-${k}`), title: k }, ICON[k] ? `${ICON[k]} ${v}` : `${k} ${v}`))),
     line.length > 0 && h('span', { class: 'statline' }, line.map((s) => `${s.label ?? s.field} ${val(s.field)}`).join(' / ')),

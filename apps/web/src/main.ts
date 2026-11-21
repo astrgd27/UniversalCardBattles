@@ -143,21 +143,23 @@ function commit(cmd: ActionCmd) {
 function toggle(id: string) {
   const sel = ui.sel;
   if (!sel) return;
-  const { options, max, key } = current(sel);
+  const { options, max, key, divide } = current(sel);
   if (!options.includes(id)) return;
   const l = sel.picks[key] ?? [];
+  // Dividing: each tap assigns one more point to that recipient.
+  if (divide) { if (l.length < max) sel.picks[key] = [...l, id]; return redraw(); }
   sel.picks[key] = l.includes(id) ? l.filter((x) => x !== id) : max === 1 ? [id] : l.length < max ? [...l, id] : l;
   redraw();
 }
 
 /** Options for the active step of a selection (action slot or pending decision). */
-export function current(sel: Selection): { options: string[]; min: number; max: number; prompt: string; key: string } {
+export function current(sel: Selection): { options: string[]; min: number; max: number; prompt: string; key: string; divide?: boolean } {
   if (sel.tpl) {
     const s = sel.tpl.slots[sel.slot];
     return { options: s.options, min: s.min, max: s.max, prompt: s.prompt, key: s.as };
   }
   const pd = ui.match!.s.pending!;
-  return { options: pd.options, min: pd.min, max: pd.max, prompt: pd.prompt, key: '$' };
+  return { options: pd.options, min: pd.min, max: pd.max, prompt: pd.prompt, key: '$', divide: pd.kind === 'divide' };
 }
 
 /** Why can't this card be used? The engine's explanations for every action. */
@@ -334,6 +336,7 @@ export const actions = {
     redraw();
   },
   choose(id: string) { toggle(id); },
+  undoPick() { const l = ui.sel?.picks.$; if (l?.length) { l.pop(); redraw(); } },
   confirm() {
     const m = ui.match!;
     const sel = ui.sel!;

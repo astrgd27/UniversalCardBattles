@@ -30,7 +30,7 @@ test('arcane-duel validates; new constructs are checked', () => {
   const bad = structuredClone(def);
   bad.cards.find((c) => c.id === 'wither')!.effects = [['modify', '$t', { layer: 'nope', mods: [] }]];
   bad.cards.find((c) => c.id === 'mirror-sentinel')!.replacements![0].replace = 'explode';
-  bad.cards.find((c) => c.id === 'banner-bearer')!.statics![0].mods[0].stat = 'speed';
+  bad.cards.find((c) => c.id === 'banner-bearer')!.statics![0].mods![0].stat = 'speed';
   const errs = validateModule(bad).join('\n');
   assert.match(errs, /modify needs a layer/);
   assert.match(errs, /cannot replace "explode"/);

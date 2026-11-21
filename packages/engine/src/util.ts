@@ -1,3 +1,4 @@
+import { defNow } from './identity.ts';
 import type { ActionDef, ActivatedDef, Ctx, Limit, Mask, Mod, Obj, PhaseDef, Player, SlotPos, State, Win } from './types.ts';
 
 export class EngineError extends Error {}
@@ -64,7 +65,7 @@ export function actionDef(m: Mod, s: State, name: string, src: string | null): A
   const o = src ? s.objects[src] : undefined;
   if (!a?.activated || !o) return undefined;
   const i = Number(name.slice(h + 1));
-  const ab = ((m.card.get(o.card) as any)?.[a.activated] as ActivatedDef[] | undefined)?.[i];
+  const ab = ((defNow(m, s, o) as any)?.[a.activated] as ActivatedDef[] | undefined)?.[i];
   if (!ab || !Number.isInteger(i)) return undefined;
   const cat = <T>(x?: T[], y?: T[]) => [...(x ?? []), ...(y ?? [])];
   return {

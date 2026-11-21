@@ -27,5 +27,6 @@ export function compileModule(def: ModuleDef): Mod {
   return {
     ...def, card: new Map(def.cards.map((c) => [c.id, c])), zone: new Map(def.rules.zones.map((z) => [z.id, z])),
     hash: hash(JSON.stringify([def.rules, def.cards])),
+    idStatics: [...(def.rules.statics ?? []), ...def.cards.flatMap((c) => c.statics ?? [])].some((st) => !!st.identity),
   };
 }

@@ -2,6 +2,7 @@
 import type { Ability, Ctx, Effect, EffectList, Frame, GEvent, Mod, Obj, Replacement, SlotDef, State } from './types.ts';
 import { ev, payPlan, scriptCtx } from './expr.ts';
 import { rawVal, tsOf } from './layers.ts';
+import { cardNow, defNow } from './identity.ts';
 import { randInt, sample, shuffle } from './rng.ts';
 import {
   CostError, EngineError, actionDef, activeId, baseCtx, freeSlots, list, masks, num, objViewers, one, player, slotAccepts, slotsOf, topWin,
@@ -11,7 +12,7 @@ import {
 export const EFFECT_OPS = new Set([
   'draw', 'move', 'shuffle', 'set', 'inc', 'damage', 'destroy', 'lose', 'win', 'if', 'each', 'let', 'choose', 'run',
   'endPhase', 'emit', 'log', 'counter', 'modify', 'link', 'unlink', 'call', 'commit', 'random', 'flip', 'create', 'gotoPhase',
-  'openWindow', 'closeWindow', 'winSet', 'pay', 'gain', 'empty', 'setSlot', 'control',
+  'openWindow', 'closeWindow', 'winSet', 'pay', 'gain', 'empty', 'setSlot', 'control', 'become', 'divide',
 ]);
 const MAX_WINDOWS = 8;
 
@@ -42,6 +43,7 @@ function collectTriggers(m: Mod, s: State, e: GEvent) {
     if (ab.limit) s.uses[lk] = (s.uses[lk] ?? 0) + 1;
     s.triggers.push({
       id: `t${e.seq}.${k++}`, ref, ctrl, ctx, label: `${name}: ${ab.text ?? ab.on}`, stack: ab.stack ?? !rule, speed: ab.speed ?? 1,
+      ...(ab.optional ? { optional: true } : {}), ...(ab.last ? { last: true, seq: e.seq } : {}),
     });
   };
   const act = activeId(s);
@@ -55,12 +57,12 @@ function collectTriggers(m: Mod, s: State, e: GEvent) {
     const zid = zoneIdOf(key);
     for (const id of s.zones[key]) {
       const o = s.objects[id];
-      const d = m.card.get(o.card);
       if (o.fd) continue;
+      const d = defNow(m, s, o);
       d?.abilities?.forEach((ab, i) => {
         if (LKI_ON[ab.on] || !isActive(m, zid, ab.zones)) return;
         if (ab.on === 'enter' ? !(e.type === 'moved' && e.newObj === id) : ab.on !== e.type) return;
-        queue(`card:${o.card}:${i}`, ab, { ...baseCtx(s, o.controller), $self: id, $e: e }, o.controller, d.name, false);
+        queue(`card:${d.id}:${i}`, ab, { ...baseCtx(s, o.controller), $self: id, $e: e }, o.controller, d.name, false);
       });
     }
   }
@@ -96,8 +98,8 @@ function replacementsFor(m: Mod, s: State, pe: any): Cand[] {
     const zid = zoneIdOf(key);
     for (const id of s.zones[key]) {
       const o = s.objects[id];
-      const d = m.card.get(o.card);
       if (o.fd) continue;
+      const d = defNow(m, s, o);
       d?.replacements?.forEach((r, i) => {
         if (isActive(m, zid, r.zones)) consider(`${id}:${i}`, tsOf(id), r, { ...baseCtx(s, o.controller), $self: id }, d.name);
       });
@@ -307,7 +309,7 @@ export function apply(m: Mod, s: State, eff: Effect, f: Frame) {
     case 'run': {
       const o = s.objects[one(A(1))];
       if (!o) return;
-      push(s, m.card.get(o.card)?.[eff[2] as string] as EffectList | undefined, { ...ctx, ...baseCtx(s, o.controller), $self: o.id });
+      push(s, defNow(m, s, o)?.[eff[2] as string] as EffectList | undefined, { ...ctx, ...baseCtx(s, o.controller), $self: o.id });
       return;
     }
     case 'endPhase': s.phaseState = 'ended'; return;
@@ -499,6 +501,36 @@ export function apply(m: Mod, s: State, eff: Effect, f: Frame) {
       }
       o.slot = to;
       emit(m, s, { type: 'slotted', obj: o.id, slot: to, from, ...masks([viewers(m, o.zone), ['obj']]) });
+      return;
+    }
+    case 'become': {
+      // Identity change: {copy: card or object} and/or {blank: true} (loses all abilities); until "turn" or permanent.
+      const o = (eff[2] ?? {}) as any;
+      const targets = list(A(1)).filter((t) => s.objects[t]);
+      if (!targets.length) return;
+      const src = o.copy !== undefined ? one(ev(m, s, o.copy, ctx)) : undefined;
+      const copy = src == null ? undefined : s.objects[src] ? cardNow(m, s, s.objects[src]) : String(src);
+      if (copy !== undefined && !m.card.has(copy)) throw new EngineError(`become: unknown card ${copy}`);
+      if (copy === undefined && !o.blank) return;
+      const ts = s.nextId++;
+      s.idfx.push({ id: `b${ts}`, ts, targets, ...(copy ? { copy } : {}), ...(o.blank ? { blank: true } : {}), until: o.until ?? null });
+      const hidden = targets.some((t) => objViewers(m, s.objects[t]) !== null);
+      emit(m, s, { type: 'became', targets, copy: copy ?? null, blank: !!o.blank, ...masks([hidden ? [] : null, ['targets']]) });
+      return;
+    }
+    case 'divide': {
+      // Split an amount among recipients: binds {recipient: points}. Players decide unless there is one way to do it.
+      const o = eff[1] as any;
+      const among = uniq(list(ev(m, s, o.among, ctx)).map(String));
+      const amount = num(ev(m, s, o.amount, ctx));
+      const each = num(ev(m, s, o.each ?? 0, ctx));
+      if (amount <= 0 || !among.length) { ctx[o.as] = {}; return; }
+      if (each * among.length > amount) throw new EngineError(`divide: ${amount} cannot give ${each} to each of ${among.length}`);
+      if (among.length === 1) { ctx[o.as] = { [among[0]]: amount }; return; }
+      s.pending = {
+        id: `d${s.nextDecision++}`, kind: 'divide', player: one(ev(m, s, o.who ?? '$me', ctx)), options: among, min: amount, max: amount, as: o.as,
+        single: false, prompt: o.prompt ?? `Divide ${amount}`, ...(each ? { each } : {}),
+      };
       return;
     }
     case 'control': {

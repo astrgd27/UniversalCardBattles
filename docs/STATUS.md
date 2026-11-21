@@ -210,10 +210,15 @@ A survey of about 30 published TCG rulebooks (`docs/COVERAGE.md`, second table) 
   - **Engine-wide targeting rules** (`rules.targeting.deny`), checked when options are offered and again at resolution.
   - **Gain control** (`control`): same object id, the new controller's side, a free slot.
   - **Teams** (`rules.teams`, `allies`/`enemies`, `get p seat`): Bastion Clash plays 2–4 as 2v2.
-- 92 tests (10 in `gaps.test.ts`); golden hashes for the 7 earlier games are unchanged; e2e covers the slot board.
+- Third tier (every gap from the survey is now closed):
+  - **Identity** (`become`, identity statics, `src/engine/identity.ts`): copies and "loses all abilities" are read wherever a card definition is: triggers, replacements, statics, keywords, stats and activated abilities.
+  - **Divide decisions** (`divide`): split damage among recipients; the AIs propose all-on-one and random spreads, and the table has tap-to-assign with Undo.
+  - **Timing**: `optional` triggers, `last` triggers that can miss their timing, and `$last` for "right after X" responses.
+  - **Grid layers** (`grid.layers`, `layer`).
+- 96 tests (14 in `gaps.test.ts`, including an inline lab module); golden hashes for the 7 earlier games are unchanged.
 
 ## Possible next steps
-- The remaining single-game gaps from the survey: copy and "loses all abilities" layers, combat damage splitting as a decision, event-anchored responses ("missing the timing"), layered grids.
+- Campaigns for the other reference games, IndexedDB saves and cloud sync, an art pipeline, online multiplayer.
 - Campaigns for the other reference games.
 - IndexedDB storage (localStorage today) and cloud sync of backups.
 - Card art pipeline: an asset browser in the gallery, using art in reference games.
