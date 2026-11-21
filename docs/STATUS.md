@@ -29,7 +29,7 @@ Known: random-vs-random, Ember Rush beats Stone Ward about 95% of the time. Mirr
 - 26 tests. Replay, restore, hidden-info and invariant suites run on both games.
 
 Balance (random-vs-random):
-- Arcane Duel: Storm Circle wins about 60–65% (about 45% when it goes second). 59% of wins come from charge.
+- Arcane Duel: Storm Circle wins about 60–65% (about 55% when it goes second). 59% of wins come from charge.
 - Spark Duel: Ember Rush beats Stone Ward about 95% of the time. Revisit both with a heuristic AI (M6).
 
 Known simplifications:
