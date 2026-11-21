@@ -1,0 +1,8 @@
+{
+  "reef-school": {
+    "deck": ["reef-pup","reef-pup","reef-hunter","reef-hunter","reef-leviathan","reef-leviathan","current-rider","current-rider","shoal-scout","shoal-scout","tidal-strike","tidal-strike","riptide","riptide","ebb","ebb"],
+    "tides": ["tide-stone","tide-stone","tide-stone","tide-stone","tide-stone","tide-stone","deep-pearl","deep-pearl"]},
+  "kelp-bastion": {
+    "deck": ["kelp-guard","kelp-guard","coral-wall","coral-wall","brine-witch","brine-witch","reef-pup","reef-pup","reef-hunter","reef-hunter","undertow","undertow","tidal-strike","tidal-strike","ebb","ebb"],
+    "tides": ["tide-stone","tide-stone","tide-stone","tide-stone","tide-stone","tide-stone","tide-stone","deep-pearl"]}
+}

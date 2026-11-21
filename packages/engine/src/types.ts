@@ -22,9 +22,10 @@ export interface ZoneDef {
   abilities?: boolean; // card abilities function here by default
 }
 /** recheck at resolution: true = target must still be in `from`; 'exists' = must still exist; false = cost choice. */
-export interface SlotDef { as: string; from: Expr; min?: number; max?: number; prompt?: string; recheck?: boolean | 'exists' }
+export interface SlotDef { as: string; from: Expr; min?: Expr; max?: Expr; prompt?: string; recheck?: boolean | 'exists' }
 export interface Req { if: Expr; why: string }
-export interface Timing { mode: 'immediate' | 'stack' | 'chain'; retain?: boolean; minResponse?: number }
+/** alternate: players take turns acting (one action each), all passing in a row ends the phase; `first` picks who starts. */
+export interface Timing { mode: 'immediate' | 'stack' | 'chain' | 'alternate'; retain?: boolean; minResponse?: number; first?: Expr }
 export interface ActionDef {
   label?: string;
   phases?: string[];
@@ -33,6 +34,7 @@ export interface ActionDef {
   source?: Expr;
   req?: Req[];
   targets?: SlotDef[];
+  check?: Req[]; // evaluated after targets are chosen (bound in ctx)
   cardTargets?: boolean;
   cost?: EffectList;
   do: EffectList;
@@ -66,7 +68,9 @@ export interface Rules {
   deckZone: string;
   handZone: string;
   graveZone: string;
-  format: { deckMin: number; deckMax: number; maxCopies: number };
+  format: { deckMin: number; deckMax: number; maxCopies: number; zones?: { zone: string; min: number; max: number; types?: string[] }[] };
+  gameVars?: Record<string, number>; // read/written via the "game" ref
+  sharedDecks?: Record<string, string[]>; // shared zone -> card ids created at match start (owner "shared")
   damage?: { player: string; object: string };
   turnLimit?: number;
   timing?: Timing;
@@ -82,7 +86,7 @@ export interface Rules {
   functions?: Record<string, FunctionDef>; // pure expression scripts: ["call", name, ...args]
   procedures?: Record<string, ProcedureDef>; // effect scripts: ["call", name, ...args]
 }
-export interface ModuleDef { manifest: Manifest; rules: Rules; cards: CardDef[]; decks?: Record<string, string[]> }
+export interface ModuleDef { manifest: Manifest; rules: Rules; cards: CardDef[]; decks?: Record<string, Deck> }
 export interface Mod extends ModuleDef { card: Map<string, CardDef>; zone: Map<string, ZoneDef>; hash: string }
 
 export interface Obj {
@@ -94,6 +98,7 @@ export interface Obj {
   zone: string; // zone key "p0:hand" | "shared:x"
   vars: Record<string, number>;
   rel?: Record<string, string>; // relationships (attachedTo, ...), cleared on zone change
+  fd?: boolean; // face down: identity known only to the controller; abilities inactive
 }
 export interface Player { id: string; vars: Record<string, number>; lost: boolean }
 export interface Frame { list: EffectList; i: number; ctx: Ctx }
@@ -110,6 +115,7 @@ export interface StackItem {
   slots: SlotDef[];
   speed: number;
   countered?: EffectList;
+  action?: string;
 }
 export interface TempEffect { id: string; ts: number; layer: string; targets: string[]; mods: { op: string; stat?: string; kw?: string; value?: any }[]; until: 'turn' | null }
 export interface Pending {
@@ -123,6 +129,7 @@ export interface Pending {
   single: boolean;
   prompt: string;
   labels?: Record<string, string>;
+  secret?: boolean; // the selection is hidden from other players
 }
 /** masks: [viewers, fields]: players not in viewers get those fields deleted. */
 export type Mask = [string[], string[]];
@@ -132,7 +139,9 @@ export type Cmd =
   | ({ t: 'act'; p: string } & ActionCmd)
   | { t: 'dec'; p: string; id: string; sel: string[] };
 export interface Result { winners: string[]; reason: string }
-export interface MatchOpts { decks: string[][]; seed: number }
+/** A deck is a card list (main deck) or sections by zone, e.g. {deck: [...], extra: [...]}. */
+export type Deck = string[] | Record<string, string[]>;
+export interface MatchOpts { decks: Deck[]; seed: number }
 export interface State {
   moduleId: string;
   version: string;
@@ -140,6 +149,7 @@ export interface State {
   opts: MatchOpts;
   rng: number[];
   players: Player[];
+  vars: Record<string, number>; // game vars
   objects: Record<string, Obj>;
   zones: Record<string, string[]>;
   turn: { n: number; active: number; phase: number };

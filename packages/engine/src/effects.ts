@@ -1,16 +1,16 @@
 // Effect primitives, the replacement pipeline, event emission and trigger detection. See docs/DSL.md.
-import type { Ability, Ctx, Effect, EffectList, Frame, GEvent, Mod, Replacement, SlotDef, State } from './types.ts';
+import type { Ability, Ctx, Effect, EffectList, Frame, GEvent, Mod, Obj, Replacement, SlotDef, State } from './types.ts';
 import { ev, scriptCtx } from './expr.ts';
 import { rawVal, tsOf } from './layers.ts';
-import { shuffle } from './rng.ts';
+import { randInt, sample, shuffle } from './rng.ts';
 import {
-  CostError, EngineError, activeId, baseCtx, list, masks, num, one, player, unionViewers, uniq, viewers, zkey, zoneIdOf,
+  CostError, EngineError, activeId, baseCtx, list, masks, num, objViewers, one, player, unionViewers, uniq, viewers, zkey, zoneIdOf,
   zoneOwnerOf,
 } from './util.ts';
 
 export const EFFECT_OPS = new Set([
   'draw', 'move', 'shuffle', 'set', 'inc', 'damage', 'destroy', 'lose', 'win', 'if', 'each', 'let', 'choose', 'run',
-  'endPhase', 'emit', 'log', 'counter', 'modify', 'link', 'unlink', 'call',
+  'endPhase', 'emit', 'log', 'counter', 'modify', 'link', 'unlink', 'call', 'commit', 'random', 'flip',
 ]);
 
 export function emit(m: Mod, s: State, e: { type: string; [k: string]: any }): GEvent {
@@ -46,6 +46,7 @@ function collectTriggers(m: Mod, s: State, e: GEvent) {
     for (const id of s.zones[key]) {
       const o = s.objects[id];
       const d = m.card.get(o.card);
+      if (o.fd) continue;
       d?.abilities?.forEach((ab, i) => {
         if (LKI_ON[ab.on] || !isActive(m, zid, ab.zones)) return;
         if (ab.on === 'enter' ? !(e.type === 'moved' && e.newObj === id) : ab.on !== e.type) return;
@@ -54,7 +55,7 @@ function collectTriggers(m: Mod, s: State, e: GEvent) {
     }
   }
   // Leave-play abilities use last-known information carried on the event.
-  if (e.card && (e.type === 'moved' || e.type === 'destroyed')) {
+  if (e.card && !e.faceDown && (e.type === 'moved' || e.type === 'destroyed')) {
     const d = m.card.get(e.card);
     d?.abilities?.forEach((ab, i) => {
       if (LKI_ON[ab.on] !== e.type || !isActive(m, e.from, ab.zones)) return;
@@ -85,6 +86,7 @@ function replacementsFor(m: Mod, s: State, pe: any): Cand[] {
     for (const id of s.zones[key]) {
       const o = s.objects[id];
       const d = m.card.get(o.card);
+      if (o.fd) continue;
       d?.replacements?.forEach((r, i) => {
         if (isActive(m, zid, r.zones)) consider(`${id}:${i}`, tsOf(id), r, { ...baseCtx(s, o.controller), $self: id }, d.name);
       });
@@ -123,12 +125,16 @@ function commit(m: Mod, s: State, ctx: Ctx, pe: any): any {
       return propose(m, s, ctx, { type: 'move', obj: deck[0], to: R.handZone, player: pe.player, cause: 'draw' });
     }
     case 'move':
-      return s.objects[pe.obj] ? moveObj(m, s, pe.obj, pe.to, pe.player ?? s.objects[pe.obj].owner, pe.pos) : null;
+      return s.objects[pe.obj] ? moveObj(m, s, pe.obj, pe.to, pe.player ?? s.objects[pe.obj].owner, pe.pos, pe.faceDown) : null;
     case 'destroy': {
       const o = s.objects[pe.obj];
       if (!o) return null;
       const nid = propose(m, s, ctx, { type: 'move', obj: o.id, to: R.graveZone, player: o.owner, cause: 'destroy' });
-      emit(m, s, { type: 'destroyed', obj: o.id, newObj: nid, card: o.card, owner: o.owner, controller: o.controller, from: zoneIdOf(o.zone) });
+      const nz = nid ? s.objects[nid]?.zone : undefined;
+      emit(m, s, {
+        type: 'destroyed', obj: o.id, newObj: nid, card: o.card, owner: o.owner, controller: o.controller, from: zoneIdOf(o.zone),
+        ...masks([viewers(m, o.zone), ['obj']], [nz ? viewers(m, nz) : null, ['newObj']], [unionViewers(objViewers(m, o), nz ? viewers(m, nz) : null), ['card']]),
+      });
       return nid;
     }
     case 'damage': {
@@ -139,7 +145,9 @@ function commit(m: Mod, s: State, ctx: Ctx, pe: any): any {
       const cfg = R.damage ?? { player: 'life', object: 'dmg' };
       const v = isP ? cfg.player : cfg.object;
       setVar(m, s, t, v, rawVal(m, s, t, v) + (isP ? -amt : amt));
-      emit(m, s, { type: 'damage', target: t, amount: amt, source: pe.source ?? null });
+      const src = pe.source ?? null;
+      const sv = src && s.objects[src] ? objViewers(m, s.objects[src]) : null;
+      emit(m, s, { type: 'damage', target: t, amount: amt, source: src, ...masks([isP ? null : viewers(m, s.objects[t].zone), ['target']], [sv, ['source']]) });
       return amt;
     }
     case 'lose': {
@@ -154,7 +162,7 @@ function commit(m: Mod, s: State, ctx: Ctx, pe: any): any {
 }
 
 // ---------- primitives ----------
-export function moveObj(m: Mod, s: State, id: string, zone: string, toPlayer: string, pos?: string): string {
+export function moveObj(m: Mod, s: State, id: string, zone: string, toPlayer: string, pos?: string, faceDown?: boolean): string {
   const o = s.objects[id];
   const fromKey = o.zone;
   const toKey = zkey(m, toPlayer, zone);
@@ -162,19 +170,23 @@ export function moveObj(m: Mod, s: State, id: string, zone: string, toPlayer: st
   from.splice(from.indexOf(id), 1);
   delete s.objects[id];
   const nid = `o${s.nextId++}`;
-  const owner = zoneOwnerOf(toKey);
-  s.objects[nid] = {
-    id: nid, inst: o.inst, card: o.card, owner: o.owner,
-    controller: owner === 'shared' ? o.owner : owner, zone: toKey, vars: { ...(m.rules.objectVars ?? {}) },
-  };
+  const zoneOwner = zoneOwnerOf(toKey);
+  // Cards from a shared pool (owner "shared") become the property of whoever takes them.
+  const owner = o.owner === 'shared' && zoneOwner !== 'shared' ? zoneOwner : o.owner;
+  const controller = zoneOwner === 'shared' ? owner : zoneOwner;
+  const no = { id: nid, inst: o.inst, card: o.card, owner, controller, zone: toKey, vars: { ...(m.rules.objectVars ?? {}) } } as Obj;
+  if (faceDown) no.fd = true;
+  s.objects[nid] = no;
   if (pos === 'top') s.zones[toKey].unshift(nid);
   else s.zones[toKey].push(nid);
-  const vf = viewers(m, fromKey);
-  const vt = viewers(m, toKey);
+  const idFrom = viewers(m, fromKey);
+  const idTo = viewers(m, toKey);
+  const known = unionViewers(objViewers(m, o), objViewers(m, no));
   emit(m, s, {
-    type: 'moved', obj: id, newObj: nid, card: o.card, owner: o.owner, controller: o.controller,
-    from: zoneIdOf(fromKey), to: zone, fromPlayer: zoneOwnerOf(fromKey), toPlayer: owner,
-    ...masks([vf, ['obj']], [vt, ['newObj']], [unionViewers(vf, vt), ['card']]),
+    type: 'moved', obj: id, newObj: nid, card: o.card, owner, controller: o.controller,
+    from: zoneIdOf(fromKey), to: zone, fromPlayer: zoneOwnerOf(fromKey), toPlayer: zoneOwner,
+    ...(o.fd ? { faceDown: true } : {}), ...(faceDown ? { toFaceDown: true } : {}),
+    ...masks([idFrom, ['obj']], [idTo, ['newObj']], [known, ['card']]),
   });
   return nid;
 }
@@ -182,7 +194,7 @@ export function moveObj(m: Mod, s: State, id: string, zone: string, toPlayer: st
 export function setVar(m: Mod, s: State, ref: any, name: string, val: number) {
   const p = player(s, ref);
   const o = p ? null : s.objects[ref];
-  const vars = p ? p.vars : o?.vars;
+  const vars = ref === 'game' ? s.vars : p ? p.vars : o?.vars;
   if (!vars) return;
   const old = rawVal(m, s, ref, name);
   if (old === val) return;
@@ -200,7 +212,7 @@ function choose(m: Mod, s: State, o: any, ctx: Ctx) {
   if (min === options.length) { ctx[o.as] = single ? options[0] : options; return; } // forced: no real choice
   s.pending = {
     id: `d${s.nextDecision++}`, kind: 'choose', player: one(ev(m, s, o.who ?? '$me', ctx)), options, min, max, as: o.as,
-    single, prompt: o.prompt ?? 'Choose',
+    single, prompt: o.prompt ?? 'Choose', ...(o.secret ? { secret: true } : {}),
   };
 }
 
@@ -212,7 +224,7 @@ function stackAction(m: Mod, s: State, eff: Effect, ctx: Ctx) {
   const id = `k${s.nextId++}`;
   s.stack.push({
     id, kind: 'action', ctrl: ctx.$me, label: card ? m.card.get(card)!.name : (a.label ?? (eff[1] as string)), card, source: src,
-    list: a.do, ctx: { ...ctx }, slots: eff[2] as SlotDef[], speed: a.speed ?? 1, countered: a.countered,
+    list: a.do, ctx: { ...ctx }, slots: eff[2] as SlotDef[], speed: a.speed ?? 1, countered: a.countered, action: eff[1] as string,
   });
   emit(m, s, { type: 'stacked', item: id, kind: 'action', ctrl: ctx.$me, card });
 }
@@ -235,7 +247,7 @@ export function apply(m: Mod, s: State, eff: Effect, f: Frame) {
       const out: (string | null)[] = list(ids).map((id: string) => {
         if (!s.objects[id]) return null;
         const to = opts.player !== undefined ? one(ev(m, s, opts.player, ctx)) : s.objects[id].owner;
-        return propose(m, s, ctx, { type: 'move', obj: id, to: zone, player: to, pos: opts.pos });
+        return propose(m, s, ctx, { type: 'move', obj: id, to: zone, player: to, pos: opts.pos, faceDown: opts.faceDown === true });
       });
       if (opts.as) ctx[opts.as] = Array.isArray(ids) ? out.filter(Boolean) : (out[0] ?? null);
       return;
@@ -299,7 +311,8 @@ export function apply(m: Mod, s: State, eff: Effect, f: Frame) {
       const mods = (spec.mods ?? []).map((md: any) => ({ ...md, value: md.value === undefined ? undefined : ev(m, s, md.value, ctx) }));
       const ts = s.nextId++;
       s.effects.push({ id: `c${ts}`, ts, layer: spec.layer, targets, mods, until: spec.until ?? null });
-      emit(m, s, { type: 'modified', id: `c${ts}`, targets });
+      const hidden = targets.some((t) => objViewers(m, s.objects[t]) !== null);
+      emit(m, s, { type: 'modified', id: `c${ts}`, targets, ...masks([hidden ? [] : null, ['targets']]) });
       return;
     }
     case 'link':
@@ -320,6 +333,55 @@ export function apply(m: Mod, s: State, eff: Effect, f: Frame) {
       const c = scriptCtx(ctx, pr.params, eff.slice(2).map((_, i) => A(i + 2)));
       if (ctx.$$applied) c.$$applied = ctx.$$applied;
       push(s, pr.do, c);
+      return;
+    }
+    case 'commit': {
+      // Simultaneous secret choice, expanded in place: one secret `choose` per player, then a public reveal.
+      const o = eff[1] as any;
+      const who: string[] = list(ev(m, s, o.who ?? ['players'], ctx));
+      const key = `$$commit${f.i}`;
+      const gen: Effect[] = [];
+      for (const p of who) gen.push(['let', '$p', ['lit', p]], ['choose', { ...o, who: ['lit', p], as: `${key}_${p}`, secret: true }]);
+      gen.push(['@reveal', o.as, key, who, o.reveal !== false]);
+      f.list = [...f.list.slice(0, f.i), ...gen, ...f.list.slice(f.i)];
+      return;
+    }
+    case '@reveal': {
+      const picks: Record<string, any> = {};
+      for (const p of eff[3] as string[]) {
+        const k = `${eff[2]}_${p}`;
+        picks[p] = ctx[k] ?? null;
+        delete ctx[k];
+      }
+      ctx[eff[1] as string] = picks;
+      if (eff[4]) emit(m, s, { type: 'revealed', picks });
+      return;
+    }
+    case 'random': {
+      const o = eff[1] as any;
+      let v: any;
+      if (o.from !== undefined) {
+        const n = o.n === undefined ? 1 : num(ev(m, s, o.n, ctx));
+        const picked = sample(s.rng, list(ev(m, s, o.from, ctx)), n);
+        v = o.n === undefined ? (picked[0] ?? null) : picked;
+      } else {
+        const lo = num(ev(m, s, o.min ?? 1, ctx));
+        v = lo + randInt(s.rng, Math.max(1, num(ev(m, s, o.max, ctx)) - lo + 1));
+      }
+      ctx[o.as] = v;
+      const secret = list(v).some((x) => s.objects[x] && objViewers(m, s.objects[x]) !== null);
+      emit(m, s, { type: 'random', value: v, ...masks([secret ? [] : null, ['value']]) });
+      return;
+    }
+    case 'flip': {
+      const up = eff.length > 2 ? !!A(2) : true;
+      each(1, (id) => {
+        const o = s.objects[id];
+        if (!o || !!o.fd === !up) return;
+        if (up) delete o.fd;
+        else o.fd = true;
+        emit(m, s, { type: 'flipped', obj: id, up, ...(up ? { card: o.card } : {}) });
+      });
       return;
     }
     case '@stack': stackAction(m, s, eff, ctx); return;

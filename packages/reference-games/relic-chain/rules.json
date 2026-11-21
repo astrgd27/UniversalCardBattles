@@ -1,0 +1,113 @@
+{
+  "players": {"min": 2, "max": 2},
+  "playerVars": {"life": 16, "summons": 0},
+  "objectVars": {"ready": 0, "pos": 1, "setTurn": 0, "moved": 0},
+  "stats": ["atk", "def"],
+  "layers": ["add"],
+  "timing": {"mode": "chain", "minResponse": 2},
+  "zones": [
+    {"id": "deck", "vis": "hidden", "ordered": true},
+    {"id": "extra", "vis": "owner"},
+    {"id": "hand", "vis": "owner"},
+    {"id": "board", "vis": "public", "abilities": true},
+    {"id": "traps", "vis": "public"},
+    {"id": "chain", "vis": "public"},
+    {"id": "grave", "vis": "public", "ordered": true}
+  ],
+  "deckZone": "deck", "handZone": "hand", "graveZone": "grave",
+  "format": {"deckMin": 15, "deckMax": 15, "maxCopies": 2, "zones": [
+    {"zone": "deck", "min": 15, "max": 15, "types": ["monster", "spell", "trap"]},
+    {"zone": "extra", "min": 0, "max": 4, "types": ["fusion"]}]},
+  "turnLimit": 60,
+  "setup": [["each", ["players"], "$p", [["shuffle", "$p", "deck"], ["draw", "$p", 5]]]],
+  "procedures": {
+    "battle": {"params": ["$a", "$t"], "do": [
+      ["if", ["isPlayer", "$t"], [["damage", "$t", ["get", "$a", "atk"], "$a"]], [
+        ["if", ["=", ["get", "$t", "pos"], 1], [
+          ["let", "$d", ["-", ["get", "$a", "atk"], ["get", "$t", "atk"]]],
+          ["if", [">", "$d", 0], [["damage", ["get", "$t", "controller"], "$d", "$a"], ["destroy", "$t"]]],
+          ["if", ["<", "$d", 0], [["damage", ["get", "$a", "controller"], ["neg", "$d"], "$t"], ["destroy", "$a"]]],
+          ["if", ["=", "$d", 0], [["destroy", ["list", "$a", "$t"]]]]
+        ], [
+          ["let", "$d", ["-", ["get", "$a", "atk"], ["get", "$t", "def"]]],
+          ["if", [">", "$d", 0], [["destroy", "$t"]]],
+          ["if", ["<", "$d", 0], [["damage", ["get", "$a", "controller"], ["neg", "$d"], "$t"]]]
+        ]]]]]}
+  },
+  "phases": [
+    {"id": "start", "auto": true, "do": [
+      ["set", "$active", "summons", 1],
+      ["each", ["cards", "$active", "board"], "$u", [["set", "$u", "ready", 1], ["set", "$u", "moved", 0]]],
+      ["if", ["!=", "$turn", 1], [["draw", "$active", 1]]]]},
+    {"id": "main"},
+    {"id": "end", "auto": true}
+  ],
+  "actions": {
+    "summon": {
+      "label": "Summon", "phases": ["main"], "speed": 1,
+      "source": ["filter", ["cards", "$me", "hand"], ["=", ["get", "$it", "type"], "monster"]],
+      "req": [{"if": [">", ["get", "$me", "summons"], 0], "why": "You already summoned this turn."},
+              {"if": ["<", ["count", ["cards", "$me", "board"]], 5], "why": "Your board is full (5 monsters)."}],
+      "targets": [{"as": "$pos", "prompt": "position", "recheck": false, "from": ["list", "attack", "defense"]}],
+      "cost": [["inc", "$me", "summons", -1], ["move", "$self", "chain", {"as": "$self"}]],
+      "do": [["move", "$self", "board", {"as": "$self"}], ["set", "$self", "pos", ["?", ["=", "$pos", "attack"], 1, 0]]],
+      "countered": [["move", "$self", "grave"]]
+    },
+    "fuse": {
+      "label": "Fuse", "phases": ["main"], "speed": 1,
+      "source": ["filter", ["cards", "$me", "extra"], ["=", ["get", "$it", "type"], "fusion"]],
+      "req": [{"if": [">", ["get", "$me", "summons"], 0], "why": "You already summoned this turn."}],
+      "targets": [{"as": "$mats", "prompt": "fusion materials", "recheck": false,
+        "min": ["count", ["get", "$self", "materials"]], "max": ["count", ["get", "$self", "materials"]],
+        "from": ["filter", ["concat", ["cards", "$me", "hand"], ["cards", "$me", "board"]], ["=", ["get", "$it", "type"], "monster"]]}],
+      "check": [{"if": ["same", ["sortBy", ["map", "$mats", ["get", "$it", "card"]], "$it"], ["sortBy", ["get", "$self", "materials"], "$it"]],
+        "why": "Those cards don't match the fusion recipe."}],
+      "cost": [["inc", "$me", "summons", -1], ["move", "$mats", "grave"], ["move", "$self", "chain", {"as": "$self"}]],
+      "do": [["move", "$self", "board", {"as": "$self"}], ["set", "$self", "pos", 1]],
+      "countered": [["move", "$self", "extra"]]
+    },
+    "set": {
+      "label": "Set a trap face down", "phases": ["main"], "speed": 1, "stack": false,
+      "source": ["filter", ["cards", "$me", "hand"], ["=", ["get", "$it", "type"], "trap"]],
+      "req": [{"if": ["<", ["count", ["cards", "$me", "traps"]], 3], "why": "You can have at most 3 set traps."}],
+      "do": [["move", "$self", "traps", {"faceDown": true, "as": "$self"}], ["set", "$self", "setTurn", "$turn"]]
+    },
+    "spring": {
+      "label": "Spring trap", "phases": ["main"], "speed": 2, "cardTargets": true,
+      "source": ["filter", ["cards", "$me", "traps"], ["and", ["get", "$it", "faceDown"], ["<", ["get", "$it", "setTurn"], "$turn"], ["not", ["has", "$it", "swift"]]]],
+      "cost": [["flip", "$self"], ["move", "$self", "chain", {"as": "$self"}]],
+      "do": [["run", "$self", "effects"], ["if", ["=", ["get", "$self", "zone"], "chain"], [["move", "$self", "grave"]]]],
+      "countered": [["move", "$self", "grave"]]
+    },
+    "counter": {
+      "label": "Spring counter-trap", "phases": ["main"], "speed": 3, "cardTargets": true,
+      "source": ["filter", ["cards", "$me", "traps"], ["and", ["get", "$it", "faceDown"], ["<", ["get", "$it", "setTurn"], "$turn"], ["has", "$it", "swift"]]],
+      "cost": [["flip", "$self"], ["move", "$self", "chain", {"as": "$self"}]],
+      "do": [["run", "$self", "effects"], ["if", ["=", ["get", "$self", "zone"], "chain"], [["move", "$self", "grave"]]]],
+      "countered": [["move", "$self", "grave"]]
+    },
+    "cast": {
+      "label": "Cast", "phases": ["main"], "speed": 1, "cardTargets": true,
+      "source": ["filter", ["cards", "$me", "hand"], ["=", ["get", "$it", "type"], "spell"]],
+      "cost": [["move", "$self", "chain", {"as": "$self"}]],
+      "do": [["run", "$self", "effects"], ["if", ["=", ["get", "$self", "zone"], "chain"], [["move", "$self", "grave"]]]],
+      "countered": [["move", "$self", "grave"]]
+    },
+    "reposition": {
+      "label": "Change position", "phases": ["main"], "speed": 1, "stack": false,
+      "source": ["filter", ["cards", "$me", "board"], ["=", ["get", "$it", "moved"], 0]],
+      "do": [["set", "$self", "pos", ["-", 1, ["get", "$self", "pos"]]], ["set", "$self", "moved", 1]]
+    },
+    "attack": {
+      "label": "Attack", "phases": ["main"], "speed": 1,
+      "source": ["filter", ["cards", "$me", "board"], ["and", ["=", ["get", "$it", "ready"], 1], ["=", ["get", "$it", "pos"], 1]]],
+      "req": [{"if": ["!=", "$turn", 1], "why": "No attacks on the first turn."}],
+      "targets": [{"as": "$t", "prompt": "attack target", "recheck": "exists",
+        "from": ["?", ["=", ["count", ["cards", "$opp", "board"]], 0], ["list", "$opp"], ["cards", "$opp", "board"]]}],
+      "cost": [["set", "$self", "ready", 0], ["set", "$self", "moved", 1]],
+      "do": [["if", ["isObj", "$self"], [["call", "battle", "$self", "$t"]]]]
+    }
+  },
+  "triggers": [{"on": "drawFail", "do": [["lose", "$e.player"]]}],
+  "stateChecks": [["each", ["players"], "$p", [["if", ["<=", ["get", "$p", "life"], 0], [["lose", "$p"]]]]]]
+}

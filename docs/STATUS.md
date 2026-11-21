@@ -48,24 +48,46 @@ Known simplifications:
 
 Deferred: save migrations (`saveMigrationVersion`); the affected player choosing replacement order.
 
-## Next: M4, compatibility
-Add the four remaining reference games (Tri-Lane, Relic Chain, Tidewardens, Ember Council) plus a regression suite. Each will likely need new engine primitives, so add them generically:
-- simultaneous sealed commitments
-- spatial lanes and adjacency
-- face-down objects
-- multiple decks per player
-- N-player voting
-- dice
+## Done: M4, compatibility
+- New generic primitives:
+  - `commit` (simultaneous secret choices, deferred reveal), secret `choose`
+  - face-down objects (`move faceDown`, `flip`)
+  - action `check` and expression slot min/max
+  - deck sections (`format.zones`), per-card `maxCopies`, `sharedDecks` with ownership transfer, game vars
+  - `alternate` timing with `first`, `random`, `$phase`, `at`/`keys`/`values`/`same`
+- Hidden-info masking now covers object ids in damage, destroyed, modified and action-target events, and stack sources in views.
+- Four new reference games:
+  - **Tri-Lane** (lanes, adjacency, secret deploys, alternating maneuvers, lane scoring)
+  - **Relic Chain** (chain timing, face-down traps, positions, extra deck fusion)
+  - **Tidewardens** (resource deck, life cards with surge, evolution stacks, pitch)
+  - **Ember Council** (3–4 players, shared market, die, council with initiative, weighted secret votes, elimination, renown)
+- Regression suite:
+  - replay, restore, hidden-info (N players, face-down) and termination run on all 6 games
+  - golden event hashes (`npm run -s golden` after an intended change)
+  - one interaction test per game
+  - 54 tests in total
+- Dev tool: `npm run -s events <game> <type-prefix...>` counts events over 50 random games.
+
+Balance under random play:
+- Tri-Lane is about 50/50.
+- Relic Chain: Blaze wins 73% as first player and 48% as second.
+- Tidewardens: Kelp Bastion wins about 70%.
+- Ember Council is about one third per seat.
+
+## Next: M5, browser UI
+- `apps/web` (Vite + TS, no framework or a light one), driven only by `observe` / `listActions` / `commitAction` / `submitDecision`.
+- Board laid out from zone metadata, card renderer, inspector, action log from `eventsFor`, legal-target highlighting, decision prompts (including secret commits and trigger order), explanation of disallowed actions, touch and iPad layout, dark/light.
+- Module picker over the six reference games. Hot-seat and vs-random-AI.
 
 ## Planned reference games (each one exercises mechanics the others lack)
 | Game | Milestone | Unique stressors |
 |---|---|---|
 | Spark Duel | M1 ✓ | baseline: immediate timing, single deck, numeric life, auto resource growth |
 | Arcane Duel | M2 ✓ | priority stack, replacement/prevention, layers/timestamps, attachments, counters, alt win |
-| Tri-Lane | M4 | 3 lanes with spatial adjacency and movement; simultaneous sealed commitments plus reveal; lane-control scoring victory |
-| Relic Chain | M4 | chain timing with reverse resolution; face-down set cards (traps); battle positions; extra deck with fusion recipes from multiple cards |
-| Tidewardens | M4 | separate resource deck; life as a hidden ordered card zone with reveal triggers; evolution stacks (cards under cards); pitch cards (resource or effect) |
-| Ember Council | M4 | 3–4 players; voting/politics; directed elimination; shared market row (draft); alternating actions with initiative; dice as objects with faces; quest-score victory |
+| Tri-Lane | M4 ✓ | 3 lanes with spatial adjacency and movement; simultaneous sealed commitments plus reveal; lane-control scoring victory |
+| Relic Chain | M4 ✓ | chain timing with reverse resolution; face-down set cards (traps); battle positions; extra deck with fusion recipes from multiple cards |
+| Tidewardens | M4 ✓ | separate resource deck; life as a hidden ordered card zone with reveal triggers; evolution stacks (cards under cards); pitch cards (resource or effect) |
+| Ember Council | M4 ✓ | 3–4 players; voting/politics; directed elimination; shared market row (draft); alternating actions with initiative; dice as objects with faces; quest-score victory |
 
 ## Later
 - M5: browser UI.

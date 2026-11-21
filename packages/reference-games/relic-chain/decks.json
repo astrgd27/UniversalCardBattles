@@ -1,0 +1,8 @@
+{
+  "blaze-pack": {
+    "deck": ["ash-hound","ash-hound","twin-fang","twin-fang","rune-knight","rune-knight","glimmer-sprite","glimmer-sprite","spark-lance","spark-lance","war-cry","mirror-ward","snare-pit","echo-seal","gravecall"],
+    "extra": ["ashen-warhound","ashen-warhound"]},
+  "bulwark-pack": {
+    "deck": ["shell-warden","shell-warden","gate-golem","gate-golem","rune-knight","rune-knight","twin-fang","twin-fang","glimmer-sprite","mirror-ward","mirror-ward","snare-pit","snare-pit","echo-seal","gravecall"],
+    "extra": ["bastion-colossus","bastion-colossus"]}
+}

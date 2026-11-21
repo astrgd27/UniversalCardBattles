@@ -1,6 +1,6 @@
 // Static module validation and deck legality. Every issue carries a JSON pointer into the module definition
 // (manifest / rules / cards / decks), which the SDK maps back to file:line:col.
-import type { Mod, ModuleDef } from './types.ts';
+import type { Deck, Mod, ModuleDef } from './types.ts';
 import { EFFECT_OPS } from './effects.ts';
 import { EXPR_OPS } from './expr.ts';
 import { isRange, isSemver } from './semver.ts';
@@ -8,7 +8,8 @@ import { isRange, isSemver } from './semver.ts';
 export const ENGINE_API = '0.3.0';
 /** Engine features a module may list in manifest.requiredCapabilities. */
 export const CAPABILITIES = [
-  'timing.immediate', 'timing.stack', 'timing.chain', 'replacements', 'layers', 'relationships', 'decisions', 'scripts',
+  'timing.immediate', 'timing.stack', 'timing.chain', 'timing.alternate', 'replacements', 'layers', 'relationships', 'decisions',
+  'scripts', 'commit', 'faceDown', 'random', 'multiDeck', 'sharedDecks', 'gameVars',
 ];
 const REPLACEABLE = ['draw', 'move', 'destroy', 'damage', 'lose'];
 
@@ -57,6 +58,7 @@ export function validateIssues(def: ModuleDef): Issue[] {
   };
   numMap(R.playerVars, '/playerVars', true);
   numMap(R.objectVars, '/objectVars', false);
+  numMap(R.gameVars, '/gameVars', false);
   const F = R.format;
   if (!isRec(F) || ![F.deckMin, F.deckMax, F.maxCopies].every(Number.isInteger) || F.deckMin > F.deckMax) eR('/format', 'needs integers {deckMin, deckMax, maxCopies}');
   const strList = (x: unknown, ptr: string) => {
@@ -153,12 +155,25 @@ export function validateIssues(def: ModuleDef): Issue[] {
         case 'link': X(1); if (typeof eff[2] !== 'string') err(`${p}/2`, 'link needs a relation name'); X(3); return;
         case 'unlink': X(1); if (typeof eff[2] !== 'string') err(`${p}/2`, 'unlink needs a relation name'); return;
         case 'call': callCheck(eff, p, err, procs, 'procedure'); eff.slice(2).forEach((_, j) => X(j + 2)); return;
+        case 'commit': {
+          const o = eff[1] as any;
+          if (!isRec(o) || o.from === undefined || !isVar(o.as)) { err(`${p}/1`, 'commit needs {from, as: "$name"} (who defaults to all players)'); return; }
+          for (const k of ['who', 'from', 'min', 'max']) expr(o[k], `${p}/1/${k}`, err);
+          return;
+        }
+        case 'random': {
+          const o = eff[1] as any;
+          if (!isRec(o) || !isVar(o.as) || (o.from === undefined && o.max === undefined)) { err(`${p}/1`, 'random needs {min?, max, as} or {from, n?, as}'); return; }
+          for (const k of ['from', 'n', 'min', 'max']) expr(o[k], `${p}/1/${k}`, err);
+          return;
+        }
         default: eff.forEach((_, j) => { if (j > 0) X(j); });
       }
     });
   };
   const timing = (t: any, ptr: string) => {
-    if (t !== undefined && !(isRec(t) && ['immediate', 'stack', 'chain'].includes(t.mode))) eR(ptr, 'timing.mode must be immediate, stack or chain');
+    if (t !== undefined && !(isRec(t) && ['immediate', 'stack', 'chain', 'alternate'].includes(t.mode))) eR(ptr, 'timing.mode must be immediate, stack, chain or alternate');
+    else if (t?.first !== undefined) expr(t.first, `${ptr}/first`, eR);
   };
   const statics = (l: unknown, ptr: string, err: Err) => {
     if (l === undefined) return;
@@ -188,7 +203,7 @@ export function validateIssues(def: ModuleDef): Issue[] {
     if (!Array.isArray(l)) { err(ptr, 'must be an array'); return; }
     l.forEach((d: any, i: number) => {
       if (!isVar(d?.as)) err(`${ptr}/${i}/as`, 'slot needs "as": "$name"');
-      expr(d?.from, `${ptr}/${i}/from`, err);
+      for (const k of ['from', 'min', 'max']) expr(d?.[k], `${ptr}/${i}/${k}`, err);
     });
   };
   const abilities = (l: unknown, ptr: string, err: Err) => {
@@ -223,7 +238,7 @@ export function validateIssues(def: ModuleDef): Issue[] {
     (a.phases ?? []).forEach((ph: string, j: number) => { if (!phases.has(ph)) eR(`${p}/phases/${j}`, `unknown phase "${ph}"`); });
     if (a.speed !== undefined && !(Number.isInteger(a.speed) && a.speed >= 1)) eR(`${p}/speed`, 'must be an integer >= 1');
     expr(a.source, `${p}/source`, eR);
-    (a.req ?? []).forEach((q: any, j: number) => expr(q?.if, `${p}/req/${j}/if`, eR));
+    for (const k of ['req', 'check']) (a[k] ?? []).forEach((q: any, j: number) => expr(q?.if, `${p}/${k}/${j}/if`, eR));
     slots(a.targets, `${p}/targets`, eR);
     for (const k of ['cost', 'do', 'countered']) effects(a[k], `${p}/${k}`, eR);
     if (!Array.isArray(a.do)) eR(`${p}/do`, 'required');
@@ -247,24 +262,64 @@ export function validateIssues(def: ModuleDef): Issue[] {
     }
   });
 
-  // ---- decks ----
-  if (def.decks !== undefined && !isRec(def.decks)) eD('', 'must be an object of card-id arrays');
+  // ---- decks, deck formats, shared decks ----
+  const fz = isRec(F) ? F.zones : undefined;
+  if (fz !== undefined) {
+    if (!Array.isArray(fz)) eR('/format/zones', 'must be an array');
+    else fz.forEach((z: any, i: number) => {
+      if (!isRec(z) || !zones.has(z.zone) || !Number.isInteger(z.min) || !Number.isInteger(z.max)) eR(`/format/zones/${i}`, 'needs {zone (a known zone), min, max, types?}');
+    });
+  }
+  const cardList = (l: unknown, ptr: string, err: Err) => {
+    if (!Array.isArray(l)) { err(ptr, 'must be an array of card ids'); return; }
+    l.forEach((c, j) => { if (!ids.has(c as string)) err(`${ptr}/${j}`, `unknown card "${c}"`); });
+  };
+  if (R.sharedDecks !== undefined) {
+    if (!isRec(R.sharedDecks)) eR('/sharedDecks', 'must be an object of zone -> card ids');
+    else for (const [z, l] of Object.entries(R.sharedDecks)) {
+      if (!R.zones.some((x: any) => x.id === z && x.shared)) eR(`/sharedDecks/${esc(z)}`, `"${z}" is not a shared zone`);
+      cardList(l, `/sharedDecks/${esc(z)}`, (ptr, msg) => eR(ptr, msg));
+    }
+  }
+  if (def.decks !== undefined && !isRec(def.decks)) eD('', 'must be an object of decks');
   else for (const [name, d] of Object.entries(def.decks ?? {})) {
-    if (!Array.isArray(d)) { eD(`/${esc(name)}`, 'must be an array of card ids'); continue; }
-    d.forEach((c, j) => { if (!ids.has(c)) eD(`/${esc(name)}/${j}`, `unknown card "${c}"`); });
+    const p = `/${esc(name)}`;
+    if (Array.isArray(d)) cardList(d, p, eD);
+    else if (isRec(d)) for (const [z, l] of Object.entries(d)) {
+      if (!Array.isArray(fz) || !fz.some((x: any) => x?.zone === z)) eD(`${p}/${esc(z)}`, `"${z}" is not a deck section in rules.format.zones`);
+      cardList(l, `${p}/${esc(z)}`, eD);
+    } else eD(p, 'must be a card list or {zone: card list}');
   }
   return out;
 }
 
-export function deckErrors(m: Mod, deck: string[]): string[] {
+/** A deck as {zone: card ids}; a plain list is the main deck. */
+export const deckSections = (m: Mod, deck: Deck): Record<string, string[]> =>
+  (Array.isArray(deck) ? { [m.rules.deckZone]: deck } : deck);
+
+export function deckErrors(m: Mod, deck: Deck): string[] {
   const f = m.rules.format;
   const errs: string[] = [];
-  if (deck.length < f.deckMin || deck.length > f.deckMax) errs.push(`deck has ${deck.length} cards (needs ${f.deckMin}-${f.deckMax})`);
+  if (!Array.isArray(deck) && (!deck || typeof deck !== 'object')) return ['deck must be a card list or {zone: card list}'];
+  const parts = deckSections(m, deck);
+  const specs = f.zones ?? [{ zone: m.rules.deckZone, min: f.deckMin, max: f.deckMax }];
+  for (const z of Object.keys(parts)) if (!specs.some((sp) => sp.zone === z)) errs.push(`unexpected deck section "${z}"`);
   const counts = new Map<string, number>();
-  for (const c of deck) {
-    if (!m.card.has(c)) errs.push(`unknown card "${c}"`);
-    counts.set(c, (counts.get(c) ?? 0) + 1);
+  for (const sp of specs) {
+    const l = parts[sp.zone] ?? [];
+    const label = f.zones ? `${sp.zone} section` : 'deck';
+    if (!Array.isArray(l)) { errs.push(`${label} must be a card list`); continue; }
+    if (l.length < sp.min || l.length > sp.max) errs.push(`${label} has ${l.length} cards (needs ${sp.min}-${sp.max})`);
+    for (const c of l) {
+      const card = m.card.get(c);
+      if (!card) errs.push(`unknown card "${c}"`);
+      else if (sp.types && !sp.types.includes(card.type)) errs.push(`"${c}" (${card.type}) cannot go in the ${sp.zone} section`);
+      counts.set(c, (counts.get(c) ?? 0) + 1);
+    }
   }
-  for (const [c, n] of counts) if (n > f.maxCopies) errs.push(`${n} copies of "${c}" (max ${f.maxCopies})`);
+  for (const [c, n] of counts) {
+    const max = (m.card.get(c)?.maxCopies as number | undefined) ?? f.maxCopies;
+    if (n > max) errs.push(`${n} copies of "${c}" (max ${max})`);
+  }
   return errs;
 }

@@ -15,7 +15,9 @@
     "sim": "node packages/test-harness/src/sim.ts",
     "check": "npm run -s typecheck && npm test -s",
     "validate": "node packages/module-sdk/src/cli.ts validate",
-    "pack": "node packages/module-sdk/src/cli.ts pack"
+    "pack": "node packages/module-sdk/src/cli.ts pack",
+    "events": "node packages/test-harness/src/events.ts",
+    "golden": "node packages/test-harness/src/golden.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

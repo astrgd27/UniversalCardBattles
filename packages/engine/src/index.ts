@@ -5,7 +5,7 @@ import { validateModule } from './validate.ts';
 
 export * from './types.ts';
 export { EngineError, CostError, ScriptError } from './util.ts';
-export { validateModule, validateIssues, issueText, deckErrors, ENGINE_API, CAPABILITIES } from './validate.ts';
+export { validateModule, validateIssues, issueText, deckErrors, deckSections, ENGINE_API, CAPABILITIES } from './validate.ts';
 export type { Issue } from './validate.ts';
 export { satisfies, isSemver, isRange } from './semver.ts';
 export { GAS, MAX_DEPTH } from './expr.ts';

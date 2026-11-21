@@ -1,0 +1,103 @@
+{
+  "players": {"min": 2, "max": 2},
+  "playerVars": {"float": 0},
+  "objectVars": {"dmg": 0, "ready": 0, "tapped": 0},
+  "stats": ["power", "health"],
+  "layers": ["add"],
+  "zones": [
+    {"id": "deck", "vis": "hidden", "ordered": true},
+    {"id": "tides", "vis": "hidden", "ordered": true},
+    {"id": "life", "vis": "hidden", "ordered": true},
+    {"id": "hand", "vis": "owner"},
+    {"id": "pool", "vis": "public", "abilities": false},
+    {"id": "board", "vis": "public", "abilities": true},
+    {"id": "under", "vis": "public"},
+    {"id": "grave", "vis": "public", "ordered": true}
+  ],
+  "deckZone": "deck", "handZone": "hand", "graveZone": "grave",
+  "format": {"deckMin": 16, "deckMax": 16, "maxCopies": 2, "zones": [
+    {"zone": "deck", "min": 16, "max": 16, "types": ["unit", "evolved", "spell"]},
+    {"zone": "tides", "min": 8, "max": 8, "types": ["tide"]}]},
+  "turnLimit": 60,
+  "setup": [["each", ["players"], "$p", [
+    ["shuffle", "$p", "deck"], ["shuffle", "$p", "tides"], ["move", ["top", "$p", "deck", 4], "life"], ["draw", "$p", 4]]]],
+  "functions": {
+    "avail": {"params": ["$p"], "body": ["+", ["get", "$p", "float"], ["count", ["filter", ["cards", "$p", "pool"], ["=", ["get", "$it", "tapped"], 0]]]]}
+  },
+  "procedures": {
+    "pay": {"params": ["$p", "$n"], "do": [
+      ["let", "$f", ["min", ["get", "$p", "float"], "$n"]],
+      ["inc", "$p", "float", ["neg", "$f"]],
+      ["each", ["slice", ["filter", ["cards", "$p", "pool"], ["=", ["get", "$it", "tapped"], 0]], 0, ["-", "$n", "$f"]], "$c", [["set", "$c", "tapped", 1]]]]},
+    "breakLife": {"params": ["$p", "$n"], "do": [
+      ["each", ["range", "$n"], "$i", [["if", ["=", ["count", ["cards", "$p", "life"]], 0], [["lose", "$p"]], [["move", ["top", "$p", "life", 1], "hand"]]]]]]}
+  },
+  "phases": [
+    {"id": "start", "auto": true, "do": [
+      ["each", ["cards", "$active", "pool"], "$c", [["set", "$c", "tapped", 0]]],
+      ["each", ["cards", "$active", "board"], "$u", [["set", "$u", "ready", 1]]],
+      ["if", [">", ["count", ["cards", "$active", "tides"]], 0], [["move", ["top", "$active", "tides", 1], "pool"]]],
+      ["if", ["!=", "$turn", 1], [["draw", "$active", 1]]]]},
+    {"id": "main"},
+    {"id": "end", "auto": true, "do": [
+      ["each", ["players"], "$p", [["set", "$p", "float", 0]]],
+      ["each", ["cards", "*", "board"], "$u", [["set", "$u", "dmg", 0]]]]}
+  ],
+  "actions": {
+    "summon": {
+      "label": "Summon", "phases": ["main"],
+      "source": ["filter", ["cards", "$me", "hand"], ["=", ["get", "$it", "type"], "unit"]],
+      "req": [{"if": ["<=", ["get", "$self", "cost"], ["call", "avail", "$me"]], "why": "Not enough tide."}],
+      "cost": [["call", "pay", "$me", ["get", "$self", "cost"]]],
+      "do": [["move", "$self", "board"]]
+    },
+    "evolve": {
+      "label": "Evolve", "phases": ["main"],
+      "source": ["filter", ["cards", "$me", "hand"], ["=", ["get", "$it", "type"], "evolved"]],
+      "req": [{"if": ["<=", ["get", "$self", "cost"], ["call", "avail", "$me"]], "why": "Not enough tide."}],
+      "targets": [{"as": "$t", "prompt": "unit to evolve", "from": ["filter", ["cards", "$me", "board"], ["=", ["get", "$it", "card"], ["get", "$self", "evolvesFrom"]]]}],
+      "cost": [["call", "pay", "$me", ["get", "$self", "cost"]]],
+      "do": [
+        ["move", "$self", "board", {"as": "$new"}],
+        ["set", "$new", "dmg", ["get", "$t", "dmg"]],
+        ["set", "$new", "ready", ["get", "$t", "ready"]],
+        ["each", ["linked", "$t", "under"], "$x", [["link", "$x", "under", "$new"]]],
+        ["move", "$t", "under", {"as": "$old"}],
+        ["link", "$old", "under", "$new"]]
+    },
+    "cast": {
+      "label": "Cast", "phases": ["main"], "cardTargets": true,
+      "source": ["filter", ["cards", "$me", "hand"], ["=", ["get", "$it", "type"], "spell"]],
+      "req": [{"if": ["<=", ["get", "$self", "cost"], ["call", "avail", "$me"]], "why": "Not enough tide."}],
+      "cost": [["call", "pay", "$me", ["get", "$self", "cost"]], ["move", "$self", "grave", {"as": "$self"}]],
+      "do": [["run", "$self", "effects"]]
+    },
+    "pitch": {
+      "label": "Pitch for tide", "phases": ["main"],
+      "source": ["filter", ["cards", "$me", "hand"], [">", ["get", "$it", "pitch"], 0]],
+      "do": [["inc", "$me", "float", ["get", "$self", "pitch"]], ["move", "$self", "deck"]]
+    },
+    "attack": {
+      "label": "Attack", "phases": ["main"],
+      "source": ["filter", ["cards", "$me", "board"], ["=", ["get", "$it", "ready"], 1]],
+      "targets": [{"as": "$t", "prompt": "attack target", "from": ["?",
+        ["any", ["cards", "$opp", "board"], ["has", "$it", "guard"]],
+        ["filter", ["cards", "$opp", "board"], ["has", "$it", "guard"]],
+        ["concat", ["list", "$opp"], ["cards", "$opp", "board"]]]}],
+      "do": [["set", "$self", "ready", 0], ["damage", "$t", ["get", "$self", "power"], "$self"],
+        ["if", ["isObj", "$t"], [["damage", "$self", ["get", "$t", "power"], "$t"]]]]
+    }
+  },
+  "triggers": [
+    {"on": "drawFail", "do": [["lose", "$e.player"]]},
+    {"on": "moved", "if": ["and", ["=", "$e.to", "board"], ["has", "$e.newObj", "haste"]], "do": [["set", "$e.newObj", "ready", 1]]}
+  ],
+  "replacements": [
+    {"replace": "damage", "text": "Life cards", "if": ["isPlayer", "$e.target"],
+      "instead": [["call", "breakLife", "$e.target", ["?", [">=", "$e.amount", 4], 2, 1]]]}
+  ],
+  "stateChecks": [
+    ["each", ["cards", "*", "board"], "$u", [["if", [">=", ["get", "$u", "dmg"], ["get", "$u", "health"]], [["destroy", "$u"]]]]],
+    ["each", ["cards", "*", "under"], "$x", [["if", ["not", ["isObj", ["get", "$x", "under"]]], [["move", "$x", "grave"]]]]]
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "players": {"min": 2, "max": 2},
+  "playerVars": {"energy": 0, "score": 0},
+  "objectVars": {"lane": 0, "ready": 0},
+  "stats": ["power"],
+  "layers": ["add"],
+  "zones": [
+    {"id": "deck", "vis": "hidden", "ordered": true},
+    {"id": "hand", "vis": "owner"},
+    {"id": "board", "vis": "public", "abilities": true},
+    {"id": "grave", "vis": "public", "ordered": true}
+  ],
+  "deckZone": "deck", "handZone": "hand", "graveZone": "grave",
+  "format": {"deckMin": 12, "deckMax": 12, "maxCopies": 2},
+  "turnLimit": 12,
+  "setup": [["each", ["players"], "$p", [["shuffle", "$p", "deck"], ["draw", "$p", 3]]]],
+  "functions": {
+    "lanePower": {"params": ["$p", "$L"], "body": ["sum",
+      ["filter", ["cards", "$p", "board"], ["or", ["=", ["get", "$it", "lane"], "$L"],
+        ["and", ["has", "$it", "siege"], ["=", ["abs", ["-", ["get", "$it", "lane"], "$L"]], 1]]]],
+      ["max", 0, ["get", "$it", "power"]]]},
+    "inLane": {"params": ["$p", "$L"], "body": ["filter", ["cards", "$p", "board"], ["=", ["get", "$it", "lane"], "$L"]]},
+    "adjacentLanes": {"params": ["$L"], "body": ["filter", ["list", 1, 2, 3], ["=", ["abs", ["-", "$it", "$L"]], 1]]}
+  },
+  "phases": [
+    {"id": "refresh", "auto": true, "do": [
+      ["each", ["players"], "$p", [["if", ["!=", "$turn", 1], [["draw", "$p", 1]]], ["set", "$p", "energy", ["min", ["+", "$turn", 1], 6]]]],
+      ["each", ["cards", "*", "board"], "$u", [["set", "$u", "ready", 1]]]
+    ]},
+    {"id": "deploy", "auto": true, "do": [
+      ["commit", {"from": ["filter", ["cards", "$p", "hand"], ["<=", ["get", "$it", "cost"], ["get", "$p", "energy"]]], "min": 0, "max": 1, "as": "$cards", "reveal": false, "prompt": "Secretly choose a unit to deploy (or none)"}],
+      ["commit", {"from": ["list", "1", "2", "3"], "as": "$lanes", "prompt": "Secretly choose its lane"}],
+      ["each", ["players"], "$p", [
+        ["let", "$c", ["at", "$cards", "$p"]],
+        ["if", ["isObj", "$c"], [
+          ["inc", "$p", "energy", ["neg", ["get", "$c", "cost"]]],
+          ["move", "$c", "board", {"as": "$c"}],
+          ["set", "$c", "lane", ["at", "$lanes", "$p"]]]]]]
+    ]},
+    {"id": "maneuver", "timing": {"mode": "alternate"}},
+    {"id": "clash", "auto": true, "do": [
+      ["let", "$pw", ["map", ["list", 1, 2, 3], ["list", ["call", "lanePower", "p0", "$it"], ["call", "lanePower", "p1", "$it"]]]],
+      ["each", ["list", 1, 2, 3], "$L", [
+        ["let", "$a", ["nth", ["nth", "$pw", ["-", "$L", 1]], 0]],
+        ["let", "$b", ["nth", ["nth", "$pw", ["-", "$L", 1]], 1]],
+        ["if", [">", "$a", "$b"], [["inc", "p0", "score", 1], ["destroy", ["call", "inLane", "p1", "$L"]]]],
+        ["if", [">", "$b", "$a"], [["inc", "p1", "score", 1], ["destroy", ["call", "inLane", "p0", "$L"]]]]]],
+      ["if", ["or", [">=", ["get", "p0", "score"], 7], [">=", ["get", "p1", "score"], 7], [">=", "$turn", 10]], [
+        ["if", [">", ["get", "p0", "score"], ["get", "p1", "score"]], [["lose", "p1"]],
+          [["if", [">", ["get", "p1", "score"], ["get", "p0", "score"]], [["lose", "p0"]], [["lose", ["players"]]]]]]]]
+    ]}
+  ],
+  "actions": {
+    "shift": {
+      "label": "Shift to an adjacent lane", "phases": ["maneuver"], "stack": false,
+      "source": ["filter", ["cards", "$me", "board"], ["and", ["=", ["get", "$it", "ready"], 1], ["not", ["has", "$it", "anchored"]]]],
+      "targets": [{"as": "$t", "prompt": "adjacent lane", "from": ["call", "adjacentLanes", ["get", "$self", "lane"]]}],
+      "cost": [["set", "$self", "ready", 0]],
+      "do": [["set", "$self", "lane", "$t"]]
+    }
+  },
+  "triggers": [{"on": "drawFail", "do": [["log", "deck is empty"]]}]
+}

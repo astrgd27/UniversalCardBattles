@@ -17,6 +17,7 @@ export const computes = (m: Mod) => !!(m.rules.stats?.length || m.rules.layers?.
 
 /** Base value: object var if set, else card definition field. Players: their var. */
 export function rawVal(m: Mod, s: State, ref: string, name: string): number {
+  if (ref === 'game') return s.vars[name] ?? 0;
   const p = s.players.find((x) => x.id === ref);
   if (p) return p.vars[name] ?? 0;
   const o = s.objects[ref];
@@ -38,6 +39,7 @@ function collect(m: Mod, s: State): CE[] {
     const zd = m.zone.get(zid)!;
     for (const id of s.zones[key]) {
       const o = s.objects[id];
+      if (o.fd) continue;
       m.card.get(o.card)?.statics?.forEach((def, i) => {
         if (!(def.zones ? def.zones.includes(zid) : zd.abilities)) return;
         out.push({ key: `${id}:${i}`, ts: tsOf(id), layer: li(def.layer), st: { def, ctx: { ...baseCtx(s, o.controller), $self: id } } });

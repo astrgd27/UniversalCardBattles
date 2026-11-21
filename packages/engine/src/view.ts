@@ -12,6 +12,7 @@ export interface ObjView {
   stats?: Record<string, any>; // computed characteristics (rules.stats)
   keywords?: string[];
   rel?: Record<string, string>;
+  faceDown?: boolean; // card is "" unless you control it
 }
 export interface StackView { id: string; kind: string; ctrl: string; label: string; card: string | null; source: string | null; targets: string[] }
 export interface View {
@@ -21,6 +22,7 @@ export interface View {
   phase: string;
   priority: string | null;
   players: { id: string; vars: Record<string, number>; lost: boolean }[];
+  vars: Record<string, number>; // game vars
   zones: Record<string, { count: number; cards?: ObjView[] }>;
   stack: StackView[]; // bottom -> top
   pending: Pending | { player: string; prompt: string } | null;
@@ -40,6 +42,10 @@ export function observe({ m, s }: Match, p: string): View {
       zones[key].cards = ids.map((id) => {
         const o = s.objects[id];
         const v: ObjView = { id, card: o.card, owner: o.owner, controller: o.controller, vars: { ...o.vars } };
+        if (o.fd) {
+          v.faceDown = true;
+          if (o.controller !== p) { v.card = ''; return v; }
+        }
         const c = ch?.get(id);
         if (c) { v.stats = { ...c.stats }; v.keywords = [...c.kw].sort(); }
         if (o.rel) v.rel = { ...o.rel };
@@ -50,9 +56,9 @@ export function observe({ m, s }: Match, p: string): View {
   const pd = s.pending;
   return {
     me: p, turn: s.turn.n, active: activeId(s), phase: m.rules.phases[s.turn.phase].id, priority: s.priority,
-    players: s.players.map((pl) => ({ id: pl.id, vars: { ...pl.vars }, lost: pl.lost })), zones,
+    players: s.players.map((pl) => ({ id: pl.id, vars: { ...pl.vars }, lost: pl.lost })), vars: { ...s.vars }, zones,
     stack: s.stack.map((it) => ({
-      id: it.id, kind: it.kind, ctrl: it.ctrl, label: it.label, card: it.card, source: it.source,
+      id: it.id, kind: it.kind, ctrl: it.ctrl, label: it.label, card: it.card, source: it.source && canSee(it.source) ? it.source : null,
       targets: it.slots.flatMap((sl) => list(it.ctx[sl.as])).filter(canSee),
     })),
     pending: pd ? (pd.player === p ? structuredClone(pd) : { player: pd.player, prompt: pd.prompt }) : null,

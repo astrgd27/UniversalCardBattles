@@ -108,7 +108,7 @@ test('scripts: functions and procedures from scripts/*.json, arity checks, gas a
   };
   const boltFx = '"effects": [["damage", "$t", 2, "$self"]]';
   const pkg = await loadPackage(editText(withFile(f, 'scripts/zap.json', scripts), 'cards.json', boltFx, '"effects": [["call", "zap", "$t", 2]]'));
-  let g = createMatch(pkg.mod, { decks: [pkg.def.decks!['ember-rush'], pkg.def.decks!['stone-ward']], seed: 3 });
+  let g = createMatch(pkg.mod, { decks: [(pkg.def.decks!['ember-rush'] as string[]), (pkg.def.decks!['stone-ward'] as string[])], seed: 3 });
   g.s.players[0].vars.energy = 5;
   const bolt = place(g, 'p0', 'spark-bolt', 'hand');
   g = commitAction(g, 'p0', { action: 'cast', source: bolt, targets: { $t: ['p1'] } });
@@ -123,7 +123,7 @@ test('scripts: functions and procedures from scripts/*.json, arity checks, gas a
     d.rules.functions = fns as any;
     d.cards.find((c) => c.id === 'spark-bolt')!.effects = [['damage', '$t', expr, '$self']];
     const M = compileModule(d);
-    const m0 = createMatch(M, { decks: [d.decks!['ember-rush'], d.decks!['stone-ward']], seed: 3 });
+    const m0 = createMatch(M, { decks: [(d.decks!['ember-rush'] as string[]), (d.decks!['stone-ward'] as string[])], seed: 3 });
     m0.s.players[0].vars.energy = 5;
     const b = place(m0, 'p0', 'spark-bolt', 'hand');
     const before = serialize(m0);
@@ -136,7 +136,7 @@ test('scripts: functions and procedures from scripts/*.json, arity checks, gas a
 
 test('expansions extend a base module; saves are pinned to the rules hash', async () => {
   const base = readModuleDir(`${REF_DIR}/spark-duel`);
-  const deck = [...base.decks!['ember-rush'].slice(1), 'kindle-imp'];
+  const deck = [...(base.decks!['ember-rush'] as string[]).slice(1), 'kindle-imp'];
   const exp = new Map<string, Uint8Array>([
     ['manifest.json', enc({ moduleId: 'spark-embers', displayName: 'Spark Duel: Embers', semanticVersion: '0.1.0', engineApiRange: '^0.3.0', extends: { moduleId: 'spark-duel', range: '^0.1.0' } })],
     ['cards.json', enc([{ id: 'kindle-imp', name: 'Kindle Imp', type: 'unit', cost: 1, power: 1, health: 2 }])],
@@ -144,14 +144,14 @@ test('expansions extend a base module; saves are pinned to the rules hash', asyn
   ]);
   const pkg = await loadPackage(exp, { base });
   assert.ok(pkg.mod.card.has('kindle-imp') && pkg.mod.card.has('ember-pup'));
-  assert.ok(createMatch(pkg.mod, { decks: [deck, base.decks!['stone-ward']], seed: 1 }).s.zones['p0:hand'].length === 4);
+  assert.ok(createMatch(pkg.mod, { decks: [deck, (base.decks!['stone-ward'] as string[])], seed: 1 }).s.zones['p0:hand'].length === 4);
   await rejects(loadPackage(exp), /requires base module spark-duel@\^0.1.0/);
   await rejects(loadPackage(exp, { base: { ...base, manifest: { ...base.manifest, semanticVersion: '0.2.0' } } }), /got spark-duel@0.2.0/);
   await rejects(loadPackage(withFile(exp, 'cards.json', [{ id: 'ember-pup', name: 'Dupe', type: 'unit' }]), { base }), /^cards\.json:\d+:\d+: ember-pup: duplicate card id$/m);
   await rejects(loadPackage(withFile(exp, 'rules.json', {}), { base }), /an expansion cannot contain rules/);
 
   const M = loadRef('spark-duel');
-  const save = serialize(createMatch(M, { decks: [base.decks!['ember-rush'], base.decks!['stone-ward']], seed: 1 }));
+  const save = serialize(createMatch(M, { decks: [(base.decks!['ember-rush'] as string[]), (base.decks!['stone-ward'] as string[])], seed: 1 }));
   const changed = structuredClone(base);
   changed.cards[0].power = 9;
   assert.throws(() => restore(compileModule(changed), save), /hash mismatch/);

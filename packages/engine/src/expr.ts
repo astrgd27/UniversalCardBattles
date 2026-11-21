@@ -7,7 +7,7 @@ export const EXPR_OPS = new Set([
   'lit', '+', '-', '*', '/', 'neg', 'min', 'max', '=', '!=', '<', '<=', '>', '>=', 'and', 'or', 'not', '?',
   'get', 'has', 'players', 'opp', 'cards', 'top', 'count', 'concat', 'list', 'first', 'filter', 'any', 'all',
   'sum', 'in', 'isPlayer', 'isObj', 'stack', 'linked', 'call', 'let', 'map', 'range', 'mod', 'abs', 'sortBy', 'maxBy', 'minBy',
-  'slice', 'reverse', 'nth',
+  'slice', 'reverse', 'nth', 'at', 'keys', 'values', 'same',
 ]);
 
 /** Script limits: evaluation steps per outermost function call, and call depth. */
@@ -23,13 +23,14 @@ export function scriptCtx(ctx: Ctx, params: string[], args: unknown[]): Ctx {
   return c;
 }
 
-export function lookup(s: State, ctx: Ctx, name: string): any {
+export function lookup(m: Mod, s: State, ctx: Ctx, name: string): any {
   const parts = name.split('.');
   const h = parts[0];
   let v: any;
   if (h in ctx) v = ctx[h];
   else if (h === '$turn') v = s.turn.n;
   else if (h === '$active') v = s.players[s.turn.active].id;
+  else if (h === '$phase') v = m.rules.phases[s.turn.phase].id;
   else throw new EngineError(`Unbound variable ${h}`);
   for (let i = 1; i < parts.length; i++) v = v == null ? undefined : v[parts[i]];
   return v;
@@ -42,6 +43,7 @@ export function lookup(s: State, ctx: Ctx, name: string): any {
 export function getProp(m: Mod, s: State, ref: any, name: string): any {
   const r = one(ref);
   if (r == null) return undefined;
+  if (r === 'game') return s.vars[name] ?? 0;
   const p = player(s, r);
   if (p) return name === 'id' ? p.id : name === 'lost' ? p.lost : (p.vars[name] ?? 0);
   const o = s.objects[r];
@@ -56,6 +58,7 @@ export function getProp(m: Mod, s: State, ref: any, name: string): any {
     case 'controller': return o.controller;
     case 'zone': return zoneIdOf(o.zone);
     case 'card': return o.card;
+    case 'faceDown': return !!o.fd;
   }
   if (o.rel && name in o.rel) return o.rel[name];
   if (m.rules.stats?.includes(name)) return chars(m, s)!.get(r)!.stats[name];
@@ -75,7 +78,7 @@ export function cardsIn(m: Mod, s: State, who: any, zone: string): string[] {
 
 export function ev(m: Mod, s: State, e: any, ctx: Ctx): any {
   if (depth > 0 && --gas < 0) throw new ScriptError(`Script gas limit (${GAS} steps) exceeded`);
-  if (typeof e === 'string') return e.charCodeAt(0) === 36 ? lookup(s, ctx, e) : e;
+  if (typeof e === 'string') return e.charCodeAt(0) === 36 ? lookup(m, s, ctx, e) : e;
   if (!Array.isArray(e) || typeof e[0] !== 'string') return e;
   const A = (i: number) => ev(m, s, e[i], ctx);
   const each = (fn: (it: any) => any) => list(A(1)).map((it) => fn(it));
@@ -165,6 +168,10 @@ export function ev(m: Mod, s: State, e: any, ctx: Ctx): any {
     case 'slice': return list(A(1)).slice(num(A(2)), e.length > 3 ? num(A(3)) : undefined);
     case 'reverse': return [...list(A(1))].reverse();
     case 'nth': return list(A(1))[num(A(2))] ?? null;
+    case 'at': { const x = A(1); const k = one(A(2)); return x == null ? null : (x[k] ?? null); }
+    case 'keys': { const x = A(1); return x && typeof x === 'object' ? Object.keys(x) : []; }
+    case 'values': { const x = A(1); return x && typeof x === 'object' ? Object.values(x) : []; }
+    case 'same': return JSON.stringify(A(1)) === JSON.stringify(A(2));
   }
   throw new EngineError(`Unknown expression op ${e[0]}`);
 }

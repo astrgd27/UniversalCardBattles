@@ -7,7 +7,7 @@ import { arcane as A, cardsIn, place, zone } from './helpers.ts';
 import { createMatch } from '#engine';
 
 const def = readModuleDir(`${REF_DIR}/arcane-duel`);
-const D = A.decks!;
+const D = A.decks! as Record<string, string[]>;
 // Grove deck variant: Mantle Warden listed before Banner Bearer (older timestamps), plus a few spells for tests.
 const groveX = ['mantle-warden', 'mantle-warden', 'banner-bearer', 'banner-bearer', 'seedling', 'arc-bolt', 'grove-hulk', 'grove-hulk',
   'swiftblade', 'swiftblade', 'wardstone-golem', 'unmake', 'grove-herald', 'grove-herald', 'storm-drake', 'storm-drake', 'pacify', 'pacify',

@@ -1,0 +1,13 @@
+[
+  {"id": "copper-mark", "name": "Copper Mark", "type": "treasure", "gold": 1, "maxCopies": 6, "text": "+1 gold."},
+  {"id": "militia", "name": "Militia", "type": "ally", "power": 1, "text": "+1 power."},
+  {"id": "silver-mark", "name": "Silver Mark", "type": "treasure", "cost": 3, "gold": 2, "text": "+2 gold."},
+  {"id": "mercenary", "name": "Mercenary", "type": "ally", "cost": 2, "power": 2, "text": "+2 power."},
+  {"id": "herald", "name": "Herald", "type": "ally", "cost": 3, "influence": 1, "text": "+1 influence. Draw a card.", "effects": [["call", "drawOne", "$me"]]},
+  {"id": "knight", "name": "Knight", "type": "ally", "cost": 4, "power": 3, "text": "+3 power."},
+  {"id": "diplomat", "name": "Diplomat", "type": "ally", "cost": 4, "influence": 2, "text": "+2 influence."},
+  {"id": "ember-sage", "name": "Ember Sage", "type": "ally", "cost": 3, "gold": 1, "text": "+1 gold. Roll the Ember Die: on 5 or 6, +1 influence.",
+    "effects": [["random", {"min": 1, "max": 6, "as": "$r"}], ["set", ["cards", "$me", "table"], "face", "$r"], ["if", [">=", "$r", 5], [["inc", "$me", "influence", 1]]]]},
+  {"id": "monument", "name": "Monument", "type": "relic", "cost": 6, "text": "When bought: +3 renown.", "onBuy": [["inc", "$me", "renown", 3]]},
+  {"id": "ember-die", "name": "Ember Die", "type": "die", "faces": ["-", "-", "gold", "gold", "influence", "council"], "text": "Rolled each turn: 3-4 gold, 5 influence, 6 calls the council."}
+]

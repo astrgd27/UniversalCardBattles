@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Match, MatchOpts, Mod, ModuleDef } from '#engine';
-import { commitAction, compileModule, createMatch, listActions, observe, submitDecision } from '#engine';
+import { IllegalAction, commitAction, compileModule, deckSections, listActions, observe, submitDecision } from '#engine';
 import type { Agent } from '#ai';
 
 export const REF_DIR = join(dirname(fileURLToPath(import.meta.url)), '../../reference-games');
@@ -18,11 +18,21 @@ export function readModuleDir(dir: string): ModuleDef {
 export const loadRef = (id: string): Mod => compileModule(readModuleDir(join(REF_DIR, id)));
 
 export function deckOpts(m: Mod, names: string[], seed: number): MatchOpts {
-  return { decks: names.map((n) => [...m.decks![n]]), seed };
+  return { decks: names.map((n) => structuredClone(m.decks![n])), seed };
+}
+/** Default seating for a module: its first decks, repeated up to the minimum player count. */
+export function defaultDecks(m: Mod): string[] {
+  const names = Object.keys(m.decks ?? {});
+  const n = Math.max(2, m.rules.players.min);
+  return Array.from({ length: n }, (_, i) => names[i] ?? names[0]);
 }
 
-/** Plays until the game ends. onStep runs before every command (for invariant checks). */
-export function playMatch(match: Match, agents: Agent[], onStep?: (m: Match) => void, maxSteps = 10_000): Match {
+/**
+ * Plays until the game ends. onStep runs before every command (for invariant checks).
+ * If an agent proposes something the engine rejects (e.g. targets failing an action's `check`), it is asked again;
+ * after 20 rejections the player passes.
+ */
+export function playMatch(match: Match, agents: Agent[], onStep?: (m: Match) => void, maxSteps = 20_000): Match {
   for (let steps = 0; !match.s.result; steps++) {
     if (steps > maxSteps) throw new Error(`Step limit ${maxSteps} reached`);
     onStep?.(match);
@@ -30,16 +40,26 @@ export function playMatch(match: Match, agents: Agent[], onStep?: (m: Match) => 
     if (s.pending) {
       const p = s.pending.player;
       match = submitDecision(match, p, s.pending.id, agents[+p.slice(1)].decide(observe(match, p)));
-    } else if (s.priority) {
-      const p = s.priority;
-      match = commitAction(match, p, agents[+p.slice(1)].act(observe(match, p), listActions(match, p)));
-    } else throw new Error('Stuck: no priority and no pending decision');
+      continue;
+    }
+    const p = s.priority;
+    if (!p) throw new Error('Stuck: no priority and no pending decision');
+    const agent = agents[+p.slice(1)];
+    let next: Match | null = null;
+    for (let tries = 0; !next && tries < 20; tries++) {
+      try {
+        next = commitAction(match, p, agent.act(observe(match, p), listActions(match, p)));
+      } catch (e) {
+        if (!(e instanceof IllegalAction) || e.reason.code !== 'check') throw e;
+      }
+    }
+    match = next ?? commitAction(match, p, { action: 'pass' });
   }
   return match;
 }
 
 /** Every object sits in exactly one zone and the card count is conserved. */
-export function invariantErrors({ s }: Match): string[] {
+export function invariantErrors({ m, s }: Match): string[] {
   const errs: string[] = [];
   const seen = new Set<string>();
   for (const [key, ids] of Object.entries(s.zones)) {
@@ -50,7 +70,9 @@ export function invariantErrors({ s }: Match): string[] {
     }
   }
   if (seen.size !== Object.keys(s.objects).length) errs.push('object/zone count mismatch');
-  const total = s.opts.decks.reduce((a, d) => a + d.length, 0);
+  let total = 0;
+  for (const d of s.opts.decks) for (const l of Object.values(deckSections(m, d))) total += l.length;
+  for (const l of Object.values(m.rules.sharedDecks ?? {})) total += l.length;
   if (seen.size !== total) errs.push(`card count ${seen.size} != ${total}`);
   return errs;
 }

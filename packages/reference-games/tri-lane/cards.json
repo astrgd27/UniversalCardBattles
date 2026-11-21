@@ -1,0 +1,26 @@
+[
+  {"id": "scout", "name": "Scout", "type": "unit", "cost": 1, "power": 1},
+  {"id": "pikeman", "name": "Pikeman", "type": "unit", "cost": 2, "power": 2},
+  {"id": "bulwark", "name": "Bulwark", "type": "unit", "cost": 3, "power": 4, "keywords": ["anchored"], "text": "Anchored (can't shift)."},
+  {"id": "champion", "name": "Champion", "type": "unit", "cost": 5, "power": 5},
+  {"id": "spotter", "name": "Spotter", "type": "unit", "cost": 2, "power": 1, "text": "Your units in adjacent lanes get +1 power.",
+    "statics": [{"layer": "add", "affects": ["filter", ["cards", "$me", "board"], ["=", ["abs", ["-", ["get", "$it", "lane"], ["get", "$self", "lane"]]], 1]],
+      "mods": [{"op": "add", "stat": "power", "value": 1}]}]},
+  {"id": "banneret", "name": "Banneret", "type": "unit", "cost": 3, "power": 2, "text": "Your other units in this lane get +1 power.",
+    "statics": [{"layer": "add", "affects": ["filter", ["cards", "$me", "board"], ["and", ["!=", "$it", "$self"], ["=", ["get", "$it", "lane"], ["get", "$self", "lane"]]]],
+      "mods": [{"op": "add", "stat": "power", "value": 1}]}]},
+  {"id": "phalanx", "name": "Phalanx", "type": "unit", "cost": 3, "power": 2, "text": "+1 power for each other unit you have in this lane.",
+    "statics": [{"layer": "add", "affects": ["list", "$self"], "mods": [{"op": "add", "stat": "power",
+      "value": ["count", ["filter", ["cards", "$me", "board"], ["and", ["!=", "$it", "$self"], ["=", ["get", "$it", "lane"], ["get", "$self", "lane"]]]]]}]}]},
+  {"id": "saboteur", "name": "Saboteur", "type": "unit", "cost": 2, "power": 1, "text": "Enter: an enemy unit in this or an adjacent lane gets -2 power this turn.",
+    "abilities": [{"on": "enter", "text": "weaken", "do": [
+      ["choose", {"from": ["filter", ["cards", "$opp", "board"], ["<=", ["abs", ["-", ["get", "$it", "lane"], ["get", "$self", "lane"]]], 1]], "as": "$t", "prompt": "Weaken"}],
+      ["modify", "$t", {"layer": "add", "until": "turn", "mods": [{"op": "add", "stat": "power", "value": -2}]}]]}]},
+  {"id": "drifter", "name": "Drifter", "type": "unit", "cost": 1, "power": 1, "text": "Enter: push an enemy unit in this lane into a random adjacent lane.",
+    "abilities": [{"on": "enter", "text": "push", "do": [
+      ["choose", {"from": ["call", "inLane", "$opp", ["get", "$self", "lane"]], "as": "$t", "prompt": "Push"}],
+      ["if", ["isObj", "$t"], [["random", {"from": ["call", "adjacentLanes", ["get", "$t", "lane"]], "as": "$to"}], ["set", "$t", "lane", "$to"]]]]}]},
+  {"id": "courier", "name": "Courier", "type": "unit", "cost": 1, "power": 0, "text": "Enter: draw a card.",
+    "abilities": [{"on": "enter", "text": "draw", "do": [["draw", "$me", 1]]}]},
+  {"id": "siege-engine", "name": "Siege Engine", "type": "unit", "cost": 4, "power": 3, "keywords": ["siege", "anchored"], "text": "Siege (also fights in adjacent lanes). Anchored."}
+]

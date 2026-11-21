@@ -6,8 +6,8 @@ import type {
 import { apply, emit, triggerList } from './effects.ts';
 import { ev } from './expr.ts';
 import { hash, seedRng } from './rng.ts';
-import { CostError, EngineError, activeId, baseCtx, list, masks, nextPlayer, player, uniq, viewers } from './util.ts';
-import { deckErrors } from './validate.ts';
+import { CostError, EngineError, activeId, baseCtx, list, masks, nextPlayer, num, objViewers, one, player, uniq } from './util.ts';
+import { deckErrors, deckSections } from './validate.ts';
 
 export class IllegalAction extends EngineError {
   reason: Reason;
@@ -29,7 +29,7 @@ export function createMatch(m: Mod, opts: MatchOpts): Match {
   });
   const s: State = {
     moduleId: m.manifest.moduleId, version: m.manifest.semanticVersion, rulesHash: m.hash, opts: structuredClone(opts),
-    rng: seedRng(opts.seed), players: [], objects: {}, zones: {}, turn: { n: 1, active: 0, phase: 0 },
+    rng: seedRng(opts.seed), players: [], vars: { ...(R.gameVars ?? {}) }, objects: {}, zones: {}, turn: { n: 1, active: 0, phase: 0 },
     phaseState: 'enter', priority: null, holder: null, passes: 0, resolving: false, stack: [], effects: [], exec: [],
     triggers: [], nextTrig: null, dirty: false, pending: null, events: [], cmds: [], nextId: 1, nextDecision: 1, result: null,
   };
@@ -39,14 +39,15 @@ export function createMatch(m: Mod, opts: MatchOpts): Match {
     else for (const p of s.players) s.zones[`${p.id}:${z.id}`] = [];
   }
   let inst = 1;
+  const make = (card: string, owner: string, key: string) => {
+    const id = `o${s.nextId++}`;
+    s.objects[id] = { id, inst: `i${inst++}`, card, owner, controller: owner, zone: key, vars: { ...(R.objectVars ?? {}) } };
+    s.zones[key].push(id);
+  };
   opts.decks.forEach((deck, i) => {
-    const key = `p${i}:${R.deckZone}`;
-    for (const card of deck) {
-      const id = `o${s.nextId++}`;
-      s.objects[id] = { id, inst: `i${inst++}`, card, owner: `p${i}`, controller: `p${i}`, zone: key, vars: { ...(R.objectVars ?? {}) } };
-      s.zones[key].push(id);
-    }
+    for (const [zone, cards] of Object.entries(deckSections(m, deck))) for (const c of cards) make(c, `p${i}`, `p${i}:${zone}`);
   });
+  for (const [zone, cards] of Object.entries(R.sharedDecks ?? {})) for (const c of cards) make(c, 'shared', `shared:${zone}`);
   if (R.setup?.length) s.exec.push({ list: R.setup, i: 0, ctx: baseCtx(s, 'p0') });
   settle(m, s);
   return { m, s };
@@ -181,7 +182,8 @@ export function settle(m: Mod, s: State, budget = SETTLE_BUDGET) {
       continue;
     }
     if (s.phaseState === 'ended' || (ph.auto && !s.stack.length)) { nextPhase(m, s); continue; }
-    const h = s.holder && !player(s, s.holder)!.lost ? s.holder : activeId(s);
+    if (!s.holder && tm.first !== undefined) s.holder = one(ev(m, s, tm.first, baseCtx(s, activeId(s))));
+    const h = s.holder && player(s, s.holder) && !player(s, s.holder)!.lost ? s.holder : activeId(s);
     s.priority = tm.mode === 'immediate' ? activeId(s) : h;
     return;
   }
@@ -221,7 +223,7 @@ function evalAction(m: Mod, s: State, p: string, name: string, src: string | nul
   if (s.stack.length) {
     const need = tm.mode === 'chain' ? Math.max(minR, s.stack[s.stack.length - 1].speed) : minR;
     if (speed < need) return fail(no('speed', `${label} is too slow to respond now (needs speed ${need}).`));
-  } else if (speed < minR && p !== activeId(s)) {
+  } else if (tm.mode !== 'alternate' && speed < minR && p !== activeId(s)) {
     return fail(no('speed', `${label} can only be used on your own turn.`));
   }
   if (a.source) {
@@ -233,10 +235,10 @@ function evalAction(m: Mod, s: State, p: string, name: string, src: string | nul
   const slots: SlotOpts[] = [];
   for (const d of slotDefs(m, s, name, src)) {
     const options = uniq(list(ev(m, s, d.from, ctx)).map(String));
-    const min = d.min ?? 1;
+    const min = num(ev(m, s, d.min ?? 1, ctx));
     const prompt = d.prompt ?? 'target';
     if (options.length < min) return fail(no('targets', `${label}: no legal ${prompt}.`));
-    slots.push({ as: d.as, options, min, max: Math.min(d.max ?? 1, options.length), prompt });
+    slots.push({ as: d.as, options, min, max: Math.min(num(ev(m, s, d.max ?? 1, ctx)), options.length), prompt });
   }
   return { r: ok(label, checks), slots, ctx };
 }
@@ -257,15 +259,29 @@ export function listActions({ m, s }: Match, p: string): Template[] {
   return out;
 }
 
+function bindSlots(ctx: Ctx, slots: SlotOpts[], targets?: Record<string, string[]>) {
+  for (const sl of slots) {
+    const sel = targets?.[sl.as] ?? [];
+    ctx[sl.as] = sl.max === 1 && sl.min <= 1 ? (sel[0] ?? null) : sel;
+  }
+}
+
 /** Validates an action without changing anything. Rejections carry an explanation tree. */
 export function proposeAction({ m, s }: Match, p: string, cmd: ActionCmd): Reason {
-  const { r, slots } = evalAction(m, s, p, cmd.action, cmd.source ?? null);
+  const { r, slots, ctx } = evalAction(m, s, p, cmd.action, cmd.source ?? null);
   if (!r.ok) return r;
   for (const sl of slots) {
     const sel = cmd.targets?.[sl.as] ?? [];
     if (new Set(sel).size !== sel.length) return no('targets', `Duplicate ${sl.prompt}.`);
     if (sel.length < sl.min || sel.length > sl.max) return no('targets', `Choose ${sl.min === sl.max ? sl.min : `${sl.min}-${sl.max}`} ${sl.prompt}.`);
     if (sel.some((t) => !sl.options.includes(t))) return no('targets', `Illegal ${sl.prompt}.`);
+  }
+  const a = m.rules.actions[cmd.action];
+  if (a?.check?.length) {
+    const c = { ...ctx };
+    bindSlots(c, slots, cmd.targets);
+    const checks = a.check.map((q) => (ev(m, s, q.if, c) ? ok(q.why) : no('check', q.why)));
+    if (checks.some((x) => !x.ok)) return no('check', `${a.label ?? cmd.action}: the chosen targets do not qualify.`, checks);
   }
   return r;
 }
@@ -301,19 +317,17 @@ export function commitAction(match: Match, p: string, cmd: ActionCmd): Match {
       else resolveTop(m, s, tm);
     } else s.holder = nextPlayer(s, p);
   } else {
-    for (const sl of slots) {
-      const sel = cmd.targets?.[sl.as] ?? [];
-      ctx[sl.as] = sl.max === 1 && sl.min <= 1 ? (sel[0] ?? null) : sel;
-    }
+    bindSlots(ctx, slots, cmd.targets);
     const a = m.rules.actions[cmd.action];
-    const vis = source ? viewers(m, s.objects[source].zone) : null;
+    const vis = source ? objViewers(m, s.objects[source]) : null;
     emit(m, s, {
       type: 'action', player: p, action: cmd.action, source, card: source ? s.objects[source].card : null,
-      targets: cmd.targets ?? {}, ...masks([vis, ['source', 'card']]),
+      targets: cmd.targets ?? {},
+      ...masks([vis, ['source', 'card']], [Object.values(cmd.targets ?? {}).flat().some((t) => s.objects[t] && objViewers(m, s.objects[t]) !== null) ? [p] : null, ['targets']]),
     });
-    const stacked = tm.mode !== 'immediate' && a.stack !== false;
+    const stacked = (tm.mode === 'stack' || tm.mode === 'chain') && a.stack !== false;
     s.passes = 0;
-    s.holder = stacked && !(tm.retain ?? tm.mode === 'stack') ? nextPlayer(s, p) : p;
+    s.holder = tm.mode === 'alternate' || (stacked && !(tm.retain ?? tm.mode === 'stack')) ? nextPlayer(s, p) : p;
     const tail = stacked ? [['@stack', cmd.action, slotDefs(m, s, cmd.action, source)]] : a.do;
     s.exec.push({ list: [...(a.cost ?? []), ...tail], i: 0, ctx });
   }
@@ -334,7 +348,7 @@ export function submitDecision(match: Match, p: string, id: string, sel: string[
   s.pending = null;
   if (pd.kind === 'order') s.nextTrig = sel[0];
   else s.exec[s.exec.length - 1].ctx[pd.as] = pd.single ? sel[0] : sel;
-  const hidden = pd.options.some((o) => s.objects[o] && viewers(m, s.objects[o].zone) !== null);
+  const hidden = !!pd.secret || pd.options.some((o) => s.objects[o] && objViewers(m, s.objects[o]) !== null);
   emit(m, s, { type: 'chose', player: p, decision: id, sel, ...masks([hidden ? [p] : null, ['sel']]) });
   settleOrReject(m, s);
   return { m, s };

@@ -1,29 +1,39 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import type { Match, Mod } from '#engine';
+import type { Match } from '#engine';
 import { applyCmd, createMatch, eventHash, eventsFor, listActions, observe, replay, restore, serialize } from '#engine';
 import { randomAgent } from '#ai';
-import { deckOpts, invariantErrors, playMatch } from '#harness';
-import { arcane, m } from './helpers.ts';
+import { deckOpts, defaultDecks, invariantErrors, loadRef, playMatch } from '#harness';
+import { GAME_IDS, goldenHashes, goldenPath } from '../src/golden.ts';
 
-const GAMES: [string, Mod, string[]][] = [
-  ['spark-duel', m, ['ember-rush', 'stone-ward']],
-  ['arcane-duel', arcane, ['storm-circle', 'grove-host']],
-];
+/** Ids a player must not see: contents of zones hidden from them. */
+function hiddenFrom(g: Match, p: string): string[] {
+  const out: string[] = [];
+  for (const [key, ids] of Object.entries(g.s.zones)) {
+    const [owner, zid] = key.split(':');
+    const zd = g.m.zone.get(zid)!;
+    const visible = zd.vis === 'public' || (zd.vis === 'owner' && !zd.shared && owner === p);
+    if (!visible) out.push(...ids);
+  }
+  return out;
+}
 
-for (const [name, mod, decks] of GAMES) {
+for (const id of GAME_IDS) {
+  const mod = loadRef(id);
+  const decks = defaultDecks(mod);
   const play = (seed: number, onStep?: (g: Match) => void) =>
-    playMatch(createMatch(mod, deckOpts(mod, decks, seed)), [randomAgent(seed), randomAgent(seed + 1000)], onStep);
+    playMatch(createMatch(mod, deckOpts(mod, decks, seed)), decks.map((_, i) => randomAgent(seed * 13 + i)), onStep);
 
-  test(`${name}: replay of the command log reproduces the event hash`, () => {
-    for (let seed = 1; seed <= 10; seed++) {
+  test(`${id}: replay of the command log reproduces the event hash`, () => {
+    for (let seed = 1; seed <= 6; seed++) {
       const end = play(seed);
       assert.equal(replay(mod, end.s.opts, end.s.cmds).hash, eventHash(end.s), `seed ${seed}`);
     }
     assert.notEqual(eventHash(play(1).s), eventHash(play(2).s));
   });
 
-  test(`${name}: restore from a mid-game checkpoint continues identically`, () => {
+  test(`${id}: restore from a mid-game checkpoint continues identically`, () => {
     const end = play(42);
     const k = Math.floor(end.s.cmds.length / 2);
     let g = restore(mod, serialize(replay(mod, end.s.opts, end.s.cmds.slice(0, k)).match));
@@ -31,24 +41,34 @@ for (const [name, mod, decks] of GAMES) {
     assert.equal(eventHash(g.s), eventHash(end.s));
   });
 
-  test(`${name}: hidden information never reaches the other player`, () => {
-    for (let seed = 1; seed <= 15; seed++) {
+  test(`${id}: hidden information never reaches other players`, () => {
+    for (let seed = 1; seed <= 8; seed++) {
       play(seed, (g) => {
-        for (const p of ['p0', 'p1']) {
-          const q = p === 'p0' ? 'p1' : 'p0';
-          const hidden = [...g.s.zones[`${q}:hand`], ...g.s.zones['p0:deck'], ...g.s.zones['p1:deck']];
-          const seen = JSON.stringify([observe(g, p), listActions(g, p), eventsFor(g, p)]);
-          for (const id of hidden) assert.ok(!seen.includes(`"${id}"`), `seed ${seed}: ${p} can see ${id}`);
+        for (const pl of g.s.players) {
+          const p = pl.id;
+          const view = observe(g, p);
+          const seen = JSON.stringify([view, listActions(g, p), eventsFor(g, p)]);
+          for (const h of hiddenFrom(g, p)) assert.ok(!seen.includes(`"${h}"`), `${id} seed ${seed}: ${p} can see ${h}`);
+          for (const o of Object.values(g.s.objects)) {
+            if (!o.fd || o.controller === p) continue;
+            const v = view.zones[o.zone].cards!.find((c) => c.id === o.id)!;
+            assert.equal(v.card, '', `${p} sees face-down ${o.id}`);
+            assert.ok(!eventsFor(g, p).some((e) => e.newObj === o.id && 'card' in e), `${p} saw face-down ${o.id} in an event`);
+          }
         }
       });
     }
   });
 
-  test(`${name}: random games terminate with conserved cards`, () => {
-    for (let seed = 100; seed < 140; seed++) {
-      const end = play(seed, seed < 105 ? (g) => assert.deepEqual(invariantErrors(g), []) : undefined);
+  test(`${id}: random games terminate with conserved cards`, () => {
+    for (let seed = 100; seed < 125; seed++) {
+      const end = play(seed, seed < 103 ? (g) => assert.deepEqual(invariantErrors(g), []) : undefined);
       assert.ok(end.s.result);
       assert.deepEqual(invariantErrors(end), []);
     }
   });
 }
+
+test('golden event hashes are unchanged (run `npm run -s golden` after an intended change)', () => {
+  assert.deepEqual(goldenHashes(), JSON.parse(readFileSync(goldenPath, 'utf8')));
+});

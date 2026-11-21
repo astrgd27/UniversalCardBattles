@@ -5,12 +5,13 @@ A module is a folder or ZIP package (see **Packages** below). All logic is JSON 
 ## Values and variables
 - Strings that start with `$` are variables. Other strings are literals.
 - Dotted paths read into objects, for example `"$e.newObj"`.
+- `"game"` is a ref for game vars (`rules.gameVars`): `["get", "game", "x"]`, `["set", "game", "x", 1]`.
 - Built-in variables:
   - `$me` is the acting or controlling player, and `$opp` is the next living player after `$me`.
   - `$self` is the source object.
   - `$e` is the triggering event.
   - `$it` is the current item inside `filter`/`any`/`all`/`sum`.
-  - `$turn` and `$active`.
+  - `$turn`, `$active` and `$phase` (the current phase id).
 - Player ids are `p0..pN`. Object ids are `o<n>`, and an object gets a **new id on every zone change**. `inst` stays stable.
 - Zone keys are `p0:hand`, or `shared:<zone>` for shared zones.
 
@@ -34,6 +35,7 @@ A module is a folder or ZIP package (see **Packages** below). All logic is JSON 
 | `let $v value body` | local binding |
 | `map l expr`, `sortBy l key`, `maxBy l key`, `minBy l key` | list helpers that use `$it` |
 | `range n` (n ≤ 10000), `slice l a b?`, `reverse l`, `nth l i`, `mod a b`, `abs a` | more helpers |
+| `at x key`, `keys x`, `values x`, `same a b` | map and list access; `same` is deep equality (`=` compares single values) |
 | `linked target rel` | objects whose relationship `rel` points at target |
 
 ## Effects
@@ -42,7 +44,7 @@ Effects run in effect lists `[[op...], [op...]]`.
 | op | meaning |
 |---|---|
 | `draw p n` | moves the top deck card to hand. An empty deck emits `drawFail` |
-| `move objs zone {player?, pos?: "top", as?: "$v"}` | moves objects to a zone (owner's zone by default). `as` rebinds the new id(s) |
+| `move objs zone {player?, pos?: "top", as?: "$v", faceDown?: true}` | moves objects to a zone (owner's zone by default). `as` rebinds the new id(s). A face-down object's identity is known only to its controller (views show `card: ""`), its abilities don't work, and `get obj faceDown` reads the flag. Cards owned by `"shared"` become the taker's |
 | `shuffle p zone` | seeded shuffle |
 | `set refs name v`, `inc refs name d` | player or object vars. Emits `changed` |
 | `damage targets n src?` | players lose `damage.player` (default `life`); objects gain `damage.object` (default `dmg`). Emits `damage` |
@@ -56,15 +58,22 @@ Effects run in effect lists `[[op...], [op...]]`.
 | `modify objs {layer, mods, until?: "turn"}` | a temporary continuous effect. Values are fixed when it's created, and it applies only to those object ids |
 | `link objs rel target`, `unlink objs rel` | relationships (attachments and so on). A zone change clears them |
 | `call proc args...` | runs a script procedure (`rules.procedures`) |
+| `commit {who?, from, min?, max?, as, prompt?, reveal?}` | simultaneous secret choice. Each player in `who` (default: all living players) picks from `from`, evaluated with `$p` set to them. Picks are masked from everyone else, then bound as `{playerId: pick}`. A public `revealed` event follows unless `reveal: false`, which keeps the picks secret for a later commit. Note: it binds `$p` |
+| `random {min?, max, as}` / `random {from, n?, as}` | seeded integer, or a random pick (a list when `n` is given). Emits `random`; picks of hidden objects are masked |
+| `flip objs up?` | turns face up (default) or face down. Emits `flipped` (with `card` when turned face up) |
 
-`choose` also takes `required: true`: if fewer options than `min` exist (typically during a cost), the whole action is rejected and nothing changes.
+`choose` also takes `secret: true` (masks the pick from others) and `required: true`: if fewer options than `min` exist (typically during a cost), the whole action is rejected and nothing changes.
 
 `draw`, `move`, `destroy`, `damage` and `lose` are **proposed events** that pass through the replacement pipeline.
 
 ## rules.json
 - `players {min,max}`, `playerVars`, `objectVars` (reset on every zone change).
 - `zones[] {id, vis: public|owner|hidden, shared?, ordered?, abilities?}`. Card abilities function in zones with `abilities: true` unless the ability lists `zones`.
-- `deckZone`, `handZone`, `graveZone`, `format {deckMin, deckMax, maxCopies}`, `damage?`, `turnLimit?`.
+- `deckZone`, `handZone`, `graveZone`, `format {deckMin, deckMax, maxCopies, zones?}`, `damage?`, `turnLimit?`.
+  - `format.zones [{zone, min, max, types?}]` declares deck sections. A deck is then `{zone: [ids]}`; a plain list is always the main deck.
+  - A card may override the copy limit with `maxCopies`.
+- `gameVars`: game-wide numbers.
+- `sharedDecks {sharedZone: [ids]}`: cards created at the start in shared zones, owned by `"shared"` (markets, dice, a common deck).
 - `setup`: effects run once with `$me` = p0.
 - `phases[] {id, auto?, do?}`: `do` runs on entry. Auto phases advance by themselves. Others give the active player priority until they `pass`. A turn ends after the last phase.
 - `actions{name: {label, phases, source?, req[{if, why}], targets[slot], cardTargets?, cost, do}}`:
@@ -72,11 +81,13 @@ Effects run in effect lists `[[op...], [op...]]`.
   - `req` failures become explanation children.
   - A slot is `{as, from, min=1, max=1, prompt}`. `cardTargets` adds the source card's `targets`.
   - `cost` and `do` run in one frame.
+  - `check [{if, why}]` runs after targets are chosen (targets bound) and rejects bad combinations, e.g. fusion recipes. Slot `min`/`max` may be expressions.
   - `pass` is built in and reserved.
 - `triggers[] {on: eventType, if?, do}`: rule triggers, controlled by the active player. They always resolve immediately and before card triggers.
 - `timing {mode: immediate|stack|chain, retain?, minResponse?=2}`, also overridable per phase. Each mode works as follows (a code sketch follows this list):
   - **immediate**: actions resolve at once, and only the active player acts.
   - **stack**: costs are paid, then the action goes on the stack. The caster keeps priority (`retain` defaults to true). When all players pass in a row, the top item resolves and the active player gets priority again. All players passing on an empty stack ends the phase. Auto phases advance once the stack is empty.
+  - **alternate**: every player may act; after each action (always resolved at once) priority moves to the next player. All passing in a row ends the phase. `first` (an expression) picks who starts, e.g. an initiative holder.
   - **chain**: priority goes to the next player after each action (`retain` defaults to false). A response needs speed ≥ max(minResponse, the top item's speed). When all pass, the whole chain resolves back to back, and triggers raised meanwhile form a new chain.
 - Actions: `speed` (default 1) works like this:
   - With an empty stack, speed below `minResponse` is only allowed for the active player.

@@ -1,4 +1,4 @@
-import type { Ctx, Mask, Mod, Player, State } from './types.ts';
+import type { Ctx, Mask, Mod, Obj, Player, State } from './types.ts';
 
 export class EngineError extends Error {}
 /** Thrown when a cost cannot be paid; the action is rejected and nothing changes. */
@@ -30,6 +30,8 @@ export function masks(...pairs: [string[] | null, string[]][]): { masks?: Mask[]
   const out = pairs.filter((p): p is Mask => p[0] !== null);
   return out.length ? { masks: out } : {};
 }
+/** Who may know an object's identity: the controller only while it is face down. */
+export const objViewers = (m: Mod, o: Obj): string[] | null => (o.fd ? [o.controller] : viewers(m, o.zone));
 export const unionViewers = (a: string[] | null, b: string[] | null) => (a === null || b === null ? null : uniq([...a, ...b]));
 
 export const player = (s: State, id: unknown): Player | undefined => s.players.find((p) => p.id === id);

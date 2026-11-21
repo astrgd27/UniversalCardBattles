@@ -19,9 +19,9 @@ test('module validates; bad ops and zones are reported', () => {
 
 test('deck construction rules', () => {
   assert.match(deckErrors(m, ['ember-pup']).join(), /deck has 1 cards/);
-  const tooMany = [...m.decks!['ember-rush'].slice(0, 17), 'mend', 'mend', 'mend'];
+  const tooMany = [...(m.decks!['ember-rush'] as string[]).slice(0, 17), 'mend', 'mend', 'mend'];
   assert.match(deckErrors(m, tooMany).join(), /3 copies of "mend"/);
-  assert.throws(() => createMatch(m, { decks: [['nope'], m.decks!['ember-rush']], seed: 1 }), /Deck 0/);
+  assert.throws(() => createMatch(m, { decks: [['nope'], (m.decks!['ember-rush'] as string[])], seed: 1 }), /Deck 0/);
 });
 
 test('setup, phases and turn handoff', () => {
@@ -94,8 +94,8 @@ test('opponent makes a hidden choice (Pry)', () => {
 });
 
 test('leave-play trigger uses last-known information; zone change makes a new object', () => {
-  const deck = m.decks!['ember-rush'].map((c) => (c === 'lantern-moth' ? 'collapse' : c));
-  let g = createMatch(m, { decks: [deck, m.decks!['stone-ward']], seed: 5 });
+  const deck = (m.decks!['ember-rush'] as string[]).map((c) => (c === 'lantern-moth' ? 'collapse' : c));
+  let g = createMatch(m, { decks: [deck, (m.decks!['stone-ward'] as string[])], seed: 5 });
   g.s.players[0].vars.energy = 10;
   const knight = place(g, 'p0', 'hollow-knight', 'board');
   const col = place(g, 'p0', 'collapse', 'hand');

@@ -1,0 +1,104 @@
+{
+  "players": {"min": 3, "max": 4},
+  "playerVars": {"life": 12, "gold": 0, "power": 0, "influence": 0, "renown": 0, "lobby": 0, "initiative": 0},
+  "gameVars": {"vote": 0, "claimed": 0},
+  "objectVars": {"face": 0},
+  "zones": [
+    {"id": "deck", "vis": "hidden", "ordered": true},
+    {"id": "hand", "vis": "owner"},
+    {"id": "play", "vis": "public"},
+    {"id": "grave", "vis": "public", "ordered": true},
+    {"id": "market", "vis": "public", "shared": true},
+    {"id": "supply", "vis": "hidden", "shared": true, "ordered": true},
+    {"id": "table", "vis": "public", "shared": true}
+  ],
+  "deckZone": "deck", "handZone": "hand", "graveZone": "grave",
+  "format": {"deckMin": 8, "deckMax": 8, "maxCopies": 2},
+  "sharedDecks": {
+    "supply": ["silver-mark","silver-mark","silver-mark","silver-mark","mercenary","mercenary","mercenary","herald","herald","herald",
+      "knight","knight","diplomat","diplomat","ember-sage","ember-sage","monument","monument"],
+    "table": ["ember-die"]
+  },
+  "turnLimit": 60,
+  "setup": [
+    ["shuffle", "$me", "supply"],
+    ["move", ["top", "$me", "supply", 4], "market", {"player": "$me"}],
+    ["each", ["players"], "$p", [["shuffle", "$p", "deck"], ["draw", "$p", 5]]],
+    ["set", ["first", ["players"]], "initiative", 1]
+  ],
+  "functions": {
+    "weight": {"params": ["$X", "$votes"], "body": ["sum", ["filter", ["players"], ["=", ["at", "$votes", "$it"], "$X"]], ["+", 1, ["get", "$it", "lobby"]]]}
+  },
+  "procedures": {
+    "drawOne": {"params": ["$p"], "do": [
+      ["if", ["and", ["=", ["count", ["cards", "$p", "deck"]], 0], [">", ["count", ["cards", "$p", "grave"]], 0]],
+        [["move", ["cards", "$p", "grave"], "deck"], ["shuffle", "$p", "deck"]]],
+      ["draw", "$p", 1]]},
+    "refill": {"params": [], "do": [
+      ["if", ["and", ["<", ["count", ["cards", "$me", "market"]], 4], [">", ["count", ["cards", "$me", "supply"]], 0]],
+        [["move", ["top", "$me", "supply", 1], "market", {"player": "$me"}]]]]}
+  },
+  "phases": [
+    {"id": "start", "auto": true, "do": [
+      ["set", "$active", "gold", 0], ["set", "$active", "power", 0], ["set", "$active", "influence", 0],
+      ["each", ["range", ["max", 0, ["-", 5, ["count", ["cards", "$active", "hand"]]]]], "$i", [["call", "drawOne", "$active"]]],
+      ["random", {"min": 1, "max": 6, "as": "$r"}],
+      ["set", ["cards", "$active", "table"], "face", "$r"],
+      ["if", ["in", "$r", ["list", 3, 4]], [["inc", "$active", "gold", 1]]],
+      ["if", ["=", "$r", 5], [["inc", "$active", "influence", 1]]],
+      ["if", ["=", "$r", 6], [["set", "game", "vote", 1]]]]},
+    {"id": "main"},
+    {"id": "council", "timing": {"mode": "alternate", "first": ["first", ["filter", ["players"], ["=", ["get", "$it", "initiative"], 1]]]},
+      "do": [["if", ["=", ["get", "game", "vote"], 0], [["endPhase"]]], ["set", "game", "claimed", 0]]},
+    {"id": "verdict", "auto": true, "do": [
+      ["if", ["=", ["get", "game", "vote"], 1], [
+        ["commit", {"from": ["filter", ["players"], ["!=", "$it", "$p"]], "as": "$votes", "prompt": "Secretly vote for a rival to censure"}],
+        ["let", "$top", ["maxBy", ["players"], ["call", "weight", "$it", "$votes"]]],
+        ["let", "$w", ["call", "weight", "$top", "$votes"]],
+        ["if", ["=", ["count", ["filter", ["players"], ["=", ["call", "weight", "$it", "$votes"], "$w"]]], 1],
+          [["emit", "censured", {"player": "$top", "votes": "$w"}], ["damage", "$top", 4]]]]],
+      ["set", "game", "vote", 0],
+      ["each", ["players"], "$p", [["set", "$p", "lobby", 0]]]]},
+    {"id": "end", "auto": true, "do": [
+      ["move", ["cards", "$active", "play"], "grave"],
+      ["move", ["cards", "$active", "hand"], "grave"],
+      ["each", ["players"], "$p", [["if", [">=", ["get", "$p", "renown"], 10], [["win", "$p"]]]]]]}
+  ],
+  "actions": {
+    "play": {
+      "label": "Play", "phases": ["main"],
+      "source": ["cards", "$me", "hand"],
+      "do": [["move", "$self", "play", {"as": "$self"}],
+        ["inc", "$me", "gold", ["get", "$self", "gold"]], ["inc", "$me", "power", ["get", "$self", "power"]],
+        ["inc", "$me", "influence", ["get", "$self", "influence"]], ["run", "$self", "effects"]]
+    },
+    "buy": {
+      "label": "Buy", "phases": ["main"],
+      "source": ["filter", ["cards", "$me", "market"], ["<=", ["get", "$it", "cost"], ["get", "$me", "gold"]]],
+      "do": [["inc", "$me", "gold", ["neg", ["get", "$self", "cost"]]], ["move", "$self", "grave", {"player": "$me", "as": "$self"}],
+        ["run", "$self", "onBuy"], ["call", "refill"]]
+    },
+    "strike": {
+      "label": "Strike a rival", "phases": ["main"],
+      "req": [{"if": [">", ["get", "$me", "power"], 0], "why": "You have no power to spend."}],
+      "targets": [{"as": "$t", "prompt": "rival", "from": ["filter", ["players"], ["!=", "$it", "$me"]]}],
+      "do": [["damage", "$t", ["get", "$me", "power"]], ["set", "$me", "power", 0]]
+    },
+    "petition": {
+      "label": "Petition (3 influence: +2 renown)", "phases": ["main"],
+      "req": [{"if": [">=", ["get", "$me", "influence"], 3], "why": "You need 3 influence."}],
+      "do": [["inc", "$me", "influence", -3], ["inc", "$me", "renown", 2]]
+    },
+    "lobby": {
+      "label": "Lobby (1 influence: +1 vote weight)", "phases": ["council"],
+      "req": [{"if": [">", ["get", "$me", "influence"], 0], "why": "You need 1 influence."}],
+      "do": [["inc", "$me", "influence", -1], ["inc", "$me", "lobby", 1]]
+    }
+  },
+  "triggers": [
+    {"on": "pass", "text": "first to pass claims initiative",
+      "if": ["and", ["=", "$phase", "council"], ["=", ["get", "game", "claimed"], 0]],
+      "do": [["each", ["players"], "$p", [["set", "$p", "initiative", 0]]], ["set", "$e.player", "initiative", 1], ["set", "game", "claimed", 1]]}
+  ],
+  "stateChecks": [["each", ["players"], "$p", [["if", ["<=", ["get", "$p", "life"], 0], [["lose", "$p"]]]]]]
+}
