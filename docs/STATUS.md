@@ -217,8 +217,14 @@ A survey of about 30 published TCG rulebooks (`docs/COVERAGE.md`, second table) 
   - **Grid layers** (`grid.layers`, `layer`).
 - 96 tests (14 in `gaps.test.ts`, including an inline lab module); golden hashes for the 7 earlier games are unchanged.
 
+## Done: better saving
+- **IndexedDB** (`apps/web/src/storage.ts`): a synchronous in-memory cache in front of IndexedDB, with writes applied in order in the background. There is no ~5 MB localStorage ceiling, and older localStorage saves move over automatically on first load. If IndexedDB is unavailable it falls back to localStorage, then to memory, and the library footer says which one is in use, the space used, and whether the browser has granted persistent storage.
+- **Save slots**: `ucb-slot:<game>:<slot>`. Up to 20 manual saves per game plus an **autosave**, written at most about once a second during a match, on quit and on page hide, and cleared when the match ends. Continue resumes the newest save; Load game lists them all with Load and Delete. Old single saves become slots.
+- **Sync file** (Chrome/Edge, File System Access API): link a file in a Dropbox, OneDrive, iCloud or Google Drive folder and every change is written to it (debounced). On a new device, link the same file and choose to load its saves. Permission is re-requested with a "Reconnect" button after a restart. Other browsers keep export/import.
+- Backups include slots; e2e covers slots, autosave, IndexedDB and survival across reloads.
+
 ## Possible next steps
-- Campaigns for the other reference games, IndexedDB saves and cloud sync, an art pipeline, online multiplayer.
+- Campaigns for the other reference games, an art pipeline, online multiplayer.
 - Campaigns for the other reference games.
 - IndexedDB storage (localStorage today) and cloud sync of backups.
 - Card art pipeline: an asset browser in the gallery, using art in reference games.

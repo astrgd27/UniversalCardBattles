@@ -1,11 +1,11 @@
-// Browser save backups: every "ucb-*" localStorage entry (profiles, custom decks, saved matches, theme) in one JSON file.
+// Browser save backups: every stored "ucb-*" entry (profiles, custom decks, save slots, theme) in one JSON file.
 // Imports are untrusted: strict JSON parsing, size cap, key whitelist and per-entry shape checks.
 import { CampaignError, migrateProfile } from '#campaign';
 import { PackageError, parseJson } from '#sdk';
 
 export const BACKUP_VERSION = 1;
 export const MAX_BACKUP_BYTES = 5 << 20;
-const KEY = /^ucb-(save|profile|decks):[a-z0-9][a-z0-9-]{1,63}$|^ucb-theme$/;
+const KEY = /^ucb-(save|profile|decks):[a-z0-9][a-z0-9-]{1,63}$|^ucb-slot:[a-z0-9][a-z0-9-]{1,63}:[a-z0-9]{1,32}$|^ucb-theme$/;
 export interface Backup { app: 'universal-card-battles'; kind: 'saves'; version: number; exportedAt: string; entries: Record<string, unknown> }
 
 const isRec = (x: unknown): x is Record<string, any> => !!x && typeof x === 'object' && !Array.isArray(x);

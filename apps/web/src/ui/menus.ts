@@ -2,7 +2,8 @@
 import type { Deck, Mod } from '#engine';
 import { deckErrors } from '#engine';
 import { MODULES } from '../modules.ts';
-import { allDecks, campaign, customDecks, hasSave, sections, type UI } from '../main.ts';
+import { allDecks, campaign, customDecks, hasSave, sections, slots, storageInfo, sync, type UI } from '../main.ts';
+import { syncSupported } from '../storage.ts';
 import { cardFace, cls, emblem, h, hue, segmented, select, themeStyle, title, topnav } from './kit.ts';
 
 export function library(ui: UI, A: any) {
@@ -22,10 +23,44 @@ export function library(ui: UI, A: any) {
         h('span', { class: 'tile-tag' }, 'Open a module package (.zip)'),
         h('input', { type: 'file', accept: '.zip', onchange: (e: Event) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) A.loadZip(f); } }))),
     h('footer', { class: 'foot' },
+      storageLine(),
+      syncSupported() && syncControls(A),
       h('button', { onclick: A.exportSaves, 'data-act': 'export' }, '⬇ Export saves'),
       h('label', { class: 'file-btn', 'data-act': 'import' }, '⬆ Import saves',
         h('input', { type: 'file', accept: '.json,application/json', onchange: (e: Event) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) A.importSaves(f); } })),
       segmented(ui.theme, [['dark', 'Dark'], ['light', 'Light']], A.setTheme, 'Theme')));
+}
+
+function storageLine() {
+  const where = storageInfo.backend === 'indexeddb' ? 'Saved in this browser' : storageInfo.backend === 'localStorage' ? 'Saved in this browser (basic storage)' : 'Saves last only until you close this tab';
+  const mb = storageInfo.used !== null ? ` · ${(storageInfo.used / 1048576).toFixed(1)} MB` : '';
+  return h('span', { class: 'muted storage-line', 'data-storage': storageInfo.backend, title: storageInfo.persisted ? 'The browser will keep these saves' : 'The browser may clear these saves when space runs low; export or link a sync file to keep them safe' },
+    `${where}${mb}${storageInfo.persisted ? ' · protected' : ''}`);
+}
+
+/** Sync file controls: link a file in a cloud-synced folder and every change is written to it. */
+function syncControls(A: any) {
+  if (sync.status === 'off') return h('button', { onclick: () => A.linkSync(true), 'data-act': 'sync', title: 'Pick a file in a Dropbox, OneDrive, iCloud or Google Drive folder; saves are written to it automatically' }, '☁ Link sync file');
+  const at = sync.at ? ` · ${new Date(sync.at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}` : '';
+  return h('span', { class: 'sync-ctl' },
+    sync.status === 'connected' ? h('span', { class: 'chip good', title: 'Every change is written to this file' }, `☁ ${sync.name}${at}`)
+      : h('button', { onclick: () => A.linkSync(false), class: 'cta small' }, sync.status === 'error' ? `☁ Sync error, retry` : `☁ Reconnect ${sync.name}`),
+    h('button', { class: 'ghost', onclick: A.unlinkSync, 'aria-label': 'Stop syncing' }, '×'));
+}
+
+/** Save slots for the open game: autosave and manual saves, newest first. */
+export function savesScreen(ui: UI, A: any) {
+  const m = ui.mod!;
+  const list = slots(m);
+  return h('div', { class: 'screen saves', style: themeStyle(m) },
+    topnav([m.manifest.displayName, () => A.go('home')], 'Load game'),
+    list.length ? h('div', { class: 'slot-list' }, list.map((s) => h('div', { class: 'slot-card', 'data-slot-key': s.key },
+      h('div', { class: 'slot-main' },
+        h('strong', {}, s.auto ? '⟳ Autosave' : s.name),
+        h('span', { class: 'muted' }, [s.savedAt ? new Date(s.savedAt).toLocaleString() : '', s.turn ? `turn ${s.turn}` : '', s.seats.map((x) => (x === 'human' ? 'You' : 'AI')).join(' vs '), s.camp ? 'campaign' : ''].filter(Boolean).join(' · '))),
+      h('button', { class: 'cta small', onclick: () => A.continueGame(s.key) }, 'Load'),
+      h('button', { class: 'ghost', onclick: () => A.deleteSlot(s.key), 'aria-label': `Delete ${s.name}` }, 'Delete'))))
+      : h('p', { class: 'muted' }, 'No saved games yet. Use Save game in the pause menu; matches also autosave.'));
 }
 
 function meta(m: Mod): string[] {
@@ -37,8 +72,9 @@ export function home(ui: UI, A: any) {
   const m = ui.mod!;
   const camp = campaign();
   const items: [string, string, () => void, string][] = [
-    ...(hasSave(m) ? [['Continue', 'Resume your saved match', A.continueGame, 'continue'] as [string, string, () => void, string]] : []),
+    ...(hasSave(m) ? [['Continue', `Resume ${slots(m)[0].auto ? 'where you left off' : slots(m)[0].name}`, () => A.continueGame(), 'continue'] as [string, string, () => void, string]] : []),
     ['Play', 'A match against the AI or friends on this device', () => A.go('setup'), 'play'],
+    ...(slots(m).length > 1 ? [['Load game', `${slots(m).length} saved games`, () => A.go('saves'), 'load'] as [string, string, () => void, string]] : []),
     ['Deckbuilder', `Build decks from ${m.cards.length} cards`, () => A.go('decks'), 'decks'],
     ['Card gallery', 'Browse every card', () => A.go('gallery'), 'gallery'],
     ...(camp ? [['Campaign', ui.profile ? `${camp.name} · ${Object.keys(ui.profile.wins).length}/${Object.keys(camp.encounters).length} won` : camp.name, () => A.go('campaign'), 'campaign'] as [string, string, () => void, string]] : []),

@@ -100,7 +100,11 @@ try {
   await page.click('.panel-pop >> text=Save game');
   await page.click('.panel-pop >> text=Quit to game menu');
   ok(await page.isVisible('[data-menu=continue]'), 'continue appears after saving');
-  await page.click('[data-menu=continue]');
+  ok(await page.isVisible('[data-menu=load]'), 'load game lists the manual save and the autosave');
+  await page.click('[data-menu=load]');
+  const slotNames = await page.$$eval('.slot-card strong', (s) => s.map((x) => x.textContent));
+  ok(slotNames.length === 2 && slotNames.includes('⟳ Autosave'), `two slots, one autosave (${slotNames})`);
+  await page.click('.slot-card >> nth=0 >> text=Load');
   ok(await page.isVisible('.hud'), 'saved game resumes');
   await page.click('button[aria-label=Menu]');
   await page.click('.panel-pop >> text=Quit to game menu');
@@ -224,10 +228,14 @@ try {
   const backupPath = await dl.path();
   const exported = JSON.parse(await (await import('node:fs/promises')).readFile(backupPath, 'utf8'));
   ok(exported.kind === 'saves' && 'ucb-profile:spark-duel' in exported.entries && 'ucb-decks:spark-duel' in exported.entries, 'backup contains profile and decks');
-  await page.evaluate(() => localStorage.clear());
+  ok(await page.isVisible('[data-storage=indexeddb]'), 'saves live in IndexedDB');
+  await page.evaluate(async () => { const s = window.__ucbStore; for (const k of s.keys()) s.del(k); await s.flush(); });
   await page.reload();
   await page.setInputFiles('[data-act=import] input', backupPath);
   await page.waitForSelector('text=Saves imported');
+  await page.evaluate(() => window.__ucbStore.flush());
+  await page.reload(); // imported saves survive a reload (written through to IndexedDB)
+  await page.waitForSelector('[data-module="spark-duel"]');
   await page.click('[data-module="spark-duel"]');
   ok(await page.isVisible(`text=${exported.entries['ucb-profile:spark-duel'].currency} Sparks to spend`), 'imported campaign currency');
   await page.click('[data-menu=play]');

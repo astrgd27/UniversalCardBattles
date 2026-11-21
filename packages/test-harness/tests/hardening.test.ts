@@ -91,6 +91,9 @@ test('save backups: round trip, whitelist, validation, fuzzing', () => {
   const r2 = readBackup(evil);
   assert.equal(Object.keys(r2.entries).length, 4);
   assert.equal(r2.problems.length, 3);
+  const slotted = readBackup(JSON.stringify(makeBackup({ 'ucb-slot:spark-duel:auto': save, 'ucb-slot:spark-duel:s1x2': save, 'ucb-slot:spark-duel:../x': save })));
+  assert.deepEqual(Object.keys(slotted.entries).sort(), ['ucb-slot:spark-duel:auto', 'ucb-slot:spark-duel:s1x2'], 'save slots round-trip; odd slot names are dropped');
+  assert.match(readBackup(JSON.stringify({ ...makeBackup({}), entries: { 'ucb-slot:spark-duel:auto': { state: 1 } } })).problems.join(), /saved match is malformed/);
   assert.match(readBackup('{"app": "other"}').problems.join(), /not a Universal Card Battles save backup/);
   assert.match(readBackup('{"__proto__": {}}').problems.join(), /forbidden key/);
   assert.match(readBackup('x'.repeat((5 << 20) + 1)).problems.join(), /larger than 5 MB/);

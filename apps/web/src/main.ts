@@ -12,12 +12,13 @@ import {
   ownedErrors, startEncounter,
 } from '#campaign';
 import { makeBackup, readBackup } from './backup.ts';
+import { connectSync, initSync, openStore, persistStorage, store, sync, unlinkSync, usage } from './storage.ts';
 import { PackageError } from '#sdk';
 import { MODULES, loadZipModule } from './modules.ts';
 import { render } from './ui/render.ts';
 
 export type Seat = 'human' | 'heuristic' | 'random';
-export type Screen = 'library' | 'home' | 'setup' | 'game' | 'decks' | 'gallery' | 'campaign' | 'encounter' | 'reward' | 'shop';
+export type Screen = 'library' | 'home' | 'setup' | 'game' | 'decks' | 'gallery' | 'campaign' | 'encounter' | 'reward' | 'shop' | 'saves';
 /** Choosing targets for an action template, or answering a pending decision. */
 export interface Selection { tpl?: Template; slot: number; picks: Record<string, string[]> }
 export interface DeckEdit { name: string; original: string | null; deck: Record<string, string[]>; section: string; campaign?: boolean }
@@ -57,18 +58,54 @@ export interface UI {
   counts: Record<string, number>; // zone sizes at the last render (pile bumps)
 }
 
-const SAVE = (id: string) => `ucb-save:${id}`;
 const PROFILE = (id: string) => `ucb-profile:${id}`;
 const DECKS = (id: string) => `ucb-decks:${id}`;
-const store = {
-  get<T>(k: string, d: T): T { try { const v = localStorage.getItem(k); return v ? (JSON.parse(v) as T) : d; } catch { return d; } },
-  set(k: string, v: unknown) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } },
-  del(k: string) { try { localStorage.removeItem(k); } catch { /* storage unavailable */ } },
-};
+/** Save slots: ucb-slot:<module>:<slot>; "auto" is the autosave, others are manual saves. */
+const SLOT = (id: string, slot: string) => `ucb-slot:${id}:${slot}`;
+const MAX_SLOTS = 20;
+export interface SlotInfo { key: string; slot: string; name: string; savedAt: string; turn: number; seats: Seat[]; auto: boolean; camp: boolean }
+export function slots(m: Mod): SlotInfo[] {
+  const pre = `ucb-slot:${m.manifest.moduleId}:`;
+  return store.keys(pre).map((key) => {
+    const d = store.get<any>(key, {});
+    return { key, slot: key.slice(pre.length), name: d.name ?? 'Saved game', savedAt: d.savedAt ?? '', turn: d.turn ?? 0, seats: d.seats ?? [], auto: key.endsWith(':auto'), camp: !!d.camp };
+  }).sort((a, b) => b.savedAt.localeCompare(a.savedAt));
+}
+/** Older versions kept one save per game under ucb-save:<module>; turn those into manual slots. */
+function migrateLegacySaves() {
+  for (const k of store.keys('ucb-save:')) {
+    const d = store.get<any>(k, null);
+    const id = k.slice('ucb-save:'.length);
+    if (d) store.set(SLOT(id, `s${Date.now().toString(36)}`), { name: 'Saved game', savedAt: new Date(0).toISOString(), turn: 0, ...d });
+    store.del(k);
+  }
+}
+function slotData(name: string) {
+  return { name, savedAt: new Date().toISOString(), turn: ui.match!.s.turn.n, seats: ui.seats, decks: ui.decks, camp: ui.camp, state: serialize(ui.match!) };
+}
+let autoTimer: ReturnType<typeof setTimeout> | undefined;
+let autoAt = '';
+const autoKey = (m: Match) => `${m.s.opts.seed}:${m.s.cmds.length}`;
+/** Writes the autosave now (a finished match clears it instead). */
+function autosaveNow() {
+  clearTimeout(autoTimer);
+  autoTimer = undefined;
+  const m = ui.match;
+  if (!m || !ui.mod || autoKey(m) === autoAt) return;
+  autoAt = autoKey(m);
+  if (m.s.result) store.del(SLOT(ui.mod.manifest.moduleId, 'auto'));
+  else store.set(SLOT(ui.mod.manifest.moduleId, 'auto'), slotData('Autosave'));
+}
+/** Autosave at most about once a second while a match is being played. */
+function autosave() {
+  const m = ui.match;
+  if (!m || !ui.mod || ui.screen !== 'game' || autoKey(m) === autoAt || autoTimer) return;
+  autoTimer = setTimeout(autosaveNow, 800);
+}
 
 export const customDecks = (m: Mod): Record<string, Deck> => store.get(DECKS(m.manifest.moduleId), {});
 export const allDecks = (m: Mod): Record<string, Deck> => ({ ...(m.decks ?? {}), ...customDecks(m) });
-export const hasSave = (m: Mod) => !!store.get(SAVE(m.manifest.moduleId), null);
+export const hasSave = (m: Mod) => slots(m).length > 0;
 export const sections = (m: Mod) => m.rules.format.zones?.map((z) => z.zone) ?? [m.rules.deckZone];
 export const actor = (m: Match) => m.s.pending?.player ?? m.s.priority;
 
@@ -86,7 +123,7 @@ export const ui: UI = {
 
 let timer: ReturnType<typeof setTimeout> | undefined;
 const seatOf = (p: string) => ui.seats[+p.slice(1)];
-export const redraw = () => { decisionStart(); render(ui, actions); };
+export const redraw = () => { decisionStart(); autosave(); render(ui, actions); };
 
 function advance() {
   clearTimeout(timer);
@@ -225,14 +262,7 @@ export const actions = {
   },
   setTheme(t: UI['theme']) { ui.theme = t; store.set('ucb-theme', t); redraw(); },
   exportSaves() {
-    const entries: Record<string, unknown> = {};
-    try {
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i)!;
-        if (k.startsWith('ucb-')) entries[k] = JSON.parse(localStorage.getItem(k)!);
-      }
-    } catch (e) { ui.note = { title: 'Could not read saves', text: String(e) }; return redraw(); }
-    const b = makeBackup(entries);
+    const b = makeBackup(store.all());
     const url = URL.createObjectURL(new Blob([JSON.stringify(b, null, 1)], { type: 'application/json' }));
     const a = Object.assign(document.createElement('a'), { href: url, download: `ucb-saves-${b.exportedAt.slice(0, 10)}.json` });
     document.body.append(a);
@@ -249,11 +279,32 @@ export const actions = {
     if (!window.confirm(`Import ${n} item(s)? Existing saves with the same names will be replaced.`)) return;
     let written = 0;
     for (const [k, v] of Object.entries(entries)) if (store.set(k, v)) written++;
+    migrateLegacySaves();
     ui.theme = store.get<'light' | 'dark'>('ucb-theme', ui.theme) === 'light' ? 'light' : 'dark';
     ui.note = { title: 'Saves imported', text: [`${written} item(s) restored.`, ...problems].join('\n') };
     redraw();
   },
   closeNote() { ui.note = null; redraw(); },
+  async linkSync(pick: boolean) {
+    try {
+      const msg = await connectSync(pick, async (text) => {
+        const { entries, problems } = readBackup(text);
+        const n = Object.keys(entries).length;
+        const same = Object.entries(entries).every(([k, v]) => JSON.stringify(store.get(k, null)) === JSON.stringify(v));
+        if (!n || same) return false;
+        if (!window.confirm(`The sync file holds ${n} saved item(s). Load them into this browser?\n\nOK: load them (same names are replaced).\nCancel: keep this browser's saves and overwrite the file.`)) return false;
+        for (const [k, v] of Object.entries(entries)) store.set(k, v);
+        migrateLegacySaves();
+        if (problems.length) ui.note = { title: 'Some items were skipped', text: problems.join('\n') };
+        return true;
+      });
+      ui.note ??= { title: 'Sync file', text: msg };
+    } catch (e) {
+      if ((e as Error).name !== 'AbortError') ui.note = { title: 'Sync failed', text: String((e as Error).message) };
+    }
+    redraw();
+  },
+  async unlinkSync() { await unlinkSync(); redraw(); },
 
   // ---- match setup ----
   setPlayers(n: number) { Object.assign(ui, seatsFor(ui.mod!, n)); redraw(); },
@@ -274,10 +325,10 @@ export const actions = {
     Object.assign(ui, { camp: null, dialogSeen: -1, fxFrom: 0, counts: {}, screen: 'game', cover: null, note: null, inspect: null, drawer: null, pile: null, paused: false });
     advance();
   },
-  continueGame() {
+  continueGame(key?: string) {
     const m = ui.mod!;
     try {
-      const d = store.get<any>(SAVE(m.manifest.moduleId), null);
+      const d = store.get<any>(key ?? slots(m)[0]?.key ?? '', null);
       if (!d) throw new Error('No saved game.');
       ui.seats = d.seats;
       ui.decks = d.decks;
@@ -287,6 +338,7 @@ export const actions = {
       ui.agents = ui.seats.map((s, i) => (ui.camp && i === 1 ? encounterAgent(campaign()!.encounters[ui.camp.enc], s0 + i) : makeAgent(s === 'random' ? 'random' : 'heuristic', s0 + i)));
       ui.dialogSeen = ui.match!.s.events.length - 1;
       ui.viewer = `p${Math.max(0, ui.seats.indexOf('human'))}`;
+      autoAt = autoKey(ui.match!);
       Object.assign(ui, { screen: 'game', cover: null, note: null, inspect: null, drawer: null, paused: false, fxFrom: ui.match!.s.events.length, counts: {} });
     } catch (e) {
       ui.note = { title: 'Could not continue', text: String((e as Error).message) };
@@ -298,11 +350,16 @@ export const actions = {
   pause(on: boolean) { ui.paused = on; if (on) { clearTimeout(timer); redraw(); } else advance(); },
   save() {
     if (!ui.match) return;
-    const ok = store.set(SAVE(ui.mod!.manifest.moduleId), { seats: ui.seats, decks: ui.decks, camp: ui.camp, state: serialize(ui.match) });
-    ui.note = ok ? { title: 'Game saved', text: 'Continue it later from the game menu.' } : { title: 'Could not save', text: 'Browser storage is unavailable.' };
+    const m = ui.mod!;
+    const manual = slots(m).filter((s) => !s.auto);
+    for (const s of manual.slice(MAX_SLOTS - 1)) store.del(s.key);
+    const when = new Date().toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const ok = store.set(SLOT(m.manifest.moduleId, `s${Date.now().toString(36)}`), slotData(`Turn ${ui.match.s.turn.n} · ${when}`));
+    ui.note = ok ? { title: 'Game saved', text: `Load it later from the game menu (Load game).${manual.length >= MAX_SLOTS ? ` The oldest save was removed (${MAX_SLOTS} kept).` : ''}` } : { title: 'Could not save', text: 'Browser storage is unavailable.' };
     redraw();
   },
-  quit() { if (ui.match?.s.result) store.del(SAVE(ui.mod!.manifest.moduleId)); ui.match = null; const back = ui.camp ? 'campaign' : 'home'; ui.camp = null; actions.go(back); },
+  deleteSlot(key: string) { if (window.confirm('Delete this saved game?')) { store.del(key); redraw(); } },
+  quit() { if (!ui.camp || !ui.match?.s.result) autosaveNow(); else clearTimeout(autoTimer); ui.match = null; const back = ui.camp ? 'campaign' : 'home'; ui.camp = null; actions.go(back); },
   rematch() { if (ui.camp) actions.playEncounter(); else actions.newGame(); },
   setExternal(name: string, value: string) {
     const m = ui.match!;
@@ -506,7 +563,9 @@ export const actions = {
     const r = finishEncounter(c, ui.profile!, enc, seq, ui.match!.s.result!);
     ui.profile = r.profile;
     saveProfile();
-    store.del(SAVE(ui.mod!.manifest.moduleId));
+    clearTimeout(autoTimer);
+    autoTimer = undefined;
+    store.del(SLOT(ui.mod!.manifest.moduleId, 'auto'));
     const en = c.encounters[enc];
     ui.reward = { won: r.won, granted: r.granted, lines: (r.won ? en.outro : en.defeat) ?? [], enc };
     Object.assign(ui, { match: null, camp: null });
@@ -543,4 +602,19 @@ window.addEventListener('keydown', (e) => {
   else if (ui.sel || ui.menu) actions.cancel();
   else if (ui.screen === 'game' && ui.match && !ui.match.s.result) actions.pause(!ui.paused);
 });
-redraw();
+
+// Boot: open storage (IndexedDB, migrating older localStorage saves), then draw.
+export const storageInfo: { backend: string; persisted: boolean; used: number | null } = { backend: 'memory', persisted: false, used: null };
+openStore((msg) => { ui.note = { title: 'Storage problem', text: msg }; redraw(); }).then(async (b) => {
+  storageInfo.backend = b;
+  migrateLegacySaves();
+  ui.theme = store.get<'light' | 'dark'>('ucb-theme', 'dark') === 'light' ? 'light' : 'dark';
+  redraw();
+  await initSync(() => JSON.stringify(makeBackup(store.all()), null, 1), redraw);
+  storageInfo.persisted = await persistStorage();
+  storageInfo.used = (await usage())?.used ?? null;
+  redraw();
+});
+window.addEventListener('pagehide', () => { if (ui.screen === 'game') autosaveNow(); });
+(window as any).__ucbStore = store; // test hook
+export { sync };
