@@ -1,0 +1,67 @@
+{
+  "players": {"min": 2, "max": 2},
+  "playerVars": {"life": 20, "energy": 0, "maxEnergy": 0},
+  "objectVars": {"dmg": 0, "ready": 0},
+  "zones": [
+    {"id": "deck", "vis": "hidden", "ordered": true},
+    {"id": "hand", "vis": "owner"},
+    {"id": "board", "vis": "public", "abilities": true},
+    {"id": "stack", "vis": "public"},
+    {"id": "grave", "vis": "public", "ordered": true}
+  ],
+  "deckZone": "deck", "handZone": "hand", "graveZone": "grave",
+  "format": {"deckMin": 20, "deckMax": 20, "maxCopies": 2},
+  "turnLimit": 80,
+  "setup": [["each", ["players"], "$p", [["shuffle", "$p", "deck"], ["draw", "$p", 4]]]],
+  "phases": [
+    {"id": "start", "auto": true, "do": [
+      ["inc", "$active", "maxEnergy", ["?", ["<", ["get", "$active", "maxEnergy"], 10], 1, 0]],
+      ["set", "$active", "energy", ["get", "$active", "maxEnergy"]],
+      ["each", ["cards", "$active", "board"], "$u", [["set", "$u", "ready", 1]]],
+      ["if", ["!=", "$turn", 1], [["draw", "$active", 1]]]
+    ]},
+    {"id": "main"},
+    {"id": "end", "auto": true, "do": [["each", ["cards", "*", "board"], "$u", [["set", "$u", "dmg", 0]]]]}
+  ],
+  "actions": {
+    "summon": {
+      "label": "Summon", "phases": ["main"],
+      "source": ["filter", ["cards", "$me", "hand"], ["=", ["get", "$it", "type"], "unit"]],
+      "req": [
+        {"if": ["<=", ["get", "$self", "cost"], ["get", "$me", "energy"]], "why": "Not enough energy."},
+        {"if": ["<", ["count", ["cards", "$me", "board"]], 6], "why": "Your board is full (6 units)."}
+      ],
+      "cost": [["inc", "$me", "energy", ["neg", ["get", "$self", "cost"]]]],
+      "do": [["move", "$self", "board"]]
+    },
+    "cast": {
+      "label": "Cast", "phases": ["main"], "cardTargets": true,
+      "source": ["filter", ["cards", "$me", "hand"], ["=", ["get", "$it", "type"], "spell"]],
+      "req": [{"if": ["<=", ["get", "$self", "cost"], ["get", "$me", "energy"]], "why": "Not enough energy."}],
+      "cost": [["inc", "$me", "energy", ["neg", ["get", "$self", "cost"]]]],
+      "do": [["move", "$self", "stack", {"as": "$self"}], ["run", "$self", "effects"], ["move", "$self", "grave"]]
+    },
+    "attack": {
+      "label": "Attack", "phases": ["main"],
+      "source": ["filter", ["cards", "$me", "board"], ["=", ["get", "$it", "ready"], 1]],
+      "targets": [{"as": "$t", "prompt": "attack target", "from": ["?",
+        ["any", ["cards", "$opp", "board"], ["has", "$it", "guard"]],
+        ["filter", ["cards", "$opp", "board"], ["has", "$it", "guard"]],
+        ["concat", ["list", "$opp"], ["cards", "$opp", "board"]]]}],
+      "do": [
+        ["set", "$self", "ready", 0],
+        ["emit", "attack", {"attacker": "$self", "target": "$t"}],
+        ["damage", "$t", ["get", "$self", "power"], "$self"],
+        ["if", ["isObj", "$t"], [["damage", "$self", ["get", "$t", "power"], "$t"]]]
+      ]
+    }
+  },
+  "triggers": [
+    {"on": "drawFail", "do": [["lose", "$e.player"]]},
+    {"on": "moved", "if": ["and", ["=", "$e.to", "board"], ["has", "$e.newObj", "haste"]], "do": [["set", "$e.newObj", "ready", 1]]}
+  ],
+  "stateChecks": [
+    ["each", ["cards", "*", "board"], "$u", [["if", [">=", ["get", "$u", "dmg"], ["get", "$u", "health"]], [["destroy", "$u"]]]]],
+    ["each", ["players"], "$p", [["if", ["<=", ["get", "$p", "life"], 0], [["lose", "$p"]]]]]
+  ]
+}
