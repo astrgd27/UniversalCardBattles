@@ -5,15 +5,19 @@ import {
   IllegalAction, commitAction, createMatch, deckErrors, determinize, listActions, observe, proposeAction, restore, serialize, submitDecision,
 } from '#engine';
 import { makeAgent, type Agent, type AgentInfo } from '#ai';
+import {
+  type Campaign, type Granted, type Line, type Profile, CampaignError, buy, campaignOf, encounterAgent, finishEncounter, newProfile, ownedErrors,
+  startEncounter,
+} from '#campaign';
 import { PackageError } from '#sdk';
 import { MODULES, loadZipModule } from './modules.ts';
 import { render } from './ui/render.ts';
 
 export type Seat = 'human' | 'heuristic' | 'random';
-export type Screen = 'library' | 'home' | 'setup' | 'game' | 'decks' | 'gallery';
+export type Screen = 'library' | 'home' | 'setup' | 'game' | 'decks' | 'gallery' | 'campaign' | 'encounter' | 'reward' | 'shop';
 /** Choosing targets for an action template, or answering a pending decision. */
 export interface Selection { tpl?: Template; slot: number; picks: Record<string, string[]> }
-export interface DeckEdit { name: string; original: string | null; deck: Record<string, string[]>; section: string }
+export interface DeckEdit { name: string; original: string | null; deck: Record<string, string[]>; section: string; campaign?: boolean }
 export interface UI {
   screen: Screen;
   mod: Mod | null;
@@ -35,9 +39,18 @@ export interface UI {
   edit: DeckEdit | null;
   filter: string;
   gallery: string | null; // card id enlarged in the gallery
+  profile: Profile | null; // campaign profile of the open module
+  camp: { enc: string; seq: number } | null; // campaign encounter being played
+  encounter: string | null; // encounter selected on the map
+  campDeck: string;
+  dialog: { lines: Line[]; i: number } | null;
+  dialogSeen: number; // last in-match dialogue event acknowledged
+  reward: { won: boolean; granted: Granted | null; lines: Line[]; enc: string } | null;
+  reveal: string[] | null; // cards from a purchase being revealed
 }
 
 const SAVE = (id: string) => `ucb-save:${id}`;
+const PROFILE = (id: string) => `ucb-profile:${id}`;
 const DECKS = (id: string) => `ucb-decks:${id}`;
 const store = {
   get<T>(k: string, d: T): T { try { const v = localStorage.getItem(k); return v ? (JSON.parse(v) as T) : d; } catch { return d; } },
@@ -59,7 +72,7 @@ function seatsFor(m: Mod, n = Math.max(2, m.rules.players.min)): Pick<UI, 'seats
 export const ui: UI = {
   screen: 'library', mod: null, seats: [], decks: [], match: null, agents: [], viewer: 'p0', cover: null, sel: null, menu: null,
   note: null, inspect: null, drawer: null, pile: null, paused: false, fast: false, theme: store.get<'light' | 'dark'>('ucb-theme', 'dark') === 'light' ? 'light' : 'dark', edit: null,
-  filter: '', gallery: null,
+  filter: '', gallery: null, profile: null, camp: null, encounter: null, campDeck: '', dialog: null, dialogSeen: -1, reward: null, reveal: null,
 };
 (window as any).__ucb = ui; // test hook
 
@@ -74,7 +87,7 @@ function advance() {
   const m = ui.match;
   if (!m || m.s.result || ui.paused) return redraw();
   const p = actor(m);
-  if (!p) return redraw();
+  if (!p || pendingDialogue()) return redraw();
   if (seatOf(p) !== 'human') {
     redraw();
     timer = setTimeout(aiStep, ui.fast ? 0 : 500);
@@ -155,6 +168,19 @@ function decisionStart() {
   }
 }
 
+/** Latest in-match dialogue event the player has not acknowledged yet (scenario `emit dialogue`). */
+export function pendingDialogue(): { seq: number; speaker: string; text: string } | null {
+  const ev = ui.match?.s.events;
+  if (!ev) return null;
+  for (let i = ev.length - 1; i > ui.dialogSeen; i--) if (ev[i].type === 'dialogue') return ev[i] as any;
+  return null;
+}
+export const campaign = (): Campaign | undefined => (ui.mod ? campaignOf(ui.mod) : undefined);
+function saveProfile() { if (ui.mod && ui.profile) store.set(PROFILE(ui.mod.manifest.moduleId), ui.profile); }
+function campaignError(e: unknown): UI['note'] {
+  return e instanceof CampaignError ? { title: 'Not possible', text: e.reasons.join('\n') } : { title: 'Error', text: String(e) };
+}
+
 function deckOf(m: Mod, name: string): Deck {
   return structuredClone(allDecks(m)[name]);
 }
@@ -170,7 +196,7 @@ export const actions = {
   },
   openModule(id: string) {
     ui.mod = MODULES.get(id)!;
-    Object.assign(ui, seatsFor(ui.mod), { match: null, filter: '', gallery: null });
+    Object.assign(ui, seatsFor(ui.mod), { match: null, filter: '', gallery: null, camp: null, profile: store.get<Profile | null>(PROFILE(id), null) });
     actions.go('home');
   },
   async loadZip(file: File) {
@@ -201,7 +227,7 @@ export const actions = {
     }
     ui.agents = ui.seats.map((s, i) => makeAgent(s === 'random' ? 'random' : 'heuristic', seed + i));
     ui.viewer = `p${Math.max(0, ui.seats.indexOf('human'))}`;
-    Object.assign(ui, { screen: 'game', cover: null, note: null, inspect: null, drawer: null, pile: null, paused: false });
+    Object.assign(ui, { camp: null, dialogSeen: -1, screen: 'game', cover: null, note: null, inspect: null, drawer: null, pile: null, paused: false });
     advance();
   },
   continueGame() {
@@ -212,7 +238,10 @@ export const actions = {
       ui.seats = d.seats;
       ui.decks = d.decks;
       ui.match = restore(m, d.state);
-      ui.agents = ui.seats.map((s, i) => makeAgent(s === 'random' ? 'random' : 'heuristic', ui.match!.s.cmds.length * 31 + i));
+      ui.camp = d.camp ?? null;
+      const s0 = ui.match!.s.cmds.length * 31;
+      ui.agents = ui.seats.map((s, i) => (ui.camp && i === 1 ? encounterAgent(campaign()!.encounters[ui.camp.enc], s0 + i) : makeAgent(s === 'random' ? 'random' : 'heuristic', s0 + i)));
+      ui.dialogSeen = ui.match!.s.events.length - 1;
       ui.viewer = `p${Math.max(0, ui.seats.indexOf('human'))}`;
       Object.assign(ui, { screen: 'game', cover: null, note: null, inspect: null, drawer: null, paused: false });
     } catch (e) {
@@ -225,12 +254,13 @@ export const actions = {
   pause(on: boolean) { ui.paused = on; if (on) { clearTimeout(timer); redraw(); } else advance(); },
   save() {
     if (!ui.match) return;
-    const ok = store.set(SAVE(ui.mod!.manifest.moduleId), { seats: ui.seats, decks: ui.decks, state: serialize(ui.match) });
+    const ok = store.set(SAVE(ui.mod!.manifest.moduleId), { seats: ui.seats, decks: ui.decks, camp: ui.camp, state: serialize(ui.match) });
     ui.note = ok ? { title: 'Game saved', text: 'Continue it later from the game menu.' } : { title: 'Could not save', text: 'Browser storage is unavailable.' };
     redraw();
   },
-  quit() { if (ui.match?.s.result) store.del(SAVE(ui.mod!.manifest.moduleId)); ui.match = null; actions.go('home'); },
-  rematch() { actions.newGame(); },
+  quit() { if (ui.match?.s.result) store.del(SAVE(ui.mod!.manifest.moduleId)); ui.match = null; const back = ui.camp ? 'campaign' : 'home'; ui.camp = null; actions.go(back); },
+  rematch() { if (ui.camp) actions.playEncounter(); else actions.newGame(); },
+  ackDialogue() { const d = pendingDialogue(); if (d) ui.dialogSeen = d.seq; advance(); },
   reveal() { ui.cover = null; redraw(); },
   drawer(d: UI['drawer'], pile: string | null = null) { ui.drawer = ui.drawer === d && ui.pile === pile ? null : d; ui.pile = pile; redraw(); },
   view(p: string) { if (ui.seats.every((s) => s !== 'human')) { ui.viewer = p; redraw(); } },
@@ -271,19 +301,28 @@ export const actions = {
   cancel() { ui.sel = null; ui.menu = null; redraw(); },
 
   // ---- deckbuilder & gallery ----
-  editDeck(name: string | null) {
+  editDeck(name: string | null, inCampaign = false) {
     const m = ui.mod!;
     const secs = sections(m);
-    const src = name ? allDecks(m)[name] : null;
+    const pool = inCampaign ? ui.profile!.decks : allDecks(m);
+    const src = name ? pool[name] : null;
     const deck: Record<string, string[]> = Object.fromEntries(secs.map((z) => [z, []]));
     if (src) Object.assign(deck, structuredClone(Array.isArray(src) ? { [secs[0]]: src } : src));
-    const custom = !!name && name in customDecks(m);
-    ui.edit = { name: name ? (custom ? name : `${name} (copy)`) : 'New deck', original: custom ? name : null, deck, section: secs[0] };
+    const custom = !!name && (inCampaign || name in customDecks(m));
+    ui.edit = { name: name ? (custom ? name : `${name} (copy)`) : 'New deck', original: custom ? name : null, deck, section: secs[0], campaign: inCampaign };
     actions.go('decks');
   },
   setSection(z: string) { ui.edit!.section = z; redraw(); },
   rename(n: string) { ui.edit!.name = n; redraw(); },
-  addCard(id: string) { const e = ui.edit!; e.deck[e.section] = [...e.deck[e.section], id]; redraw(); },
+  addCard(id: string) {
+    const e = ui.edit!;
+    if (e.campaign) {
+      const used = Object.values(e.deck).flat().filter((x) => x === id).length;
+      if (used >= (ui.profile!.collection[id] ?? 0)) { ui.note = { title: 'Not in your collection', text: `You own ${ui.profile!.collection[id] ?? 0} of this card.` }; return redraw(); }
+    }
+    e.deck[e.section] = [...e.deck[e.section], id];
+    redraw();
+  },
   removeCard(id: string, section?: string) {
     const e = ui.edit!;
     const z = section ?? e.section;
@@ -297,9 +336,19 @@ export const actions = {
     const name = e.name.trim();
     const secs = sections(m);
     const deck: Deck = secs.length === 1 && !m.rules.format.zones ? e.deck[secs[0]] : e.deck;
-    const errs = deckErrors(m, deck);
-    if (!name || (name in (m.decks ?? {}))) { ui.note = { title: 'Choose another name', text: 'Built-in deck names are reserved.' }; return redraw(); }
+    const errs = [...deckErrors(m, deck), ...(e.campaign ? ownedErrors(ui.profile!.collection, deck) : [])];
+    if (!name || (!e.campaign && name in (m.decks ?? {}))) { ui.note = { title: 'Choose another name', text: 'Built-in deck names are reserved.' }; return redraw(); }
     if (errs.length) { ui.note = { title: 'Deck is not legal yet', text: errs.join('\n') }; return redraw(); }
+    if (e.campaign) {
+      const p = ui.profile!;
+      if (e.original && e.original !== name) delete p.decks[e.original];
+      p.decks[name] = deck;
+      saveProfile();
+      e.original = name;
+      ui.campDeck = name;
+      ui.note = { title: 'Deck saved', text: `"${name}" is ready for the campaign.` };
+      return redraw();
+    }
     const all = customDecks(m);
     if (e.original && e.original !== name) delete all[e.original];
     all[name] = deck;
@@ -318,12 +367,87 @@ export const actions = {
     redraw();
   },
   setFilter(f: string) { ui.filter = f; redraw(); },
+
+  // ---- campaign & shop ----
+  beginCampaign() {
+    ui.profile = newProfile(ui.mod!, campaign()!, Math.floor(Math.random() * 2 ** 31));
+    saveProfile();
+    ui.dialog = campaign()!.intro?.length ? { lines: campaign()!.intro!, i: 0 } : null;
+    actions.go('campaign');
+  },
+  resetCampaign() {
+    if (!window.confirm('Erase all campaign progress for this game?')) return;
+    store.del(PROFILE(ui.mod!.manifest.moduleId));
+    ui.profile = null;
+    redraw();
+  },
+  openEncounter(id: string) {
+    const en = campaign()!.encounters[id];
+    ui.encounter = id;
+    ui.campDeck = ui.campDeck in (ui.profile?.decks ?? {}) ? ui.campDeck : Object.keys(ui.profile!.decks)[0];
+    ui.dialog = en.intro?.length ? { lines: en.intro, i: 0 } : null;
+    actions.go('encounter');
+  },
+  dialogNext(skip = false) {
+    const d = ui.dialog!;
+    ui.dialog = !skip && d.i + 1 < d.lines.length ? { ...d, i: d.i + 1 } : null;
+    redraw();
+  },
+  setCampDeck(n: string) { ui.campDeck = n; redraw(); },
+  editCampaignDeck(name: string | null) { actions.editDeck(name, true); },
+  playEncounter() {
+    const m = ui.mod!;
+    const c = campaign()!;
+    const id = ui.encounter!;
+    const seed = Math.floor(Math.random() * 1e9);
+    try {
+      const r = startEncounter(m, c, ui.profile!, id, ui.campDeck, seed);
+      ui.profile = r.profile;
+      saveProfile();
+      ui.match = createMatch(m, r.opts);
+      ui.seats = ['human', 'heuristic'];
+      ui.decks = [ui.campDeck, c.encounters[id].deck];
+      ui.agents = [makeAgent('random', seed), encounterAgent(c.encounters[id], seed + 1)];
+      ui.camp = { enc: id, seq: r.profile.active!.seq };
+      Object.assign(ui, { screen: 'game', viewer: 'p0', cover: null, note: null, inspect: null, drawer: null, paused: false, dialogSeen: -1 });
+    } catch (e) {
+      ui.note = campaignError(e);
+      return redraw();
+    }
+    advance();
+  },
+  finishCampaignMatch() {
+    const c = campaign()!;
+    const { enc, seq } = ui.camp!;
+    const r = finishEncounter(c, ui.profile!, enc, seq, ui.match!.s.result!);
+    ui.profile = r.profile;
+    saveProfile();
+    store.del(SAVE(ui.mod!.manifest.moduleId));
+    const en = c.encounters[enc];
+    ui.reward = { won: r.won, granted: r.granted, lines: (r.won ? en.outro : en.defeat) ?? [], enc };
+    Object.assign(ui, { match: null, camp: null });
+    actions.go('reward');
+  },
+  buyItem(id: string) {
+    try {
+      const r = buy(campaign()!, ui.profile!, id);
+      ui.profile = r.profile;
+      saveProfile();
+      ui.reveal = r.cards;
+    } catch (e) {
+      ui.note = campaignError(e);
+    }
+    redraw();
+  },
+  closeReveal() { ui.reveal = null; redraw(); },
   enlarge(id: string | null) { ui.gallery = id; redraw(); },
 };
 
 window.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
   if (ui.gallery) actions.enlarge(null);
+  else if (ui.reveal) actions.closeReveal();
+  else if (ui.dialog) actions.dialogNext(true);
   else if (ui.sel || ui.menu) actions.cancel();
   else if (ui.screen === 'game' && ui.match && !ui.match.s.result) actions.pause(!ui.paused);
 });

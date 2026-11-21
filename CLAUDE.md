@@ -21,10 +21,11 @@ A universal, fully automated TCG simulator. The headless deterministic TypeScrip
 - `packages/engine/src`: the kernel (types, util, rng, expr, effects, match, view, validate, module). It is browser-safe and has no node imports.
 - `packages/ai/src`: agents that see only `observe()` views and `listActions()`.
 - `packages/module-sdk/src`: ZIP/JSON/package loading (browser-safe), plus `node.ts` (disk) and `cli.ts`.
+- `packages/campaign/src`: campaign runtime (profiles, encounters, rewards ledger, boosters, shop). It sits outside the match engine.
 - `packages/reference-games/<id>/`: `manifest.json`, `rules.json`, `cards.json`, `decks.json`.
 - `packages/test-harness`: the node module loader, match runner, sim CLI, and tests (`tests/*.test.ts`).
 - `apps/web`: the browser UI (`main.ts` controller, `ui/` screens rendered only from player views, `modules.ts`, `e2e.mjs`). `npm run dev` / `build` / `e2e`.
-- Imports go through `#engine`, `#ai`, `#sdk`, `#sdk/node` and `#harness` (package.json `imports`).
+- Imports go through `#engine`, `#ai`, `#campaign`, `#sdk`, `#sdk/node` and `#harness` (package.json `imports`).
 
 ## Non-negotiables (from the spec)
 

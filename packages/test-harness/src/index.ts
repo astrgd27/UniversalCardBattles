@@ -15,6 +15,7 @@ export function readModuleDir(dir: string): ModuleDef {
     manifest: j('manifest.json'), rules: j('rules.json'), cards: j('cards.json'),
     decks: existsSync(join(dir, 'decks.json')) ? j('decks.json') : {},
     ...(existsSync(join(dir, 'ai/ai.json')) ? { ai: j('ai/ai.json') } : {}),
+    ...(existsSync(join(dir, 'campaign/campaign.json')) ? { campaign: j('campaign/campaign.json') } : {}),
   };
 }
 export const loadRef = (id: string): Mod => compileModule(readModuleDir(join(REF_DIR, id)));
@@ -77,6 +78,7 @@ export function invariantErrors({ m, s }: Match): string[] {
   let total = 0;
   for (const d of s.opts.decks) for (const l of Object.values(deckSections(m, d))) total += l.length;
   for (const l of Object.values(m.rules.sharedDecks ?? {})) total += l.length;
+  total += s.events.filter((e) => e.type === 'created').length; // tokens
   if (seen.size !== total) errs.push(`card count ${seen.size} != ${total}`);
   return errs;
 }

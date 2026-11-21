@@ -48,6 +48,9 @@ export function createMatch(m: Mod, opts: MatchOpts): Match {
     for (const [zone, cards] of Object.entries(deckSections(m, deck))) for (const c of cards) make(c, `p${i}`, `p${i}:${zone}`);
   });
   for (const [zone, cards] of Object.entries(R.sharedDecks ?? {})) for (const c of cards) make(c, 'shared', `shared:${zone}`);
+  Object.assign(s.vars, opts.scenario?.vars ?? {});
+  // Frames are a stack: push the scenario setup first so it runs after the module's setup.
+  if (opts.scenario?.setup?.length) s.exec.push({ list: opts.scenario.setup, i: 0, ctx: baseCtx(s, 'p0') });
   if (R.setup?.length) s.exec.push({ list: R.setup, i: 0, ctx: baseCtx(s, 'p0') });
   settle(m, s);
   return { m, s };
@@ -109,7 +112,7 @@ function takeTrigger(m: Mod, s: State, tm: Timing): boolean {
   }
   s.nextTrig = null;
   s.triggers.splice(s.triggers.indexOf(t), 1);
-  const effects = triggerList(m, t.ref);
+  const effects = triggerList(m, t.ref, s);
   if (tm.mode === 'immediate' || !t.stack) {
     s.exec.push({ list: effects, i: 0, ctx: t.ctx });
     return true;

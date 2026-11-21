@@ -10,7 +10,7 @@ import {
 
 export const EFFECT_OPS = new Set([
   'draw', 'move', 'shuffle', 'set', 'inc', 'damage', 'destroy', 'lose', 'win', 'if', 'each', 'let', 'choose', 'run',
-  'endPhase', 'emit', 'log', 'counter', 'modify', 'link', 'unlink', 'call', 'commit', 'random', 'flip',
+  'endPhase', 'emit', 'log', 'counter', 'modify', 'link', 'unlink', 'call', 'commit', 'random', 'flip', 'create',
 ]);
 
 export function emit(m: Mod, s: State, e: { type: string; [k: string]: any }): GEvent {
@@ -32,7 +32,9 @@ const LKI_ON: Record<string, string> = { leave: 'moved', destroyed: 'destroyed' 
 function collectTriggers(m: Mod, s: State, e: GEvent) {
   let k = 0;
   const queue = (ref: string, ab: Ability, ctx: Ctx, ctrl: string, name: string, rule: boolean) => {
+    if (ab.once && s.vars[`once:${ref}`]) return;
     if (ab.if !== undefined && !ev(m, s, ab.if, ctx)) return;
+    if (ab.once) s.vars[`once:${ref}`] = 1;
     s.triggers.push({
       id: `t${e.seq}.${k++}`, ref, ctrl, ctx, label: `${name}: ${ab.text ?? ab.on}`, stack: ab.stack ?? !rule, speed: ab.speed ?? 1,
     });
@@ -40,6 +42,9 @@ function collectTriggers(m: Mod, s: State, e: GEvent) {
   const act = activeId(s);
   (m.rules.triggers ?? []).forEach((ab, i) => {
     if (ab.on === e.type) queue(`rule:${i}`, ab, { ...baseCtx(s, act), $e: e }, act, 'Rule', true);
+  });
+  (s.opts.scenario?.triggers ?? []).forEach((ab, i) => {
+    if (ab.on === e.type) queue(`scn:${i}`, ab, { ...baseCtx(s, act), $e: e }, act, 'Scenario', true);
   });
   for (const key in s.zones) {
     const zid = zoneIdOf(key);
@@ -64,8 +69,9 @@ function collectTriggers(m: Mod, s: State, e: GEvent) {
   }
 }
 
-export function triggerList(m: Mod, ref: string): EffectList {
+export function triggerList(m: Mod, ref: string, s: State): EffectList {
   if (ref.startsWith('rule:')) return m.rules.triggers![+ref.slice(5)].do;
+  if (ref.startsWith('scn:')) return s.opts.scenario!.triggers![+ref.slice(4)].do;
   const k = ref.lastIndexOf(':');
   return m.card.get(ref.slice(5, k))!.abilities![+ref.slice(k + 1)].do;
 }
@@ -382,6 +388,22 @@ export function apply(m: Mod, s: State, eff: Effect, f: Frame) {
         else o.fd = true;
         emit(m, s, { type: 'flipped', obj: id, up, ...(up ? { card: o.card } : {}) });
       });
+      return;
+    }
+    case 'create': {
+      // A new object (token) from a card definition: ["create", card, player, zone, {as?, faceDown?}].
+      const card = String(one(A(1)));
+      if (!m.card.has(card)) throw new EngineError(`create: unknown card ${card}`);
+      const p = one(A(2));
+      const key = zkey(m, p, A(3));
+      const opts = (eff[4] ?? {}) as any;
+      const id = `o${s.nextId++}`;
+      const owner = key.startsWith('shared:') ? 'shared' : p;
+      s.objects[id] = { id, inst: `t${id}`, card, owner, controller: owner, zone: key, vars: { ...(m.rules.objectVars ?? {}) }, ...(opts.faceDown ? { fd: true } : {}) };
+      s.zones[key].push(id);
+      if (opts.as) ctx[opts.as] = id;
+      const known = objViewers(m, s.objects[id]);
+      emit(m, s, { type: 'created', newObj: id, card, to: zoneIdOf(key), toPlayer: owner, ...masks([viewers(m, key), ['newObj']], [known, ['card']]) });
       return;
     }
     case '@stack': stackAction(m, s, eff, ctx); return;

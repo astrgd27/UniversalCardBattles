@@ -3,17 +3,17 @@ import type { Mod } from '#engine';
 import { compileModule } from '#engine';
 import { loadPackage, readZip } from '#sdk';
 
-const files = import.meta.glob(['../../../packages/reference-games/*/*.json', '../../../packages/reference-games/*/ai/ai.json'], { eager: true, import: 'default' }) as Record<string, any>;
+const files = import.meta.glob(['../../../packages/reference-games/*/*.json', '../../../packages/reference-games/*/ai/ai.json', '../../../packages/reference-games/*/campaign/campaign.json'], { eager: true, import: 'default' }) as Record<string, any>;
 export const MODULES = new Map<string, Mod>();
 /** Object URLs for assets of modules loaded from packages: moduleId -> path -> url. */
 export const ASSETS = new Map<string, Map<string, string>>();
 const byId: Record<string, Record<string, any>> = {};
 for (const [path, data] of Object.entries(files)) {
-  const m = path.match(/reference-games\/([^/]+)\/(?:ai\/)?([a-z]+)\.json$/);
+  const m = path.match(/reference-games\/([^/]+)\/(?:ai\/|campaign\/)?([a-z]+)\.json$/);
   if (m) (byId[m[1]] ??= {})[m[2]] = data;
 }
 for (const [id, d] of Object.entries(byId)) {
-  MODULES.set(id, compileModule({ manifest: d.manifest, rules: d.rules, cards: d.cards, decks: d.decks ?? {}, ...(d.ai ? { ai: d.ai } : {}) }));
+  MODULES.set(id, compileModule({ manifest: d.manifest, rules: d.rules, cards: d.cards, decks: d.decks ?? {}, ...(d.ai ? { ai: d.ai } : {}), ...(d.campaign ? { campaign: d.campaign } : {}) }));
 }
 
 /** Loads a module package (.zip) chosen by the user. Throws PackageError with file:line:col messages. */

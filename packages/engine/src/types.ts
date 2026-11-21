@@ -42,7 +42,7 @@ export interface ActionDef {
   do: EffectList;
   countered?: EffectList; // runs if the stack item is countered or fizzles
 }
-export interface Ability { on: string; if?: Expr; do: EffectList; zones?: string[]; stack?: boolean; speed?: number; text?: string }
+export interface Ability { on: string; if?: Expr; do: EffectList; zones?: string[]; stack?: boolean; speed?: number; text?: string; once?: boolean }
 export interface Replacement { replace: string; if?: Expr; instead?: EffectList; modify?: Record<string, Expr>; zones?: string[]; order?: number; text?: string }
 export interface ModDef { op: 'set' | 'add' | 'grant' | 'remove'; stat?: string; kw?: string; value?: Expr }
 export interface StaticDef { layer: string; affects: Expr; mods: ModDef[]; if?: Expr; zones?: string[]; text?: string }
@@ -90,7 +90,8 @@ export interface Rules {
 }
 /** AI hints (ai/ai.json): eval = position value for $me; bias = per-action score bonus; samples = possible worlds per decision. */
 export interface AiDef { eval?: Expr; bias?: Record<string, number>; samples?: number }
-export interface ModuleDef { manifest: Manifest; rules: Rules; cards: CardDef[]; decks?: Record<string, Deck>; ai?: AiDef }
+/** campaign: single-player campaign data (validated by packages/campaign; opaque to the engine). */
+export interface ModuleDef { manifest: Manifest; rules: Rules; cards: CardDef[]; decks?: Record<string, Deck>; ai?: AiDef; campaign?: unknown }
 export interface Mod extends ModuleDef { card: Map<string, CardDef>; zone: Map<string, ZoneDef>; hash: string }
 
 export interface Obj {
@@ -145,7 +146,12 @@ export type Cmd =
 export interface Result { winners: string[]; reason: string }
 /** A deck is a card list (main deck) or sections by zone, e.g. {deck: [...], extra: [...]}. */
 export type Deck = string[] | Record<string, string[]>;
-export interface MatchOpts { decks: Deck[]; seed: number }
+/**
+ * Scenario (campaign encounters, puzzles): validated additions to a normal match. `setup` runs after the module's setup
+ * ($me = p0, $opp = p1); `vars` seed game vars; `triggers` behave like rule triggers (once = fire at most once per match).
+ */
+export interface Scenario { setup?: EffectList; vars?: Record<string, number>; triggers?: Ability[] }
+export interface MatchOpts { decks: Deck[]; seed: number; scenario?: Scenario }
 export interface State {
   moduleId: string;
   version: string;

@@ -60,6 +60,7 @@ Effects run in effect lists `[[op...], [op...]]`.
 | `call proc args...` | runs a script procedure (`rules.procedures`) |
 | `commit {who?, from, min?, max?, as, prompt?, reveal?}` | simultaneous secret choice. Each player in `who` (default: all living players) picks from `from`, evaluated with `$p` set to them. Picks are masked from everyone else, then bound as `{playerId: pick}`. A public `revealed` event follows unless `reveal: false`, which keeps the picks secret for a later commit. Note: it binds `$p` |
 | `random {min?, max, as}` / `random {from, n?, as}` | seeded integer, or a random pick (a list when `n` is given). Emits `random`; picks of hidden objects are masked |
+| `create card player zone {as?, faceDown?}` | creates a new object (a token) from a card definition. Emits `created`. Mark token-only cards with `maxCopies: 0` |
 | `flip objs up?` | turns face up (default) or face down. Emits `flipped` (with `card` when turned face up) |
 
 `choose` also takes `secret: true` (masks the pick from others) and `required: true`: if fewer options than `min` exist (typically during a cost), the whole action is rejected and nothing changes.
@@ -128,6 +129,26 @@ Effects run in effect lists `[[op...], [op...]]`.
 - Limits: 100,000 evaluation steps per outermost function call and a call depth of 64. Breaking either raises `ScriptError`, and the command is rejected with the match unchanged.
 - Arity and names are checked statically.
 
+## Scenarios (`MatchOpts.scenario`)
+- `{setup?, vars?, triggers?}` are validated additions to a normal match (`validateScenario`), used by campaign encounters and puzzles.
+- `setup` runs after the module's setup, with `$me` = p0 and `$opp` = p1. `vars` seed game vars.
+- `triggers` behave like rule triggers. With `once: true`, a trigger fires at most once per match; this works for any trigger.
+- Scenarios are part of the match options, so replays and saves include them.
+
+## Campaigns (`campaign/campaign.json`, runtime in `packages/campaign`)
+- Top-level fields:
+  - `name`, `intro [{speaker, text}]`, `currency {name, start}`
+  - `starter {collection {card: n}, decks}`, `decks` (opponent decks)
+  - `chapters [{id, name, nodes: [encounterId]}]`, `encounters {id: Encounter}`
+  - `boosters {id: {name, slots [{count, pool, weights?}]}}`, `shop [{id, name, price, booster | card, stock?}]`
+- An encounter has:
+  - `{name, opponent, portrait?, deck, requires?, repeatable?, intro?, outro?, defeat?}`
+  - `ai {kind?, bias?, phaseVar?, phases {value: {bias}}}`: the boss changes its bias when a game var changes
+  - `scenario?`, `rewards {first?, repeat?: {currency?, cards?, packs?}}`
+  - Scenario triggers can `["emit", "dialogue", {speaker, text}]`; the UI shows it and holds the AI until it is dismissed.
+- Profiles are plain JSON. Rewards and purchases are idempotent through ledger keys (`enc:<id>:<attempt seq>`, `shop:<item>:<seq>`), so a reload can never grant twice. Boosters are seeded and deterministic.
+- `validateCampaign(mod, campaign)` checks references, deck legality and ownership, and scenarios. Package loading runs it.
+
 ## AI hints (`ai/ai.json`)
 - `{eval?, bias?, samples?}`.
 - `eval` is an expression valued from `$me`'s point of view (`$opp` = next player). Higher is better. Wins and losses are scored automatically.
@@ -145,7 +166,7 @@ Effects run in effect lists `[[op...], [op...]]`.
   - Cards: `cards.json` and/or `cards/*.json` (arrays).
   - Decks: `decks.json` and/or `decks/*.json` (objects).
   - Optional: `scripts/*.json`, `assets/*` (png, jpg, webp, gif, mp3, ogg, wav, woff2, txt, json; 4 MB each).
-  - `ai/ai.json` (AI hints, see above). Reserved for later: other `ai/` files, `campaign/`, `tests/`. `LICENSE` and `README` are allowed.
+  - `ai/ai.json` (AI hints) and `campaign/campaign.json` (see above). Reserved for later: other `ai/` files, `tests/`. `LICENSE` and `README` are allowed.
   - Anything else is rejected.
 - **Manifest:**
   - Required: `moduleId` (2–64 of `[a-z0-9-]`), `displayName`, `semanticVersion`, `engineApiRange` (must include the engine's version, currently 0.3.0).

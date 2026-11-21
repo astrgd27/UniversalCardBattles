@@ -1,0 +1,67 @@
+{
+  "name": "The Ember Road",
+  "intro": [
+    {"speaker": "Warden Ilse", "text": "The road east is burning, recruit. Raiders on the ridge, and something worse behind them."},
+    {"speaker": "Warden Ilse", "text": "Take the Ward deck. Hold the line, earn your sparks, and build something sharper."}
+  ],
+  "currency": {"name": "Sparks", "start": 60},
+  "starter": {
+    "collection": {"tin-squire": 2, "brook-sentinel": 2, "moss-golem": 2, "warden-elk": 2, "mend": 2, "insight": 2, "collapse": 2, "recall": 2, "lantern-moth": 2, "quarry-brute": 2, "pry": 1, "ember-pup": 2},
+    "decks": {"Ward of the Road": ["tin-squire","tin-squire","brook-sentinel","brook-sentinel","moss-golem","moss-golem","warden-elk","warden-elk","mend","mend","insight","insight","collapse","collapse","recall","recall","lantern-moth","lantern-moth","quarry-brute","pry"]}
+  },
+  "chapters": [{"id": "road", "name": "The Ember Road", "nodes": ["training", "raiders", "champion"]}],
+  "encounters": {
+    "training": {
+      "name": "Training Yard", "opponent": "Sparring Master Dov", "portrait": "🛡", "deck": "stone-ward", "ai": {"kind": "random"},
+      "intro": [{"speaker": "Sparring Master Dov", "text": "Guards first, recruit. Nothing gets past a good wall. Show me."}],
+      "outro": [{"speaker": "Sparring Master Dov", "text": "Not bad. Take these sparks and buy yourself some teeth."}],
+      "defeat": [{"speaker": "Sparring Master Dov", "text": "Again. Walls don't build themselves."}],
+      "repeatable": true,
+      "rewards": {"first": {"currency": 40, "packs": ["ember"]}, "repeat": {"currency": 10}}
+    },
+    "raiders": {
+      "name": "Ashfield Ridge", "opponent": "Raider Captain Kess", "portrait": "🔥", "deck": "ember-rush", "requires": ["training"],
+      "intro": [{"speaker": "Raider Captain Kess", "text": "A wall-builder? Cute. Walls burn too."}],
+      "outro": [{"speaker": "Raider Captain Kess", "text": "Fine. Take the drake. It never liked me anyway."}],
+      "defeat": [{"speaker": "Raider Captain Kess", "text": "Come back when you can hit back."}],
+      "repeatable": true,
+      "rewards": {"first": {"currency": 60, "cards": ["cinder-drake"]}, "repeat": {"currency": 15}}
+    },
+    "champion": {
+      "name": "The Brass Gate", "opponent": "The Clockwork Champion", "portrait": "⚙", "deck": "ember-rush", "requires": ["raiders"],
+      "ai": {"kind": "heuristic", "phaseVar": "bossPhase", "phases": {"2": {"bias": {"attack": 3}}}},
+      "intro": [
+        {"speaker": "Warden Ilse", "text": "Keep the signal beacon standing. If it falls, the road falls with it."},
+        {"speaker": "The Clockwork Champion", "text": "INTRUDER DETECTED. THIRTY UNITS OF RESOLVE REMAIN. PROCEED TO BE DISMANTLED."}
+      ],
+      "outro": [{"speaker": "Warden Ilse", "text": "The gate is open. The road is ours. Well fought, warden."}],
+      "defeat": [{"speaker": "The Clockwork Champion", "text": "DISMANTLING COMPLETE. PLEASE TRY AGAIN."}],
+      "scenario": {
+        "vars": {"bossPhase": 1},
+        "setup": [["set", "$opp", "life", 30], ["create", "brass-bulwark", "$opp", "board"], ["create", "signal-beacon", "$me", "board"]],
+        "triggers": [
+          {"on": "changed", "once": true, "text": "Overdrive",
+            "if": ["and", ["=", "$e.ref", "p1"], ["=", "$e.name", "life"], ["<=", "$e.to", 15]],
+            "do": [["emit", "dialogue", {"speaker": "The Clockwork Champion", "text": "GEARS GRINDING. OVERDRIVE ENGAGED. REINFORCEMENTS DEPLOYED."}],
+              ["set", "game", "bossPhase", 2], ["create", "clockwork-sentry", "p1", "board"], ["create", "clockwork-sentry", "p1", "board"]]},
+          {"on": "destroyed", "text": "Beacon lost", "if": ["=", "$e.card", "signal-beacon"],
+            "do": [["emit", "dialogue", {"speaker": "Warden Ilse", "text": "The beacon is down! Fall back!"}], ["lose", "p0"]]}
+        ]
+      },
+      "rewards": {"first": {"currency": 150, "packs": ["ember", "ember"]}, "repeat": {"currency": 25}},
+      "repeatable": true
+    }
+  },
+  "boosters": {
+    "ember": {"name": "Ember Pack", "slots": [
+      {"count": 4, "pool": ["ember-pup","tin-squire","spark-wisp","lantern-moth","gale-runner","brook-sentinel","quarry-brute","spark-bolt","mend","insight","pry"]},
+      {"count": 1, "pool": ["cinder-drake","hollow-knight","ash-herald","collapse","rally","warden-elk","moss-golem","recall"], "weights": {"cinder-drake": 1, "hollow-knight": 2, "ash-herald": 2, "collapse": 2, "rally": 2, "warden-elk": 3, "moss-golem": 3, "recall": 3}}
+    ]}
+  },
+  "shop": [
+    {"id": "ember-pack", "name": "Ember Pack", "price": 50, "booster": "ember"},
+    {"id": "buy-cinder-drake", "name": "Cinder Drake", "price": 90, "card": "cinder-drake", "stock": 1},
+    {"id": "buy-ash-herald", "name": "Ash Herald", "price": 60, "card": "ash-herald", "stock": 2},
+    {"id": "buy-spark-bolt", "name": "Spark Bolt", "price": 35, "card": "spark-bolt", "stock": 2}
+  ]
+}

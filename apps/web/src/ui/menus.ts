@@ -2,7 +2,8 @@
 import type { Deck, Mod } from '#engine';
 import { deckErrors } from '#engine';
 import { MODULES } from '../modules.ts';
-import { allDecks, customDecks, hasSave, sections, type UI } from '../main.ts';
+import { allDecks, campaign, customDecks, hasSave, sections, type UI } from '../main.ts';
+import { ownedErrors } from '#campaign';
 import { cardFace, cls, emblem, h, hue, segmented, select, themeStyle, title, topnav } from './kit.ts';
 
 export function library(ui: UI, A: any) {
@@ -31,14 +32,14 @@ function meta(m: Mod): string[] {
 
 export function home(ui: UI, A: any) {
   const m = ui.mod!;
-  const extra = m as any;
+  const camp = campaign();
   const items: [string, string, () => void, string][] = [
     ...(hasSave(m) ? [['Continue', 'Resume your saved match', A.continueGame, 'continue'] as [string, string, () => void, string]] : []),
     ['Play', 'A match against the AI or friends on this device', () => A.go('setup'), 'play'],
     ['Deckbuilder', `Build decks from ${m.cards.length} cards`, () => A.go('decks'), 'decks'],
     ['Card gallery', 'Browse every card', () => A.go('gallery'), 'gallery'],
-    ...(extra.campaign ? [['Campaign', 'Story encounters and rewards', () => A.go('campaign'), 'campaign'] as [string, string, () => void, string]] : []),
-    ...(extra.shop ? [['Shop', 'Spend your earnings', () => A.go('shop'), 'shop'] as [string, string, () => void, string]] : []),
+    ...(camp ? [['Campaign', ui.profile ? `${camp.name} · ${Object.keys(ui.profile.wins).length}/${Object.keys(camp.encounters).length} won` : camp.name, () => A.go('campaign'), 'campaign'] as [string, string, () => void, string]] : []),
+    ...(camp?.shop?.length ? [['Shop', ui.profile ? `${ui.profile.currency} ${camp.currency.name} to spend` : 'Boosters and singles', () => A.go('shop'), 'shop'] as [string, string, () => void, string]] : []),
   ];
   return h('div', { class: 'screen home', style: themeStyle(m) },
     h('button', { class: 'back', onclick: () => A.go('library') }, '← Library'),
@@ -75,18 +76,19 @@ export function setup(ui: UI, A: any) {
 
 export function decks(ui: UI, A: any) {
   const m = ui.mod!;
-  const custom = customDecks(m);
   const e = ui.edit;
+  const inCamp = !!e?.campaign;
+  const custom = inCamp ? ui.profile!.decks : customDecks(m);
   const list = h('aside', { class: 'deck-list' },
-    h('button', { class: 'cta small', onclick: () => A.editDeck(null) }, '+ New deck'),
+    h('button', { class: 'cta small', onclick: () => A.editDeck(null, inCamp) }, '+ New deck'),
     h('h3', {}, 'Your decks'),
     Object.keys(custom).length ? Object.keys(custom).map((n) => h('div', { class: cls('deck-row', e?.original === n && 'on') },
-      h('button', { class: 'link', onclick: () => A.editDeck(n) }, `★ ${n}`),
+      h('button', { class: 'link', onclick: () => A.editDeck(n, inCamp) }, `★ ${n}`),
       h('button', { class: 'x', 'aria-label': `Delete ${n}`, onclick: () => A.deleteDeck(n) }, '×'))) : h('p', { class: 'muted' }, 'None yet.'),
-    h('h3', {}, 'Starter decks'),
-    Object.keys(m.decks ?? {}).map((n) => h('div', { class: 'deck-row' }, h('button', { class: 'link', onclick: () => A.editDeck(n) }, title(n)), h('span', { class: 'muted' }, 'copy'))));
+    !inCamp && h('h3', {}, 'Starter decks'),
+    !inCamp && Object.keys(m.decks ?? {}).map((n) => h('div', { class: 'deck-row' }, h('button', { class: 'link', onclick: () => A.editDeck(n) }, title(n)), h('span', { class: 'muted' }, 'copy'))));
   return h('div', { class: 'screen decks', style: themeStyle(m) },
-    topnav([m.manifest.displayName, () => A.go('home')], 'Deckbuilder'),
+    inCamp ? topnav([campaign()!.name, () => A.go('campaign')], 'Campaign decks') : topnav([m.manifest.displayName, () => A.go('home')], 'Deckbuilder'),
     h('div', { class: 'deck-layout' }, list, e ? editor(ui, A, m) : h('div', { class: 'empty' }, h('p', {}, 'Copy a starter deck or start a new one.'))));
 }
 
@@ -96,11 +98,12 @@ function editor(ui: UI, A: any, m: Mod) {
   const F = m.rules.format;
   const spec = F.zones?.find((z) => z.zone === e.section) ?? { zone: e.section, min: F.deckMin, max: F.deckMax, types: undefined };
   const deck: Deck = secs.length === 1 && !F.zones ? e.deck[secs[0]] : e.deck;
-  const errs = deckErrors(m, deck);
+  const owned = e.campaign ? ui.profile!.collection : null;
+  const errs = [...deckErrors(m, deck), ...(owned ? ownedErrors(owned, deck) : [])];
   const inDeck = new Map<string, number>();
   for (const l of Object.values(e.deck)) for (const c of l) inDeck.set(c, (inDeck.get(c) ?? 0) + 1);
   const q = ui.filter.toLowerCase();
-  const pool = m.cards.filter((c) => (!spec.types || spec.types.includes(c.type)) && (!q || `${c.name} ${c.type} ${c.text ?? ''}`.toLowerCase().includes(q)));
+  const pool = m.cards.filter((c) => (!owned || (owned[c.id] ?? 0) > 0) && (!spec.types || spec.types.includes(c.type)) && (!q || `${c.name} ${c.type} ${c.text ?? ''}`.toLowerCase().includes(q)));
   const counts = new Map<string, number>();
   for (const c of e.deck[e.section]) counts.set(c, (counts.get(c) ?? 0) + 1);
   return h('div', { class: 'editor' },
@@ -113,7 +116,7 @@ function editor(ui: UI, A: any, m: Mod) {
     h('div', { class: 'editor-cols' },
       h('section', { class: 'pool' },
         h('input', { class: 'search', placeholder: 'Search cards…', value: ui.filter, 'data-keep': 'filter', 'aria-label': 'Search cards', oninput: (ev: Event) => A.setFilter((ev.target as HTMLInputElement).value) }),
-        h('div', { class: 'grid' }, pool.map((c) => cardFace(m, c.id, { size: 'sm', count: inDeck.get(c.id) ?? 0, onclick: () => A.addCard(c.id), label: `Add ${c.name}` })))),
+        h('div', { class: 'grid' }, pool.map((c) => cardFace(m, c.id, { size: 'sm', count: owned ? (owned[c.id] ?? 0) - (inDeck.get(c.id) ?? 0) : (inDeck.get(c.id) ?? 0), onclick: () => A.addCard(c.id), label: `Add ${c.name}` })))),
       h('section', { class: 'decklist' },
         h('h3', {}, `${title(e.section)}: ${e.deck[e.section].length} / ${spec.min === spec.max ? spec.min : `${spec.min}–${spec.max}`}`),
         [...counts].sort((a, b) => ((m.card.get(a[0])?.cost as number) ?? 0) - ((m.card.get(b[0])?.cost as number) ?? 0)).map(([id, n]) => {

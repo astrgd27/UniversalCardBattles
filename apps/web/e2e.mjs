@@ -88,16 +88,55 @@ try {
   // Gallery.
   await page.click('text=← Spark Duel');
   await page.click('[data-menu=gallery]');
-  ok(await page.$$eval('.gallery .grid .card', (c) => c.length) === 19, 'gallery shows all cards');
+  ok(await page.$$eval('.gallery .grid .card', (c) => c.length) === 22, 'gallery shows all cards');
   await page.fill('.search', 'bolt');
   ok(await page.$$eval('.gallery .grid .card', (c) => c.length) === 1, 'gallery search filters');
   await page.click('.gallery .grid .card');
   ok(await page.isVisible('.enlarged'), 'card enlarges');
   await page.keyboard.press('Escape');
 
-  // Phone width: library and table without horizontal scroll.
-  await page.setViewportSize({ width: 390, height: 844 });
+  // Campaign: begin, intro dialogue, first encounter, play it out, rewards screen, shop purchase, campaign decks.
   await page.click('text=← Spark Duel');
+  ok(await page.isVisible('[data-menu=campaign]') && await page.isVisible('[data-menu=shop]'), 'campaign and shop on the game menu');
+  await page.click('[data-menu=campaign]');
+  await page.click('text=Begin campaign');
+  ok(await page.isVisible('.dialogue'), 'campaign intro dialogue');
+  await page.click('.dialogue >> text=Skip');
+  ok(await page.isDisabled('[data-node=raiders]'), 'second encounter locked');
+  await page.click('[data-node=training]');
+  await page.click('.dialogue >> text=Skip');
+  await page.click('text=Fight!');
+  await page.waitForSelector('.hud');
+  await page.click('button[aria-label=Menu]');
+  await page.check('.panel-pop >> text=Fast AI');
+  await page.click('.panel-pop >> text=Resume');
+  for (let i = 0; i < 400 && !(await page.isVisible('.gameover')); i++) {
+    if (await page.isVisible('.dialogue >> text=Continue')) await page.click('.dialogue >> text=Continue');
+    else if (await page.isVisible('.dock >> text=Confirm')) {
+      const opt = await page.$('.dock .opt'); if (opt) await opt.click(); else await page.click('.target >> nth=0');
+      await page.click('.dock >> text=Confirm').catch(() => {});
+    } else if (await page.isVisible('button.pass')) await page.click('button.pass');
+    else await page.waitForTimeout(30);
+  }
+  ok(await page.isVisible('.gameover'), 'campaign match ends');
+  await page.click('.gameover >> text=Continue');
+  ok(await page.isVisible('.reward .result'), 'reward screen');
+  await page.click('text=Back to the map');
+  await page.click('[data-camp=shop]');
+  await page.click('[data-buy=ember-pack]');
+  ok(await page.$$eval('.reveal .card', (c) => c.length) === 5, 'pack reveals 5 cards');
+  await page.click('text=Collect');
+  ok(await page.isVisible('text=◆ 10 Sparks'), 'currency deducted');
+  ok(await page.isDisabled('[data-buy=ember-pack]'), 'cannot afford a second pack');
+  await page.click('text=← Spark Duel');
+  await page.click('[data-menu=campaign]');
+  await page.click('[data-camp=decks]');
+  ok(await page.isVisible('text=Campaign decks') && await page.isVisible('text=✓ Legal'), 'campaign deck editor');
+
+  // Phone width: library and table without horizontal scroll.
+  await page.click('text=← The Ember Road');
+  await page.click('text=← Spark Duel');
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.click('text=← Library');
   ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'library fits a phone');
   await open('arcane-duel');

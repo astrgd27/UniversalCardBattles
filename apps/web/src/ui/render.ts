@@ -3,8 +3,9 @@ import type { UI } from '../main.ts';
 import { decks, gallery, home, library, setup } from './menus.ts';
 import { noteEl } from './kit.ts';
 import { table } from './table.ts';
+import { campaignScreen, encounterScreen, rewardScreen, shopScreen } from './campaign.ts';
 
-const SCREENS = { library, home, setup, decks, gallery, game: table };
+const SCREENS = { library, home, setup, decks, gallery, game: table, campaign: campaignScreen, encounter: encounterScreen, reward: rewardScreen, shop: shopScreen };
 
 export function render(ui: UI, A: any) {
   document.documentElement.dataset.theme = ui.theme;

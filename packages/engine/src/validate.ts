@@ -1,6 +1,6 @@
 // Static module validation and deck legality. Every issue carries a JSON pointer into the module definition
 // (manifest / rules / cards / decks), which the SDK maps back to file:line:col.
-import type { Deck, Mod, ModuleDef } from './types.ts';
+import type { Deck, Mod, ModuleDef, Scenario } from './types.ts';
 import { EFFECT_OPS } from './effects.ts';
 import { EXPR_OPS } from './expr.ts';
 import { isRange, isSemver } from './semver.ts';
@@ -83,6 +83,7 @@ export function validateIssues(def: ModuleDef): Issue[] {
     if (typeof ph.id !== 'string' || phases.has(ph.id)) eR(`/phases/${i}/id`, 'phase ids must be unique strings');
     phases.add(ph.id);
   });
+  const cardIds = new Set<string>(Array.isArray(def.cards) ? def.cards.map((c: any) => c?.id) : []);
   const layers = new Set<string>(Array.isArray(R.layers) ? R.layers : []);
   const stats = new Set<string>(Array.isArray(R.stats) ? R.stats : []);
   const fns: Record<string, any> = isRec(R.functions) ? R.functions : {};
@@ -161,6 +162,10 @@ export function validateIssues(def: ModuleDef): Issue[] {
           for (const k of ['who', 'from', 'min', 'max']) expr(o[k], `${p}/1/${k}`, err);
           return;
         }
+        case 'create':
+          X(1); X(2); zoneLit(eff[3], `${p}/3`, err);
+          if (typeof eff[1] === 'string' && eff[1][0] !== '$' && !cardIds.has(eff[1])) err(`${p}/1`, `unknown card "${eff[1]}"`);
+          return;
         case 'random': {
           const o = eff[1] as any;
           if (!isRec(o) || !isVar(o.as) || (o.from === undefined && o.max === undefined)) { err(`${p}/1`, 'random needs {min?, max, as} or {from, n?, as}'); return; }
@@ -331,6 +336,18 @@ export function deckErrors(m: Mod, deck: Deck): string[] {
   for (const [c, n] of counts) {
     const max = (m.card.get(c)?.maxCopies as number | undefined) ?? f.maxCopies;
     if (n > max) errs.push(`${n} copies of "${c}" (max ${max})`);
+  }
+  return errs;
+}
+
+/** Validates a scenario against a module with the module's own walkers. Issues read "scenario/setup/0/...". */
+export function validateScenario(def: ModuleDef, sc: Scenario): string[] {
+  if (!sc || typeof sc !== 'object') return ['scenario: must be an object'];
+  const errs: string[] = [];
+  if (sc.vars !== undefined && (typeof sc.vars !== 'object' || Object.values(sc.vars).some((v) => typeof v !== 'number'))) errs.push('scenario/vars: must be an object of numbers');
+  const probe: ModuleDef = { ...def, rules: { ...def.rules, setup: sc.setup ?? [], triggers: sc.triggers ?? [] } };
+  for (const i of validateIssues(probe)) {
+    if (i.where === 'rules' && (i.ptr.startsWith('/setup') || i.ptr.startsWith('/triggers'))) errs.push(`scenario${i.ptr}: ${i.msg}`);
   }
   return errs;
 }

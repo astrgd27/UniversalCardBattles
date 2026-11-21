@@ -2,6 +2,7 @@
 // and validation errors mapped back to file:line:col.
 import type { Issue, Mod, ModuleDef } from '#engine';
 import { CAPABILITIES, ENGINE_API, compileModule, satisfies, validateIssues } from '#engine';
+import { validateCampaign } from '#campaign';
 import { lineCol, parseJson, type Parsed } from './json.ts';
 import { PackageError, ZIP_LIMITS, checkPath, writeZip, type ZipLimits } from './zip.ts';
 
@@ -140,8 +141,9 @@ export async function loadPackage(files: Map<string, Uint8Array>, opts: LoadOpti
   }
   done();
   const ai = files.has('ai/ai.json') ? tryJson('ai/ai.json') : ext ? base!.ai : undefined;
+  const campaign = files.has('campaign/campaign.json') ? tryJson('campaign/campaign.json') : undefined;
   done();
-  const def: ModuleDef = { manifest: mf as ModuleDef['manifest'], rules, cards, decks, ...(ai !== undefined ? { ai } : {}) };
+  const def: ModuleDef = { manifest: mf as ModuleDef['manifest'], rules, cards, decks, ...(ai !== undefined ? { ai } : {}), ...(campaign !== undefined ? { campaign } : {}) };
 
   // ---- validation, mapped to file:line:col ----
   const locate = (i: Issue): string => {
@@ -185,7 +187,10 @@ export async function loadPackage(files: Map<string, Uint8Array>, opts: LoadOpti
     }
   });
   done();
-  return { def, mod: compileModule(def), hash: pkgHash, files: names, assets, warnings };
+  const mod = compileModule(def);
+  if (campaign !== undefined) for (const x of validateCampaign(mod, campaign)) errors.push(`campaign/campaign.json: ${x}`);
+  done();
+  return { def, mod, hash: pkgHash, files: names, assets, warnings };
 }
 
 /** Builds a ZIP with manifest.contentHashes covering every other file (deterministic order). */

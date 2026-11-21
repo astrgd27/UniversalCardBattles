@@ -126,16 +126,31 @@ Not done yet: card art (the module `art` field is validated but not rendered), a
 - Dark by default with a light option. Esc pauses or cancels.
 - Code: `apps/web/src/main.ts` (controller) and `ui/{kit,render,menus,table}.ts`. e2e covers all screens.
 
-## Next: M7, campaigns
-- Campaign runtime outside the match engine, per the spec entities and hooks in `SPEC.md`:
-  - JSON `campaign/*.json` in packages
-  - a profile with collection, currencies and flags (IndexedDB in the browser, JSON in node)
-  - map nodes and chapters, encounters (opponent deck, AI policy via `scriptedAgent`, scenario setup and rule overrides, triggers like the Clockwork Champion)
-  - dialogue, shop, boosters (seeded weighted slots, guarantees)
-  - an idempotent reward ledger (encounterId + profileId + seq)
-  - save/reload mid-dialogue and mid-decision
-- Scenario modifiers enter only through validated match config (e.g. `MatchOpts.scenario` with starting objects and a deck order override).
-- A complete small example campaign over one reference game.
+## Done: M7, campaigns
+- Engine: `MatchOpts.scenario` (setup, vars, `once` triggers), the `create` effect (tokens), and `validateScenario`.
+- `packages/campaign` (`#campaign`):
+  - `newProfile`, `nodeState`, `startEncounter` (legality and ownership checks, marks the attempt), `encounterAgent` (phased boss AI)
+  - `finishEncounter` (idempotent ledger), `openBooster` (seeded weighted slots), `buy` (stock, currency)
+  - `validateCampaign`, also run by the package loader
+- Spark Duel campaign, **The Ember Road**:
+  - three encounters (training, raiders, boss)
+  - the Clockwork Champion boss: 30 life, a Brass Bulwark token, a Signal Beacon objective whose loss loses the match, and an Overdrive at ≤15 life (dialogue, two Sentry tokens, AI phase 2)
+  - an Ember Pack booster and a shop with singles
+- UI:
+  - Campaign and Shop on the game menu
+  - map with nodes, encounter dialogue and a versus screen with deck choice, in-match dialogue banners
+  - reward screen with card reveals, shop with pack opening
+  - collection-limited campaign deckbuilder; campaign matches survive save/continue
+- 63 tests (6 campaign tests); e2e plays a campaign encounter, buys a pack and checks the campaign decks.
+
+Not done yet: IndexedDB storage (localStorage is used), profile export/import, tournaments and quests, campaigns for the other reference games.
+
+## Next: M8, hardening
+- Performance check: matches with 100+ objects and many modifiers stay interactive (measure the `chars` cache and observe cost).
+- Save migrations (`saveMigrationVersion`) and profile export/import.
+- Security review of the zip and scripts paths; fuzz the JSON parser and validator.
+- Docs: a module author guide and a campaign guide.
+- Optional: campaigns for more reference games, the affected player choosing replacement order, undo where rules allow.
 
 ## Planned reference games (each one exercises mechanics the others lack)
 | Game | Milestone | Unique stressors |
@@ -148,5 +163,4 @@ Not done yet: card art (the module `art` field is validated but not rendered), a
 | Ember Council | M4 ✓ | 3–4 players; voting/politics; directed elimination; shared market row (draft); alternating actions with initiative; dice as objects with faces; quest-score victory |
 
 ## Later
-- M7: campaigns.
 - M8: hardening.

@@ -1,7 +1,7 @@
 // The game table. Renders strictly from observe()/eventsFor()/listActions() for the viewing player.
 import type { GEvent, Mod, ObjView, Template, View, ZoneDef } from '#engine';
 import { eventsFor, listActions, observe } from '#engine';
-import { actor, current, type UI } from '../main.ts';
+import { actor, current, pendingDialogue, type UI } from '../main.ts';
 import { cardBack, cardFace, cls, emblem, h, noteEl, pname, segmented, themeStyle, title } from './kit.ts';
 
 interface C {
@@ -39,6 +39,7 @@ export function table(ui: UI, A: any) {
     dock(c, mine, tpls, step),
     ui.drawer && drawer(c),
     ui.paused && pause(c),
+    !v.result && pendingDialogue() && banner(c),
     v.result && gameOver(c),
     ui.cover && h('div', { class: 'overlay cover', role: 'dialog', 'aria-modal': 'true' },
       h('div', { class: 'panel-pop' }, h('h2', {}, `Pass the device to ${pname(ui.cover)}`),
@@ -203,9 +204,17 @@ function gameOver(c: C) {
     h('div', { class: 'panel-pop' },
       h('h1', { class: cls('result', head === 'Victory' && 'win', head === 'Defeat' && 'loss') }, head),
       h('p', { class: 'muted' }, `${r.winners.length ? `${r.winners.map(pname).join(' & ')} won` : 'No winner'} after ${v.turn} turns (${r.reason}).`),
-      h('button', { class: 'cta', onclick: A.rematch }, 'Rematch'),
+      ui.camp ? h('button', { class: 'cta', onclick: A.finishCampaignMatch }, 'Continue') : h('button', { class: 'cta', onclick: A.rematch }, 'Rematch'),
       h('button', { onclick: () => A.drawer('log') }, 'Review log'),
-      h('button', { class: 'ghost', onclick: A.quit }, 'Game menu')));
+      !ui.camp && h('button', { class: 'ghost', onclick: A.quit }, 'Game menu')));
+}
+
+function banner(c: C) {
+  const d = pendingDialogue()!;
+  return h('div', { class: 'overlay soft', role: 'dialog', 'aria-label': 'Dialogue' },
+    h('div', { class: 'dialogue' }, h('div', { class: 'portrait', 'aria-hidden': 'true' }, '💬'),
+      h('div', { class: 'speech' }, h('div', { class: 'speaker' }, d.speaker), h('p', {}, d.text),
+        h('div', { class: 'opts end' }, h('button', { class: 'cta small', onclick: c.A.ackDialogue, autofocus: true }, 'Continue')))));
 }
 
 function fmt(e: Record<string, any>, mod: Mod, label: (x: string) => string): string | null {
@@ -226,6 +235,8 @@ function fmt(e: Record<string, any>, mod: Mod, label: (x: string) => string): st
     case 'gameOver': return `Game over (${e.reason})`;
     case 'random': return `Random result: ${e.value === undefined ? 'hidden' : [e.value].flat().map((x: any) => label(String(x))).join(', ')}`;
     case 'flipped': return `${cn(e.card) ?? 'A card'} turned face ${e.up ? 'up' : 'down'}`;
+    case 'dialogue': return `${e.speaker}: “${e.text}”`;
+    case 'created': return `${cn(e.card) ?? 'A token'} appears${e.toPlayer && e.toPlayer !== 'shared' ? ` (${pname(e.toPlayer)})` : ''}`;
     case 'replaced': return `${e.by}: ${e.event} ${e.how === 'instead' ? 'replaced' : 'modified'}`;
     case 'shuffled': case 'linked': case 'unlinked': case 'modified': case 'expired': case 'drawFail': case 'log': return null;
     default: {

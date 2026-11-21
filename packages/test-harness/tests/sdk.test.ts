@@ -36,7 +36,7 @@ test('reference modules round-trip: folder -> pack -> zip -> load', async () => 
     assert.deepEqual([pkg.def.rules, pkg.def.cards, pkg.def.decks, pkg.def.ai], [src.rules, src.cards, src.decks, src.ai]);
     assert.equal(pkg.mod.hash, loadRef(id).hash);
     assert.deepEqual(pkg.warnings, []);
-    assert.equal(Object.keys(pkg.def.manifest.contentHashes!).length, 4);
+    assert.equal(Object.keys(pkg.def.manifest.contentHashes!).length, pkg.files.length - 1);
   }
   assert.match((await loadPackage(await spark())).warnings.join(), /no contentHashes/);
 });
@@ -96,7 +96,7 @@ test('errors point at file:line:col, including split card files and JSON syntax'
   split.set('cards/b.json', enc([...cards.slice(10), { id: 'broken', name: 'Broken' }]));
   await rejects(loadPackage(split), /^cards\/b\.json:\d+:\d+: broken: id, name and type are required strings$/m);
   split.set('cards/b.json', enc(cards.slice(10)));
-  assert.equal((await loadPackage(split)).def.cards.length, 19);
+  assert.equal((await loadPackage(split)).def.cards.length, cards.length);
   await rejects(loadPackage(editText(f, 'rules.json', '"turnLimit": 80,', '"turnLimit": 80,,')), /^rules\.json:\d+:\d+: invalid JSON \(expected a property name\)$/m);
 });
 
