@@ -5,7 +5,7 @@ import { deckErrors } from '#engine';
 import { ownedErrors } from '#campaign';
 import { campaign, customDecks, sections, type UI } from '../main.ts';
 import { customArt } from '../art.ts';
-import { cardMatches, curve, facets, hasToken, parseQuery, sortCards } from '../search.ts';
+import { cardMatches, costTotal, curve, facets, hasToken, parseQuery, sortCards } from '../search.ts';
 import { templateFor } from '../templates.ts';
 import { cardFace, cls, h, hue, segmented, themeStyle, title, topnav } from './kit.ts';
 
@@ -86,7 +86,7 @@ function editor(ui: UI, A: any, m: Mod) {
   const peak = Math.max(1, ...cv);
   const types = new Map<string, number>();
   for (const c of here) { const t = m.card.get(c)?.type ?? '?'; types.set(t, (types.get(t) ?? 0) + 1); }
-  const costs = here.map((c) => m.card.get(c)?.cost).filter((x): x is number => typeof x === 'number');
+  const costs = here.map((c) => costTotal(m.card.get(c)?.cost)).filter((x): x is number => typeof x === 'number');
   return h('div', { class: 'editor' },
     h('div', { class: 'editor-head' },
       h('input', { class: 'deck-name', value: e.name, 'aria-label': 'Deck name', onchange: (ev: Event) => A.rename((ev.target as HTMLInputElement).value) }),

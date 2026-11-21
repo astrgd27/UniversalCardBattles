@@ -3,6 +3,7 @@ import type { CardDef, Mod, Reason } from '#engine';
 import { ASSETS } from '../modules.ts';
 import { customArt, procArt } from '../art.ts';
 import { type StatSlot, templateFor } from '../templates.ts';
+import { costText, costTotal } from '../search.ts';
 
 export type Child = Node | string | null | undefined | false | Child[];
 export function h(tag: string, props: Record<string, any> = {}, ...kids: Child[]): HTMLElement {
@@ -88,9 +89,13 @@ export function cardFace(m: Mod, cardId: string, o: FaceOpts = {}): HTMLElement 
   return h('button', {
     class: cls('card', `tpl-${tpl.base}`, `layout-${tpl.layout}`, `size-${o.size ?? 'md'}`, `t-${def.type}`, o.faceDown && 'fd', o.state),
     style: `--h:${hue(def.id)}`, onclick: o.onclick, title: def.text ?? def.name, 'data-template': tpl.base,
-    'aria-label': o.label ?? `${def.name}, ${def.type}${def.cost !== undefined ? `, cost ${def.cost}` : ''}${aria ? `, ${aria}` : ''}`,
+    'aria-label': o.label ?? `${def.name}, ${def.type}${def.cost !== undefined ? `, cost ${costText(def.cost)}` : ''}${aria ? `, ${aria}` : ''}`,
   },
-  tpl.cost !== 'none' && def.cost !== undefined && h('span', { class: `gem pos-${tpl.cost}` }, String(o.stats?.cost ?? def.cost)),
+  tpl.cost !== 'none' && def.cost !== undefined && (typeof def.cost === 'object'
+    ? h('span', { class: `gem typed pos-${tpl.cost}`, title: `Cost: ${costText(def.cost)}` }, String(costTotal(def.cost)),
+      h('span', { class: 'pips' }, Object.entries(def.cost as Record<string, number>).filter(([k]) => k !== 'any').flatMap(([k, n]) =>
+        Array.from({ length: n }, () => h('i', { class: 'pip', style: `--h:${hue(k)}` }, k[0].toUpperCase())))))
+    : h('span', { class: `gem pos-${tpl.cost}` }, String(o.stats?.cost ?? def.cost))),
   o.count !== undefined && h('span', { class: 'count' }, `×${o.count}`),
   h('span', { class: 'art' }, h('img', { src: art, alt: '', draggable: 'false' })),
   h('span', { class: 'body' },

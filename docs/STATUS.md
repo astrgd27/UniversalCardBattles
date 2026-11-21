@@ -197,7 +197,18 @@ Security notes:
   - The reference games mix several formats: Relic has ranked monsters plus a Fusion template, Ember Council has its own Coin and Ally templates, Vault Breach has landscape locations and a Barrier template.
 - 82 tests; e2e covers chips, queries, export/import, sample hand and template labels.
 
+## Done: the big rules-structure gaps (engine API 0.3.1, backward compatible)
+A survey of about 30 published TCG rulebooks (`docs/COVERAGE.md`, second table) found five structures that most of them need. All five are now generic engine primitives, documented in `docs/DSL.md`:
+- **Timing windows** (`rules.windows`, `openWindow`, `winSet`, `closeWindow`, `$win`): combat steps, showdowns and counter/guard windows opened mid-turn. The turn's effects, stack and priority are saved, the window's steps run with their own timing and actions, then the opening effect resumes. Saves, replays and determinized AI worlds include open windows.
+- **Slotted zones** (zone `slots`, `move {slot}`, `setSlot`, `freeSlots`, `inSlot`, `adjacent`): named positions with type/kind limits, capacity, rows (tags) and adjacency. The table draws slots, and open slots are clickable targets.
+- **Typed resources** (`rules.resources`, `pay`, `gain`, `empty`, `canPay`, `pool`, `meets`, `tally`): map costs with a generic part, thresholds that aren't paid, and pools that expire at the end of the phase or turn. Cards print typed costs as pips; search, facets and the curve use cost totals.
+- **Deck rules** (`format.rules`, `copiesBy`, section `maxCopies`, `def`/`distinct`): colour/aspect identity, group limits, copies counted by name across printings.
+- **Usage limits** (action and ability `limit`, `uses`): per turn, phase or game, by player, object, physical card, card id or name, with shared groups. Rejections explain themselves (code `limit`).
+- New test game **Bastion Clash** (disposable, no balance work) uses all five: a combat window with a defender's guard step, front/back rows with support from behind, gear slots, sun/moon aether from wells, aspect deck rules and once-per-turn limits.
+- 88 tests (6 focused ones in `gaps.test.ts`); golden hashes for the 7 earlier games are unchanged; e2e covers the slot board.
+
 ## Possible next steps
+- The remaining smaller gaps from the survey: activated-ability lists on cards, engine-wide targeting restrictions, gain control, teams, copy/"loses abilities" layers, layered grids.
 - Campaigns for the other reference games.
 - IndexedDB storage (localStorage today) and cloud sync of backups.
 - Card art pipeline: an asset browser in the gallery, using art in reference games.
@@ -212,6 +223,7 @@ Security notes:
 | Tri-Lane | M4 ✓ | 3 lanes with spatial adjacency and movement; simultaneous sealed commitments plus reveal; lane-control scoring victory |
 | Relic Chain | M4 ✓ | chain timing with reverse resolution; face-down set cards (traps); battle positions; extra deck with fusion recipes from multiple cards |
 | Tidewardens | M4 ✓ | separate resource deck; life as a hidden ordered card zone with reveal triggers; evolution stacks (cards under cards); pitch cards (resource or effect) |
+| Bastion Clash | gaps ✓ | timing windows (combat steps), slotted zones with rows/adjacency and gear slots, typed resources with thresholds, deck rules, usage limits |
 | Ember Council | M4 ✓ | 3–4 players; voting/politics; directed elimination; shared market row (draft); alternating actions with initiative; dice as objects with faces; quest-score victory |
 
 ## Later

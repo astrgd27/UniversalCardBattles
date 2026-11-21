@@ -1,17 +1,19 @@
 // Effect primitives, the replacement pipeline, event emission and trigger detection. See docs/DSL.md.
 import type { Ability, Ctx, Effect, EffectList, Frame, GEvent, Mod, Obj, Replacement, SlotDef, State } from './types.ts';
-import { ev, scriptCtx } from './expr.ts';
+import { ev, payPlan, scriptCtx } from './expr.ts';
 import { rawVal, tsOf } from './layers.ts';
 import { randInt, sample, shuffle } from './rng.ts';
 import {
-  CostError, EngineError, activeId, baseCtx, list, masks, num, objViewers, one, player, unionViewers, uniq, viewers, zkey, zoneIdOf,
-  zoneOwnerOf,
+  CostError, EngineError, activeId, baseCtx, freeSlots, list, masks, num, objViewers, one, player, slotAccepts, slotsOf, topWin,
+  unionViewers, uniq, useKey, viewers, zkey, zoneIdOf, zoneOwnerOf,
 } from './util.ts';
 
 export const EFFECT_OPS = new Set([
   'draw', 'move', 'shuffle', 'set', 'inc', 'damage', 'destroy', 'lose', 'win', 'if', 'each', 'let', 'choose', 'run',
   'endPhase', 'emit', 'log', 'counter', 'modify', 'link', 'unlink', 'call', 'commit', 'random', 'flip', 'create', 'gotoPhase',
+  'openWindow', 'closeWindow', 'winSet', 'pay', 'gain', 'empty', 'setSlot',
 ]);
+const MAX_WINDOWS = 8;
 
 export function emit(m: Mod, s: State, e: { type: string; [k: string]: any }): GEvent {
   const event = { seq: s.events.length, ...e } as GEvent;
@@ -33,8 +35,11 @@ function collectTriggers(m: Mod, s: State, e: GEvent) {
   let k = 0;
   const queue = (ref: string, ab: Ability, ctx: Ctx, ctrl: string, name: string, rule: boolean) => {
     if (ab.once && s.vars[`once:${ref}`]) return;
+    const lk = ab.limit ? useKey(m, s, ab.limit, ref, ctrl, ctx.$self ?? null) : '';
+    if (ab.limit && (s.uses[lk] ?? 0) >= (ab.limit.n ?? 1)) return;
     if (ab.if !== undefined && !ev(m, s, ab.if, ctx)) return;
     if (ab.once) s.vars[`once:${ref}`] = 1;
+    if (ab.limit) s.uses[lk] = (s.uses[lk] ?? 0) + 1;
     s.triggers.push({
       id: `t${e.seq}.${k++}`, ref, ctrl, ctx, label: `${name}: ${ab.text ?? ab.on}`, stack: ab.stack ?? !rule, speed: ab.speed ?? 1,
     });
@@ -131,7 +136,7 @@ function commit(m: Mod, s: State, ctx: Ctx, pe: any): any {
       return propose(m, s, ctx, { type: 'move', obj: deck[0], to: R.handZone, player: pe.player, cause: 'draw' });
     }
     case 'move':
-      return s.objects[pe.obj] ? moveObj(m, s, pe.obj, pe.to, pe.player ?? s.objects[pe.obj].owner, pe.pos, pe.faceDown) : null;
+      return s.objects[pe.obj] ? moveObj(m, s, pe.obj, pe.to, pe.player ?? s.objects[pe.obj].owner, pe.pos, pe.faceDown, pe.slot) : null;
     case 'destroy': {
       const o = s.objects[pe.obj];
       if (!o) return null;
@@ -168,10 +173,20 @@ function commit(m: Mod, s: State, ctx: Ctx, pe: any): any {
 }
 
 // ---------- primitives ----------
-export function moveObj(m: Mod, s: State, id: string, zone: string, toPlayer: string, pos?: string, faceDown?: boolean): string {
+export function moveObj(m: Mod, s: State, id: string, zone: string, toPlayer: string, pos?: string, faceDown?: boolean, slot?: string): string | null {
   const o = s.objects[id];
   const fromKey = o.zone;
   const toKey = zkey(m, toPlayer, zone);
+  // Slotted zones: the requested slot (or the first free one that accepts the card) must have room, else nothing moves.
+  let at: string | undefined;
+  if (slotsOf(m, zone).length) {
+    const free = freeSlots(m, s, toKey, o.card, id);
+    at = slot === undefined || slot === null ? free[0] : free.includes(slot) ? slot : undefined;
+    if (!at) {
+      emit(m, s, { type: 'slotFull', obj: id, zone, slot: slot ?? null, ...masks([viewers(m, fromKey), ['obj']]) });
+      return null;
+    }
+  }
   const from = s.zones[fromKey];
   from.splice(from.indexOf(id), 1);
   delete s.objects[id];
@@ -182,6 +197,7 @@ export function moveObj(m: Mod, s: State, id: string, zone: string, toPlayer: st
   const controller = zoneOwner === 'shared' ? owner : zoneOwner;
   const no = { id: nid, inst: o.inst, card: o.card, owner, controller, zone: toKey, vars: { ...(m.rules.objectVars ?? {}) } } as Obj;
   if (faceDown) no.fd = true;
+  if (at) no.slot = at;
   s.objects[nid] = no;
   if (pos === 'top') s.zones[toKey].unshift(nid);
   else s.zones[toKey].push(nid);
@@ -191,7 +207,7 @@ export function moveObj(m: Mod, s: State, id: string, zone: string, toPlayer: st
   emit(m, s, {
     type: 'moved', obj: id, newObj: nid, card: o.card, owner, controller: o.controller,
     from: zoneIdOf(fromKey), to: zone, fromPlayer: zoneOwnerOf(fromKey), toPlayer: zoneOwner,
-    ...(o.fd ? { faceDown: true } : {}), ...(faceDown ? { toFaceDown: true } : {}),
+    ...(o.fd ? { faceDown: true } : {}), ...(faceDown ? { toFaceDown: true } : {}), ...(at ? { slot: at } : {}),
     ...masks([idFrom, ['obj']], [idTo, ['newObj']], [known, ['card']]),
   });
   return nid;
@@ -253,7 +269,8 @@ export function apply(m: Mod, s: State, eff: Effect, f: Frame) {
       const out: (string | null)[] = list(ids).map((id: string) => {
         if (!s.objects[id]) return null;
         const to = opts.player !== undefined ? one(ev(m, s, opts.player, ctx)) : s.objects[id].owner;
-        return propose(m, s, ctx, { type: 'move', obj: id, to: zone, player: to, pos: opts.pos, faceDown: opts.faceDown === true });
+        const slot = opts.slot !== undefined ? one(ev(m, s, opts.slot, ctx)) ?? undefined : undefined;
+        return propose(m, s, ctx, { type: 'move', obj: id, to: zone, player: to, pos: opts.pos, faceDown: opts.faceDown === true, ...(slot ? { slot } : {}) });
       });
       if (opts.as) ctx[opts.as] = Array.isArray(ids) ? out.filter(Boolean) : (out[0] ?? null);
       return;
@@ -296,9 +313,12 @@ export function apply(m: Mod, s: State, eff: Effect, f: Frame) {
     case 'endPhase': s.phaseState = 'ended'; return;
     case 'gotoPhase': {
       // Ends the current phase and continues at the named phase (the last phase ends the turn after it runs).
-      const idx = m.rules.phases.findIndex((p) => p.id === A(1));
-      if (idx < 0) throw new EngineError(`gotoPhase: unknown phase ${A(1)}`);
-      s.turn.phase = idx - 1;
+      // Inside a timing window it jumps between the window's steps instead.
+      const w = topWin(s);
+      const idx = (w ? m.rules.windows![w.id].steps : m.rules.phases).findIndex((p) => p.id === A(1));
+      if (idx < 0) throw new EngineError(`gotoPhase: unknown ${w ? 'step' : 'phase'} ${A(1)}`);
+      if (w) w.step = idx - 1;
+      else s.turn.phase = idx - 1;
       s.phaseState = 'ended';
       return;
     }
@@ -405,13 +425,80 @@ export function apply(m: Mod, s: State, eff: Effect, f: Frame) {
       const p = one(A(2));
       const key = zkey(m, p, A(3));
       const opts = (eff[4] ?? {}) as any;
+      let at: string | undefined;
+      if (slotsOf(m, zoneIdOf(key)).length) {
+        const want = opts.slot !== undefined ? one(ev(m, s, opts.slot, ctx)) : undefined;
+        const free = freeSlots(m, s, key, card);
+        at = want == null ? free[0] : free.includes(want) ? want : undefined;
+        if (!at) { emit(m, s, { type: 'slotFull', card, zone: zoneIdOf(key), slot: want ?? null }); if (opts.as) ctx[opts.as] = null; return; }
+      }
       const id = `o${s.nextId++}`;
       const owner = key.startsWith('shared:') ? 'shared' : p;
-      s.objects[id] = { id, inst: `t${id}`, card, owner, controller: owner, zone: key, vars: { ...(m.rules.objectVars ?? {}) }, ...(opts.faceDown ? { fd: true } : {}) };
+      s.objects[id] = { id, inst: `t${id}`, card, owner, controller: owner, zone: key, vars: { ...(m.rules.objectVars ?? {}) }, ...(opts.faceDown ? { fd: true } : {}), ...(at ? { slot: at } : {}) };
       s.zones[key].push(id);
       if (opts.as) ctx[opts.as] = id;
       const known = objViewers(m, s.objects[id]);
       emit(m, s, { type: 'created', newObj: id, card, to: zoneIdOf(key), toPlayer: owner, ...masks([viewers(m, key), ['newObj']], [known, ['card']]) });
+      return;
+    }
+    case 'openWindow': {
+      // Suspends the turn (this frame, the stack, priority) and runs the window's steps; this frame resumes after it closes.
+      const id = String(A(1));
+      if (!m.rules.windows?.[id]) throw new EngineError(`openWindow: unknown window ${id}`);
+      if (s.windows.length >= MAX_WINDOWS) throw new EngineError(`openWindow: more than ${MAX_WINDOWS} nested windows`);
+      const data: Record<string, any> = {};
+      for (const [k, v] of Object.entries(((eff[2] ?? {}) as any).data ?? {})) data[k] = ev(m, s, v, ctx);
+      s.windows.push({ id, step: 0, data, saved: { exec: s.exec, stack: s.stack, resolving: s.resolving, holder: s.holder, passes: s.passes, phaseState: s.phaseState } });
+      Object.assign(s, { exec: [], stack: [], resolving: false, holder: null, priority: null, passes: 0, phaseState: 'enter' });
+      emit(m, s, { type: 'windowOpened', window: id, data });
+      return;
+    }
+    case 'closeWindow': { const w = topWin(s); if (w) w.closed = true; return; }
+    case 'winSet': {
+      const w = topWin(s);
+      if (!w) throw new EngineError('winSet: no open window');
+      w.data = { ...w.data, [String(A(1))]: A(2) };
+      return;
+    }
+    case 'pay': {
+      // ["pay", player, resource, cost]: typed payment; an unpayable cost rejects the action (atomic).
+      const p = one(A(1));
+      const res = String(A(2));
+      const plan = payPlan(m, s, p, res, A(3));
+      if (!plan) throw new CostError(`Cannot pay: not enough ${res}.`);
+      for (const [t, n] of Object.entries(plan)) if (n) setVar(m, s, p, `${res}:${t}`, rawVal(m, s, p, `${res}:${t}`) - n);
+      emit(m, s, { type: 'paid', player: p, resource: res, paid: plan });
+      return;
+    }
+    case 'gain': {
+      const res = String(A(2));
+      const add = A(3) ?? {};
+      const types = m.rules.resources?.[res]?.types ?? [];
+      each(1, (p) => { for (const [t, n] of Object.entries(add)) if (types.includes(t)) setVar(m, s, p, `${res}:${t}`, rawVal(m, s, p, `${res}:${t}`) + num(n)); });
+      return;
+    }
+    case 'empty': {
+      const res = String(A(2));
+      each(1, (p) => { for (const t of m.rules.resources?.[res]?.types ?? []) setVar(m, s, p, `${res}:${t}`, 0); });
+      return;
+    }
+    case 'setSlot': {
+      // Repositions an object inside its slotted zone; with a full one-object slot, the two swap.
+      const o = s.objects[one(A(1))];
+      const to = String(one(A(2)));
+      if (!o?.slot || o.slot === to) return;
+      const sp = slotsOf(m, zoneIdOf(o.zone)).find((x) => x.id === to);
+      if (!sp || !slotAccepts(m, sp, o.card)) return;
+      const there = s.zones[o.zone].filter((id) => s.objects[id].slot === to);
+      const from = o.slot;
+      if (there.length >= (sp.cap ?? 1)) {
+        const fromSp = slotsOf(m, zoneIdOf(o.zone)).find((x) => x.id === from)!;
+        if (there.length !== 1 || !slotAccepts(m, fromSp, s.objects[there[0]].card)) return;
+        s.objects[there[0]].slot = from;
+        emit(m, s, { type: 'slotted', obj: there[0], slot: from, from: to, ...masks([viewers(m, o.zone), ['obj']]) });
+      }
+      o.slot = to;
+      emit(m, s, { type: 'slotted', obj: o.id, slot: to, from, ...masks([viewers(m, o.zone), ['obj']]) });
       return;
     }
     case '@stack': stackAction(m, s, eff, ctx); return;

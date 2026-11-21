@@ -1,4 +1,4 @@
-# Rules DSL (engine API 0.3)
+# Rules DSL (engine API 0.3.1)
 
 A module is a folder or ZIP package (see **Packages** below). All logic is JSON S-expressions: `["op", arg, ...]`. The reference module is `packages/reference-games/spark-duel`.
 
@@ -39,6 +39,15 @@ A module is a folder or ZIP package (see **Packages** below). All logic is JSON 
 | `ext name` | current value of an external input |
 | `at x key`, `keys x`, `values x`, `same a b` | map and list access; `same` is deep equality (`=` compares single values) |
 | `linked target rel` | objects whose relationship `rel` points at target |
+| `def cardOrObj field` | a card definition field, by card id or object (works in deck rules, where there are no objects) |
+| `tally list keyExpr?` | counts into a map: each item's key (`$it`) is counted once; a list counts each element; a map adds its values (e.g. summing `yields`) |
+| `distinct l` | unique items |
+| `meets have need` | every `need[k] <= have[k]` (missing = 0): thresholds and requirements that are not paid |
+| `canPay p res cost`, `pool p res` | typed payment check, and a player's pool `{type: n}` (see `rules.resources`) |
+| `slots zone tag?`, `adjSlots zone slot` | slot ids of a slotted zone (optionally those with a tag), and a slot's neighbours |
+| `inSlot p zone slot`, `freeSlots p zone card?` | objects in a slot; slots with room (that accept `card`: a card id or object) |
+| `adjacent obj` | objects in the same zone whose slots neighbour obj's slot. `get obj slot` reads the slot |
+| `uses group per key?` | a usage counter: `per` turn, phase or game; key defaults to `$me` (see `limit`) |
 
 ## Effects
 Effects run in effect lists `[[op...], [op...]]`.
@@ -46,7 +55,7 @@ Effects run in effect lists `[[op...], [op...]]`.
 | op | meaning |
 |---|---|
 | `draw p n` | moves the top deck card to hand. An empty deck emits `drawFail` |
-| `move objs zone {player?, pos?: "top", as?: "$v", faceDown?: true}` | moves objects to a zone (owner's zone by default). `as` rebinds the new id(s). A face-down object's identity is known only to its controller (views show `card: ""`), its abilities don't work, and `get obj faceDown` reads the flag. Cards owned by `"shared"` become the taker's |
+| `move objs zone {player?, pos?: "top", as?: "$v", faceDown?: true, slot?}` | moves objects to a zone (owner's zone by default). `as` rebinds the new id(s). In a slotted zone the object takes `slot` (or the first free slot that accepts it); with no room it stays put and `slotFull` is emitted. A face-down object's identity is known only to its controller (views show `card: ""`), its abilities don't work, and `get obj faceDown` reads the flag. Cards owned by `"shared"` become the taker's |
 | `shuffle p zone` | seeded shuffle |
 | `set refs name v`, `inc refs name d` | player or object vars. Emits `changed` |
 | `damage targets n src?` | players lose `damage.player` (default `life`); objects gain `damage.object` (default `dmg`). Emits `damage` |
@@ -62,8 +71,13 @@ Effects run in effect lists `[[op...], [op...]]`.
 | `call proc args...` | runs a script procedure (`rules.procedures`) |
 | `commit {who?, from, min?, max?, as, prompt?, reveal?}` | simultaneous secret choice. Each player in `who` (default: all living players) picks from `from`, evaluated with `$p` set to them. Picks are masked from everyone else, then bound as `{playerId: pick}`. A public `revealed` event follows unless `reveal: false`, which keeps the picks secret for a later commit. Note: it binds `$p` |
 | `random {min?, max, as}` / `random {from, n?, as}` | seeded integer, or a random pick (a list when `n` is given). Emits `random`; picks of hidden objects are masked |
-| `create card player zone {as?, faceDown?}` | creates a new object (a token) from a card definition. Emits `created`. Mark token-only cards with `maxCopies: 0` |
+| `create card player zone {as?, faceDown?, slot?}` | creates a new object (a token) from a card definition. Emits `created`. Mark token-only cards with `maxCopies: 0` |
 | `gotoPhase id` | ends the current phase and continues at phase `id`. Jumping to the last phase ends the turn after it runs, e.g. when a shared meter crosses a threshold |
+| `openWindow id {data?: {k: expr}}` | opens timing window `id` (`rules.windows`): the turn pauses (this effect list, the stack and priority are saved), the window's steps run like phases, then everything is restored and this effect list continues after `openWindow`. `$win` reads the window's data, `$window` its id, `$phase` the current step. Windows can nest (8 deep). Emits `windowOpened`, `step`, `windowClosed` |
+| `winSet key expr`, `closeWindow` | change the innermost window's data; close it early (when the current effects finish; leftover window stack items are dropped). `endPhase`/`gotoPhase` move between steps while a window is open |
+| `pay p res cost` | pays a typed cost: specific types first, then the generic key (default `any`) from the largest pools. Unpayable = the whole action is rejected. A number is an all-generic cost. Emits `paid` |
+| `gain ps res {type: n}`, `empty ps res` | add to / clear typed pools |
+| `setSlot obj slot` | repositions an object inside its slotted zone; a full one-object slot swaps the two. Emits `slotted` |
 | `flip objs up?` | turns face up (default) or face down. Emits `flipped` (with `card` when turned face up) |
 
 `choose` also takes `secret: true` (masks the pick from others) and `required: true`: if fewer options than `min` exist (typically during a cost), the whole action is rejected and nothing changes.
@@ -72,10 +86,15 @@ Effects run in effect lists `[[op...], [op...]]`.
 
 ## rules.json
 - `players {min,max}`, `playerVars`, `objectVars` (reset on every zone change).
-- `zones[] {id, vis: public|owner|hidden, shared?, ordered?, abilities?}`. Card abilities function in zones with `abilities: true` unless the ability lists `zones`.
+- `zones[] {id, vis: public|owner|hidden, shared?, ordered?, abilities?, slots?}`. Card abilities function in zones with `abilities: true` unless the ability lists `zones`.
+  - `slots [{id, types?, kinds?, cap?=1, tags?, adj?}]` makes a **slotted zone** (equipment slots, front/back rows, circles, provinces). `types` limits card types, `kinds` the card field `kind` (string or list), `tags` group slots (the UI draws one row per first tag), `adj` lists neighbours. Objects carry their slot; it is cleared by a zone change.
 - `deckZone`, `handZone`, `graveZone`, `format {deckMin, deckMax, maxCopies, zones?}`, `damage?`, `turnLimit?`.
   - `format.zones [{zone, min, max, types?}]` declares deck sections. A deck is then `{zone: [ids]}`; a plain list is always the main deck.
-  - A card may override the copy limit with `maxCopies`.
+  - A card may override the copy limit with `maxCopies`; a section may add its own `maxCopies` (e.g. singleton extra decks).
+  - `copiesBy: "name"` counts copies by a card field instead of id, so reprints and alternate art share one limit.
+  - `rules [{if, why}]`: construction rules as expressions over `$deck` (every card id) and `$sections` (`{zone: ids}`), using `def`, `tally`, `distinct`, `count`, `all`… For example: colours, singleton, "at most 3 gear", "every card shares an aspect with the hero" (`["def", ["first", "$sections.hero"], "aspects"]`). Failed rules report `why`.
+- `resources {id: {types, generic?="any", expire?: phase|turn}}`: **typed pools** held as player vars `"<id>:<type>"`. Costs are maps such as `{"sun": 1, "any": 2}`. `expire` empties the pools at the end of each phase or turn. Card fields can be maps (`cost`, `yields`, `needs`), and the UI prints typed costs as pips.
+- `windows {id: {steps: [phase-like steps], timing?}}`: **timing windows** opened mid-turn by `openWindow` (combat steps, showdowns, counter or guard windows). Steps take `auto`, `do` and `timing` like phases; action `phases` lists may name steps. Step timing falls back to the window's, then the rules' timing. A typical defend step: `{"id": "block", "timing": {"mode": "alternate", "first": "$win.defender"}}`.
 - `gameVars`: game-wide numbers.
 - `sharedDecks {sharedZone: [ids]}`: cards created at the start in shared zones, owned by `"shared"` (markets, dice, a common deck).
 - `setup`: effects run once with `$me` = p0.
@@ -86,8 +105,9 @@ Effects run in effect lists `[[op...], [op...]]`.
   - A slot is `{as, from, min=1, max=1, prompt}`. `cardTargets` adds the source card's `targets`.
   - `cost` and `do` run in one frame.
   - `check [{if, why}]` runs after targets are chosen (targets bound) and rejects bad combinations, e.g. fusion recipes. Slot `min`/`max` may be expressions.
+  - `limit {per: turn|phase|game, n?=1, by?: player|source|card|name|inst, group?}`: an **engine-tracked usage limit**. Counts are kept per player (default), per game object (`source`: resets when it changes zones), per physical card (`inst`), or per player and card id / card name. `group` shares one counter between actions ("one well per turn" across several actions). Over the limit the action is not offered, and proposing it explains why (code `limit`).
   - `pass` is built in and reserved.
-- `triggers[] {on: eventType, if?, do}`: rule triggers, controlled by the active player. They always resolve immediately and before card triggers.
+- `triggers[] {on: eventType, if?, do, limit?}`: rule triggers, controlled by the active player. They always resolve immediately and before card triggers.
 - `timing {mode: immediate|stack|chain, retain?, minResponse?=2}`, also overridable per phase. Each mode works as follows (a code sketch follows this list):
   - **immediate**: actions resolve at once, and only the active player acts.
   - **stack**: costs are paid, then the action goes on the stack. The caster keeps priority (`retain` defaults to true). When all players pass in a row, the top item resolves and the active player gets priority again. All players passing on an empty stack ends the phase. Auto phases advance once the stack is empty.
@@ -115,7 +135,7 @@ Effects run in effect lists `[[op...], [op...]]`.
   - `enter`: this object arrived.
   - `leave`: left an ability zone (last-known info).
   - `destroyed`: last-known info.
-- Ability options: `stack` (default true for cards; under stack/chain timing the trigger uses the stack), `speed`, `text` (used in labels).
+- Ability options: `stack` (default true for cards; under stack/chain timing the trigger uses the stack), `speed`, `text` (used in labels), `once` (once per match), `limit` (like action limits; counted when it triggers, by its controller and `$self`).
 - Card `statics` and `replacements` work in ability zones, the same as abilities.
 - In leave and destroyed abilities, `$self` is the new object (for example in the grave), `$me` is the last controller, and `$e` carries the old id.
 

@@ -1,4 +1,4 @@
-import type { Ctx, Mask, Mod, Obj, Player, State } from './types.ts';
+import type { Ctx, Limit, Mask, Mod, Obj, PhaseDef, Player, SlotPos, State, Win } from './types.ts';
 
 export class EngineError extends Error {}
 /** Thrown when a cost cannot be paid; the action is rejected and nothing changes. */
@@ -45,3 +45,42 @@ export function nextPlayer(s: State, id: string): string {
   return id;
 }
 export const baseCtx = (s: State, me: string): Ctx => ({ $me: me, $opp: nextPlayer(s, me) });
+
+// ---------- timing windows ----------
+export const topWin = (s: State): Win | undefined => s.windows[s.windows.length - 1];
+/** The phase (or, inside a timing window, the window step) the game is in. */
+export function curPhase(m: Mod, s: State): PhaseDef {
+  const w = topWin(s);
+  return w ? m.rules.windows![w.id].steps[w.step] : m.rules.phases[s.turn.phase];
+}
+
+// ---------- slotted zones ----------
+const defList = (x: unknown): string[] => (x == null ? [] : Array.isArray(x) ? x.map(String) : [String(x)]);
+/** Whether a card (definition id) may occupy a slot: type in types, card field `kind` in kinds. */
+export function slotAccepts(m: Mod, sp: SlotPos, card: string): boolean {
+  const d = m.card.get(card) as any;
+  if (!d) return false;
+  if (sp.types && !sp.types.includes(d.type)) return false;
+  if (sp.kinds && !defList(d.kind).some((k) => sp.kinds!.includes(k))) return false;
+  return true;
+}
+export const slotsOf = (m: Mod, zone: string): SlotPos[] => m.zone.get(zone)?.slots ?? [];
+export const inSlot = (s: State, key: string, slot: string) => (s.zones[key] ?? []).filter((id) => s.objects[id]?.slot === slot);
+/** Slots of a zone with room left (ignoring `except`), optionally only those that accept `card`. */
+export function freeSlots(m: Mod, s: State, key: string, card?: string, except?: string): string[] {
+  return slotsOf(m, zoneIdOf(key))
+    .filter((sp) => inSlot(s, key, sp.id).filter((id) => id !== except).length < (sp.cap ?? 1) && (card === undefined || slotAccepts(m, sp, card)))
+    .map((sp) => sp.id);
+}
+
+// ---------- usage limits ----------
+/** Counter key for a limit: scope | group | who (player, object, physical card, or player/card id or name). */
+export function useKey(m: Mod, s: State, lim: Limit, group: string, p: string, src: string | null): string {
+  const o = src ? s.objects[src] : undefined;
+  const by = lim.by ?? 'player';
+  const who = by === 'player' || !o ? p : by === 'source' ? o.id : by === 'inst' ? o.inst : by === 'card' ? `${p}/${o.card}` : `${p}/${m.card.get(o.card)?.name ?? o.card}`;
+  return `${lim.per}|${lim.group ?? group}|${who}`;
+}
+export const resetUses = (s: State, scope: 'turn' | 'phase') => {
+  for (const k of Object.keys(s.uses)) if (k.startsWith(`${scope}|`)) delete s.uses[k];
+};

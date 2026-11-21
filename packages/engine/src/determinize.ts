@@ -44,6 +44,7 @@ export function determinize({ m, s }: Match, p: string, seed: number): Match {
   d.exec.forEach((f) => scrub(f.ctx));
   d.triggers.forEach((t) => scrub(t.ctx));
   d.stack.forEach((it) => scrub(it.ctx));
+  for (const w of d.windows ?? []) { w.saved.exec.forEach((f) => scrub(f.ctx)); w.saved.stack.forEach((it) => scrub(it.ctx)); }
   return { m, s: d };
 }
 

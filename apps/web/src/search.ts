@@ -29,6 +29,14 @@ export function parseQuery(q: string): Term[] {
   return out;
 }
 
+/** A cost as one number: plain costs as-is, typed costs ({sun: 1, any: 2}) as their total. */
+export const costTotal = (x: unknown): number | undefined =>
+  typeof x === 'number' ? x : x && typeof x === 'object' ? Object.values(x).reduce((a: number, b) => a + (Number(b) || 0), 0) : undefined;
+/** Typed cost text, e.g. {sun: 1, any: 2} -> "2 + sun". */
+export const costText = (x: unknown): string =>
+  typeof x === 'number' ? String(x) : x && typeof x === 'object'
+    ? Object.entries(x).map(([k, n]) => (k === 'any' || k === 'generic' ? String(n) : Array.from({ length: Number(n) || 0 }, () => k).join(' + '))).filter(Boolean).join(' + ')
+    : '';
 const words = (c: CardDef) => [...(c.keywords ?? []), ...((c.tags as string[] | undefined) ?? [])].map((x) => String(x).toLowerCase());
 
 function test(c: CardDef, t: Term): boolean {
@@ -42,7 +50,7 @@ function test(c: CardDef, t: Term): boolean {
     case 'text': return (c.text ?? '').toLowerCase().includes(v);
     case 'is': return v === 'token' ? c.maxCopies === 0 : words(c).includes(v) || c.type.toLowerCase() === v;
   }
-  const field = (c as any)[key];
+  const field = key === 'cost' ? costTotal(c.cost) : (c as any)[key];
   if (field === undefined) return false;
   const n = Number(v);
   if (typeof field === 'number' && !Number.isNaN(n)) {
@@ -67,7 +75,8 @@ export function facets(cards: CardDef[]): { types: [string, number][]; words: [s
   for (const c of cards) {
     types.set(c.type, (types.get(c.type) ?? 0) + 1);
     for (const w of words(c)) ws.set(w, (ws.get(w) ?? 0) + 1);
-    if (typeof c.cost === 'number') costs.add(c.cost);
+    const ct = costTotal(c.cost);
+    if (ct !== undefined) costs.add(ct);
   }
   const sorted = (m: Map<string, number>) => [...m].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   return { types: sorted(types), words: sorted(ws), costs: [...costs].sort((a, b) => a - b) };
@@ -85,7 +94,7 @@ export const hasToken = (q: string, token: string) => q.split(/\s+/).some((p) =>
 
 export type SortKey = 'cost' | 'name' | 'type';
 export function sortCards(cards: CardDef[], key: SortKey): CardDef[] {
-  const cost = (c: CardDef) => (typeof c.cost === 'number' ? c.cost : 99);
+  const cost = (c: CardDef) => costTotal(c.cost) ?? 99;
   return [...cards].sort((a, b) => (key === 'name' ? 0 : key === 'type' ? a.type.localeCompare(b.type) : cost(a) - cost(b)) || cost(a) - cost(b) || a.name.localeCompare(b.name));
 }
 
@@ -135,8 +144,8 @@ export function deckFromText(m: Mod, text: string, secs: string[]): { deck: Reco
 export function curve(m: Mod, ids: string[], max = 7): number[] {
   const out = Array.from({ length: max + 1 }, () => 0);
   for (const id of ids) {
-    const c = m.card.get(id)?.cost;
-    if (typeof c === 'number') out[Math.min(max, Math.max(0, c))]++;
+    const c = costTotal(m.card.get(id)?.cost);
+    if (c !== undefined) out[Math.min(max, Math.max(0, c))]++;
   }
   return out;
 }

@@ -1,13 +1,14 @@
 // Expression evaluator for the S-expression DSL. See docs/DSL.md.
 import type { Ctx, Mod, State } from './types.ts';
 import { chars } from './layers.ts';
-import { EngineError, ScriptError, list, nextPlayer, num, one, player, zoneIdOf } from './util.ts';
+import { EngineError, ScriptError, curPhase, freeSlots, inSlot, list, nextPlayer, num, one, player, slotsOf, topWin, zkey, zoneIdOf } from './util.ts';
 
 export const EXPR_OPS = new Set([
   'lit', '+', '-', '*', '/', 'neg', 'min', 'max', '=', '!=', '<', '<=', '>', '>=', 'and', 'or', 'not', '?',
   'get', 'has', 'players', 'opp', 'cards', 'top', 'count', 'concat', 'list', 'first', 'filter', 'any', 'all',
   'sum', 'in', 'isPlayer', 'isObj', 'stack', 'linked', 'call', 'let', 'map', 'range', 'mod', 'abs', 'sortBy', 'maxBy', 'minBy',
   'slice', 'reverse', 'nth', 'at', 'keys', 'values', 'same', 'cell', 'cx', 'cy', 'cellOf', 'dist', 'near', 'ext',
+  'def', 'tally', 'distinct', 'meets', 'canPay', 'pool', 'slots', 'inSlot', 'freeSlots', 'adjSlots', 'adjacent', 'uses',
 ]);
 
 /** Script limits: evaluation steps per outermost function call, and call depth. */
@@ -30,7 +31,9 @@ export function lookup(m: Mod, s: State, ctx: Ctx, name: string): any {
   if (h in ctx) v = ctx[h];
   else if (h === '$turn') v = s.turn.n;
   else if (h === '$active') v = s.players[s.turn.active].id;
-  else if (h === '$phase') v = m.rules.phases[s.turn.phase].id;
+  else if (h === '$phase') v = curPhase(m, s).id;
+  else if (h === '$win') v = topWin(s)?.data ?? null;
+  else if (h === '$window') v = topWin(s)?.id ?? null;
   else throw new EngineError(`Unbound variable ${h}`);
   for (let i = 1; i < parts.length; i++) v = v == null ? undefined : v[parts[i]];
   return v;
@@ -59,6 +62,7 @@ export function getProp(m: Mod, s: State, ref: any, name: string): any {
     case 'zone': return zoneIdOf(o.zone);
     case 'card': return o.card;
     case 'faceDown': return !!o.fd;
+    case 'slot': return o.slot ?? null;
   }
   if (o.rel && name in o.rel) return o.rel[name];
   if (m.rules.stats?.includes(name)) return chars(m, s)!.get(r)!.stats[name];
@@ -190,6 +194,34 @@ export function ev(m: Mod, s: State, e: any, ctx: Ctx): any {
       return out;
     }
     case 'ext': return s.ext[String(A(1))] ?? null;
+    case 'def': { const r = one(A(1)); const c = s.objects?.[r]?.card ?? r; return (m.card.get(c) as any)?.[A(2)] ?? null; }
+    case 'tally': {
+      const out: Record<string, number> = {};
+      for (const it of list(A(1))) {
+        const k = e.length > 2 ? ev(m, s, e[2], { ...ctx, $it: it }) : it;
+        if (k && typeof k === 'object' && !Array.isArray(k)) for (const [kk, v] of Object.entries(k)) out[kk] = (out[kk] ?? 0) + num(v);
+        else for (const kk of list(k)) out[String(kk)] = (out[String(kk)] ?? 0) + 1;
+      }
+      return out;
+    }
+    case 'distinct': { const seen = new Set<string>(); return list(A(1)).filter((x) => { const k = JSON.stringify(x); return seen.has(k) ? false : (seen.add(k), true); }); }
+    case 'meets': { const have = A(1) ?? {}; const need = A(2) ?? {}; return Object.entries(need).every(([k, v]) => num(have[k]) >= num(v)); }
+    case 'canPay': return payPlan(m, s, one(A(1)), String(A(2)), A(3)) !== null;
+    case 'pool': { const r = resDef(m, String(A(2))); const p = one(A(1)); return Object.fromEntries(r.types.map((t) => [t, num(player(s, p)?.vars[`${A(2)}:${t}`])])); }
+    case 'slots': { const tag = e.length > 2 ? A(2) : null; return slotsOf(m, A(1)).filter((sp) => tag === null || sp.tags?.includes(tag)).map((sp) => sp.id); }
+    case 'inSlot': return inSlot(s, zkey(m, one(A(1)), A(2)), A(3));
+    case 'freeSlots': {
+      const c = e.length > 3 ? one(A(3)) : undefined;
+      return freeSlots(m, s, zkey(m, one(A(1)), A(2)), c === undefined ? undefined : (s.objects[c]?.card ?? c));
+    }
+    case 'adjSlots': return slotsOf(m, A(1)).find((sp) => sp.id === A(2))?.adj ?? [];
+    case 'adjacent': {
+      const o = s.objects[one(A(1))];
+      if (!o?.slot) return [];
+      const adj = slotsOf(m, zoneIdOf(o.zone)).find((sp) => sp.id === o.slot)?.adj ?? [];
+      return s.zones[o.zone].filter((id) => id !== o.id && adj.includes(s.objects[id].slot!));
+    }
+    case 'uses': return s.uses[`${A(2)}|${A(1)}|${e.length > 3 ? one(A(3)) : ctx.$me}`] ?? 0;
   }
   throw new EngineError(`Unknown expression op ${e[0]}`);
 }
@@ -199,4 +231,37 @@ function xy(m: Mod, s: State, v: any): [number, number] {
   const r = one(v);
   if (typeof r === 'string' && r.includes(',')) { const [a, b] = r.split(','); return [Number(a) || 0, Number(b) || 0]; }
   return [num(getProp(m, s, r, 'x')), num(getProp(m, s, r, 'y'))];
+}
+
+const resDef = (m: Mod, id: string) => {
+  const r = m.rules.resources?.[id];
+  if (!r) throw new EngineError(`Unknown resource ${id}`);
+  return r;
+};
+/**
+ * How player p pays `cost` from typed pool `res`: specific types first, then the generic part from whatever is most
+ * plentiful (ties: declared type order). A number is an all-generic cost. Returns the amounts per type, or null.
+ */
+export function payPlan(m: Mod, s: State, p: string, res: string, cost: any): Record<string, number> | null {
+  const r = resDef(m, res);
+  const g = r.generic ?? 'any';
+  const pl = player(s, p);
+  if (!pl) return null;
+  const c: Record<string, any> = typeof cost === 'number' ? { [g]: cost } : (cost ?? {});
+  const left: Record<string, number> = Object.fromEntries(r.types.map((t) => [t, num(pl.vars[`${res}:${t}`])]));
+  const paid: Record<string, number> = Object.fromEntries(r.types.map((t) => [t, 0]));
+  for (const [k, v] of Object.entries(c)) {
+    if (k === g) continue;
+    if (!(k in left) || left[k] < num(v)) return null;
+    left[k] -= num(v);
+    paid[k] += num(v);
+  }
+  for (let n = num(c[g]); n > 0; n--) {
+    let best: string | null = null;
+    for (const t of r.types) if (left[t] > 0 && (best === null || left[t] > left[best])) best = t;
+    if (best === null) return null;
+    left[best]--;
+    paid[best]++;
+  }
+  return paid;
 }

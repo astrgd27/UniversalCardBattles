@@ -1,15 +1,16 @@
 // Static module validation and deck legality. Every issue carries a JSON pointer into the module definition
 // (manifest / rules / cards / decks), which the SDK maps back to file:line:col.
-import type { Deck, Mod, ModuleDef, Scenario } from './types.ts';
+import type { Deck, Mod, ModuleDef, Scenario, State } from './types.ts';
 import { EFFECT_OPS } from './effects.ts';
-import { EXPR_OPS } from './expr.ts';
+import { EXPR_OPS, ev } from './expr.ts';
 import { isRange, isSemver } from './semver.ts';
 
-export const ENGINE_API = '0.3.0';
+export const ENGINE_API = '0.3.1';
 /** Engine features a module may list in manifest.requiredCapabilities. */
 export const CAPABILITIES = [
   'timing.immediate', 'timing.stack', 'timing.chain', 'timing.alternate', 'replacements', 'layers', 'relationships', 'decisions',
   'scripts', 'commit', 'faceDown', 'random', 'multiDeck', 'sharedDecks', 'gameVars', 'grid', 'external',
+  'windows', 'slots', 'resources', 'deckRules', 'limits',
 ];
 const REPLACEABLE = ['draw', 'move', 'destroy', 'damage', 'lose'];
 /** Built-in card template families a module may use or extend (presentation; rendered by apps/web). */
@@ -99,6 +100,18 @@ export function validateIssues(def: ModuleDef): Issue[] {
     if (zones.has(z.id)) eR(`/zones/${i}/id`, `duplicate zone "${z.id}"`);
     zones.add(z.id);
     if (!['public', 'owner', 'hidden'].includes(z.vis)) eR(`/zones/${i}/vis`, `must be public, owner or hidden (got "${z.vis}")`);
+    if (z.slots !== undefined) {
+      if (!Array.isArray(z.slots) || !z.slots.length || !z.slots.every((sp: any) => isRec(sp) && typeof sp.id === 'string')) { eR(`/zones/${i}/slots`, 'must be a non-empty array of {id, types?, kinds?, cap?, tags?, adj?}'); return; }
+      const sids = new Set<string>();
+      z.slots.forEach((sp: any, j: number) => {
+        const p = `/zones/${i}/slots/${j}`;
+        if (sids.has(sp.id)) eR(`${p}/id`, `duplicate slot "${sp.id}"`);
+        sids.add(sp.id);
+        if (sp.cap !== undefined && !(Number.isInteger(sp.cap) && sp.cap >= 1)) eR(`${p}/cap`, 'must be an integer >= 1');
+        for (const k of ['types', 'kinds', 'tags', 'adj']) if (sp[k] !== undefined && !(Array.isArray(sp[k]) && sp[k].every((x: unknown) => typeof x === 'string'))) eR(`${p}/${k}`, 'must be an array of strings');
+      });
+      z.slots.forEach((sp: any, j: number) => (sp.adj ?? []).forEach((a: string, k: number) => { if (!sids.has(a)) eR(`/zones/${i}/slots/${j}/adj/${k}`, `unknown slot "${a}"`); }));
+    }
   });
   for (const k of ['deckZone', 'handZone', 'graveZone']) if (!zones.has(R[k])) eR(`/${k}`, `unknown zone "${R[k]}"`);
   const phases = new Set<string>();
@@ -107,6 +120,27 @@ export function validateIssues(def: ModuleDef): Issue[] {
     if (typeof ph.id !== 'string' || phases.has(ph.id)) eR(`/phases/${i}/id`, 'phase ids must be unique strings');
     phases.add(ph.id);
   });
+  const wins: Record<string, any> = isRec(R.windows) ? R.windows : {};
+  if (R.windows !== undefined && !isRec(R.windows)) eR('/windows', 'must be an object of {steps, timing?}');
+  const steps = new Set<string>();
+  for (const [wid, w] of Object.entries(wins)) {
+    const p = `/windows/${esc(wid)}`;
+    if (!isRec(w) || !Array.isArray(w.steps) || !w.steps.length || !w.steps.every(isRec)) { eR(`${p}/steps`, 'a window needs a non-empty array of steps'); continue; }
+    const own = new Set<string>();
+    w.steps.forEach((st: any, i: number) => {
+      if (typeof st.id !== 'string' || own.has(st.id)) eR(`${p}/steps/${i}/id`, 'step ids must be unique strings');
+      own.add(st.id);
+      steps.add(st.id);
+    });
+  }
+  const res: Record<string, any> = isRec(R.resources) ? R.resources : {};
+  if (R.resources !== undefined && !isRec(R.resources)) eR('/resources', 'must be an object of {types, generic?, expire?}');
+  for (const [rid, r] of Object.entries(res)) {
+    const p = `/resources/${esc(rid)}`;
+    if (!isRec(r) || !Array.isArray(r.types) || !r.types.length || !r.types.every((x: unknown) => typeof x === 'string')) eR(`${p}/types`, 'needs a non-empty array of type names');
+    else if (r.types.includes(r.generic ?? 'any')) eR(`${p}/generic`, `the generic key "${r.generic ?? 'any'}" cannot also be a type`);
+    if (isRec(r) && r.expire !== undefined && !['phase', 'turn'].includes(r.expire)) eR(`${p}/expire`, 'must be "phase" or "turn"');
+  }
   const cardIds = new Set<string>(Array.isArray(def.cards) ? def.cards.map((c: any) => c?.id) : []);
   const layers = new Set<string>(Array.isArray(R.layers) ? R.layers : []);
   const stats = new Set<string>(Array.isArray(R.stats) ? R.stats : []);
@@ -119,6 +153,13 @@ export function validateIssues(def: ModuleDef): Issue[] {
   const zoneLit = (x: unknown, ptr: string, err: Err) => {
     if (typeof x === 'string' && x[0] !== '$' && !zones.has(x)) err(ptr, `unknown zone "${x}"`);
   };
+  const slotZone = (x: string, ptr: string, err: Err) => {
+    if (x[0] === '$') return;
+    const z = R.zones.find((zz: any) => zz.id === x);
+    if (!z) err(ptr, `unknown zone "${x}"`);
+    else if (!Array.isArray(z.slots)) err(ptr, `zone "${x}" has no slots`);
+  };
+  const resLit = (x: unknown, ptr: string, err: Err) => { if (typeof x === 'string' && x[0] !== '$' && !(x in res)) err(ptr, `unknown resource "${x}"`); };
   const callCheck = (e: any[], ptr: string, err: Err, table: Record<string, any>, kind: string) => {
     const fn = table[e[1]];
     if (typeof e[1] !== 'string' || !isRec(fn)) { err(`${ptr}/1`, `unknown ${kind} "${e[1]}"`); return; }
@@ -135,6 +176,9 @@ export function validateIssues(def: ModuleDef): Issue[] {
     if (op === 'near' && !isRec(R.grid)) err(`${ptr}/0`, 'near needs rules.grid');
     if (op === 'ext' && typeof e[1] === 'string' && !(isRec(R.external) && e[1] in R.external)) err(`${ptr}/1`, `unknown external input "${e[1]}"`);
     if (op === 'call') callCheck(e, ptr, err, fns, 'function');
+    if ((op === 'canPay' || op === 'pool') && typeof e[2] === 'string' && !(e[2] in res)) err(`${ptr}/2`, `unknown resource "${e[2]}"`);
+    if ((op === 'inSlot' || op === 'freeSlots') && typeof e[2] === 'string') slotZone(e[2], `${ptr}/2`, err);
+    if ((op === 'slots' || op === 'adjSlots') && typeof e[1] === 'string') slotZone(e[1], `${ptr}/1`, err);
     if (op === 'let' && !isVar(e[1])) err(`${ptr}/1`, 'let needs a $variable name');
     e.forEach((x, i) => { if (i > 0 && !(op === 'call' && i === 1)) expr(x, `${ptr}/${i}`, err); });
   };
@@ -164,7 +208,14 @@ export function validateIssues(def: ModuleDef): Issue[] {
           expr(o.who, `${p}/1/who`, err);
           return;
         }
-        case 'move': X(1); zoneLit(eff[2], `${p}/2`, err); X(2); if (isRec(eff[3])) expr(eff[3].player, `${p}/3/player`, err); return;
+        case 'move': X(1); zoneLit(eff[2], `${p}/2`, err); X(2); if (isRec(eff[3])) { expr(eff[3].player, `${p}/3/player`, err); expr(eff[3].slot, `${p}/3/slot`, err); } return;
+        case 'openWindow':
+          if (typeof eff[1] !== 'string' || !(eff[1] in wins)) err(`${p}/1`, `unknown window "${eff[1]}"`);
+          if (eff[2] !== undefined && !(isRec(eff[2]) && (eff[2].data === undefined || isRec(eff[2].data)))) err(`${p}/2`, 'options must be {data?: {key: expr}}');
+          else if (isRec(eff[2]?.data)) for (const [k, v] of Object.entries(eff[2].data)) expr(v, `${p}/2/data/${esc(k)}`, err);
+          return;
+        case 'winSet': if (typeof eff[1] !== 'string') err(`${p}/1`, 'winSet needs a key'); X(2); return;
+        case 'pay': case 'gain': case 'empty': X(1); resLit(eff[2], `${p}/2`, err); X(3); return;
         case 'shuffle': X(1); zoneLit(eff[2], `${p}/2`, err); return;
         case 'run': X(1); if (typeof eff[2] !== 'string') err(`${p}/2`, 'run needs a card field name'); return;
         case 'emit':
@@ -188,7 +239,7 @@ export function validateIssues(def: ModuleDef): Issue[] {
           for (const k of ['who', 'from', 'min', 'max']) expr(o[k], `${p}/1/${k}`, err);
           return;
         }
-        case 'gotoPhase': if (typeof eff[1] === 'string' && !phases.has(eff[1])) err(`${p}/1`, `unknown phase "${eff[1]}"`); return;
+        case 'gotoPhase': if (typeof eff[1] === 'string' && !phases.has(eff[1]) && !steps.has(eff[1])) err(`${p}/1`, `unknown phase or step "${eff[1]}"`); return;
         case 'create':
           X(1); X(2); zoneLit(eff[3], `${p}/3`, err);
           if (typeof eff[1] === 'string' && eff[1][0] !== '$' && !cardIds.has(eff[1])) err(`${p}/1`, `unknown card "${eff[1]}"`);
@@ -238,6 +289,13 @@ export function validateIssues(def: ModuleDef): Issue[] {
       for (const k of ['from', 'min', 'max']) expr(d?.[k], `${ptr}/${i}/${k}`, err);
     });
   };
+  const limit = (x: any, ptr: string, err: Err) => {
+    if (x === undefined) return;
+    if (!isRec(x) || !['turn', 'phase', 'game'].includes(x.per)) { err(ptr, 'limit needs {per: turn|phase|game, n?, by?, group?}'); return; }
+    if (x.n !== undefined && !(Number.isInteger(x.n) && x.n >= 1)) err(`${ptr}/n`, 'must be an integer >= 1');
+    if (x.by !== undefined && !['player', 'source', 'card', 'name', 'inst'].includes(x.by)) err(`${ptr}/by`, 'must be player, source, card, name or inst');
+    if (x.group !== undefined && typeof x.group !== 'string') err(`${ptr}/group`, 'must be a string');
+  };
   const abilities = (l: unknown, ptr: string, err: Err) => {
     if (l === undefined) return;
     if (!Array.isArray(l)) { err(ptr, 'must be an array'); return; }
@@ -246,6 +304,7 @@ export function validateIssues(def: ModuleDef): Issue[] {
       if (typeof ab?.on !== 'string') err(`${p}/on`, 'missing "on"');
       (ab?.zones ?? []).forEach((z: unknown, j: number) => zoneLit(z, `${p}/zones/${j}`, err));
       expr(ab?.if, `${p}/if`, err);
+      limit(ab?.limit, `${p}/limit`, err);
       effects(ab?.do, `${p}/do`, err);
     });
   };
@@ -263,11 +322,17 @@ export function validateIssues(def: ModuleDef): Issue[] {
   effects(R.setup, '/setup', eR);
   effects(R.stateChecks, '/stateChecks', eR);
   R.phases.forEach((ph: any, i: number) => { timing(ph.timing, `/phases/${i}/timing`); effects(ph.do, `/phases/${i}/do`, eR); });
+  for (const [wid, w] of Object.entries<any>(wins)) {
+    if (!isRec(w) || !Array.isArray(w.steps)) continue;
+    timing(w.timing, `/windows/${esc(wid)}/timing`);
+    w.steps.forEach((st: any, i: number) => { if (isRec(st)) { timing(st.timing, `/windows/${esc(wid)}/steps/${i}/timing`); effects(st.do, `/windows/${esc(wid)}/steps/${i}/do`, eR); } });
+  }
   for (const [name, a] of Object.entries<any>(R.actions)) {
     const p = `/actions/${esc(name)}`;
     if (name === 'pass') eR(p, '"pass" is reserved');
     if (!isRec(a)) { eR(p, 'must be an object'); continue; }
-    (a.phases ?? []).forEach((ph: string, j: number) => { if (!phases.has(ph)) eR(`${p}/phases/${j}`, `unknown phase "${ph}"`); });
+    (a.phases ?? []).forEach((ph: string, j: number) => { if (!phases.has(ph) && !steps.has(ph)) eR(`${p}/phases/${j}`, `unknown phase or window step "${ph}"`); });
+    limit(a.limit, `${p}/limit`, eR);
     if (a.speed !== undefined && !(Number.isInteger(a.speed) && a.speed >= 1)) eR(`${p}/speed`, 'must be an integer >= 1');
     expr(a.source, `${p}/source`, eR);
     for (const k of ['req', 'check']) (a[k] ?? []).forEach((q: any, j: number) => expr(q?.if, `${p}/${k}/${j}/if`, eR));
@@ -310,8 +375,19 @@ export function validateIssues(def: ModuleDef): Issue[] {
   if (fz !== undefined) {
     if (!Array.isArray(fz)) eR('/format/zones', 'must be an array');
     else fz.forEach((z: any, i: number) => {
-      if (!isRec(z) || !zones.has(z.zone) || !Number.isInteger(z.min) || !Number.isInteger(z.max)) eR(`/format/zones/${i}`, 'needs {zone (a known zone), min, max, types?}');
+      if (!isRec(z) || !zones.has(z.zone) || !Number.isInteger(z.min) || !Number.isInteger(z.max)) eR(`/format/zones/${i}`, 'needs {zone (a known zone), min, max, types?, maxCopies?}');
+      else if (z.maxCopies !== undefined && !(Number.isInteger(z.maxCopies) && z.maxCopies >= 1)) eR(`/format/zones/${i}/maxCopies`, 'must be an integer >= 1');
     });
+  }
+  if (isRec(F)) {
+    if (F.copiesBy !== undefined && typeof F.copiesBy !== 'string') eR('/format/copiesBy', 'must be a card field name');
+    if (F.rules !== undefined) {
+      if (!Array.isArray(F.rules)) eR('/format/rules', 'must be an array of {if, why}');
+      else F.rules.forEach((q: any, i: number) => {
+        if (!isRec(q) || typeof q.why !== 'string' || q.if === undefined) eR(`/format/rules/${i}`, 'needs {if: expr, why: text}');
+        else expr(q.if, `/format/rules/${i}/if`, eR);
+      });
+    }
   }
   const cardList = (l: unknown, ptr: string, err: Err) => {
     if (!Array.isArray(l)) { err(ptr, 'must be an array of card ids'); return; }
@@ -347,25 +423,45 @@ export function deckErrors(m: Mod, deck: Deck): string[] {
   const parts = deckSections(m, deck);
   const specs = f.zones ?? [{ zone: m.rules.deckZone, min: f.deckMin, max: f.deckMax }];
   for (const z of Object.keys(parts)) if (!specs.some((sp) => sp.zone === z)) errs.push(`unexpected deck section "${z}"`);
-  const counts = new Map<string, number>();
+  // Copies are grouped by card id, or by a shared card field (copiesBy, e.g. "name").
+  const keyOf = (c: string) => (f.copiesBy ? String((m.card.get(c) as any)?.[f.copiesBy] ?? c) : c);
+  const counts = new Map<string, { n: number; max: number }>();
   for (const sp of specs) {
     const l = parts[sp.zone] ?? [];
     const label = f.zones ? `${sp.zone} section` : 'deck';
     if (!Array.isArray(l)) { errs.push(`${label} must be a card list`); continue; }
     if (l.length < sp.min || l.length > sp.max) errs.push(`${label} has ${l.length} cards (needs ${sp.min}-${sp.max})`);
+    const local = new Map<string, number>();
     for (const c of l) {
       const card = m.card.get(c);
-      if (!card) errs.push(`unknown card "${c}"`);
-      else if (sp.types && !sp.types.includes(card.type)) errs.push(`"${c}" (${card.type}) cannot go in the ${sp.zone} section`);
-      counts.set(c, (counts.get(c) ?? 0) + 1);
+      if (!card) { errs.push(`unknown card "${c}"`); continue; }
+      if (sp.types && !sp.types.includes(card.type)) errs.push(`"${c}" (${card.type}) cannot go in the ${sp.zone} section`);
+      const k = keyOf(c);
+      const prev = counts.get(k);
+      const max = Math.min(prev?.max ?? Infinity, (card.maxCopies as number | undefined) ?? f.maxCopies);
+      counts.set(k, { n: (prev?.n ?? 0) + 1, max });
+      local.set(k, (local.get(k) ?? 0) + 1);
     }
+    if (sp.maxCopies !== undefined) for (const [k, n] of local) if (n > sp.maxCopies) errs.push(`${n} copies of "${k}" in the ${sp.zone} section (max ${sp.maxCopies})`);
   }
-  for (const [c, n] of counts) {
-    const max = (m.card.get(c)?.maxCopies as number | undefined) ?? f.maxCopies;
-    if (n > max) errs.push(`${n} copies of "${c}" (max ${max})`);
+  for (const [k, { n, max }] of counts) if (n > max) errs.push(`${n} copies of "${k}" (max ${max})`);
+  if (f.rules?.length && !errs.some((e) => e.startsWith('unknown card'))) {
+    const ctx = { $deck: Object.values(parts).flat(), $sections: Object.fromEntries(specs.map((sp) => [sp.zone, parts[sp.zone] ?? []])) };
+    for (const q of f.rules) {
+      try {
+        if (!ev(m, DECK_STATE, q.if, ctx)) errs.push(q.why);
+      } catch (e) {
+        errs.push(`${q.why} (could not be checked: ${(e as Error).message})`);
+      }
+    }
   }
   return errs;
 }
+
+/** Deck rules run before any match exists: an empty state (no players, objects or zones). */
+const DECK_STATE = {
+  players: [], objects: {}, zones: {}, vars: {}, ext: {}, stack: [], windows: [], uses: {}, turn: { n: 0, active: 0, phase: 0 },
+} as unknown as State;
 
 /** Validates a scenario against a module with the module's own walkers. Issues read "scenario/setup/0/...". */
 export function validateScenario(def: ModuleDef, sc: Scenario): string[] {

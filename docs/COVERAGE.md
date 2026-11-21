@@ -64,3 +64,24 @@ Cross-cutting items:
 - **Subgames** (a separate mini-match inside a match) are ◐: nested encounters are covered, but a full nested match with its own zones is not a primitive yet.
 - **Card-level official compatibility** is out of scope: it needs the rights holder's rules, card data and permission.
 - Per the spec, a ◐ row becomes ✓ only after a focused interaction test, which is about 20 adversarial cases per stressor in a dedicated module.
+
+## Rules-structure survey (published comprehensive rules of about 30 popular and historical TCGs)
+A second pass read the published rules of about 30 commercial and historical games to find rule **structures** that the engine could not yet express. Only the structures are recorded here: nothing from those games is reproduced, and the reference games stay original. "Games" is how many of the surveyed games need the structure.
+
+| # | Structure | Games | Status | How |
+|---|---|---|---|---|
+| 10 | Timing windows opened mid-turn (combat steps, showdowns, counter/guard/defend windows) | 11 | ✚ | `rules.windows` + `openWindow`, step timing, `$win` data (Bastion Clash combat) |
+| 6 | Slotted zones: named slots, type limits, rows, adjacency | 8 | ✚ | zone `slots`, `move {slot}`, `setSlot`, `freeSlots`/`adjacent` (Bastion Clash rows and gear) |
+| 1 | Usage limits: once per turn/game, per card, name or object | 7 | ✚ | action/ability `limit`, `uses` (Bastion Clash wells, attacks, hero power, enter draw) |
+| 7 | Typed resources: payment, generic costs, thresholds, expiring pools | 7 | ✚ | `rules.resources`, `pay`/`gain`/`canPay`/`meets`/`tally` (Bastion Clash aether) |
+| 9 | Deck construction as rules: colours, singleton, group limits, leader identity, copies by name | 5 | ✚ | `format.rules`, `copiesBy`, section `maxCopies` (Bastion Clash aspects, gear cap, well floor) |
+| 2 | Lists of activated abilities printed on cards | 3 | ◐ | an action with `source` + `run obj field` per card; no list primitive yet |
+| 8 | Engine-wide targeting restrictions (untargetable, "only by X") | 2 | ◐ | slot `from` filters by convention; not enforced globally |
+| 11 | Teams | 2 | ◐ | role vars; no shared-win team primitive |
+| 12 | Helpers: combat damage splitting, rotated (tapped) cards | 2 | ◐ | decisions and vars |
+| 3 | Responses anchored to a specific event, "missing the timing" | 1 | ◐ | triggers plus windows |
+| 4 | Gain control | 1 | ◐ | needs a `control` effect |
+| 5 | Copy effects, "loses all abilities" | 1 | ◐ | layers cover stats and keywords, not ability lists |
+| 13 | Grids with vertical layers (surface/underground/air) | 1 | ◐ | grid plus a layer var |
+
+Already covered across the surveyed games: damage dealt as cards (life cards, shields, clocks, prizes, deck as life), resource decks and pitching, evolution and level-up stacks, per-turn role swaps, secret bids and votes, multiplayer seating.

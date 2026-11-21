@@ -24,7 +24,17 @@ export interface ZoneDef {
   shared?: boolean;
   ordered?: boolean;
   abilities?: boolean; // card abilities function here by default
+  /** Named positions inside the zone (equipment, circles, provinces): objects occupy one via `slot`. */
+  slots?: SlotPos[];
 }
+/** types/kinds limit what may occupy the slot (card type / card field `kind`); cap = objects per slot (default 1). */
+export interface SlotPos { id: string; types?: string[]; kinds?: string[]; cap?: number; tags?: string[]; adj?: string[] }
+/** Engine-tracked usage limit: at most n uses per scope, counted per group (default: the action / ability) and key. */
+export interface Limit { n?: number; per: 'turn' | 'phase' | 'game'; by?: 'player' | 'source' | 'card' | 'name' | 'inst'; group?: string }
+/** Typed resource pool: player vars "<id>:<type>"; generic = the cost key any type can pay; expire empties pools. */
+export interface ResourceDef { types: string[]; generic?: string; expire?: 'phase' | 'turn' }
+/** A timing window opened mid-turn (combat, showdown): its steps run like phases, then the opening effect resumes. */
+export interface WindowDef { steps: PhaseDef[]; timing?: Timing }
 /** recheck at resolution: true = target must still be in `from`; 'exists' = must still exist; false = cost choice. */
 export interface SlotDef { as: string; from: Expr; min?: Expr; max?: Expr; prompt?: string; recheck?: boolean | 'exists' }
 export interface Req { if: Expr; why: string }
@@ -41,10 +51,11 @@ export interface ActionDef {
   check?: Req[]; // evaluated after targets are chosen (bound in ctx)
   cardTargets?: boolean;
   cost?: EffectList;
+  limit?: Limit;
   do: EffectList;
   countered?: EffectList; // runs if the stack item is countered or fizzles
 }
-export interface Ability { on: string; if?: Expr; do: EffectList; zones?: string[]; stack?: boolean; speed?: number; text?: string; once?: boolean }
+export interface Ability { on: string; if?: Expr; do: EffectList; zones?: string[]; stack?: boolean; speed?: number; text?: string; once?: boolean; limit?: Limit }
 export interface Replacement { replace: string; if?: Expr; instead?: EffectList; modify?: Record<string, Expr>; zones?: string[]; order?: number; text?: string }
 export interface ModDef { op: 'set' | 'add' | 'grant' | 'remove'; stat?: string; kw?: string; value?: Expr }
 export interface StaticDef { layer: string; affects: Expr; mods: ModDef[]; if?: Expr; zones?: string[]; text?: string }
@@ -72,7 +83,12 @@ export interface Rules {
   deckZone: string;
   handZone: string;
   graveZone: string;
-  format: { deckMin: number; deckMax: number; maxCopies: number; zones?: { zone: string; min: number; max: number; types?: string[] }[] };
+  format: {
+    deckMin: number; deckMax: number; maxCopies: number;
+    zones?: { zone: string; min: number; max: number; types?: string[]; maxCopies?: number }[];
+    copiesBy?: string; // card field that identifies "the same card" for copy limits (e.g. "name"); default id
+    rules?: Req[]; // construction rules as expressions over $deck (all ids), $sections ({zone: ids})
+  };
   gameVars?: Record<string, number>; // read/written via the "game" ref
   sharedDecks?: Record<string, string[]>; // shared zone -> card ids created at match start (owner "shared")
   damage?: { player: string; object: string };
@@ -88,6 +104,8 @@ export interface Rules {
   statics?: StaticDef[];
   stateChecks?: EffectList;
   grid?: { cols: number; rows: number; zones?: string[] }; // 2D board: objects in `zones` sit at cells via vars x, y
+  resources?: Record<string, ResourceDef>;
+  windows?: Record<string, WindowDef>;
   external?: Record<string, (string | number)[]>; // inputs from outside the game (sensors, toys, the host): name -> allowed values
   functions?: Record<string, FunctionDef>; // pure expression scripts: ["call", name, ...args]
   procedures?: Record<string, ProcedureDef>; // effect scripts: ["call", name, ...args]
@@ -108,6 +126,7 @@ export interface Obj {
   vars: Record<string, number>;
   rel?: Record<string, string>; // relationships (attachedTo, ...), cleared on zone change
   fd?: boolean; // face down: identity known only to the controller; abilities inactive
+  slot?: string; // position inside a slotted zone
 }
 export interface Player { id: string; vars: Record<string, number>; lost: boolean }
 export interface Frame { list: EffectList; i: number; ctx: Ctx }
@@ -186,6 +205,13 @@ export interface State {
   nextId: number;
   nextDecision: number;
   result: Result | null;
+  windows: Win[]; // open timing windows, innermost last
+  uses: Record<string, number>; // usage-limit counters "scope|group|key" (turn and phase scopes reset)
+}
+/** An open timing window; `saved` holds the interrupted turn state, restored when the window closes. */
+export interface Win {
+  id: string; step: number; data: Record<string, any>; closed?: boolean;
+  saved: { exec: Frame[]; stack: StackItem[]; resolving: boolean; holder: string | null; passes: number; phaseState: State['phaseState'] };
 }
 export interface Match { m: Mod; s: State }
 export interface Reason { ok: boolean; code: string; msg: string; children?: Reason[] }

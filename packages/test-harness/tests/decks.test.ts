@@ -24,7 +24,8 @@ test('every game enforces its own deck rules in the builder (engine deckErrors)'
     const greedy = structuredClone(secs);
     const pick = greedy[main].find((c) => ((m.card.get(c)?.maxCopies as number | undefined) ?? F.maxCopies) === F.maxCopies)!;
     greedy[main] = [...greedy[main].slice(0, greedy[main].length - (F.maxCopies + 1)), ...Array(F.maxCopies + 1).fill(pick)];
-    assert.match(deckErrors(m, greedy).join(), new RegExp(`copies of "${pick}" \\(max ${F.maxCopies}\\)`), `${id}: copy limit enforced`);
+    const key = F.copiesBy ? String((m.card.get(pick) as any)[F.copiesBy]) : pick; // copies may be counted by name
+    assert.match(deckErrors(m, greedy).join(), new RegExp(`copies of "${key}" \\(max ${F.maxCopies}\\)`), `${id}: copy limit enforced`);
     const token = m.cards.find((c) => c.maxCopies === 0);
     if (token) {
       const t = structuredClone(secs);

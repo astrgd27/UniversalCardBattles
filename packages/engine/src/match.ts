@@ -6,7 +6,8 @@ import type {
 import { apply, emit, triggerList } from './effects.ts';
 import { ev } from './expr.ts';
 import { hash, seedRng } from './rng.ts';
-import { CostError, EngineError, activeId, baseCtx, list, masks, nextPlayer, num, objViewers, one, player, uniq } from './util.ts';
+import { CostError, EngineError, activeId, baseCtx, curPhase, list, masks, nextPlayer, num, objViewers, one, player, resetUses, topWin, uniq, useKey } from './util.ts';
+import { setVar } from './effects.ts';
 import { deckErrors, deckSections } from './validate.ts';
 
 export class IllegalAction extends EngineError {
@@ -16,7 +17,10 @@ export class IllegalAction extends EngineError {
 
 const SETTLE_BUDGET = 200_000;
 const IMMEDIATE: Timing = { mode: 'immediate' };
-export const timingOf = (m: Mod, s: State): Timing => m.rules.phases[s.turn.phase].timing ?? m.rules.timing ?? IMMEDIATE;
+export const timingOf = (m: Mod, s: State): Timing => {
+  const w = topWin(s);
+  return curPhase(m, s).timing ?? (w ? m.rules.windows![w.id].timing : undefined) ?? m.rules.timing ?? IMMEDIATE;
+};
 const alive = (s: State) => s.players.filter((p) => !p.lost);
 
 export function createMatch(m: Mod, opts: MatchOpts): Match {
@@ -32,6 +36,7 @@ export function createMatch(m: Mod, opts: MatchOpts): Match {
     rng: seedRng(opts.seed), players: [], vars: { ...(R.gameVars ?? {}) }, ext: externalInit(m, opts), objects: {}, zones: {}, turn: { n: 1, active: 0, phase: 0 },
     phaseState: 'enter', priority: null, holder: null, passes: 0, resolving: false, stack: [], effects: [], exec: [],
     triggers: [], nextTrig: null, dirty: false, pending: null, events: [], cmds: [], nextId: 1, nextDecision: 1, result: null,
+    windows: [], uses: {},
   };
   for (let i = 0; i < n; i++) s.players.push({ id: `p${i}`, vars: { ...R.playerVars }, lost: false });
   for (const z of R.zones) {
@@ -99,12 +104,30 @@ function endCheck(m: Mod, s: State): boolean {
   return false;
 }
 
+/** Empties typed resource pools whose `expire` scope just ended (a turn end also ends a phase). */
+function expirePools(m: Mod, s: State, turnEnd: boolean) {
+  for (const [id, r] of Object.entries(m.rules.resources ?? {})) {
+    if (!r.expire || (r.expire === 'turn' && !turnEnd)) continue;
+    for (const p of s.players) for (const t of r.types) setVar(m, s, p.id, `${id}:${t}`, 0);
+  }
+}
+
 function nextPhase(m: Mod, s: State) {
   s.priority = null;
   s.holder = null;
   s.passes = 0;
   s.phaseState = 'enter';
-  if (++s.turn.phase < m.rules.phases.length) return;
+  resetUses(s, 'phase');
+  const w = topWin(s);
+  if (w) {
+    // Inside a timing window: advance to the next step; after the last one the window closes.
+    if (++w.step >= m.rules.windows![w.id].steps.length) { w.step--; w.closed = true; }
+    return;
+  }
+  const turnEnd = s.turn.phase + 1 >= m.rules.phases.length;
+  expirePools(m, s, turnEnd);
+  if (!turnEnd) { s.turn.phase++; return; }
+  resetUses(s, 'turn');
   s.turn.phase = 0;
   s.turn.n++;
   s.turn.active = s.players.findIndex((p) => p.id === nextPlayer(s, activeId(s)));
@@ -208,10 +231,12 @@ export function settle(m: Mod, s: State, budget = SETTLE_BUDGET) {
       s.passes = 0;
       continue;
     }
-    const ph = m.rules.phases[s.turn.phase];
+    const w = topWin(s);
+    if (w?.closed) { closeWindow(m, s); continue; }
+    const ph = curPhase(m, s);
     if (s.phaseState === 'enter') {
       s.phaseState = 'run';
-      emit(m, s, { type: 'phase', turn: s.turn.n, active: activeId(s), phase: ph.id });
+      emit(m, s, w ? { type: 'step', turn: s.turn.n, active: activeId(s), window: w.id, step: ph.id } : { type: 'phase', turn: s.turn.n, active: activeId(s), phase: ph.id });
       if (ph.do?.length) s.exec.push({ list: ph.do, i: 0, ctx: baseCtx(s, activeId(s)) });
       continue;
     }
@@ -222,6 +247,14 @@ export function settle(m: Mod, s: State, budget = SETTLE_BUDGET) {
     return;
   }
   throw new EngineError('Settle budget exceeded (unbounded loop in rules?)');
+}
+
+/** Closes the innermost window: leftover window stack items are dropped and the interrupted turn state comes back. */
+function closeWindow(m: Mod, s: State) {
+  const w = s.windows.pop()!;
+  const dropped = s.stack.length;
+  Object.assign(s, w.saved, { priority: null });
+  emit(m, s, { type: 'windowClosed', window: w.id, ...(dropped ? { dropped } : {}) });
 }
 
 // ---------- actions ----------
@@ -249,8 +282,8 @@ function evalAction(m: Mod, s: State, p: string, name: string, src: string | nul
   const a = m.rules.actions[name];
   if (!a) return fail(no('unknown', `Unknown action "${name}".`));
   const label = a.label ?? name;
-  const phase = m.rules.phases[s.turn.phase].id;
-  if (a.phases && !a.phases.includes(phase)) return fail(no('phase', `${label} is not allowed during the ${phase} phase.`));
+  const phase = curPhase(m, s).id;
+  if (a.phases && !a.phases.includes(phase)) return fail(no('phase', `${label} is not allowed during the ${phase} ${topWin(s) ? 'step' : 'phase'}.`));
   const tm = timingOf(m, s);
   const speed = a.speed ?? 1;
   const minR = tm.minResponse ?? 2;
@@ -263,6 +296,10 @@ function evalAction(m: Mod, s: State, p: string, name: string, src: string | nul
   if (a.source) {
     if (!src || !list(ev(m, s, a.source, base)).includes(src)) return fail(no('source', `That card cannot be used to ${label} right now.`));
   } else if (src) return fail(no('source', `${label} does not take a source card.`));
+  if (a.limit) {
+    const n = a.limit.n ?? 1;
+    if ((s.uses[useKey(m, s, a.limit, `act:${name}`, p, src)] ?? 0) >= n) return fail(no('limit', `${label} can only be used ${n === 1 ? 'once' : `${n} times`} per ${a.limit.per}.`));
+  }
   const ctx = { ...base, $self: src };
   const checks = (a.req ?? []).map((q) => (ev(m, s, q.if, ctx) ? ok(q.why) : no('req', q.why)));
   if (checks.some((c) => !c.ok)) return fail(no('req', `${label}: requirements not met.`, checks));
@@ -353,6 +390,7 @@ export function commitAction(match: Match, p: string, cmd: ActionCmd): Match {
   } else {
     bindSlots(ctx, slots, cmd.targets);
     const a = m.rules.actions[cmd.action];
+    if (a.limit) { const k = useKey(m, s, a.limit, `act:${cmd.action}`, p, source); s.uses[k] = (s.uses[k] ?? 0) + 1; }
     const vis = source ? objViewers(m, s.objects[source]) : null;
     emit(m, s, {
       type: 'action', player: p, action: cmd.action, source, card: source ? s.objects[source].card : null,
@@ -397,6 +435,8 @@ export function restore(m: Mod, json: string): Match {
     throw new EngineError(`Save is for ${s.moduleId}@${s.version}, module is ${m.manifest.moduleId}@${m.manifest.semanticVersion}`);
   }
   if (s.rulesHash !== m.hash) throw new EngineError('Save was made with different rules or cards (hash mismatch)');
+  s.windows ??= [];
+  s.uses ??= {};
   return { m, s };
 }
 export function applyCmd(match: Match, c: Cmd): Match {

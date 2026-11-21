@@ -1,7 +1,7 @@
 // Player-specific projections. The only way UI and AI read match state.
 import type { GEvent, Match, Pending } from './types.ts';
 import { chars } from './layers.ts';
-import { activeId, list, viewers } from './util.ts';
+import { activeId, curPhase, list, topWin, viewers } from './util.ts';
 
 export interface ObjView {
   id: string;
@@ -13,13 +13,15 @@ export interface ObjView {
   keywords?: string[];
   rel?: Record<string, string>;
   faceDown?: boolean; // card is "" unless you control it
+  slot?: string; // position in a slotted zone
 }
 export interface StackView { id: string; kind: string; ctrl: string; label: string; card: string | null; source: string | null; targets: string[] }
 export interface View {
   me: string;
   turn: number;
   active: string;
-  phase: string;
+  phase: string; // the phase, or the step of the open timing window
+  window: { id: string; step: string; data: Record<string, any> } | null;
   priority: string | null;
   players: { id: string; vars: Record<string, number>; lost: boolean }[];
   vars: Record<string, number>; // game vars
@@ -45,18 +47,21 @@ export function observe({ m, s }: Match, p: string): View {
         const v: ObjView = { id, card: o.card, owner: o.owner, controller: o.controller, vars: { ...o.vars } };
         if (o.fd) {
           v.faceDown = true;
+          if (o.slot) v.slot = o.slot;
           if (o.controller !== p) { v.card = ''; return v; }
         }
         const c = ch?.get(id);
         if (c) { v.stats = { ...c.stats }; v.keywords = [...c.kw].sort(); }
         if (o.rel) v.rel = { ...o.rel };
+        if (o.slot) v.slot = o.slot;
         return v;
       });
     }
   }
   const pd = s.pending;
   return {
-    me: p, turn: s.turn.n, active: activeId(s), phase: m.rules.phases[s.turn.phase].id, priority: s.priority,
+    me: p, turn: s.turn.n, active: activeId(s), phase: curPhase(m, s).id, priority: s.priority,
+    window: topWin(s) ? { id: topWin(s)!.id, step: curPhase(m, s).id, data: structuredClone(topWin(s)!.data) } : null,
     players: s.players.map((pl) => ({ id: pl.id, vars: { ...pl.vars }, lost: pl.lost })), vars: { ...s.vars }, ext: { ...s.ext }, zones,
     stack: s.stack.map((it) => ({
       id: it.id, kind: it.kind, ctrl: it.ctrl, label: it.label, card: it.card, source: it.source && canSee(it.source) ? it.source : null,

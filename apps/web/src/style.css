@@ -363,3 +363,16 @@ h1, h2, h3 { margin: 0; letter-spacing: .02em; }
 .rules { font-size: 12px; }
 .io-text { width: 100%; font: 13px/1.4 ui-monospace, monospace; padding: 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-solid); color: var(--ink); }
 .panel-pop.io { text-align: left; }
+
+/* typed costs, slotted zones, timing windows */
+.gem.typed { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+.gem .pips { display: flex; gap: 1px; margin-top: 1px; }
+.gem .pip { font-style: normal; font-size: 8px; width: 10px; height: 10px; border-radius: 50%; display: grid; place-items: center; background: hsl(var(--h) 70% 55%); color: #111; }
+.zone.slotted { display: flex; flex-direction: column; gap: 6px; }
+.slot-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.slot { min-width: 64px; min-height: 84px; border: 1px dashed var(--line); border-radius: 10px; display: grid; place-items: center; padding: 2px; }
+.slot.full { border-style: solid; border-color: transparent; }
+.slot-l { color: var(--muted); font-size: 11px; text-align: center; padding: 4px; }
+.slot.target { cursor: pointer; background: color-mix(in srgb, var(--target) 18%, transparent); }
+.slot.picked { background: color-mix(in srgb, var(--accent) 25%, transparent); }
+.pill.window { border-color: var(--accent); color: var(--accent); }

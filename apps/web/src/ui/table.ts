@@ -57,7 +57,7 @@ export function table(ui: UI, A: any) {
     sources: new Set(tpls.map((t) => t.source).filter(Boolean) as string[]),
     targets: new Set(step?.options ?? []),
     picked: new Set(step ? ui.sel!.picks[step.key] ?? [] : []),
-    label: (x) => (/^p\d+$/.test(x) ? pname(x) : names.get(x) ?? x),
+    label: (x) => (/^p\d+$/.test(x) ? pname(x) : names.get(x) ?? (/^[a-z][a-z-]*$/.test(x) ? title(x) : x)),
     fx: effectsSince(ui, v),
   };
   const onGrid = new Set(mod.rules.grid?.zones ?? []);
@@ -88,7 +88,7 @@ function hud(c: C, mine: boolean) {
   return h('header', { class: 'hud' },
     h('button', { class: 'icon', 'aria-label': 'Menu', onclick: () => A.pause(true) }, '☰'),
     h('span', { class: 'hud-game' }, h('span', { class: 'hud-emblem' }, emblem(mod)), mod.manifest.displayName),
-    h('span', { class: 'pill' }, `Turn ${v.turn} · ${title(v.phase)}`),
+    h('span', { class: cls('pill', v.window && 'window') }, `Turn ${v.turn} · ${v.window ? `${title(v.window.id)}: ${title(v.window.step)}` : title(v.phase)}`),
     h('span', { class: cls('hud-status', mine && 'go'), role: 'status' },
       v.result ? 'Game over' : mine ? (v.pending ? 'Your decision' : 'Your move') : `${who ? pname(who) : '…'} is thinking…`),
     Object.entries(mod.rules.external ?? {}).map(([name, dom]) => h('label', { class: 'ext', title: 'External input (set by the host, logged in the replay)' }, `⚙ ${name} `,
@@ -173,10 +173,27 @@ function pile(c: C, key: string, z: ZoneDef) {
   }, h('span', { class: 'pile-n' }, String(zv.count)), h('span', { class: 'pile-l' }, title(z.id)));
 }
 
+/** A zone with named slots: rows grouped by each slot's first tag; empty slots show their name and can be targets. */
+function slotted(c: C, key: string, z: ZoneDef, cards: ObjView[]) {
+  const mine = key.startsWith(`${c.ui.viewer}:`);
+  const rows = new Map<string, NonNullable<ZoneDef['slots']>>();
+  for (const sp of z.slots!) { const r = sp.tags?.[0] ?? ''; rows.set(r, [...(rows.get(r) ?? []), sp]); }
+  return h('div', { class: 'zone slotted' }, h('span', { class: 'zone-l' }, title(z.id)),
+    [...rows.values()].map((row) => h('div', { class: 'slot-row' }, row.map((sp) => {
+      const here = cards.filter((o) => o.slot === sp.id);
+      const t = mine && c.targets.has(sp.id);
+      return h('div', {
+        class: cls('slot', t && 'target', mine && c.picked.has(sp.id) && 'picked', here.length > 0 && 'full'), 'data-slot': sp.id,
+        role: t ? 'button' : null, tabindex: t ? 0 : null, 'aria-label': `${title(sp.id)} slot${t ? ', can be chosen' : ''}`, onclick: t ? () => c.A.choose(sp.id) : null,
+      }, here.length ? here.map((o) => obj(c, o, 'sm')) : h('span', { class: 'slot-l' }, title(sp.id)));
+    }))));
+}
+
 function zoneBlock(c: C, key: string, z: ZoneDef) {
   const zv = c.v.zones[key];
   if (!zv) return null;
   if (!zv.cards) return pile(c, key, z);
+  if (z.slots?.length) return slotted(c, key, z, zv.cards);
   if (!zv.cards.length && !z.abilities) return null;
   return h('div', { class: 'zone' }, h('span', { class: 'zone-l' }, title(z.id)),
     h('div', { class: 'row' }, zv.cards.length ? zv.cards.map((o) => obj(c, o, 'sm')) : h('span', { class: 'empty-slot' }, 'empty')));
@@ -309,6 +326,12 @@ function fmt(e: Record<string, any>, mod: Mod, label: (x: string) => string): st
     case 'dialogue': return `${e.speaker}: “${e.text}”`;
     case 'created': return `${cn(e.card) ?? 'A token'} appears${e.toPlayer && e.toPlayer !== 'shared' ? ` (${pname(e.toPlayer)})` : ''}`;
     case 'replaced': return `${e.by}: ${e.event} ${e.how === 'instead' ? 'replaced' : 'modified'}`;
+    case 'windowOpened': return `▸ ${title(e.window)} begins`;
+    case 'windowClosed': return `◂ ${title(e.window)} ends`;
+    case 'step': return `  ${title(e.window)}: ${title(e.step)} step`;
+    case 'paid': return `${pname(e.player)} paid ${Object.entries(e.paid).filter(([, n]) => n).map(([k, n]) => `${n} ${k}`).join(', ') || 'nothing'}`;
+    case 'slotted': return e.obj ? `${label(e.obj)} moves to ${title(e.slot)}` : null;
+    case 'slotFull': return `No room${e.slot ? ` in ${title(e.slot)}` : ''}`;
     case 'shuffled': case 'linked': case 'unlinked': case 'modified': case 'expired': case 'drawFail': case 'log': return null;
     default: {
       const { seq: _s, type, ...rest } = e;

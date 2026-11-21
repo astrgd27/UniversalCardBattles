@@ -16,7 +16,7 @@ try {
   page.on('dialog', (d) => d.accept());
   await page.goto(`http://localhost:${port}/`);
   const ids = await page.$$eval('[data-module]', (t) => t.map((x) => x.dataset.module));
-  ok(ids.length === 7, `expected 7 game tiles, got ${ids.length}`);
+  ok(ids.length === 8, `expected 8 game tiles, got ${ids.length}`);
   const open = async (id) => { await page.click('text=← Library').catch(() => {}); await page.click(`[data-module="${id}"]`); };
   const seat = (i, label) => page.click(`[data-seat="${i}"] .seg button:text-is("${label}")`);
 
@@ -53,6 +53,27 @@ try {
   } else fail.push('vault-breach: no deployable unit');
   await page.selectOption('select[aria-label="External input lights"]', 'off');
   ok(await page.evaluate(() => window.__ucb.match.s.ext.lights) === 'off', 'external input changed from the HUD');
+  await page.click('button[aria-label=Menu]');
+  await page.click('.panel-pop >> text=Quit to game menu');
+  await page.click('text=← Library');
+
+  // Bastion Clash: slotted zones render as named slots; deploying picks a slot on the table.
+  await open('bastion-clash');
+  await page.click('[data-menu=play]');
+  await seat(2, 'AI');
+  await page.click('text=Start match');
+  await page.waitForSelector('.hud-status.go');
+  ok(await page.$$eval('.seat-area.me .zone.slotted .slot', (s) => s.length) === 9, 'six field slots and three gear slots');
+  const well = await page.$('.seat-area.me .hand .card.legal:has(.type:text("Well"))');
+  if (well) { await well.click(); await page.waitForSelector('.hud-status.go'); }
+  const unit = await page.$('.seat-area.me .hand .card.legal:has(.type:text("Unit"))');
+  if (unit) {
+    await unit.click();
+    ok(await page.$$eval('.seat-area.me .slot.target', (c) => c.length) === 6, 'six open slots glow');
+    await page.click('.seat-area.me .slot.target[data-slot="front-mid"]');
+    await page.click('.dock >> text=Confirm');
+    ok(await page.isVisible('.seat-area.me .slot[data-slot="front-mid"] .card.own'), 'unit stands in its slot');
+  } else console.log('bastion-clash: no deployable unit on this seed');
   await page.click('button[aria-label=Menu]');
   await page.click('.panel-pop >> text=Quit to game menu');
   await page.click('text=← Library');

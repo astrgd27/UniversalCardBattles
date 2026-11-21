@@ -1,0 +1,103 @@
+{
+  "players": {"min": 2, "max": 2},
+  "playerVars": {"life": 20, "aether:sun": 0, "aether:moon": 0},
+  "objectVars": {"dmg": 0, "boost": 0, "sick": 0},
+  "resources": {"aether": {"types": ["sun", "moon"], "generic": "any", "expire": "turn"}},
+  "zones": [
+    {"id": "deck", "vis": "hidden", "ordered": true},
+    {"id": "hero", "vis": "public", "abilities": true},
+    {"id": "hand", "vis": "owner"},
+    {"id": "wells", "vis": "public"},
+    {"id": "field", "vis": "public", "abilities": true, "slots": [
+      {"id": "front-left", "types": ["unit"], "tags": ["front"], "adj": ["front-mid", "back-left"]},
+      {"id": "front-mid", "types": ["unit"], "tags": ["front"], "adj": ["front-left", "front-right", "back-mid"]},
+      {"id": "front-right", "types": ["unit"], "tags": ["front"], "adj": ["front-mid", "back-right"]},
+      {"id": "back-left", "types": ["unit"], "tags": ["back"], "adj": ["front-left", "back-mid"]},
+      {"id": "back-mid", "types": ["unit"], "tags": ["back"], "adj": ["front-mid", "back-left", "back-right"]},
+      {"id": "back-right", "types": ["unit"], "tags": ["back"], "adj": ["front-right", "back-mid"]}]},
+    {"id": "gear", "vis": "public", "abilities": true, "slots": [
+      {"id": "head", "kinds": ["head"]}, {"id": "arms", "kinds": ["arms"]}, {"id": "body", "kinds": ["body"]}]},
+    {"id": "grave", "vis": "public", "ordered": true}
+  ],
+  "deckZone": "deck", "handZone": "hand", "graveZone": "grave",
+  "format": {
+    "deckMin": 20, "deckMax": 30, "maxCopies": 2, "copiesBy": "name",
+    "zones": [{"zone": "hero", "min": 1, "max": 1, "types": ["hero"]}, {"zone": "deck", "min": 20, "max": 30, "types": ["unit", "guard", "gear", "well"]}],
+    "rules": [
+      {"if": ["all", "$sections.deck", ["or", ["=", ["def", "$it", "aspect"], "neutral"], ["in", ["def", "$it", "aspect"], ["def", ["first", "$sections.hero"], "aspects"]]]], "why": "Every card must be neutral or share an aspect with your hero"},
+      {"if": ["<=", ["count", ["filter", "$deck", ["=", ["def", "$it", "type"], "gear"]]], 3], "why": "At most 3 gear cards"},
+      {"if": [">=", ["count", ["filter", "$deck", ["=", ["def", "$it", "type"], "well"]]], 8], "why": "At least 8 wells"}
+    ]
+  },
+  "turnLimit": 40,
+  "damage": {"player": "life", "object": "dmg"},
+  "functions": {
+    "support": {"params": ["$u"], "body": ["?", ["in", ["get", "$u", "slot"], ["slots", "field", "front"]],
+      ["sum", ["filter", ["adjacent", "$u"], ["in", ["get", "$it", "slot"], ["slots", "field", "back"]]], ["get", "$it", "power"]], 0]},
+    "atk": {"params": ["$u"], "body": ["+", ["get", "$u", "power"], ["get", "$u", "boost"], ["call", "support", "$u"]]},
+    "armor": {"params": ["$p"], "body": ["sum", ["cards", "$p", "gear"], ["get", "$it", "armor"]]},
+    "yields": {"params": ["$p"], "body": ["tally", ["cards", "$p", "wells"], ["def", "$it", "yields"]]},
+    "payable": {"params": ["$c"], "body": ["and", ["canPay", "$me", "aether", ["def", "$c", "cost"]], ["meets", ["call", "yields", "$me"], ["def", "$c", "needs"]]]}
+  },
+  "procedures": {
+    "resolveCombat": {"params": [], "do": [
+      ["let", "$a", "$win.attacker"],
+      ["if", ["isObj", "$a"], [
+        ["let", "$dmg", ["max", 0, ["-", ["call", "atk", "$a"], "$win.guard"]]],
+        ["if", ["isPlayer", "$win.target"],
+          [["damage", "$win.target", ["max", 0, ["-", "$dmg", ["call", "armor", "$win.target"]]], "$a"]],
+          [["if", ["isObj", "$win.target"], [["damage", "$win.target", "$dmg", "$a"], ["damage", "$a", ["call", "atk", "$win.target"], "$win.target"]]]]]
+      ]]
+    ]}
+  },
+  "windows": {
+    "combat": {"steps": [
+      {"id": "declare", "auto": true},
+      {"id": "block", "timing": {"mode": "alternate", "first": "$win.defender"}},
+      {"id": "damage", "auto": true, "do": [["call", "resolveCombat"]]}
+    ]}
+  },
+  "setup": [["each", ["players"], "$p", [["shuffle", "$p", "deck"], ["draw", "$p", 5]]]],
+  "phases": [
+    {"id": "start", "auto": true, "do": [
+      ["each", ["cards", "$me", "field"], "$u", [["set", "$u", "sick", 0], ["set", "$u", "boost", 0]]],
+      ["gain", "$me", "aether", ["call", "yields", "$me"]],
+      ["draw", "$me", 1]]},
+    {"id": "main"},
+    {"id": "end", "auto": true}
+  ],
+  "actions": {
+    "playWell": {"label": "Raise well", "phases": ["main"], "limit": {"per": "turn", "group": "well"},
+      "source": ["filter", ["cards", "$me", "hand"], ["=", ["get", "$it", "type"], "well"]],
+      "do": [["let", "$y", ["def", "$self", "yields"]], ["move", "$self", "wells"], ["gain", "$me", "aether", "$y"]]},
+    "deploy": {"label": "Deploy", "phases": ["main"],
+      "source": ["filter", ["cards", "$me", "hand"], ["and", ["=", ["get", "$it", "type"], "unit"], ["call", "payable", "$it"], [">", ["count", ["freeSlots", "$me", "field", "$it"]], 0]]],
+      "targets": [{"as": "$pos", "from": ["freeSlots", "$me", "field", "$self"], "prompt": "position"}],
+      "cost": [["pay", "$me", "aether", ["def", "$self", "cost"]]],
+      "do": [["move", "$self", "field", {"slot": "$pos", "as": "$u"}], ["set", "$u", "sick", 1]]},
+    "equip": {"label": "Equip", "phases": ["main"],
+      "source": ["filter", ["cards", "$me", "hand"], ["and", ["=", ["get", "$it", "type"], "gear"], ["call", "payable", "$it"], [">", ["count", ["freeSlots", "$me", "gear", "$it"]], 0]]],
+      "cost": [["pay", "$me", "aether", ["def", "$self", "cost"]]],
+      "do": [["move", "$self", "gear"]]},
+    "reposition": {"label": "Reposition", "phases": ["main"], "limit": {"per": "turn", "by": "source"},
+      "source": ["cards", "$me", "field"],
+      "targets": [{"as": "$to", "from": ["filter", ["slots", "field"], ["!=", "$it", ["get", "$self", "slot"]]], "prompt": "new position"}],
+      "do": [["setSlot", "$self", "$to"]]},
+    "attack": {"label": "Attack", "phases": ["main"], "limit": {"per": "turn", "by": "source"},
+      "source": ["filter", ["cards", "$me", "field"], ["and", ["=", ["get", "$it", "sick"], 0], ["or", ["in", ["get", "$it", "slot"], ["slots", "field", "front"]], ["has", "$it", "reach"]]]],
+      "targets": [{"as": "$t", "from": ["concat", ["list", "$opp"], ["filter", ["cards", "$opp", "field"], ["in", ["get", "$it", "slot"], ["slots", "field", "front"]]]], "prompt": "attack target"}],
+      "do": [["openWindow", "combat", {"data": {"attacker": "$self", "target": "$t", "defender": "$opp", "guard": 0}}], ["log", "The clash is over"]]},
+    "guard": {"label": "Guard", "phases": ["block"],
+      "source": ["filter", ["cards", "$me", "hand"], ["and", ["=", "$win.defender", "$me"], ["=", ["get", "$it", "type"], "guard"], ["call", "payable", "$it"]]],
+      "cost": [["pay", "$me", "aether", ["def", "$self", "cost"]]],
+      "do": [["winSet", "guard", ["+", "$win.guard", ["get", "$self", "guard"]]], ["run", "$self", "onGuard"], ["move", "$self", "grave"]]},
+    "heroPower": {"label": "Hero power", "phases": ["main", "block"], "limit": {"per": "turn", "by": "name"}, "cardTargets": true,
+      "source": ["filter", ["cards", "$me", "hero"], ["canPay", "$me", "aether", ["def", "$it", "powerCost"]]],
+      "cost": [["pay", "$me", "aether", ["def", "$self", "powerCost"]]],
+      "do": [["run", "$self", "power"]]}
+  },
+  "stateChecks": [
+    ["each", ["filter", ["cards", "*", "field"], [">=", ["get", "$it", "dmg"], ["get", "$it", "health"]]], "$u", [["destroy", "$u"]]],
+    ["each", ["filter", ["players"], ["<=", ["get", "$it", "life"], 0]], "$p", [["lose", "$p"]]]
+  ]
+}
