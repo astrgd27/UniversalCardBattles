@@ -1,6 +1,7 @@
 // Screen dispatcher. Re-renders everything on each change and restores focus to inputs marked data-keep.
 import type { UI } from '../main.ts';
-import { decks, gallery, home, library, setup } from './menus.ts';
+import { home, library, setup } from './menus.ts';
+import { decks, gallery } from './decks.ts';
 import { noteEl } from './kit.ts';
 import { table } from './table.ts';
 import { campaignScreen, encounterScreen, rewardScreen, shopScreen } from './campaign.ts';

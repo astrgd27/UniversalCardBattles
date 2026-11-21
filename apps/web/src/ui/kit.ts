@@ -2,6 +2,7 @@
 import type { CardDef, Mod, Reason } from '#engine';
 import { ASSETS } from '../modules.ts';
 import { customArt, procArt } from '../art.ts';
+import { type StatSlot, templateFor } from '../templates.ts';
 
 export type Child = Node | string | null | undefined | false | Child[];
 export function h(tag: string, props: Record<string, any> = {}, ...kids: Child[]): HTMLElement {
@@ -69,25 +70,38 @@ export interface FaceOpts {
 export function cardFace(m: Mod, cardId: string, o: FaceOpts = {}): HTMLElement {
   const def = m.card.get(cardId);
   if (!def) return cardBack(m, o);
+  const tpl = templateFor(m, def);
   const hidden = new Set([...(m.manifest.theme?.hideStats ?? []), ...(m.rules.grid ? ['x', 'y'] : [])]);
-  const stats = cardStats(def, o.stats).filter(([k]) => !hidden.has(k));
+  const val = (f: string) => o.stats?.[f] ?? (def as any)[f];
+  const placed = tpl.stats.filter((s) => typeof val(s.field) === 'number' && !hidden.has(s.field));
+  const onFrame = new Set([...placed.map((s) => s.field), ...(tpl.level ? [tpl.level] : [])]);
+  const chips = cardStats(def, o.stats).filter(([k]) => !hidden.has(k) && !onFrame.has(k));
   const kw = o.keywords ?? def.keywords ?? [];
   const badges = Object.entries(o.vars ?? {}).filter(([k, n]) => n !== (o.baseVars?.[k] ?? 0) && !(m.rules.grid && (k === 'x' || k === 'y')));
   const art = customArt(m.manifest.moduleId, def.id) ?? (typeof def.art === 'string' ? ASSETS.get(m.manifest.moduleId)?.get(def.art) : undefined) ?? procArt(def, GLYPH[def.type] ?? '◆');
-  const hh = hue(def.id);
+  const corners = new Map<string, StatSlot[]>();
+  for (const s of placed) if (s.pos !== 'line') corners.set(s.pos, [...(corners.get(s.pos) ?? []), s]);
+  const line = placed.filter((s) => s.pos === 'line');
+  const level = tpl.level && typeof def[tpl.level] === 'number' ? (def[tpl.level] as number) : 0;
+  const statText = (s: StatSlot) => (s.icon ? `${s.icon} ${val(s.field)}` : String(val(s.field)));
+  const aria = [...placed.map((s) => `${s.label ?? s.field} ${val(s.field)}`), ...chips.map(([a, b]) => `${a} ${b}`)].join(', ');
   return h('button', {
-    class: cls('card', `size-${o.size ?? 'md'}`, `t-${def.type}`, o.faceDown && 'fd', o.state),
-    style: `--h:${hh}`, onclick: o.onclick, title: def.text ?? def.name,
-    'aria-label': o.label ?? `${def.name}, ${def.type}${stats.length ? `, ${stats.map(([a, b]) => `${a} ${b}`).join(', ')}` : ''}`,
+    class: cls('card', `tpl-${tpl.base}`, `layout-${tpl.layout}`, `size-${o.size ?? 'md'}`, `t-${def.type}`, o.faceDown && 'fd', o.state),
+    style: `--h:${hue(def.id)}`, onclick: o.onclick, title: def.text ?? def.name, 'data-template': tpl.base,
+    'aria-label': o.label ?? `${def.name}, ${def.type}${def.cost !== undefined ? `, cost ${def.cost}` : ''}${aria ? `, ${aria}` : ''}`,
   },
-  def.cost !== undefined && h('span', { class: 'gem' }, String(o.stats?.cost ?? def.cost)),
+  tpl.cost !== 'none' && def.cost !== undefined && h('span', { class: `gem pos-${tpl.cost}` }, String(o.stats?.cost ?? def.cost)),
   o.count !== undefined && h('span', { class: 'count' }, `×${o.count}`),
   h('span', { class: 'art' }, h('img', { src: art, alt: '', draggable: 'false' })),
-  h('span', { class: 'name' }, def.name),
-  h('span', { class: 'type' }, title(def.type), kw.length ? ` · ${kw.map(title).join(', ')}` : '', o.faceDown ? ' · face down' : ''),
-  def.text && h('span', { class: 'text' }, def.text),
-  stats.length > 0 && h('span', { class: 'stats' }, stats.map(([k, v]) => h('span', { class: cls('stat', `s-${k}`), title: k }, ICON[k] ? `${ICON[k]} ${v}` : `${k} ${v}`))),
-  badges.length > 0 && h('span', { class: 'badges' }, badges.map(([k, v]) => h('span', { class: 'chip' }, `${k} ${v}`))));
+  h('span', { class: 'body' },
+    h('span', { class: 'name' }, def.name),
+    level > 0 && h('span', { class: 'stars', 'aria-label': `level ${level}` }, '★'.repeat(Math.min(12, level))),
+    h('span', { class: 'type' }, title(def.type), kw.length ? ` · ${kw.map(title).join(', ')}` : '', o.faceDown ? ' · face down' : ''),
+    tpl.text && def.text && h('span', { class: 'text' }, def.text),
+    chips.length > 0 && h('span', { class: 'stats' }, chips.map(([k, v]) => h('span', { class: cls('stat', `s-${k}`), title: k }, ICON[k] ? `${ICON[k]} ${v}` : `${k} ${v}`))),
+    line.length > 0 && h('span', { class: 'statline' }, line.map((s) => `${s.label ?? s.field} ${val(s.field)}`).join(' / ')),
+    badges.length > 0 && h('span', { class: 'badges' }, badges.map(([k, v]) => h('span', { class: 'chip' }, `${k} ${v}`)))),
+  [...corners].map(([pos, slots]) => h('span', { class: `statbox pos-${pos}` }, slots.map(statText).join(tpl.base === 'classic' ? '/' : ' '))));
 }
 
 export function cardBack(m: Mod, o: FaceOpts = {}): HTMLElement {

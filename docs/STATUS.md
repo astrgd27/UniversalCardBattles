@@ -184,6 +184,19 @@ Security notes:
 - **Grid UI:** modules with `rules.grid` render a board. Objects sit in their cells, target cells glow and are clickable, and the top bar has controls for external inputs.
 - e2e covers grid deploys, entry animations, the external toggle and custom art upload and reset. The campaign e2e no longer assumes a lost fight.
 
+## Done: deckbuilder upgrade and card formats
+- **Deck rules confirmed:** the builder and match setup both use the engine's `deckErrors` with each game's `rules.format` (size, copies, per-card `maxCopies`, section card types, token-only cards). Campaign decks also check ownership. Tests cover every game.
+- **Builder:**
+  - search language: `t:` `k:` `tag:` `n:` `x:` `is:token`, numeric comparisons, phrases, negation (`apps/web/src/search.ts`)
+  - facet chips from each game's own types, keywords, tags and costs; sort by cost, name or type
+  - copy counters (n/max, owned in campaigns), a cost curve, a type breakdown and average cost
+  - text export (clipboard) and import (checked against the rules), duplicate, sample opening hand
+  - the game's format rules spelled out
+- **Card formats:** `apps/web/src/templates.ts` with nine built-in families.
+  - Modules choose per type or per card and can define their own (validated; `TEMPLATE_BASES` in the engine).
+  - The reference games mix several formats: Relic has ranked monsters plus a Fusion template, Ember Council has its own Coin and Ally templates, Vault Breach has landscape locations and a Barrier template.
+- 82 tests; e2e covers chips, queries, export/import, sample hand and template labels.
+
 ## Possible next steps
 - Campaigns for the other reference games.
 - IndexedDB storage (localStorage today) and cloud sync of backups.

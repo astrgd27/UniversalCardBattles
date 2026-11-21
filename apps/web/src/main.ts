@@ -5,6 +5,7 @@ import {
   IllegalAction, commitAction, createMatch, deckErrors, determinize, listActions, observe, proposeAction, restore, serialize, setExternal, submitDecision,
 } from '#engine';
 import { clearCustomArt, loadCustomArt, setCustomArt } from './art.ts';
+import { type SortKey, deckFromText, deckToText, toggleToken } from './search.ts';
 import { makeAgent, type Agent, type AgentInfo } from '#ai';
 import {
   type Campaign, type Granted, type Line, type Profile, CampaignError, buy, campaignOf, encounterAgent, finishEncounter, migrateProfile, newProfile,
@@ -49,6 +50,9 @@ export interface UI {
   dialogSeen: number; // last in-match dialogue event acknowledged
   reward: { won: boolean; granted: Granted | null; lines: Line[]; enc: string } | null;
   reveal: string[] | null; // cards from a purchase being revealed
+  sort: SortKey;
+  sample: string[] | null; // sample opening hand in the deckbuilder
+  io: { mode: 'import' | 'export'; text: string; errors: string[] } | null; // deck text dialog
   fxFrom: number; // first event not yet animated
   counts: Record<string, number>; // zone sizes at the last render (pile bumps)
 }
@@ -76,7 +80,7 @@ function seatsFor(m: Mod, n = Math.max(2, m.rules.players.min)): Pick<UI, 'seats
 export const ui: UI = {
   screen: 'library', mod: null, seats: [], decks: [], match: null, agents: [], viewer: 'p0', cover: null, sel: null, menu: null,
   note: null, inspect: null, drawer: null, pile: null, paused: false, fast: false, theme: store.get<'light' | 'dark'>('ucb-theme', 'dark') === 'light' ? 'light' : 'dark', edit: null,
-  filter: '', gallery: null, profile: null, camp: null, encounter: null, campDeck: '', dialog: null, dialogSeen: -1, reward: null, reveal: null, fxFrom: 0, counts: {},
+  filter: '', gallery: null, profile: null, camp: null, encounter: null, campDeck: '', dialog: null, dialogSeen: -1, reward: null, reveal: null, fxFrom: 0, counts: {}, sort: 'cost', sample: null, io: null,
 };
 (window as any).__ucb = ui; // test hook
 
@@ -353,6 +357,8 @@ export const actions = {
     if (src) Object.assign(deck, structuredClone(Array.isArray(src) ? { [secs[0]]: src } : src));
     const custom = !!name && (inCampaign || name in customDecks(m));
     ui.edit = { name: name ? (custom ? name : `${name} (copy)`) : 'New deck', original: custom ? name : null, deck, section: secs[0], campaign: inCampaign };
+    ui.sample = null;
+    ui.io = null;
     actions.go('decks');
   },
   setSection(z: string) { ui.edit!.section = z; redraw(); },
@@ -410,6 +416,36 @@ export const actions = {
     redraw();
   },
   setFilter(f: string) { ui.filter = f; redraw(); },
+  toggleFacet(token: string) { ui.filter = toggleToken(ui.filter, token); redraw(); },
+  setSort(k: SortKey) { ui.sort = k; redraw(); },
+  sampleHand(n: number) {
+    const all = Object.values(ui.edit!.deck)[0] ?? [];
+    const pool = [...all];
+    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+    ui.sample = pool.slice(0, n);
+    redraw();
+  },
+  closeSample() { ui.sample = null; redraw(); },
+  openIO(mode: 'import' | 'export') {
+    const e = ui.edit!;
+    ui.io = { mode, text: mode === 'export' ? deckToText(ui.mod!, e.deck, sections(ui.mod!)) : '', errors: [] };
+    if (mode === 'export') navigator.clipboard?.writeText(ui.io.text).catch(() => {});
+    redraw();
+  },
+  setIOText(t: string) { ui.io!.text = t; },
+  applyImport() {
+    const r = deckFromText(ui.mod!, ui.io!.text, sections(ui.mod!));
+    if (r.errors.length) { ui.io!.errors = r.errors; return redraw(); }
+    ui.edit!.deck = r.deck;
+    ui.io = null;
+    redraw();
+  },
+  closeIO() { ui.io = null; redraw(); },
+  duplicateDeck() {
+    const e = ui.edit!;
+    ui.edit = { ...e, deck: structuredClone(e.deck), name: `${e.name} (copy)`, original: null };
+    redraw();
+  },
 
   // ---- campaign & shop ----
   beginCampaign() {

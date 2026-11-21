@@ -16,6 +16,7 @@ my-game/
   assets/            optional art (png/jpg/webp/gif); refer to it with "art": "assets/x.png" on a card
 ```
 Start by copying `packages/reference-games/spark-duel`. It is the smallest complete game.
+Card looks: set `presentation.byType` in the manifest, e.g. `{"unit": "skirmisher", "spell": "spell"}`. You can also define your own templates (see `DSL.md`, Presentation).
 
 ## 2. Think in four parts
 1. **Zones**: where cards can be, and who can see them (`public`, `owner`, `hidden`).

@@ -15,6 +15,8 @@ export interface Manifest {
   extends?: { moduleId: string; range: string }; // expansion of a base module
   tagline?: string; // presentation only
   theme?: { accent?: string; accent2?: string; glyph?: string; hideStats?: string[] }; // presentation only: colours, emblem, card fields not to print
+  /** Presentation only: card templates (see apps/web templates). byType maps card types to template names. */
+  presentation?: { templates?: Record<string, { base?: string; layout?: 'portrait' | 'landscape'; cost?: 'tl' | 'tr' | 'none'; stats?: { field: string; pos: string; icon?: string; label?: string }[]; level?: string; text?: boolean; label?: string }>; byType?: Record<string, string> };
 }
 export interface ZoneDef {
   id: string;

@@ -187,7 +187,20 @@ Effects run in effect lists `[[op...], [op...]]`.
   - At most 8 MB per file, 64 MB total and 2000 entries.
 - **JSON** is parsed strictly: duplicate keys and `__proto__`, `constructor` and `prototype` keys are rejected, and nesting is capped at 256 levels.
 - **Errors** read `file:line:col: message`.
-- **Presentation** (optional manifest fields, no effect on rules): `tagline` and `theme {accent, accent2, glyph, hideStats}`.
+- **Presentation** (optional manifest fields, no effect on rules): `tagline`, `theme {accent, accent2, glyph, hideStats}` and `presentation {templates, byType}`.
+  - **Card templates.** The built-in families, generic layouts based on common TCG card anatomy:
+    - `classic`: cost top-right, stat box bottom-right
+    - `skirmisher`: attack and health in the bottom corners
+    - `monster`: level stars and an ATK/DEF line
+    - `vital`: HP top-right
+    - `leader`: no cost, life shield
+    - `spell`: no stats, large text
+    - `resource`: full-bleed art
+    - `location`: landscape
+    - `token`
+  - A module may define its own: `templates {name: {base, layout?, cost?: tl|tr|none, stats?: [{field, pos: tl|tr|bl|br|line, icon?, label?}], level?, text?, label?}}`.
+  - Choosing a template: `card.template`, then `byType[type]`, then a template inferred from the card's fields. So a game can mix several formats, and every game can look different.
+  - Cards may also carry `tags: [...]`, which deckbuilder search uses alongside keywords.
 - **Saves:** a save stores `rulesHash`, a hash of the rules and cards, and `restore` refuses a mismatch.
 - **CLI:**
   - `npm run -s validate <dir|zip> [--base <dir|zip>]`

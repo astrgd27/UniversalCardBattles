@@ -12,6 +12,8 @@ export const CAPABILITIES = [
   'scripts', 'commit', 'faceDown', 'random', 'multiDeck', 'sharedDecks', 'gameVars', 'grid', 'external',
 ];
 const REPLACEABLE = ['draw', 'move', 'destroy', 'damage', 'lose'];
+/** Built-in card template families a module may use or extend (presentation; rendered by apps/web). */
+export const TEMPLATE_BASES = ['classic', 'skirmisher', 'monster', 'vital', 'leader', 'spell', 'resource', 'location', 'token'];
 
 export interface Issue { where: 'manifest' | 'rules' | 'cards' | 'decks' | 'ai'; ptr: string; msg: string }
 export const issueText = (i: Issue) => `${i.where}${i.ptr}: ${i.msg}`;
@@ -42,6 +44,25 @@ export function validateIssues(def: ModuleDef): Issue[] {
     }
     if (mf.extends !== undefined && !(isRec(mf.extends) && typeof mf.extends.moduleId === 'string' && isRange(mf.extends.range))) {
       eM('/extends', 'must be {moduleId, range}');
+    }
+    const pr = mf.presentation;
+    if (pr !== undefined) {
+      if (!isRec(pr)) eM('/presentation', 'must be an object');
+      else {
+        const own = isRec(pr.templates) ? pr.templates : {};
+        if (pr.templates !== undefined && !isRec(pr.templates)) eM('/presentation/templates', 'must be an object');
+        for (const [name, t] of Object.entries<any>(own)) {
+          const p = `/presentation/templates/${esc(name)}`;
+          if (!isRec(t)) { eM(p, 'must be an object'); continue; }
+          if (t.base !== undefined && !TEMPLATE_BASES.includes(t.base)) eM(`${p}/base`, `unknown base "${t.base}" (${TEMPLATE_BASES.join(', ')})`);
+          if (t.layout !== undefined && !['portrait', 'landscape'].includes(t.layout)) eM(`${p}/layout`, 'must be portrait or landscape');
+          if (t.cost !== undefined && !['tl', 'tr', 'none'].includes(t.cost)) eM(`${p}/cost`, 'must be tl, tr or none');
+          if (t.stats !== undefined && !(Array.isArray(t.stats) && t.stats.every((s: any) => isRec(s) && typeof s.field === 'string' && ['tl', 'tr', 'bl', 'br', 'line'].includes(s.pos)))) eM(`${p}/stats`, 'must be [{field, pos: tl|tr|bl|br|line, icon?, label?}]');
+        }
+        for (const [type, name] of Object.entries<any>(isRec(pr.byType) ? pr.byType : {})) {
+          if (!(name in own) && !TEMPLATE_BASES.includes(name)) eM(`/presentation/byType/${esc(type)}`, `unknown template "${name}"`);
+        }
+      }
     }
   }
 
