@@ -5,6 +5,8 @@ import { loadPackage, readZip } from '#sdk';
 
 const files = import.meta.glob(['../../../packages/reference-games/*/*.json', '../../../packages/reference-games/*/ai/ai.json'], { eager: true, import: 'default' }) as Record<string, any>;
 export const MODULES = new Map<string, Mod>();
+/** Object URLs for assets of modules loaded from packages: moduleId -> path -> url. */
+export const ASSETS = new Map<string, Map<string, string>>();
 const byId: Record<string, Record<string, any>> = {};
 for (const [path, data] of Object.entries(files)) {
   const m = path.match(/reference-games\/([^/]+)\/(?:ai\/)?([a-z]+)\.json$/);
@@ -18,5 +20,6 @@ for (const [id, d] of Object.entries(byId)) {
 export async function loadZipModule(file: File): Promise<Mod> {
   const pkg = await loadPackage(await readZip(new Uint8Array(await file.arrayBuffer())));
   MODULES.set(pkg.mod.manifest.moduleId, pkg.mod);
+  ASSETS.set(pkg.mod.manifest.moduleId, new Map([...pkg.assets].map(([p, a]) => [p, URL.createObjectURL(new Blob([a.data as BlobPart], { type: a.mime }))])));
   return pkg.mod;
 }

@@ -1,0 +1,23 @@
+// Screen dispatcher. Re-renders everything on each change and restores focus to inputs marked data-keep.
+import type { UI } from '../main.ts';
+import { decks, gallery, home, library, setup } from './menus.ts';
+import { noteEl } from './kit.ts';
+import { table } from './table.ts';
+
+const SCREENS = { library, home, setup, decks, gallery, game: table };
+
+export function render(ui: UI, A: any) {
+  document.documentElement.dataset.theme = ui.theme;
+  const app = document.getElementById('app')!;
+  const active = document.activeElement as HTMLInputElement | null;
+  const keep = active?.dataset?.keep;
+  const caret = keep ? active!.selectionStart : null;
+  const screen = ui.screen !== 'library' && !ui.mod ? 'library' : ui.screen;
+  const view = SCREENS[screen](ui, A);
+  app.replaceChildren(view, ...(ui.note && screen !== 'game' ? [noteEl(ui.note, A.closeNote)] : []));
+  if (keep) {
+    const el = app.querySelector<HTMLInputElement>(`[data-keep="${keep}"]`);
+    el?.focus();
+    if (el && caret !== null) el.setSelectionRange(caret, caret);
+  }
+}

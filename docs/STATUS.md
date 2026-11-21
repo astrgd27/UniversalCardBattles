@@ -113,6 +113,19 @@ Not done yet: card art (the module `art` field is validated but not rendered), a
   - Spark Duel (about 55/45) and Tri-Lane (about 50/50) were already balanced; their random-play skew was an artifact of random play.
 - 57 tests; e2e passes.
 
+## Done: UI redesign (game-style launcher)
+- Screens:
+  - **Library**: themed tiles per module, plus loading `.zip` modules.
+  - **Game home**: Continue, Play, Deckbuilder and Card gallery. Campaign and Shop appear when the module defines them.
+  - **Setup**: player count, seat type (Human / AI / Random) and deck per seat, Fast AI.
+  - **Table**: HUD, opponents above, shared zones and stack in the centre, your field and hand below, side piles, a floating action dock, a drawer (log, card details, pile contents), and pause and game-over overlays.
+  - **Deckbuilder**: card pool with search and section filters, live legality from `deckErrors`, custom decks saved per module.
+  - **Gallery** with an enlarged view.
+- Manifest presentation fields: `tagline`, `theme {accent, accent2, glyph}`.
+- Cards get procedural art (hue from the card id, type glyph); a `card.art` asset is used for zip modules.
+- Dark by default with a light option. Esc pauses or cancels.
+- Code: `apps/web/src/main.ts` (controller) and `ui/{kit,render,menus,table}.ts`. e2e covers all screens.
+
 ## Next: M7, campaigns
 - Campaign runtime outside the match engine, per the spec entities and hooks in `SPEC.md`:
   - JSON `campaign/*.json` in packages

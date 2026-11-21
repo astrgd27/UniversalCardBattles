@@ -13,6 +13,8 @@ export interface Manifest {
   licensing?: string;
   contentHashes?: Record<string, string>; // path -> sha256 hex
   extends?: { moduleId: string; range: string }; // expansion of a base module
+  tagline?: string; // presentation only
+  theme?: { accent?: string; accent2?: string; glyph?: string }; // presentation only: menu colours and emblem
 }
 export interface ZoneDef {
   id: string;

@@ -23,7 +23,7 @@ A universal, fully automated TCG simulator. The headless deterministic TypeScrip
 - `packages/module-sdk/src`: ZIP/JSON/package loading (browser-safe), plus `node.ts` (disk) and `cli.ts`.
 - `packages/reference-games/<id>/`: `manifest.json`, `rules.json`, `cards.json`, `decks.json`.
 - `packages/test-harness`: the node module loader, match runner, sim CLI, and tests (`tests/*.test.ts`).
-- `apps/web`: the browser UI (`main.ts` controller, `render.ts` view-only rendering, `modules.ts`, `e2e.mjs`). `npm run dev` / `build` / `e2e`.
+- `apps/web`: the browser UI (`main.ts` controller, `ui/` screens rendered only from player views, `modules.ts`, `e2e.mjs`). `npm run dev` / `build` / `e2e`.
 - Imports go through `#engine`, `#ai`, `#sdk`, `#sdk/node` and `#harness` (package.json `imports`).
 
 ## Non-negotiables (from the spec)
