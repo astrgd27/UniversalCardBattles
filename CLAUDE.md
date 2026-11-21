@@ -1,6 +1,6 @@
 # Universal Card Battles
 
-A universal, fully automated TCG simulator. The headless deterministic TypeScript rules engine runs any card game defined as a data module. The browser UI comes later (M5).
+A universal, fully automated TCG simulator. The headless deterministic TypeScript rules engine runs any card game defined as a data module. The browser UI is in `apps/web`.
 
 - Spec: `docs/SPEC.md` (a condensed form of the design PDF; never re-read the PDF).
 - Rules DSL reference: `docs/DSL.md`.
@@ -13,7 +13,7 @@ A universal, fully automated TCG simulator. The headless deterministic TypeScrip
 3. **Quiet tooling.** Use `npm run -s check` (typecheck plus tests, dot reporter, failures only), `npm run -s sim <game> -- --games=200` (a one-line summary) `npm run -s validate <dir|zip>` (`file:line:col` errors) and `npm run -s events <game> <type...>` (event counts). After an intended behaviour change, run `npm run -s golden`. Pipe anything long through `tail`/`grep`.
 4. **Content is data.** Games, cards, decks and campaigns are compact JSON using the S-expression DSL, never TS code. Adding a game must not touch `packages/engine`.
 5. **Write whole files in one pass.** Plan the design in your head first, then write. Avoid edit-and-rerun churn.
-6. **No subagents, and no screenshots before M5.**
+6. **No subagents.** Verify the UI with `npm run -s e2e` (Playwright, text output). Take at most one 1x screenshot, and only when the layout itself changed.
 7. **Small commits per vertical slice**, on the session branch.
 
 ## Layout
@@ -23,6 +23,7 @@ A universal, fully automated TCG simulator. The headless deterministic TypeScrip
 - `packages/module-sdk/src`: ZIP/JSON/package loading (browser-safe), plus `node.ts` (disk) and `cli.ts`.
 - `packages/reference-games/<id>/`: `manifest.json`, `rules.json`, `cards.json`, `decks.json`.
 - `packages/test-harness`: the node module loader, match runner, sim CLI, and tests (`tests/*.test.ts`).
+- `apps/web`: the browser UI (`main.ts` controller, `render.ts` view-only rendering, `modules.ts`, `e2e.mjs`). `npm run dev` / `build` / `e2e`.
 - Imports go through `#engine`, `#ai`, `#sdk`, `#sdk/node` and `#harness` (package.json `imports`).
 
 ## Non-negotiables (from the spec)

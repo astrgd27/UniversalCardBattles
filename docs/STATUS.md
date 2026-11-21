@@ -74,10 +74,31 @@ Balance under random play:
 - Tidewardens: Kelp Bastion wins about 70%.
 - Ember Council is about one third per seat.
 
-## Next: M5, browser UI
-- `apps/web` (Vite + TS, no framework or a light one), driven only by `observe` / `listActions` / `commitAction` / `submitDecision`.
-- Board laid out from zone metadata, card renderer, inspector, action log from `eventsFor`, legal-target highlighting, decision prompts (including secret commits and trigger order), explanation of disallowed actions, touch and iPad layout, dark/light.
-- Module picker over the six reference games. Hot-seat and vs-random-AI.
+## Done: M5, browser UI
+- `apps/web`: Vite with vanilla TS (no framework).
+  - `modules.ts`: the bundled reference games, plus `.zip` modules loaded at runtime through the SDK.
+  - `main.ts`: the controller, with seats (human/AI), the AI loop, selection, save/load (localStorage) and the hot-seat cover.
+  - `render.ts`: renders only from `observe` / `eventsFor` / `listActions`, so it cannot leak hidden information.
+- Features:
+  - player panels built from zone metadata, with shared zones and a stack panel
+  - cards showing cost, stats, keywords and non-default vars; face-down backs; an inspector
+  - legal sources (▶), targets (◎) and picks (✓); a multi-action menu
+  - target and decision prompts, including secret commits, trigger order and string options
+  - "why not?" explanation trees when an unusable card is clicked
+  - a readable log, game-over banner, Fast AI and a dark/light/auto theme
+  - a responsive layout (single column under 960px, no horizontal scroll at 390px) with 40px touch targets
+- `npm run -s e2e` (Playwright smoke test) checks:
+  - all 6 games play AI-vs-AI through the UI
+  - a human turn by clicks, the explanation note, save/load and the hot-seat cover
+  - phone width
+- Commands: `npm run dev`, `npm run -s build`.
+
+Not done yet: card art (the module `art` field is validated but not rendered), animations from the event log, and undo.
+
+## Next: M6, AI
+- Heuristic agent: module-provided weights in `ai/*.json`, for example `value(card)`, `threat` and `target preference` expressions, with a generic fallback (maximise own resources, minimise the opponent's).
+- Limited lookahead or rollout over `listActions`, using determinized views. Opponents' hidden cards are sampled from what is publicly unknown, never read from state.
+- Time budgets, scripted policy hooks for campaigns, and headless tournaments (`npm run -s tourney`) to rebalance the reference decks.
 
 ## Planned reference games (each one exercises mechanics the others lack)
 | Game | Milestone | Unique stressors |
@@ -90,7 +111,6 @@ Balance under random play:
 | Ember Council | M4 ✓ | 3–4 players; voting/politics; directed elimination; shared market row (draft); alternating actions with initiative; dice as objects with faces; quest-score victory |
 
 ## Later
-- M5: browser UI.
 - M6: AI.
 - M7: campaigns.
 - M8: hardening.

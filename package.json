@@ -17,10 +17,15 @@
     "validate": "node packages/module-sdk/src/cli.ts validate",
     "pack": "node packages/module-sdk/src/cli.ts pack",
     "events": "node packages/test-harness/src/events.ts",
-    "golden": "node packages/test-harness/src/golden.ts"
+    "golden": "node packages/test-harness/src/golden.ts",
+    "dev": "vite --config apps/web/vite.config.ts",
+    "build": "vite build --config apps/web/vite.config.ts",
+    "preview": "vite preview --config apps/web/vite.config.ts",
+    "e2e": "npm run -s build -- --logLevel warn && node apps/web/e2e.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
-    "typescript": "5.9"
+    "typescript": "5.9",
+    "vite": "^6.4.6"
   }
 }

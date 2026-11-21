@@ -6,6 +6,8 @@ A universal, fully automated trading-card-game simulator: a deterministic TypeSc
 npm install
 npm run check            # typecheck + tests
 npm run sim spark-duel   # 200 random-AI games
+npm run dev              # play in the browser (hot-seat or vs AI)
+npm run e2e              # browser smoke test
 ```
 
 See `docs/STATUS.md` for progress, `docs/DSL.md` for the module format and `docs/SPEC.md` for the design.
