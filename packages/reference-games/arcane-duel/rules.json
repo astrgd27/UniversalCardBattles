@@ -22,7 +22,7 @@
       ["set", "$active", "mana", ["get", "$active", "maxMana"]],
       ["each", ["cards", "$active", "board"], "$u", [["set", "$u", "ready", 1]]],
       ["if", ["!=", "$turn", 1], [["draw", "$active", 1]]],
-      ["if", [">=", ["get", "$active", "charge"], 12], [["win", "$active"]]]
+      ["if", [">=", ["get", "$active", "charge"], 10], [["win", "$active"]]]
     ]},
     {"id": "main"},
     {"id": "end", "auto": true, "do": [["each", ["cards", "*", "board"], "$u", [["set", "$u", "dmg", 0]]]]}

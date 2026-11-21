@@ -1,0 +1,5 @@
+{"eval": ["+",
+  ["-", ["get", "$me", "life"], ["get", "$opp", "life"]],
+  ["*", 0.7, ["-", ["sum", ["cards", "$me", "board"], ["+", ["get", "$it", "atk"], ["get", "$it", "def"]]], ["sum", ["cards", "$opp", "board"], ["+", ["get", "$it", "atk"], ["get", "$it", "def"]]]]],
+  ["count", ["cards", "$me", "traps"]],
+  ["*", 0.5, ["-", ["count", ["cards", "$me", "hand"]], ["count", ["cards", "$opp", "hand"]]]]]}

@@ -128,13 +128,24 @@ Effects run in effect lists `[[op...], [op...]]`.
 - Limits: 100,000 evaluation steps per outermost function call and a call depth of 64. Breaking either raises `ScriptError`, and the command is rejected with the match unchanged.
 - Arity and names are checked statically.
 
+## AI hints (`ai/ai.json`)
+- `{eval?, bias?, samples?}`.
+- `eval` is an expression valued from `$me`'s point of view (`$opp` = next player). Higher is better. Wins and losses are scored automatically.
+- `bias {actionName: number}` is added to that action's score. `samples` (1–16) sets the possible worlds per decision (default 2).
+- Without `eval`, the agent counts controlled objects in ability zones plus 0.3 per card in hand.
+- **Possible worlds:** `determinize(match, p, seed)` re-samples every identity p cannot see:
+  - p's own hidden cards and shared pools are shuffled among themselves (p knows that multiset);
+  - other players' hidden cards are drawn from the public card pool;
+  - the RNG is reseeded, and other players' secret picks and decklists are removed.
+  Agents only ever get views, legal actions and these worlds.
+
 ## Packages (module SDK)
 - **Layout:**
   - Required: `manifest.json`, plus `rules.json` (unless the package is an expansion).
   - Cards: `cards.json` and/or `cards/*.json` (arrays).
   - Decks: `decks.json` and/or `decks/*.json` (objects).
   - Optional: `scripts/*.json`, `assets/*` (png, jpg, webp, gif, mp3, ogg, wav, woff2, txt, json; 4 MB each).
-  - Reserved for later: `ai/`, `campaign/`, `tests/`. `LICENSE` and `README` are allowed.
+  - `ai/ai.json` (AI hints, see above). Reserved for later: other `ai/` files, `campaign/`, `tests/`. `LICENSE` and `README` are allowed.
   - Anything else is rejected.
 - **Manifest:**
   - Required: `moduleId` (2–64 of `[a-z0-9-]`), `displayName`, `semanticVersion`, `engineApiRange` (must include the engine's version, currently 0.3.0).

@@ -95,10 +95,34 @@ Balance under random play:
 
 Not done yet: card art (the module `art` field is validated but not rendered), animations from the event log, and undo.
 
-## Next: M6, AI
-- Heuristic agent: module-provided weights in `ai/*.json`, for example `value(card)`, `threat` and `target preference` expressions, with a generic fallback (maximise own resources, minimise the opponent's).
-- Limited lookahead or rollout over `listActions`, using determinized views. Opponents' hidden cards are sampled from what is publicly unknown, never read from state.
-- Time budgets, scripted policy hooks for campaigns, and headless tournaments (`npm run -s tourney`) to rebalance the reference decks.
+## Done: M6, AI
+- `determinize` (engine): possible worlds that depend only on the player's information. A test proves that changing hidden identities, own deck order or the RNG leaves them unchanged.
+- `scoreFor`: terminal results, then the module's `ai/ai.json` `eval`, else a generic material count.
+- Agents (`packages/ai`):
+  - `heuristicAgent`: one-ply search over candidate commands and targets, averaged across possible worlds. Stacks are resolved assuming no responses, and hidden choices are guessed. The budget is a simulation count, so it is deterministic.
+  - `randomAgent`
+  - `scriptedAgent`: the script's move if legal, else a fallback, logged as a divergence.
+  - `makeAgent`
+- The UI has seats for Human, AI (heuristic) and Random AI. Harness and UI pass `AgentInfo` (`player`, `mod`, `sample`).
+- `npm run -s tourney <game> -- --agents=heuristic,random --games=20 --decks=a,b` (seats rotate).
+- Heuristic vs random: Spark 10/10, Arcane 9/10, Tri-Lane 18/20, Relic 8/10, Tidewardens 9/10, Council 6/9 with 3 players (par is a third).
+- Rebalanced with heuristic mirrors (40 games per pairing, about ±8%):
+  - Arcane: Arc Bolt deals 3, charge win at 10. Now 57/43.
+  - Relic: Warhound attack 5, Colossus attack 5, Spark Lance deals 2. Blaze still wins about 62%.
+  - Tidewardens: Kelp Guard 1/3, Coral Wall 0/2, no tide on turn 1. Now about 60/40, with no seat bias.
+  - Spark Duel (about 55/45) and Tri-Lane (about 50/50) were already balanced; their random-play skew was an artifact of random play.
+- 57 tests; e2e passes.
+
+## Next: M7, campaigns
+- Campaign runtime outside the match engine, per the spec entities and hooks in `SPEC.md`:
+  - JSON `campaign/*.json` in packages
+  - a profile with collection, currencies and flags (IndexedDB in the browser, JSON in node)
+  - map nodes and chapters, encounters (opponent deck, AI policy via `scriptedAgent`, scenario setup and rule overrides, triggers like the Clockwork Champion)
+  - dialogue, shop, boosters (seeded weighted slots, guarantees)
+  - an idempotent reward ledger (encounterId + profileId + seq)
+  - save/reload mid-dialogue and mid-decision
+- Scenario modifiers enter only through validated match config (e.g. `MatchOpts.scenario` with starting objects and a deck order override).
+- A complete small example campaign over one reference game.
 
 ## Planned reference games (each one exercises mechanics the others lack)
 | Game | Milestone | Unique stressors |
@@ -111,6 +135,5 @@ Not done yet: card art (the module `art` field is validated but not rendered), a
 | Ember Council | M4 ✓ | 3–4 players; voting/politics; directed elimination; shared market row (draft); alternating actions with initiative; dice as objects with faces; quest-score victory |
 
 ## Later
-- M6: AI.
 - M7: campaigns.
 - M8: hardening.

@@ -1,12 +1,12 @@
 // App controller: owns the match, seats (human/AI), selection state and the AI loop. Rendering lives in render.ts.
 import type { ActionCmd, Match, Mod, Reason, Template } from '#engine';
-import { IllegalAction, commitAction, createMatch, listActions, observe, proposeAction, restore, serialize, submitDecision } from '#engine';
-import { randomAgent, type Agent } from '#ai';
+import { IllegalAction, commitAction, createMatch, determinize, listActions, observe, proposeAction, restore, serialize, submitDecision } from '#engine';
+import { makeAgent, type Agent, type AgentInfo } from '#ai';
 import { PackageError } from '#sdk';
 import { MODULES, loadZipModule } from './modules.ts';
 import { render } from './render.ts';
 
-export type Seat = 'human' | 'ai';
+export type Seat = 'human' | 'heuristic' | 'random';
 /** Choosing targets for an action template, or answering a pending decision. */
 export interface Selection { tpl?: Template; slot: number; picks: Record<string, string[]> }
 export interface UI {
@@ -29,7 +29,7 @@ const SAVE_KEY = 'ucb-save';
 const deckNames = (m: Mod) => Object.keys(m.decks ?? {});
 function seatsFor(m: Mod, n = Math.max(2, m.rules.players.min)): { seats: Seat[]; decks: string[] } {
   const d = deckNames(m);
-  return { seats: Array.from({ length: n }, (_, i) => (i === 0 ? 'human' : 'ai')), decks: Array.from({ length: n }, (_, i) => d[i % d.length]) };
+  return { seats: Array.from({ length: n }, (_, i) => (i === 0 ? 'human' : 'heuristic')), decks: Array.from({ length: n }, (_, i) => d[i % d.length]) };
 }
 
 const first = MODULES.values().next().value as Mod;
@@ -53,7 +53,7 @@ function advance() {
   if (!m || m.s.result) return redraw();
   const p = actor(m);
   if (!p) return redraw();
-  if (seatOf(p) === 'ai') {
+  if (seatOf(p) !== 'human') {
     redraw();
     timer = setTimeout(aiStep, ui.fast ? 0 : 450);
     return;
@@ -71,12 +71,13 @@ function aiStep() {
   if (!m || m.s.result) return;
   const p = actor(m)!;
   const agent = ui.agents[+p.slice(1)];
+  const info: AgentInfo = { player: p, mod: m.m, sample: (seed) => determinize(m, p, seed) };
   try {
-    if (m.s.pending) ui.match = submitDecision(m, p, m.s.pending.id, agent.decide(observe(m, p)));
+    if (m.s.pending) ui.match = submitDecision(m, p, m.s.pending.id, agent.decide(observe(m, p), info));
     else {
       let next: Match | null = null;
       for (let i = 0; !next && i < 20; i++) {
-        try { next = commitAction(m, p, agent.act(observe(m, p), listActions(m, p))); } catch (e) { if (!(e instanceof IllegalAction)) throw e; }
+        try { next = commitAction(m, p, agent.act(observe(m, p), listActions(m, p), info)); } catch (e) { if (!(e instanceof IllegalAction)) throw e; }
       }
       ui.match = next ?? commitAction(m, p, { action: 'pass' });
     }
@@ -115,13 +116,13 @@ export const actions = {
       ui.note = { title: 'Cannot start', text: String((e as Error).message) };
       return redraw();
     }
-    ui.agents = ui.seats.map((_, i) => randomAgent(seed + i));
+    ui.agents = ui.seats.map((s, i) => makeAgent(s === 'random' ? 'random' : 'heuristic', seed + i));
     ui.viewer = `p${Math.max(0, ui.seats.indexOf('human'))}`;
     Object.assign(ui, { cover: null, note: null, inspect: null });
     advance();
   },
   reveal() { ui.cover = null; redraw(); },
-  view(p: string) { if (ui.seats.every((s) => s === 'ai')) { ui.viewer = p; redraw(); } },
+  view(p: string) { if (ui.seats.every((s) => s !== 'human')) { ui.viewer = p; redraw(); } },
   /** Click on a card, player or stack item. */
   pick(id: string) {
     const m = ui.match;
@@ -179,7 +180,7 @@ export const actions = {
       ui.seats = d.seats;
       ui.decks = d.decks;
       ui.match = restore(mod, d.state);
-      ui.agents = ui.seats.map((_, i) => randomAgent(ui.match!.s.cmds.length * 31 + i));
+      ui.agents = ui.seats.map((s, i) => makeAgent(s === 'random' ? 'random' : 'heuristic', ui.match!.s.cmds.length * 31 + i));
       ui.note = null;
       ui.viewer = `p${Math.max(0, ui.seats.indexOf('human'))}`;
     } catch (e) { ui.note = { title: 'Could not load', text: String((e as Error).message) }; }

@@ -139,7 +139,9 @@ export async function loadPackage(files: Map<string, Uint8Array>, opts: LoadOpti
     }
   }
   done();
-  const def: ModuleDef = { manifest: mf as ModuleDef['manifest'], rules, cards, decks };
+  const ai = files.has('ai/ai.json') ? tryJson('ai/ai.json') : ext ? base!.ai : undefined;
+  done();
+  const def: ModuleDef = { manifest: mf as ModuleDef['manifest'], rules, cards, decks, ...(ai !== undefined ? { ai } : {}) };
 
   // ---- validation, mapped to file:line:col ----
   const locate = (i: Issue): string => {
@@ -157,7 +159,8 @@ export async function loadPackage(files: Map<string, Uint8Array>, opts: LoadOpti
       const o = origins.scripts[`${m[1]}/${unesc(m[2])}`];
       file = o.file;
       ptr = o.ptr + m[3];
-    } else if (i.where !== 'rules') file = `${i.where}`;
+    } else if (i.where === 'ai') file = 'ai/ai.json';
+    else if (i.where !== 'rules') file = `${i.where}`;
     const pz = parsed.get(file);
     if (!pz) return `${file}${ptr}: ${i.msg}`;
     let p = ptr;

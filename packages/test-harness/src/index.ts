@@ -3,7 +3,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Match, MatchOpts, Mod, ModuleDef } from '#engine';
-import { IllegalAction, commitAction, compileModule, deckSections, listActions, observe, submitDecision } from '#engine';
+import { IllegalAction, commitAction, compileModule, deckSections, determinize, listActions, observe, submitDecision } from '#engine';
+import type { AgentInfo } from '#ai';
 import type { Agent } from '#ai';
 
 export const REF_DIR = join(dirname(fileURLToPath(import.meta.url)), '../../reference-games');
@@ -13,6 +14,7 @@ export function readModuleDir(dir: string): ModuleDef {
   return {
     manifest: j('manifest.json'), rules: j('rules.json'), cards: j('cards.json'),
     decks: existsSync(join(dir, 'decks.json')) ? j('decks.json') : {},
+    ...(existsSync(join(dir, 'ai/ai.json')) ? { ai: j('ai/ai.json') } : {}),
   };
 }
 export const loadRef = (id: string): Mod => compileModule(readModuleDir(join(REF_DIR, id)));
@@ -37,9 +39,11 @@ export function playMatch(match: Match, agents: Agent[], onStep?: (m: Match) => 
     if (steps > maxSteps) throw new Error(`Step limit ${maxSteps} reached`);
     onStep?.(match);
     const s = match.s;
+    const cur = match;
+    const info = (p: string): AgentInfo => ({ player: p, mod: cur.m, sample: (seed) => determinize(cur, p, seed) });
     if (s.pending) {
       const p = s.pending.player;
-      match = submitDecision(match, p, s.pending.id, agents[+p.slice(1)].decide(observe(match, p)));
+      match = submitDecision(match, p, s.pending.id, agents[+p.slice(1)].decide(observe(match, p), info(p)));
       continue;
     }
     const p = s.priority;
@@ -48,7 +52,7 @@ export function playMatch(match: Match, agents: Agent[], onStep?: (m: Match) => 
     let next: Match | null = null;
     for (let tries = 0; !next && tries < 20; tries++) {
       try {
-        next = commitAction(match, p, agent.act(observe(match, p), listActions(match, p)));
+        next = commitAction(match, p, agent.act(observe(match, p), listActions(match, p), info(p)));
       } catch (e) {
         if (!(e instanceof IllegalAction) || e.reason.code !== 'check') throw e;
       }

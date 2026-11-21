@@ -40,7 +40,7 @@ function topbar(ui: UI, A: any) {
     select(ui.mod.manifest.moduleId, [...MODULES.values()].map((m) => [m.manifest.moduleId, m.manifest.displayName]), A.setModule, 'Game'),
     counts.length > 1 && select(String(ui.seats.length), counts.map((n) => [String(n), `${n} players`]), (v) => A.setPlayers(+v), 'Players'),
     ui.seats.map((s, i) => h('span', { class: 'seat' }, `P${i + 1}`,
-      select(s, [['human', 'Human'], ['ai', 'AI']], (v) => A.setSeat(i, v), `Player ${i + 1} seat`),
+      select(s, [['human', 'Human'], ['heuristic', 'AI'], ['random', 'Random AI']], (v) => A.setSeat(i, v), `Player ${i + 1} seat`),
       decks.length > 1 && select(ui.decks[i], decks.map((d) => [d, d]), (v) => A.setDeck(i, v), `Player ${i + 1} deck`))),
     h('button', { class: 'primary', onclick: A.newGame }, 'New game'),
     h('button', { onclick: A.save, disabled: !ui.match }, 'Save'),

@@ -16,6 +16,7 @@ export {
 export { observe, eventsFor, redact } from './view.ts';
 export type { View, ObjView, StackView } from './view.ts';
 export { invalidate } from './layers.ts';
+export { determinize, scoreFor } from './determinize.ts';
 export { timingOf } from './match.ts';
 export { seedRng, rand, randInt, sample, shuffle, hash } from './rng.ts';
 

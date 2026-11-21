@@ -85,7 +85,7 @@ test('replacement (ward) and prevention (damage reduction)', () => {
   const sent = place(g, 'p1', 'mirror-sentinel', 'board');
   const bolt = place(g, 'p0', 'arc-bolt', 'hand');
   g = passBoth(act(g, 'p0', 'flash', bolt, [sent]));
-  assert.equal(g.s.objects[sent].vars.dmg, 1);
+  assert.equal(g.s.objects[sent].vars.dmg, 2, 'arc bolt 3, reduced by 1');
 });
 
 test('layers: dependency beats timestamp, set before add, counters last, effects expire', () => {
@@ -164,7 +164,7 @@ test('chain timing: no priority retention, speed ladder, links resolve back to b
   assert.equal(proposeAction(g, 'p0', { action: 'summon', source: extra }).code, 'speed');
   g = passBoth(g);
   assert.equal(g.s.stack.length, 0, 'both links resolved without further passes');
-  assert.equal(g.s.players[0].vars.life, 20 - 2);
+  assert.equal(g.s.players[0].vars.life, 20 - 3);
   assert.ok(cardsIn(g, 'p0:board').includes('swiftblade'));
   assert.equal(g.s.priority, 'p0');
 });

@@ -13,7 +13,7 @@ export const CAPABILITIES = [
 ];
 const REPLACEABLE = ['draw', 'move', 'destroy', 'damage', 'lose'];
 
-export interface Issue { where: 'manifest' | 'rules' | 'cards' | 'decks'; ptr: string; msg: string }
+export interface Issue { where: 'manifest' | 'rules' | 'cards' | 'decks' | 'ai'; ptr: string; msg: string }
 export const issueText = (i: Issue) => `${i.where}${i.ptr}: ${i.msg}`;
 type Err = (ptr: string, msg: string) => void;
 const isRec = (x: unknown): x is Record<string, any> => !!x && typeof x === 'object' && !Array.isArray(x);
@@ -261,6 +261,17 @@ export function validateIssues(def: ModuleDef): Issue[] {
       if (Array.isArray(v) && Array.isArray(v[0]) && !['targets', 'abilities', 'statics', 'replacements'].includes(k)) effects(v, `/${esc(k)}`, err);
     }
   });
+
+  // ---- AI hints ----
+  if (def.ai !== undefined) {
+    const eA = at('ai');
+    if (!isRec(def.ai)) eA('', 'must be an object');
+    else {
+      expr(def.ai.eval, '/eval', eA);
+      if (def.ai.bias !== undefined && (!isRec(def.ai.bias) || Object.values(def.ai.bias).some((v) => typeof v !== 'number'))) eA('/bias', 'must be an object of numbers');
+      if (def.ai.samples !== undefined && !(Number.isInteger(def.ai.samples) && def.ai.samples >= 1 && def.ai.samples <= 16)) eA('/samples', 'must be an integer 1-16');
+    }
+  }
 
   // ---- decks, deck formats, shared decks ----
   const fz = isRec(F) ? F.zones : undefined;

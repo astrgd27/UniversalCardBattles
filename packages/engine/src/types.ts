@@ -86,7 +86,9 @@ export interface Rules {
   functions?: Record<string, FunctionDef>; // pure expression scripts: ["call", name, ...args]
   procedures?: Record<string, ProcedureDef>; // effect scripts: ["call", name, ...args]
 }
-export interface ModuleDef { manifest: Manifest; rules: Rules; cards: CardDef[]; decks?: Record<string, Deck> }
+/** AI hints (ai/ai.json): eval = position value for $me; bias = per-action score bonus; samples = possible worlds per decision. */
+export interface AiDef { eval?: Expr; bias?: Record<string, number>; samples?: number }
+export interface ModuleDef { manifest: Manifest; rules: Rules; cards: CardDef[]; decks?: Record<string, Deck>; ai?: AiDef }
 export interface Mod extends ModuleDef { card: Map<string, CardDef>; zone: Map<string, ZoneDef>; hash: string }
 
 export interface Obj {

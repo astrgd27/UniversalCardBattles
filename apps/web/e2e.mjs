@@ -21,7 +21,7 @@ try {
   for (const id of ids) {
     await page.selectOption('select[aria-label="Game"]', id);
     const n = await page.$$eval('select[aria-label$="seat"]', (s) => s.length);
-    for (let i = 1; i <= n; i++) await seat(i, 'ai');
+    for (let i = 1; i <= n; i++) await seat(i, 'random');
     await page.click('text=New game');
     await page.waitForFunction(() => window.__ucb.match?.s.result, null, { timeout: 120000 });
     const r = await page.evaluate(() => ({ r: window.__ucb.match.s.result, t: window.__ucb.match.s.turn.n }));

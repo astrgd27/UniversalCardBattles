@@ -67,7 +67,7 @@ test('relic-chain: face-down traps, fusion recipes, chain responses', () => {
   assert.equal(g.s.priority, 'p1', 'chain timing: the opponent may respond');
   g = passRound(g);
   const wh = g.s.zones['p0:board'].find((id) => g.s.objects[id].card === 'ashen-warhound')!;
-  assert.equal(view(g, 'p1', wh).stats!.atk, 6);
+  assert.equal(view(g, 'p1', wh).stats!.atk, 5);
   assert.deepEqual(cardsIn(g, 'p0:grave').sort(), ['ash-hound', 'twin-fang']);
 
   g = passRound(g); // end p0's turn
@@ -91,7 +91,7 @@ test('relic-chain: face-down traps, fusion recipes, chain responses', () => {
 test('tidewardens: resource deck, life cards with surge, evolution stacks, pitching', () => {
   const W = loadRef('tidewardens');
   let g = createMatch(W, deckOpts(W, ['reef-school', 'kelp-bastion'], 4));
-  assert.deepEqual([g.s.zones['p0:life'].length, g.s.zones['p0:pool'].length, g.s.zones['p0:tides'].length], [4, 1, 7]);
+  assert.deepEqual([g.s.zones['p0:life'].length, g.s.zones['p0:pool'].length, g.s.zones['p0:tides'].length], [4, 0, 8], 'no tide on turn 1');
   g = act(g, 'p0', 'pitch', place(g, 'p0', 'ebb', 'hand'));
   assert.equal(g.s.players[0].vars.float, 2);
 

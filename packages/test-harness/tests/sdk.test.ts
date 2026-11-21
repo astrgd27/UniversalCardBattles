@@ -33,10 +33,10 @@ test('reference modules round-trip: folder -> pack -> zip -> load', async () => 
     const zip = await packFiles(await readDirFiles(`${REF_DIR}/${id}`));
     const pkg = await loadPackage(await readZip(zip));
     const src = readModuleDir(`${REF_DIR}/${id}`);
-    assert.deepEqual([pkg.def.rules, pkg.def.cards, pkg.def.decks], [src.rules, src.cards, src.decks]);
+    assert.deepEqual([pkg.def.rules, pkg.def.cards, pkg.def.decks, pkg.def.ai], [src.rules, src.cards, src.decks, src.ai]);
     assert.equal(pkg.mod.hash, loadRef(id).hash);
     assert.deepEqual(pkg.warnings, []);
-    assert.equal(Object.keys(pkg.def.manifest.contentHashes!).length, 3);
+    assert.equal(Object.keys(pkg.def.manifest.contentHashes!).length, 4);
   }
   assert.match((await loadPackage(await spark())).warnings.join(), /no contentHashes/);
 });

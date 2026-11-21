@@ -36,7 +36,7 @@
     {"id": "start", "auto": true, "do": [
       ["each", ["cards", "$active", "pool"], "$c", [["set", "$c", "tapped", 0]]],
       ["each", ["cards", "$active", "board"], "$u", [["set", "$u", "ready", 1]]],
-      ["if", [">", ["count", ["cards", "$active", "tides"]], 0], [["move", ["top", "$active", "tides", 1], "pool"]]],
+      ["if", ["and", ["!=", "$turn", 1], [">", ["count", ["cards", "$active", "tides"]], 0]], [["move", ["top", "$active", "tides", 1], "pool"]]],
       ["if", ["!=", "$turn", 1], [["draw", "$active", 1]]]]},
     {"id": "main"},
     {"id": "end", "auto": true, "do": [
