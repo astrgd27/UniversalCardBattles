@@ -173,6 +173,17 @@ Security notes:
 - **Vault Breach** (a test game) exercises all of these. 77 tests.
 - **Test games are disposable.** The reference games exist to prove mechanics, not to be balanced or kept, so don't spend effort tuning them.
 
+## Done: polish (art and animation)
+- **Card art:** procedural SVG illustrations, original and deterministic per card id (landscape, rings or shards, plus a type glyph).
+- **Custom art:** players can upload their own image per card in the gallery. It is stored in IndexedDB, only in that browser (PNG/JPEG/WebP/GIF, 3 MB max), with a reset option.
+- **Art priority:** custom art, then package asset, then procedural.
+- **Animations** come from the viewer's redacted event log since the last render:
+  - cards entering, hit shakes with floating damage, flip reveals
+  - pulsing player stats, pile bumps, a turn banner
+  - `prefers-reduced-motion` turns them off
+- **Grid UI:** modules with `rules.grid` render a board. Objects sit in their cells, target cells glow and are clickable, and the top bar has controls for external inputs.
+- e2e covers grid deploys, entry animations, the external toggle and custom art upload and reset. The campaign e2e no longer assumes a lost fight.
+
 ## Possible next steps
 - Campaigns for the other reference games.
 - IndexedDB storage (localStorage today) and cloud sync of backups.

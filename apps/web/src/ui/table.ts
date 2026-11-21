@@ -2,12 +2,44 @@
 import type { GEvent, Mod, ObjView, Template, View, ZoneDef } from '#engine';
 import { eventsFor, listActions, observe } from '#engine';
 import { actor, current, pendingDialogue, type UI } from '../main.ts';
-import { cardBack, cardFace, cls, emblem, h, noteEl, pname, segmented, themeStyle, title } from './kit.ts';
+import { cardBack, cardFace, cls, emblem, h, noteEl, pname, segmented, select, themeStyle, title } from './kit.ts';
 
+interface Fx {
+  entered: Set<string>; // objects that just arrived in a visible zone
+  hit: Map<string, number>; // object or player id -> damage just taken
+  flipped: Set<string>;
+  pulse: Map<string, Set<string>>; // player -> vars that just changed
+  bump: Set<string>; // zone keys whose size just grew
+  banner: string | null; // a new turn began
+}
 interface C {
   ui: UI; A: any; v: View; mod: Mod;
   sources: Set<string>; targets: Set<string>; picked: Set<string>;
   label: (x: string) => string;
+  fx: Fx;
+}
+
+/** Animations come only from the viewer's redacted event log since the previous render. */
+function effectsSince(ui: UI, v: View): Fx {
+  const m = ui.match!;
+  const fx: Fx = { entered: new Set(), hit: new Map(), flipped: new Set(), pulse: new Map(), bump: new Set(), banner: null };
+  const from = Math.min(ui.fxFrom, m.s.events.length);
+  const first = m.m.rules.phases[0].id;
+  for (const e of eventsFor(m, ui.viewer, from)) {
+    if ((e.type === 'moved' || e.type === 'created') && e.newObj) fx.entered.add(e.newObj);
+    else if (e.type === 'damage' && e.target) fx.hit.set(e.target, (fx.hit.get(e.target) ?? 0) + e.amount);
+    else if (e.type === 'flipped') fx.flipped.add(e.obj);
+    else if (e.type === 'changed' && /^p\d+$/.test(e.ref)) { if (!fx.pulse.has(e.ref)) fx.pulse.set(e.ref, new Set()); fx.pulse.get(e.ref)!.add(e.name); }
+    else if (e.type === 'phase' && e.phase === first && from > 0) fx.banner = e.active === ui.viewer && ui.seats[+ui.viewer.slice(1)] === 'human' ? 'Your turn' : `${pname(e.active)}'s turn`;
+  }
+  const counts: Record<string, number> = {};
+  for (const [k, z] of Object.entries(v.zones)) {
+    counts[k] = z.count;
+    if (ui.counts[k] !== undefined && z.count > ui.counts[k]) fx.bump.add(k);
+  }
+  ui.counts = counts;
+  ui.fxFrom = m.s.events.length;
+  return fx;
 }
 
 export function table(ui: UI, A: any) {
@@ -26,17 +58,21 @@ export function table(ui: UI, A: any) {
     targets: new Set(step?.options ?? []),
     picked: new Set(step ? ui.sel!.picks[step.key] ?? [] : []),
     label: (x) => (/^p\d+$/.test(x) ? pname(x) : names.get(x) ?? x),
+    fx: effectsSince(ui, v),
   };
-  const shared = mod.rules.zones.filter((z) => z.shared);
+  const onGrid = new Set(mod.rules.grid?.zones ?? []);
+  const shared = mod.rules.zones.filter((z) => z.shared && !onGrid.has(z.id));
   return h('div', { class: 'screen table', style: themeStyle(mod) },
     hud(c, mine),
     h('div', { class: 'felt' },
       h('div', { class: 'opponents' }, v.players.filter((p) => p.id !== ui.viewer).map((p) => seat(c, p.id, false))),
+      mod.rules.grid && gridBoard(c),
       (shared.length > 0 || v.stack.length > 0) && h('div', { class: 'center' },
         shared.map((z) => zoneBlock(c, `shared:${z.id}`, z)),
         v.stack.length > 0 && stack(c)),
       seat(c, ui.viewer, true)),
     dock(c, mine, tpls, step),
+    c.fx.banner && h('div', { class: 'turn-banner', 'aria-hidden': 'true' }, c.fx.banner),
     ui.drawer && drawer(c),
     ui.paused && pause(c),
     !v.result && pendingDialogue() && banner(c),
@@ -55,23 +91,58 @@ function hud(c: C, mine: boolean) {
     h('span', { class: 'pill' }, `Turn ${v.turn} · ${title(v.phase)}`),
     h('span', { class: cls('hud-status', mine && 'go'), role: 'status' },
       v.result ? 'Game over' : mine ? (v.pending ? 'Your decision' : 'Your move') : `${who ? pname(who) : '…'} is thinking…`),
+    Object.entries(mod.rules.external ?? {}).map(([name, dom]) => h('label', { class: 'ext', title: 'External input (set by the host, logged in the replay)' }, `⚙ ${name} `,
+      select(String(v.ext[name]), dom.map((x) => [String(x), String(x)]), (val) => A.setExternal(name, val), `External input ${name}`))),
     h('span', { class: 'hud-right' },
       h('button', { class: cls('icon', ui.drawer === 'log' && 'on'), onclick: () => A.drawer('log'), 'aria-label': 'Log' }, '☷ Log'),
       h('button', { class: cls('icon', ui.drawer === 'card' && 'on'), onclick: () => A.drawer('card'), 'aria-label': 'Card details' }, '🔍')));
 }
 
 function obj(c: C, o: ObjView, size: 'sm' | 'md') {
-  const state = cls(c.sources.has(o.id) && 'legal', c.targets.has(o.id) && 'target', c.picked.has(o.id) && 'picked', c.ui.inspect === o.id && 'inspected');
+  const hit = c.fx.hit.get(o.id);
+  const state = cls(c.sources.has(o.id) && 'legal', c.targets.has(o.id) && 'target', c.picked.has(o.id) && 'picked', c.ui.inspect === o.id && 'inspected',
+    c.fx.entered.has(o.id) && 'fx-enter', !!hit && 'fx-hit', c.fx.flipped.has(o.id) && 'fx-flip', o.controller === c.ui.viewer ? 'own' : 'foe');
   const onclick = () => c.A.pick(o.id);
-  if (!o.card) return cardBack(c.mod, { size, state, onclick });
-  return cardFace(c.mod, o.card, { size, state, onclick, stats: o.stats, vars: o.vars, baseVars: c.mod.rules.objectVars, keywords: o.keywords, faceDown: o.faceDown });
+  const el = o.card
+    ? cardFace(c.mod, o.card, { size, state, onclick, stats: o.stats, vars: o.vars, baseVars: c.mod.rules.objectVars, keywords: o.keywords, faceDown: o.faceDown })
+    : cardBack(c.mod, { size, state, onclick });
+  if (hit) el.append(h('span', { class: 'dmg-float', 'aria-hidden': 'true' }, `-${hit}`));
+  return el;
+}
+
+function gridBoard(c: C) {
+  const g = c.mod.rules.grid!;
+  const zones = new Set(g.zones ?? []);
+  const at = new Map<string, ObjView[]>();
+  for (const [key, z] of Object.entries(c.v.zones)) {
+    if (!zones.has(key.slice(key.indexOf(':') + 1))) continue;
+    for (const o of z.cards ?? []) {
+      const k = `${o.vars.x ?? 0},${o.vars.y ?? 0}`;
+      if (!at.has(k)) at.set(k, []);
+      at.get(k)!.push(o);
+    }
+  }
+  const cells: HTMLElement[] = [];
+  for (let y = 0; y < g.rows; y++) {
+    for (let x = 0; x < g.cols; x++) {
+      const k = `${x},${y}`;
+      const t = c.targets.has(k);
+      cells.push(h('div', {
+        class: cls('cell', t && 'target', c.picked.has(k) && 'picked'), 'data-cell': k, role: t ? 'button' : null, tabindex: t ? 0 : null,
+        'aria-label': `cell ${k}${t ? ', can be chosen' : ''}`, onclick: t ? () => c.A.choose(k) : null,
+        onkeydown: t ? (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') c.A.choose(k); } : null,
+      }, (at.get(k) ?? []).map((o) => obj(c, o, 'sm'))));
+    }
+  }
+  return h('div', { class: 'gridboard', style: `--cols:${g.cols}`, 'aria-label': `${g.cols} by ${g.rows} board` }, cells);
 }
 
 function layout(mod: Mod) {
   const zones = mod.rules.zones.filter((z) => !z.shared);
   const hand = zones.find((z) => z.id === mod.rules.handZone);
-  const field = zones.filter((z) => z !== hand && z.vis === 'public' && !z.ordered);
-  return { hand, field, piles: zones.filter((z) => z !== hand && !field.includes(z)) };
+  const onGrid = new Set(mod.rules.grid?.zones ?? []);
+  const field = zones.filter((z) => z !== hand && z.vis === 'public' && !z.ordered && !onGrid.has(z.id));
+  return { hand, field, piles: zones.filter((z) => z !== hand && !field.includes(z) && !onGrid.has(z.id)) };
 }
 
 function seat(c: C, p: string, me: boolean) {
@@ -80,11 +151,11 @@ function seat(c: C, p: string, me: boolean) {
   const L = layout(mod);
   const bar = h('div', { class: 'seat-bar' },
     h('button', {
-      class: cls('avatar', targets.has(p) && 'target', picked.has(p) && 'picked'), style: `--h:${(+p.slice(1) * 97 + 200) % 360}`,
+      class: cls('avatar', targets.has(p) && 'target', picked.has(p) && 'picked', c.fx.hit.has(p) && 'fx-hit'), style: `--h:${(+p.slice(1) * 97 + 200) % 360}`,
       'aria-label': `${pname(p)}${targets.has(p) ? ', can be chosen' : ''}`, onclick: () => (c.ui.sel ? A.pick(p) : A.view(p)),
-    }, String(+p.slice(1) + 1)),
+    }, String(+p.slice(1) + 1), c.fx.hit.has(p) && h('span', { class: 'dmg-float', 'aria-hidden': 'true' }, `-${c.fx.hit.get(p)}`)),
     h('span', { class: 'seat-name' }, `${pname(p)}${me ? ' (you)' : ''}`, v.active === p ? h('span', { class: 'turn-dot', title: 'Active player' }, ' ●') : null, pl.lost ? ' — out' : ''),
-    h('span', { class: 'vars' }, Object.entries(pl.vars).map(([k, n]) => h('span', { class: 'chip' }, h('b', {}, String(n)), ` ${k}`))),
+    h('span', { class: 'vars' }, Object.entries(pl.vars).map(([k, n]) => h('span', { class: cls('chip', c.fx.pulse.get(p)?.has(k) && 'fx-pulse') }, h('b', {}, String(n)), ` ${k}`))),
     h('span', { class: 'piles' }, L.piles.map((z) => pile(c, `${p}:${z.id}`, z))));
   const field = h('div', { class: 'field' }, L.field.map((z) => zoneBlock(c, `${p}:${z.id}`, z)));
   const hand = L.hand ? handRow(c, `${p}:${L.hand.id}`, me) : null;
@@ -97,7 +168,7 @@ function pile(c: C, key: string, z: ZoneDef) {
   if (!zv) return null;
   const hot = (zv.cards ?? []).some((o) => c.sources.has(o.id) || c.targets.has(o.id));
   return h('button', {
-    class: cls('pile', hot && 'hot', !zv.cards && 'hidden'), disabled: !zv.cards,
+    class: cls('pile', hot && 'hot', !zv.cards && 'hidden', c.fx.bump.has(key) && 'fx-bump'), disabled: !zv.cards,
     'aria-label': `${title(z.id)}: ${zv.count} cards${zv.cards ? '' : ' (hidden)'}`, onclick: () => c.A.drawer('pile', key),
   }, h('span', { class: 'pile-n' }, String(zv.count)), h('span', { class: 'pile-l' }, title(z.id)));
 }
@@ -140,7 +211,7 @@ function prompt(c: C, step: ReturnType<typeof current>) {
   const { ui, A, label } = c;
   const picks = ui.sel!.picks[step.key] ?? [];
   const pd = ui.match!.s.pending;
-  const objectish = (x: string) => /^(o|k)\d+$/.test(x) || /^p\d+$/.test(x);
+  const objectish = (x: string) => /^(o|k)\d+$/.test(x) || /^p\d+$/.test(x) || (!!c.mod.rules.grid && /^\d+,\d+$/.test(x));
   const inline = step.options.filter((x) => !objectish(x) || (!ui.sel!.tpl && pd?.labels));
   const ok = picks.length >= step.min && picks.length <= step.max;
   return h('div', { class: 'dock-body' },

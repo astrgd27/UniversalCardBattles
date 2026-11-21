@@ -2,8 +2,9 @@
 // Rendering lives in ui/*.ts and only ever reads player views.
 import type { ActionCmd, Deck, Match, Mod, Reason, Template } from '#engine';
 import {
-  IllegalAction, commitAction, createMatch, deckErrors, determinize, listActions, observe, proposeAction, restore, serialize, submitDecision,
+  IllegalAction, commitAction, createMatch, deckErrors, determinize, listActions, observe, proposeAction, restore, serialize, setExternal, submitDecision,
 } from '#engine';
+import { clearCustomArt, loadCustomArt, setCustomArt } from './art.ts';
 import { makeAgent, type Agent, type AgentInfo } from '#ai';
 import {
   type Campaign, type Granted, type Line, type Profile, CampaignError, buy, campaignOf, encounterAgent, finishEncounter, migrateProfile, newProfile,
@@ -48,6 +49,8 @@ export interface UI {
   dialogSeen: number; // last in-match dialogue event acknowledged
   reward: { won: boolean; granted: Granted | null; lines: Line[]; enc: string } | null;
   reveal: string[] | null; // cards from a purchase being revealed
+  fxFrom: number; // first event not yet animated
+  counts: Record<string, number>; // zone sizes at the last render (pile bumps)
 }
 
 const SAVE = (id: string) => `ucb-save:${id}`;
@@ -73,7 +76,7 @@ function seatsFor(m: Mod, n = Math.max(2, m.rules.players.min)): Pick<UI, 'seats
 export const ui: UI = {
   screen: 'library', mod: null, seats: [], decks: [], match: null, agents: [], viewer: 'p0', cover: null, sel: null, menu: null,
   note: null, inspect: null, drawer: null, pile: null, paused: false, fast: false, theme: store.get<'light' | 'dark'>('ucb-theme', 'dark') === 'light' ? 'light' : 'dark', edit: null,
-  filter: '', gallery: null, profile: null, camp: null, encounter: null, campDeck: '', dialog: null, dialogSeen: -1, reward: null, reveal: null,
+  filter: '', gallery: null, profile: null, camp: null, encounter: null, campDeck: '', dialog: null, dialogSeen: -1, reward: null, reveal: null, fxFrom: 0, counts: {},
 };
 (window as any).__ucb = ui; // test hook
 
@@ -200,6 +203,7 @@ export const actions = {
     let profile: Profile | null = null;
     try { const raw = store.get<unknown>(PROFILE(id), null); profile = raw ? migrateProfile(raw) : null; } catch { profile = null; ui.note = { title: 'Campaign progress unreadable', text: 'The stored profile was damaged and has been ignored.' }; }
     Object.assign(ui, seatsFor(ui.mod), { match: null, filter: '', gallery: null, camp: null, profile });
+    void loadCustomArt(id).then(() => redraw());
     actions.go('home');
   },
   async loadZip(file: File) {
@@ -259,7 +263,7 @@ export const actions = {
     }
     ui.agents = ui.seats.map((s, i) => makeAgent(s === 'random' ? 'random' : 'heuristic', seed + i));
     ui.viewer = `p${Math.max(0, ui.seats.indexOf('human'))}`;
-    Object.assign(ui, { camp: null, dialogSeen: -1, screen: 'game', cover: null, note: null, inspect: null, drawer: null, pile: null, paused: false });
+    Object.assign(ui, { camp: null, dialogSeen: -1, fxFrom: 0, counts: {}, screen: 'game', cover: null, note: null, inspect: null, drawer: null, pile: null, paused: false });
     advance();
   },
   continueGame() {
@@ -275,7 +279,7 @@ export const actions = {
       ui.agents = ui.seats.map((s, i) => (ui.camp && i === 1 ? encounterAgent(campaign()!.encounters[ui.camp.enc], s0 + i) : makeAgent(s === 'random' ? 'random' : 'heuristic', s0 + i)));
       ui.dialogSeen = ui.match!.s.events.length - 1;
       ui.viewer = `p${Math.max(0, ui.seats.indexOf('human'))}`;
-      Object.assign(ui, { screen: 'game', cover: null, note: null, inspect: null, drawer: null, paused: false });
+      Object.assign(ui, { screen: 'game', cover: null, note: null, inspect: null, drawer: null, paused: false, fxFrom: ui.match!.s.events.length, counts: {} });
     } catch (e) {
       ui.note = { title: 'Could not continue', text: String((e as Error).message) };
     }
@@ -292,6 +296,13 @@ export const actions = {
   },
   quit() { if (ui.match?.s.result) store.del(SAVE(ui.mod!.manifest.moduleId)); ui.match = null; const back = ui.camp ? 'campaign' : 'home'; ui.camp = null; actions.go(back); },
   rematch() { if (ui.camp) actions.playEncounter(); else actions.newGame(); },
+  setExternal(name: string, value: string) {
+    const m = ui.match!;
+    const dom = m.m.rules.external?.[name] ?? [];
+    const v = dom.find((x) => String(x) === value) ?? value;
+    try { ui.match = setExternal(m, name, v); } catch (e) { ui.note = { title: 'Not allowed', text: String((e as Error).message) }; }
+    advance();
+  },
   ackDialogue() { const d = pendingDialogue(); if (d) ui.dialogSeen = d.seq; advance(); },
   reveal() { ui.cover = null; redraw(); },
   drawer(d: UI['drawer'], pile: string | null = null) { ui.drawer = ui.drawer === d && ui.pile === pile ? null : d; ui.pile = pile; redraw(); },
@@ -441,7 +452,7 @@ export const actions = {
       ui.decks = [ui.campDeck, c.encounters[id].deck];
       ui.agents = [makeAgent('random', seed), encounterAgent(c.encounters[id], seed + 1)];
       ui.camp = { enc: id, seq: r.profile.active!.seq };
-      Object.assign(ui, { screen: 'game', viewer: 'p0', cover: null, note: null, inspect: null, drawer: null, paused: false, dialogSeen: -1 });
+      Object.assign(ui, { screen: 'game', viewer: 'p0', cover: null, note: null, inspect: null, drawer: null, paused: false, dialogSeen: -1, fxFrom: 0, counts: {} });
     } catch (e) {
       ui.note = campaignError(e);
       return redraw();
@@ -473,6 +484,14 @@ export const actions = {
   },
   closeReveal() { ui.reveal = null; redraw(); },
   enlarge(id: string | null) { ui.gallery = id; redraw(); },
+  async setArt(cardId: string, file: File) {
+    try { await setCustomArt(ui.mod!.manifest.moduleId, cardId, file); ui.note = null; } catch (e) { ui.note = { title: 'Could not use that image', text: String((e as Error).message) }; }
+    redraw();
+  },
+  async clearArt(cardId: string) {
+    try { await clearCustomArt(ui.mod!.manifest.moduleId, cardId); } catch (e) { ui.note = { title: 'Could not reset art', text: String(e) }; }
+    redraw();
+  },
 };
 
 window.addEventListener('keydown', (e) => {

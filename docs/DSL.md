@@ -187,6 +187,7 @@ Effects run in effect lists `[[op...], [op...]]`.
   - At most 8 MB per file, 64 MB total and 2000 entries.
 - **JSON** is parsed strictly: duplicate keys and `__proto__`, `constructor` and `prototype` keys are rejected, and nesting is capped at 256 levels.
 - **Errors** read `file:line:col: message`.
+- **Presentation** (optional manifest fields, no effect on rules): `tagline` and `theme {accent, accent2, glyph, hideStats}`.
 - **Saves:** a save stores `rulesHash`, a hash of the rules and cards, and `restore` refuses a mismatch.
 - **CLI:**
   - `npm run -s validate <dir|zip> [--base <dir|zip>]`

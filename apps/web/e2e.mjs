@@ -16,7 +16,7 @@ try {
   page.on('dialog', (d) => d.accept());
   await page.goto(`http://localhost:${port}/`);
   const ids = await page.$$eval('[data-module]', (t) => t.map((x) => x.dataset.module));
-  ok(ids.length === 6, `expected 6 game tiles, got ${ids.length}`);
+  ok(ids.length === 7, `expected 7 game tiles, got ${ids.length}`);
   const open = async (id) => { await page.click('text=← Library').catch(() => {}); await page.click(`[data-module="${id}"]`); };
   const seat = (i, label) => page.click(`[data-seat="${i}"] .seg button:text-is("${label}")`);
 
@@ -33,6 +33,29 @@ try {
     await page.click('.gameover >> text=Game menu');
     ok(await page.isVisible('[data-menu=play]'), `${id}: back on the game menu`);
   }
+
+  // Vault Breach: deploy onto the grid by clicking a cell, entry animation, external input control.
+  await open('vault-breach');
+  await page.click('[data-menu=play]');
+  await seat(2, 'AI');
+  await page.uncheck('text=Fast AI');
+  await page.click('text=Start match');
+  await page.waitForSelector('.hud-status.go');
+  ok(await page.$$eval('.gridboard .cell', (c) => c.length) === 25, 'grid board has 25 cells');
+  const deployable = await page.$('.seat-area.me .hand .card.legal:has(.type:text("Unit"))');
+  if (deployable) {
+    await deployable.click();
+    ok(await page.$$eval('.gridboard .cell.target', (c) => c.length) === 5, 'five entry cells glow');
+    await page.click('.gridboard .cell.target >> nth=2');
+    await page.click('.dock >> text=Confirm');
+    ok(await page.isVisible('.gridboard .cell[data-cell="2,0"] .card.own'), 'unit stands on its cell');
+    ok(await page.$('.fx-enter') !== null, 'entry animation from the event log');
+  } else fail.push('vault-breach: no deployable unit');
+  await page.selectOption('select[aria-label="External input lights"]', 'off');
+  ok(await page.evaluate(() => window.__ucb.match.s.ext.lights) === 'off', 'external input changed from the HUD');
+  await page.click('button[aria-label=Menu]');
+  await page.click('.panel-pop >> text=Quit to game menu');
+  await page.click('text=← Library');
 
   // Human vs AI on Spark Duel.
   await open('spark-duel');
@@ -94,6 +117,12 @@ try {
   ok(await page.$$eval('.gallery .grid .card', (c) => c.length) === 1, 'gallery search filters');
   await page.click('.gallery .grid .card');
   ok(await page.isVisible('.enlarged'), 'card enlarges');
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+  await page.setInputFiles('[data-act=art] input', { name: 'art.png', mimeType: 'image/png', buffer: png });
+  await page.waitForSelector('.enlarged .card .art img[src^="blob:"]');
+  ok(await page.isVisible('.enlarged >> text=Reset art'), 'custom art applied');
+  await page.click('.enlarged >> text=Reset art');
+  await page.waitForSelector('.enlarged .card .art img[src^="data:image/svg"]');
   await page.keyboard.press('Escape');
 
   // Campaign: begin, intro dialogue, first encounter, play it out, rewards screen, shop purchase, campaign decks.
@@ -124,11 +153,14 @@ try {
   ok(await page.isVisible('.reward .result'), 'reward screen');
   await page.click('text=Back to the map');
   await page.click('[data-camp=shop]');
+  const before = await page.evaluate(() => window.__ucb.profile.currency);
   await page.click('[data-buy=ember-pack]');
   ok(await page.$$eval('.reveal .card', (c) => c.length) === 5, 'pack reveals 5 cards');
   await page.click('text=Collect');
-  ok(await page.isVisible('text=◆ 10 Sparks'), 'currency deducted');
-  ok(await page.isDisabled('[data-buy=ember-pack]'), 'cannot afford a second pack');
+  const after = await page.evaluate(() => window.__ucb.profile.currency);
+  ok(after === before - 50, `currency deducted (${before} -> ${after})`);
+  ok(await page.isVisible(`text=◆ ${after} Sparks`), 'currency shown');
+  ok((after < 50) === (await page.isDisabled('[data-buy=ember-pack]')), 'pack affordable only with 50+');
   await page.click('text=← Spark Duel');
   await page.click('[data-menu=campaign]');
   await page.click('[data-camp=decks]');
@@ -149,7 +181,7 @@ try {
   await page.setInputFiles('[data-act=import] input', backupPath);
   await page.waitForSelector('text=Saves imported');
   await page.click('[data-module="spark-duel"]');
-  ok(await page.isVisible('text=10 Sparks to spend'), 'imported campaign currency');
+  ok(await page.isVisible(`text=${exported.entries['ucb-profile:spark-duel'].currency} Sparks to spend`), 'imported campaign currency');
   await page.click('[data-menu=play]');
   ok((await page.$$eval('.deck-select option', (o) => o.map((x) => x.textContent))).includes('★ Test Deck'), 'imported custom deck');
   await page.click('text=← Spark Duel');

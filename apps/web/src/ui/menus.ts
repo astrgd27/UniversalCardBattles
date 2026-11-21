@@ -4,6 +4,7 @@ import { deckErrors } from '#engine';
 import { MODULES } from '../modules.ts';
 import { allDecks, campaign, customDecks, hasSave, sections, type UI } from '../main.ts';
 import { ownedErrors } from '#campaign';
+import { customArt } from '../art.ts';
 import { cardFace, cls, emblem, h, hue, segmented, select, themeStyle, title, topnav } from './kit.ts';
 
 export function library(ui: UI, A: any) {
@@ -142,5 +143,10 @@ export function gallery(ui: UI, A: any) {
     h('div', { class: 'grid roomy' }, cards.map((c) => cardFace(m, c.id, { size: 'md', onclick: () => A.enlarge(c.id) }))),
     big && h('div', { class: 'overlay', onclick: () => A.enlarge(null) },
       h('div', { class: 'enlarged', onclick: (ev: Event) => ev.stopPropagation() }, cardFace(m, big.id, { size: 'lg' }),
-        h('button', { onclick: () => A.enlarge(null) }, 'Close'))));
+        h('div', { class: 'opts' },
+          h('label', { class: 'file-btn', 'data-act': 'art' }, '🖼 Use my own art',
+            h('input', { type: 'file', accept: 'image/png,image/jpeg,image/webp,image/gif', onchange: (e: Event) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) A.setArt(big.id, f); } })),
+          customArt(m.manifest.moduleId, big.id) && h('button', { onclick: () => A.clearArt(big.id) }, 'Reset art'),
+          h('button', { onclick: () => A.enlarge(null) }, 'Close')),
+        h('p', { class: 'muted' }, 'Your art is stored only in this browser.'))));
 }

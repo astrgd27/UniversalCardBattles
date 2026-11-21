@@ -1,6 +1,7 @@
 // Shared UI building blocks: element helper, card faces, module theming.
 import type { CardDef, Mod, Reason } from '#engine';
 import { ASSETS } from '../modules.ts';
+import { customArt, procArt } from '../art.ts';
 
 export type Child = Node | string | null | undefined | false | Child[];
 export function h(tag: string, props: Record<string, any> = {}, ...kids: Child[]): HTMLElement {
@@ -68,10 +69,11 @@ export interface FaceOpts {
 export function cardFace(m: Mod, cardId: string, o: FaceOpts = {}): HTMLElement {
   const def = m.card.get(cardId);
   if (!def) return cardBack(m, o);
-  const stats = cardStats(def, o.stats);
+  const hidden = new Set([...(m.manifest.theme?.hideStats ?? []), ...(m.rules.grid ? ['x', 'y'] : [])]);
+  const stats = cardStats(def, o.stats).filter(([k]) => !hidden.has(k));
   const kw = o.keywords ?? def.keywords ?? [];
-  const badges = Object.entries(o.vars ?? {}).filter(([k, n]) => n !== (o.baseVars?.[k] ?? 0));
-  const art = typeof def.art === 'string' ? ASSETS.get(m.manifest.moduleId)?.get(def.art) : undefined;
+  const badges = Object.entries(o.vars ?? {}).filter(([k, n]) => n !== (o.baseVars?.[k] ?? 0) && !(m.rules.grid && (k === 'x' || k === 'y')));
+  const art = customArt(m.manifest.moduleId, def.id) ?? (typeof def.art === 'string' ? ASSETS.get(m.manifest.moduleId)?.get(def.art) : undefined) ?? procArt(def, GLYPH[def.type] ?? '◆');
   const hh = hue(def.id);
   return h('button', {
     class: cls('card', `size-${o.size ?? 'md'}`, `t-${def.type}`, o.faceDown && 'fd', o.state),
@@ -80,7 +82,7 @@ export function cardFace(m: Mod, cardId: string, o: FaceOpts = {}): HTMLElement 
   },
   def.cost !== undefined && h('span', { class: 'gem' }, String(o.stats?.cost ?? def.cost)),
   o.count !== undefined && h('span', { class: 'count' }, `×${o.count}`),
-  h('span', { class: 'art' }, art ? h('img', { src: art, alt: '' }) : h('span', { class: 'glyph' }, GLYPH[def.type] ?? '◆')),
+  h('span', { class: 'art' }, h('img', { src: art, alt: '', draggable: 'false' })),
   h('span', { class: 'name' }, def.name),
   h('span', { class: 'type' }, title(def.type), kw.length ? ` · ${kw.map(title).join(', ')}` : '', o.faceDown ? ' · face down' : ''),
   def.text && h('span', { class: 'text' }, def.text),
