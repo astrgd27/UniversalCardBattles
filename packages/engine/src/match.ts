@@ -1,11 +1,12 @@
-// Match lifecycle and the public engine API. All entry points are pure: they return a new Match.
+// Match lifecycle, timing protocols (immediate / stack / chain) and the public engine API.
+// All entry points are pure: they return a new Match and never mutate the one passed in.
 import type {
-  ActionCmd, Cmd, Ctx, Match, MatchOpts, Mod, Reason, SlotOpts, State, Template,
+  ActionCmd, Cmd, Ctx, Match, MatchOpts, Mod, Reason, SlotDef, SlotOpts, State, Template, Timing,
 } from './types.ts';
 import { apply, emit, triggerList } from './effects.ts';
 import { ev } from './expr.ts';
 import { hash, seedRng } from './rng.ts';
-import { EngineError, activeId, baseCtx, list, masks, nextPlayer, uniq, viewers } from './util.ts';
+import { CostError, EngineError, activeId, baseCtx, list, masks, nextPlayer, player, uniq, viewers } from './util.ts';
 import { deckErrors } from './validate.ts';
 
 export class IllegalAction extends EngineError {
@@ -14,6 +15,9 @@ export class IllegalAction extends EngineError {
 }
 
 const SETTLE_BUDGET = 200_000;
+const IMMEDIATE: Timing = { mode: 'immediate' };
+export const timingOf = (m: Mod, s: State): Timing => m.rules.phases[s.turn.phase].timing ?? m.rules.timing ?? IMMEDIATE;
+const alive = (s: State) => s.players.filter((p) => !p.lost);
 
 export function createMatch(m: Mod, opts: MatchOpts): Match {
   const R = m.rules;
@@ -26,8 +30,8 @@ export function createMatch(m: Mod, opts: MatchOpts): Match {
   const s: State = {
     moduleId: m.manifest.moduleId, version: m.manifest.semanticVersion, opts: structuredClone(opts),
     rng: seedRng(opts.seed), players: [], objects: {}, zones: {}, turn: { n: 1, active: 0, phase: 0 },
-    phaseState: 'enter', priority: null, exec: [], triggers: [], dirty: false, pending: null, events: [], cmds: [],
-    nextId: 1, nextDecision: 1, result: null,
+    phaseState: 'enter', priority: null, holder: null, passes: 0, resolving: false, stack: [], effects: [], exec: [],
+    triggers: [], nextTrig: null, dirty: false, pending: null, events: [], cmds: [], nextId: 1, nextDecision: 1, result: null,
   };
   for (let i = 0; i < n; i++) s.players.push({ id: `p${i}`, vars: { ...R.playerVars }, lost: false });
   for (const z of R.zones) {
@@ -51,9 +55,9 @@ export function createMatch(m: Mod, opts: MatchOpts): Match {
 // ---------- automatic advancement ----------
 function endCheck(m: Mod, s: State): boolean {
   if (s.result) return true;
-  const alive = s.players.filter((p) => !p.lost);
-  if (s.players.length > 1 && alive.length <= 1) {
-    s.result = { winners: alive.map((p) => p.id), reason: alive.length ? 'lastStanding' : 'draw' };
+  const a = alive(s);
+  if (s.players.length > 1 && a.length <= 1) {
+    s.result = { winners: a.map((p) => p.id), reason: a.length ? 'lastStanding' : 'draw' };
     emit(m, s, { type: 'gameOver', ...s.result });
     return true;
   }
@@ -62,18 +66,86 @@ function endCheck(m: Mod, s: State): boolean {
 
 function nextPhase(m: Mod, s: State) {
   s.priority = null;
+  s.holder = null;
+  s.passes = 0;
   s.phaseState = 'enter';
   if (++s.turn.phase < m.rules.phases.length) return;
   s.turn.phase = 0;
   s.turn.n++;
   s.turn.active = s.players.findIndex((p) => p.id === nextPlayer(s, activeId(s)));
+  const keep = s.effects.filter((e) => e.until !== 'turn' && e.targets.some((t) => s.objects[t]));
+  if (keep.length !== s.effects.length) {
+    s.effects = keep;
+    emit(m, s, { type: 'expired' });
+  }
   if (m.rules.turnLimit && s.turn.n > m.rules.turnLimit) {
     s.result = { winners: [], reason: 'turnLimit' };
     emit(m, s, { type: 'gameOver', ...s.result });
   }
 }
 
-/** Runs effects, state checks, triggers and automatic phases until a player must act. */
+/** Takes the next trigger (rules first, then APNAP; a player orders their own). False = waiting on a decision. */
+function takeTrigger(m: Mod, s: State, tm: Timing): boolean {
+  let t = s.triggers.find((x) => x.ref.startsWith('rule:'));
+  if (!t) {
+    let ctrl = activeId(s);
+    for (let k = 0; k < s.players.length && !s.triggers.some((x) => x.ctrl === ctrl); k++) ctrl = nextPlayer(s, ctrl);
+    if (!s.triggers.some((x) => x.ctrl === ctrl)) ctrl = s.triggers[0].ctrl;
+    const mine = s.triggers.filter((x) => x.ctrl === ctrl);
+    t = mine.find((x) => x.id === s.nextTrig);
+    if (!t) {
+      if (mine.length > 1 && new Set(mine.map((x) => x.ref)).size > 1) {
+        s.pending = {
+          id: `d${s.nextDecision++}`, kind: 'order', player: ctrl, options: mine.map((x) => x.id), min: 1, max: 1, as: '',
+          single: true,
+          prompt: tm.mode === 'immediate' ? 'Choose which ability resolves next' : 'Choose which ability goes on the stack next (it resolves later)',
+          labels: Object.fromEntries(mine.map((x) => [x.id, x.label])),
+        };
+        return false;
+      }
+      t = mine[0];
+    }
+  }
+  s.nextTrig = null;
+  s.triggers.splice(s.triggers.indexOf(t), 1);
+  const effects = triggerList(m, t.ref);
+  if (tm.mode === 'immediate' || !t.stack) {
+    s.exec.push({ list: effects, i: 0, ctx: t.ctx });
+    return true;
+  }
+  const src = t.ctx.$self && s.objects[t.ctx.$self] ? (t.ctx.$self as string) : null;
+  const id = `k${s.nextId++}`;
+  s.stack.push({
+    id, kind: 'trigger', ctrl: t.ctrl, label: t.label, card: src ? s.objects[src].card : null, source: src, list: effects,
+    ctx: t.ctx, slots: [], speed: t.speed,
+  });
+  emit(m, s, { type: 'stacked', item: id, kind: 'trigger', ctrl: t.ctrl, label: t.label });
+  s.holder = activeId(s);
+  s.passes = 0;
+  return true;
+}
+
+function resolveTop(m: Mod, s: State, tm: Timing) {
+  const it = s.stack.pop()!;
+  if (tm.mode !== 'chain') { s.holder = activeId(s); s.passes = 0; }
+  for (const sl of it.slots) {
+    const rc = sl.recheck ?? true;
+    const bound = list(it.ctx[sl.as]);
+    if (rc === false || !bound.length) continue;
+    const opts: string[] = rc === 'exists' ? [] : list(ev(m, s, sl.from, it.ctx)).map(String);
+    const legal = bound.filter((t) => (rc === 'exists' ? t in s.objects || (player(s, t) && !player(s, t)!.lost) : opts.includes(t)));
+    if (!legal.length) {
+      emit(m, s, { type: 'fizzled', item: it.id, card: it.card });
+      if (it.countered?.length) s.exec.push({ list: it.countered, i: 0, ctx: it.ctx });
+      return;
+    }
+    it.ctx[sl.as] = Array.isArray(it.ctx[sl.as]) ? legal : legal[0];
+  }
+  emit(m, s, { type: 'resolve', item: it.id, card: it.card });
+  s.exec.push({ list: it.list, i: 0, ctx: it.ctx });
+}
+
+/** Runs effects, state checks, triggers, stack resolution and automatic phases until a player must act. */
 export function settle(m: Mod, s: State, budget = SETTLE_BUDGET) {
   while (budget-- > 0) {
     if (s.result || s.pending) return;
@@ -89,11 +161,16 @@ export function settle(m: Mod, s: State, budget = SETTLE_BUDGET) {
       continue;
     }
     if (endCheck(m, s)) return;
-    if (s.triggers.length) {
-      const act = activeId(s);
-      const k = Math.max(0, s.triggers.findIndex((t) => t.ctrl === act)); // APNAP: active player's first
-      const t = s.triggers.splice(k, 1)[0];
-      s.exec.push({ list: triggerList(m, t.ref), i: 0, ctx: t.ctx });
+    const tm = timingOf(m, s);
+    if (s.triggers.length && !(s.resolving && tm.mode === 'chain')) {
+      if (takeTrigger(m, s, tm)) continue;
+      return;
+    }
+    if (s.resolving) {
+      if (s.stack.length) { resolveTop(m, s, tm); continue; }
+      s.resolving = false;
+      s.holder = activeId(s);
+      s.passes = 0;
       continue;
     }
     const ph = m.rules.phases[s.turn.phase];
@@ -103,8 +180,9 @@ export function settle(m: Mod, s: State, budget = SETTLE_BUDGET) {
       if (ph.do?.length) s.exec.push({ list: ph.do, i: 0, ctx: baseCtx(s, activeId(s)) });
       continue;
     }
-    if (s.phaseState === 'ended' || ph.auto) { nextPhase(m, s); continue; }
-    s.priority = activeId(s);
+    if (s.phaseState === 'ended' || (ph.auto && !s.stack.length)) { nextPhase(m, s); continue; }
+    const h = s.holder && !player(s, s.holder)!.lost ? s.holder : activeId(s);
+    s.priority = tm.mode === 'immediate' ? activeId(s) : h;
     return;
   }
   throw new EngineError('Settle budget exceeded (unbounded loop in rules?)');
@@ -117,8 +195,13 @@ const no = (code: string, msg: string, children?: Reason[]): Reason => ({ ok: fa
 function gate(s: State, p: string): Reason | null {
   if (s.result) return no('over', 'The game is over.');
   if (s.pending) return no('pending', s.pending.player === p ? 'Answer the pending decision first.' : 'Waiting for another player to decide.');
-  if (s.priority !== p) return no('priority', 'It is not your turn to act.');
+  if (s.priority !== p) return no('priority', 'You do not have priority.');
   return null;
+}
+
+function slotDefs(m: Mod, s: State, name: string, src: string | null): SlotDef[] {
+  const a = m.rules.actions[name];
+  return [...(a.targets ?? []), ...(a.cardTargets && src ? (m.card.get(s.objects[src].card)?.targets ?? []) : [])];
 }
 
 function evalAction(m: Mod, s: State, p: string, name: string, src: string | null): { r: Reason; slots: SlotOpts[]; ctx: Ctx } {
@@ -132,15 +215,23 @@ function evalAction(m: Mod, s: State, p: string, name: string, src: string | nul
   const label = a.label ?? name;
   const phase = m.rules.phases[s.turn.phase].id;
   if (a.phases && !a.phases.includes(phase)) return fail(no('phase', `${label} is not allowed during the ${phase} phase.`));
+  const tm = timingOf(m, s);
+  const speed = a.speed ?? 1;
+  const minR = tm.minResponse ?? 2;
+  if (s.stack.length) {
+    const need = tm.mode === 'chain' ? Math.max(minR, s.stack[s.stack.length - 1].speed) : minR;
+    if (speed < need) return fail(no('speed', `${label} is too slow to respond now (needs speed ${need}).`));
+  } else if (speed < minR && p !== activeId(s)) {
+    return fail(no('speed', `${label} can only be used on your own turn.`));
+  }
   if (a.source) {
     if (!src || !list(ev(m, s, a.source, base)).includes(src)) return fail(no('source', `That card cannot be used to ${label} right now.`));
   } else if (src) return fail(no('source', `${label} does not take a source card.`));
   const ctx = { ...base, $self: src };
   const checks = (a.req ?? []).map((q) => (ev(m, s, q.if, ctx) ? ok(q.why) : no('req', q.why)));
   if (checks.some((c) => !c.ok)) return fail(no('req', `${label}: requirements not met.`, checks));
-  const defs = [...(a.targets ?? []), ...(a.cardTargets && src ? (m.card.get(s.objects[src].card)?.targets ?? []) : [])];
   const slots: SlotOpts[] = [];
-  for (const d of defs) {
+  for (const d of slotDefs(m, s, name, src)) {
     const options = uniq(list(ev(m, s, d.from, ctx)).map(String));
     const min = d.min ?? 1;
     const prompt = d.prompt ?? 'target';
@@ -153,16 +244,16 @@ function evalAction(m: Mod, s: State, p: string, name: string, src: string | nul
 export function listActions({ m, s }: Match, p: string): Template[] {
   if (gate(s, p)) return [];
   const out: Template[] = [];
-  const phase = m.rules.phases[s.turn.phase].id;
   for (const [name, a] of Object.entries(m.rules.actions)) {
-    if (a.phases && !a.phases.includes(phase)) continue;
     const srcs: (string | null)[] = a.source ? list(ev(m, s, a.source, baseCtx(s, p))) : [null];
     for (const src of srcs) {
       const { r, slots } = evalAction(m, s, p, name, src);
       if (r.ok) out.push({ action: name, label: a.label ?? name, source: src, slots });
     }
   }
-  out.push({ action: 'pass', label: 'End phase', source: null, slots: [] });
+  const tm = timingOf(m, s);
+  const label = tm.mode === 'immediate' ? 'End phase' : s.stack.length ? 'Pass (let it resolve)' : 'Pass priority';
+  out.push({ action: 'pass', label, source: null, slots: [] });
   return out;
 }
 
@@ -180,18 +271,35 @@ export function proposeAction({ m, s }: Match, p: string, cmd: ActionCmd): Reaso
 }
 export const explainLegality = proposeAction;
 
+/** Settles a cloned state; a cost that cannot be paid rejects the whole command (atomicity). */
+function settleOrReject(m: Mod, s: State) {
+  try {
+    settle(m, s);
+  } catch (e) {
+    if (e instanceof CostError) throw new IllegalAction(no('cost', e.message));
+    throw e;
+  }
+}
+
 export function commitAction(match: Match, p: string, cmd: ActionCmd): Match {
   const r = proposeAction(match, p, cmd);
   if (!r.ok) throw new IllegalAction(r);
   const { m } = match;
   const s = structuredClone(match.s);
   const source = cmd.source ?? null;
-  s.cmds.push({ t: 'act', p, action: cmd.action, source, targets: cmd.targets ?? {} });
   const { slots, ctx } = evalAction(m, s, p, cmd.action, source);
+  const tm = timingOf(m, s);
+  s.cmds.push({ t: 'act', p, action: cmd.action, source, targets: cmd.targets ?? {} });
   s.priority = null;
   if (cmd.action === 'pass') {
     emit(m, s, { type: 'pass', player: p });
-    s.phaseState = 'ended';
+    if (tm.mode === 'immediate') s.phaseState = 'ended';
+    else if (++s.passes >= alive(s).length) {
+      s.passes = 0;
+      if (!s.stack.length) s.phaseState = 'ended';
+      else if (tm.mode === 'chain') s.resolving = true;
+      else resolveTop(m, s, tm);
+    } else s.holder = nextPlayer(s, p);
   } else {
     for (const sl of slots) {
       const sel = cmd.targets?.[sl.as] ?? [];
@@ -203,27 +311,32 @@ export function commitAction(match: Match, p: string, cmd: ActionCmd): Match {
       type: 'action', player: p, action: cmd.action, source, card: source ? s.objects[source].card : null,
       targets: cmd.targets ?? {}, ...masks([vis, ['source', 'card']]),
     });
-    s.exec.push({ list: [...(a.cost ?? []), ...a.do], i: 0, ctx });
+    const stacked = tm.mode !== 'immediate' && a.stack !== false;
+    s.passes = 0;
+    s.holder = stacked && !(tm.retain ?? tm.mode === 'stack') ? nextPlayer(s, p) : p;
+    const tail = stacked ? [['@stack', cmd.action, slotDefs(m, s, cmd.action, source)]] : a.do;
+    s.exec.push({ list: [...(a.cost ?? []), ...tail], i: 0, ctx });
   }
-  settle(m, s);
+  settleOrReject(m, s);
   return { m, s };
 }
 
 export function submitDecision(match: Match, p: string, id: string, sel: string[]): Match {
   const pd = match.s.pending;
-  const fail = (code: string, msg: string) => { throw new IllegalAction(no(code, msg)); };
-  if (!pd || pd.id !== id) fail('decision', 'There is no such pending decision.');
-  if (pd!.player !== p) fail('decision', 'This decision belongs to another player.');
-  if (new Set(sel).size !== sel.length || sel.length < pd!.min || sel.length > pd!.max) fail('decision', `Choose ${pd!.min}-${pd!.max}.`);
-  if (sel.some((x) => !pd!.options.includes(x))) fail('decision', 'Illegal choice.');
+  const fail = (msg: string): never => { throw new IllegalAction(no('decision', msg)); };
+  if (!pd || pd.id !== id) return fail('There is no such pending decision.');
+  if (pd.player !== p) fail('This decision belongs to another player.');
+  if (new Set(sel).size !== sel.length || sel.length < pd.min || sel.length > pd.max) fail(`Choose ${pd.min}-${pd.max}.`);
+  if (sel.some((x) => !pd.options.includes(x))) fail('Illegal choice.');
   const { m } = match;
   const s = structuredClone(match.s);
   s.cmds.push({ t: 'dec', p, id, sel });
-  s.exec[s.exec.length - 1].ctx[pd!.as] = pd!.single ? sel[0] : sel;
   s.pending = null;
-  const hidden = pd!.options.some((o) => s.objects[o] && viewers(m, s.objects[o].zone) !== null);
+  if (pd.kind === 'order') s.nextTrig = sel[0];
+  else s.exec[s.exec.length - 1].ctx[pd.as] = pd.single ? sel[0] : sel;
+  const hidden = pd.options.some((o) => s.objects[o] && viewers(m, s.objects[o].zone) !== null);
   emit(m, s, { type: 'chose', player: p, decision: id, sel, ...masks([hidden ? [p] : null, ['sel']]) });
-  settle(m, s);
+  settleOrReject(m, s);
   return { m, s };
 }
 

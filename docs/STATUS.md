@@ -14,27 +14,41 @@
 
 Known: random-vs-random, Ember Rush beats Stone Ward about 95% of the time. Mirror matches are about 55/45 in favour of the first player. Revisit balance once there is a heuristic AI (M6).
 
-## Next: M2, timing and effects
-- Timing adapters, selected per phase in rules:
-  - immediate (current behaviour)
-  - priority stack (pass sequence, LIFO, responses)
-  - chain (link legality, reverse resolution)
-- Replacement and prevention pipeline (`proposed event → replacements in module order → commit`), with application identity so a replacement applies only once.
-- Continuous effects: layers, timestamps, dependency order, recompute on change. Use a computed-characteristics view instead of mutating vars.
-- Let the controller order simultaneous triggers (a decision).
-- Costs that need choices (sacrifice, discard) with atomic rollback.
-- Reference game **Arcane Duel**, which tests the stack:
-  - instants and responses
-  - shields as prevention, and "instead" replacements
-  - +N/+N anthems against set-power layers
-  - counters, aura attachments (a relationship graph)
-  - an alternate win condition
+## Done: M2, timing and effects
+- Timing protocols, set globally or per phase:
+  - immediate
+  - priority stack (retain, pass sequence, LIFO, priority returns to the active player)
+  - chain (responses pass priority on, speed ladder, back-to-back resolution, triggers form a new chain)
+- Targets are rechecked on resolution and fizzle if gone. `counter` with `countered` effects.
+- Replacement and prevention pipeline (`instead` / `modify`, applied once each, in module order then timestamp).
+- Continuous effects: computed `stats` and keywords by layer, with timestamps and dependency ordering (cycles fall back to timestamp). Temporary `modify ... until turn`.
+- Relationships (`link`), with aura-style attachments.
+- Controller orders simultaneous triggers (`order` decision). Costs are atomic (`choose required`).
+- Views include the stack and computed stats/keywords.
+- **Arcane Duel**: 21 cards, 2 decks. Covers stack, fast spells, counter, fizzle, ward replacement, damage reduction, anthem and threshold statics, set/add/counters layers, aura, activated abilities, charge alt-win.
+- 26 tests. Replay, restore, hidden-info and invariant suites run on both games.
+
+Balance (random-vs-random):
+- Arcane Duel is about 60/40 for Storm Circle from either seat. 59% of wins come from charge.
+- Spark Duel: Ember Rush beats Stone Ward about 95% of the time. Revisit both with a heuristic AI (M6).
+
+Known simplifications:
+- Triggered abilities choose targets when they resolve, not when they go on the stack.
+- An activated ability doesn't resolve if its source has left play.
+- Replacement order is module order plus timestamp, not the affected player's choice.
+- An `instead` lineage is exempt from that same replacement.
+
+## Next: M3, module SDK
+- ZIP package loader: manifest validation, path-traversal, zip-bomb and size limits, content hashes, `engineApiRange` check.
+- JSON schema for each file, and a validator CLI (`npm run validate <dir|zip>`) with line-precise errors.
+- Sandboxed, gas-limited, deterministic custom scripts (an interpreter over immutable views that returns effect lists). Pin the runtime version for replay.
+- Optional: the affected player chooses replacement order (resumable `@ev` frames).
 
 ## Planned reference games (each one exercises mechanics the others lack)
 | Game | Milestone | Unique stressors |
 |---|---|---|
 | Spark Duel | M1 ✓ | baseline: immediate timing, single deck, numeric life, auto resource growth |
-| Arcane Duel | M2 | priority stack, replacement/prevention, layers/timestamps, attachments, counters, alt win |
+| Arcane Duel | M2 ✓ | priority stack, replacement/prevention, layers/timestamps, attachments, counters, alt win |
 | Tri-Lane | M4 | 3 lanes with spatial adjacency and movement; simultaneous sealed commitments plus reveal; lane-control scoring victory |
 | Relic Chain | M4 | chain timing with reverse resolution; face-down set cards (traps); battle positions; extra deck with fusion recipes from multiple cards |
 | Tidewardens | M4 | separate resource deck; life as a hidden ordered card zone with reveal triggers; evolution stacks (cards under cards); pitch cards (resource or effect) |

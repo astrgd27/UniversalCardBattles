@@ -1,0 +1,91 @@
+{
+  "players": {"min": 2, "max": 2},
+  "playerVars": {"life": 20, "mana": 0, "maxMana": 0, "charge": 0},
+  "objectVars": {"dmg": 0, "ready": 0, "ward": 0, "growth": 0},
+  "stats": ["power", "health", "cost"],
+  "layers": ["set", "add", "counters"],
+  "timing": {"mode": "stack"},
+  "zones": [
+    {"id": "deck", "vis": "hidden", "ordered": true},
+    {"id": "hand", "vis": "owner"},
+    {"id": "board", "vis": "public", "abilities": true},
+    {"id": "stack", "vis": "public"},
+    {"id": "grave", "vis": "public", "ordered": true}
+  ],
+  "deckZone": "deck", "handZone": "hand", "graveZone": "grave",
+  "format": {"deckMin": 20, "deckMax": 20, "maxCopies": 2},
+  "turnLimit": 80,
+  "setup": [["each", ["players"], "$p", [["shuffle", "$p", "deck"], ["draw", "$p", 4]]]],
+  "phases": [
+    {"id": "start", "auto": true, "do": [
+      ["inc", "$active", "maxMana", ["?", ["<", ["get", "$active", "maxMana"], 10], 1, 0]],
+      ["set", "$active", "mana", ["get", "$active", "maxMana"]],
+      ["each", ["cards", "$active", "board"], "$u", [["set", "$u", "ready", 1]]],
+      ["if", ["!=", "$turn", 1], [["draw", "$active", 1]]],
+      ["if", [">=", ["get", "$active", "charge"], 12], [["win", "$active"]]]
+    ]},
+    {"id": "main"},
+    {"id": "end", "auto": true, "do": [["each", ["cards", "*", "board"], "$u", [["set", "$u", "dmg", 0]]]]}
+  ],
+  "actions": {
+    "summon": {
+      "label": "Summon", "phases": ["main"], "speed": 1,
+      "source": ["filter", ["cards", "$me", "hand"], ["=", ["get", "$it", "type"], "unit"]],
+      "req": [{"if": ["<=", ["get", "$self", "cost"], ["get", "$me", "mana"]], "why": "Not enough mana."}],
+      "cost": [["inc", "$me", "mana", ["neg", ["get", "$self", "cost"]]], ["move", "$self", "stack", {"as": "$self"}]],
+      "do": [["move", "$self", "board"]],
+      "countered": [["move", "$self", "grave"]]
+    },
+    "cast": {
+      "label": "Cast", "phases": ["main"], "speed": 1, "cardTargets": true,
+      "source": ["filter", ["cards", "$me", "hand"], ["and", ["in", ["get", "$it", "type"], ["list", "spell", "aura"]], ["not", ["has", "$it", "fast"]]]],
+      "req": [{"if": ["<=", ["get", "$self", "cost"], ["get", "$me", "mana"]], "why": "Not enough mana."}],
+      "cost": [["inc", "$me", "mana", ["neg", ["get", "$self", "cost"]]], ["move", "$self", "stack", {"as": "$self"}]],
+      "do": [["run", "$self", "effects"], ["if", ["=", ["get", "$self", "zone"], "stack"], [["move", "$self", "grave"]]]],
+      "countered": [["move", "$self", "grave"]]
+    },
+    "flash": {
+      "label": "Cast (fast)", "phases": ["main"], "speed": 2, "cardTargets": true,
+      "source": ["filter", ["cards", "$me", "hand"], ["has", "$it", "fast"]],
+      "req": [{"if": ["<=", ["get", "$self", "cost"], ["get", "$me", "mana"]], "why": "Not enough mana."}],
+      "cost": [["inc", "$me", "mana", ["neg", ["get", "$self", "cost"]]], ["move", "$self", "stack", {"as": "$self"}]],
+      "do": [["run", "$self", "effects"], ["if", ["=", ["get", "$self", "zone"], "stack"], [["move", "$self", "grave"]]]],
+      "countered": [["move", "$self", "grave"]]
+    },
+    "attack": {
+      "label": "Attack", "phases": ["main"], "speed": 1,
+      "source": ["filter", ["cards", "$me", "board"], ["and", ["=", ["get", "$it", "type"], "unit"], ["=", ["get", "$it", "ready"], 1], ["not", ["has", "$it", "pacified"]]]],
+      "targets": [{"as": "$t", "prompt": "attack target", "recheck": "exists", "from": ["?",
+        ["any", ["filter", ["cards", "$opp", "board"], ["=", ["get", "$it", "type"], "unit"]], ["has", "$it", "guard"]],
+        ["filter", ["cards", "$opp", "board"], ["and", ["=", ["get", "$it", "type"], "unit"], ["has", "$it", "guard"]]],
+        ["concat", ["list", "$opp"], ["filter", ["cards", "$opp", "board"], ["=", ["get", "$it", "type"], "unit"]]]]}],
+      "cost": [["set", "$self", "ready", 0]],
+      "do": [["if", ["isObj", "$self"], [
+        ["damage", "$t", ["get", "$self", "power"], "$self"],
+        ["if", ["isObj", "$t"], [["damage", "$self", ["get", "$t", "power"], "$t"]]]]]]
+    },
+    "channel": {
+      "label": "Channel", "phases": ["main"], "speed": 2, "cardTargets": true,
+      "source": ["filter", ["cards", "$me", "board"], ["and", ["has", "$it", "channeler"], ["=", ["get", "$it", "ready"], 1]]],
+      "cost": [["set", "$self", "ready", 0]],
+      "do": [["run", "$self", "channel"]]
+    }
+  },
+  "triggers": [
+    {"on": "drawFail", "do": [["lose", "$e.player"]]},
+    {"on": "moved", "if": ["and", ["=", "$e.to", "board"], ["has", "$e.newObj", "haste"]], "do": [["set", "$e.newObj", "ready", 1]]},
+    {"on": "action", "if": ["in", "$e.action", ["list", "cast", "flash"]], "do": [["inc", "$e.player", "charge", 1]]}
+  ],
+  "statics": [
+    {"layer": "counters", "text": "Growth counters", "affects": ["filter", ["cards", "*", "board"], [">", ["get", "$it", "growth"], 0]],
+      "mods": [{"op": "add", "stat": "power", "value": ["get", "$it", "growth"]}, {"op": "add", "stat": "health", "value": ["get", "$it", "growth"]}]}
+  ],
+  "replacements": [
+    {"replace": "destroy", "text": "Ward", "if": [">", ["get", "$e.obj", "ward"], 0], "instead": [["inc", "$e.obj", "ward", -1], ["set", "$e.obj", "dmg", 0]]}
+  ],
+  "stateChecks": [
+    ["each", ["filter", ["cards", "*", "board"], ["=", ["get", "$it", "type"], "unit"]], "$u", [["if", [">=", ["get", "$u", "dmg"], ["get", "$u", "health"]], [["destroy", "$u"]]]]],
+    ["each", ["filter", ["cards", "*", "board"], ["=", ["get", "$it", "type"], "aura"]], "$a", [["if", ["not", ["isObj", ["get", "$a", "bound"]]], [["destroy", "$a"]]]]],
+    ["each", ["players"], "$p", [["if", ["<=", ["get", "$p", "life"], 0], [["lose", "$p"]]]]]
+  ]
+}

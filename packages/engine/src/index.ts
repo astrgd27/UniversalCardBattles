@@ -3,14 +3,16 @@ import { EngineError } from './util.ts';
 import { validateModule } from './validate.ts';
 
 export * from './types.ts';
-export { EngineError } from './util.ts';
+export { EngineError, CostError } from './util.ts';
 export { validateModule, deckErrors, ENGINE_API } from './validate.ts';
 export {
   createMatch, listActions, proposeAction, explainLegality, commitAction, submitDecision, serialize, restore, replay,
   applyCmd, eventHash, IllegalAction,
 } from './match.ts';
 export { observe, eventsFor, redact } from './view.ts';
-export type { View, ObjView } from './view.ts';
+export type { View, ObjView, StackView } from './view.ts';
+export { invalidate } from './layers.ts';
+export { timingOf } from './match.ts';
 export { seedRng, rand, randInt, sample, shuffle, hash } from './rng.ts';
 
 /** Validates a module definition and indexes it for the engine. Throws with all errors. */

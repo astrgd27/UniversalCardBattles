@@ -1,11 +1,12 @@
 // Expression evaluator for the S-expression DSL. See docs/DSL.md.
 import type { Ctx, Mod, State } from './types.ts';
+import { chars } from './layers.ts';
 import { EngineError, list, nextPlayer, num, one, player, zoneIdOf } from './util.ts';
 
 export const EXPR_OPS = new Set([
   'lit', '+', '-', '*', '/', 'neg', 'min', 'max', '=', '!=', '<', '<=', '>', '>=', 'and', 'or', 'not', '?',
   'get', 'has', 'players', 'opp', 'cards', 'top', 'count', 'concat', 'list', 'first', 'filter', 'any', 'all',
-  'sum', 'in', 'isPlayer', 'isObj',
+  'sum', 'in', 'isPlayer', 'isObj', 'stack', 'linked',
 ]);
 
 export function lookup(s: State, ctx: Ctx, name: string): any {
@@ -20,14 +21,21 @@ export function lookup(s: State, ctx: Ctx, name: string): any {
   return v;
 }
 
-/** Property of a player or game object. Object vars override card-definition fields. */
+/**
+ * Property of a player, game object or stack item. Objects: special names, then relationships,
+ * then computed stats (rules.stats), then vars, then card-definition fields.
+ */
 export function getProp(m: Mod, s: State, ref: any, name: string): any {
   const r = one(ref);
   if (r == null) return undefined;
   const p = player(s, r);
   if (p) return name === 'id' ? p.id : name === 'lost' ? p.lost : (p.vars[name] ?? 0);
   const o = s.objects[r];
-  if (!o) return undefined;
+  if (!o) {
+    const it = s.stack.find((x) => x.id === r);
+    if (!it) return undefined;
+    return name === 'controller' ? it.ctrl : (it as any)[name];
+  }
   switch (name) {
     case 'id': return o.id;
     case 'owner': return o.owner;
@@ -35,6 +43,8 @@ export function getProp(m: Mod, s: State, ref: any, name: string): any {
     case 'zone': return zoneIdOf(o.zone);
     case 'card': return o.card;
   }
+  if (o.rel && name in o.rel) return o.rel[name];
+  if (m.rules.stats?.includes(name)) return chars(m, s)!.get(r)!.stats[name];
   if (name in o.vars) return o.vars[name];
   return (m.card.get(o.card) as any)?.[name] ?? 0;
 }
@@ -79,6 +89,8 @@ export function ev(m: Mod, s: State, e: any, ctx: Ctx): any {
       const o = s.objects[one(A(1))];
       if (!o) return false;
       const k = A(2);
+      const ch = chars(m, s);
+      if (ch) return ch.get(o.id)!.kw.has(k);
       return (m.card.get(o.card)?.keywords ?? []).includes(k) || (o.vars[`kw:${k}`] ?? 0) > 0;
     }
     case 'players': return s.players.filter((p) => !p.lost).map((p) => p.id);
@@ -96,6 +108,8 @@ export function ev(m: Mod, s: State, e: any, ctx: Ctx): any {
     case 'in': return list(A(2)).includes(one(A(1)));
     case 'isPlayer': return !!player(s, one(A(1)));
     case 'isObj': return one(A(1)) in s.objects;
+    case 'stack': return s.stack.map((x) => x.id).reverse(); // top first
+    case 'linked': { const t = one(A(1)); const n = A(2); return Object.values(s.objects).filter((o) => o.rel?.[n] === t).map((o) => o.id); }
   }
   throw new EngineError(`Unknown expression op ${e[0]}`);
 }
