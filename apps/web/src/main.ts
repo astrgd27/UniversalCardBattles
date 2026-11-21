@@ -6,9 +6,10 @@ import {
 } from '#engine';
 import { makeAgent, type Agent, type AgentInfo } from '#ai';
 import {
-  type Campaign, type Granted, type Line, type Profile, CampaignError, buy, campaignOf, encounterAgent, finishEncounter, newProfile, ownedErrors,
-  startEncounter,
+  type Campaign, type Granted, type Line, type Profile, CampaignError, buy, campaignOf, encounterAgent, finishEncounter, migrateProfile, newProfile,
+  ownedErrors, startEncounter,
 } from '#campaign';
+import { makeBackup, readBackup } from './backup.ts';
 import { PackageError } from '#sdk';
 import { MODULES, loadZipModule } from './modules.ts';
 import { render } from './ui/render.ts';
@@ -196,7 +197,9 @@ export const actions = {
   },
   openModule(id: string) {
     ui.mod = MODULES.get(id)!;
-    Object.assign(ui, seatsFor(ui.mod), { match: null, filter: '', gallery: null, camp: null, profile: store.get<Profile | null>(PROFILE(id), null) });
+    let profile: Profile | null = null;
+    try { const raw = store.get<unknown>(PROFILE(id), null); profile = raw ? migrateProfile(raw) : null; } catch { profile = null; ui.note = { title: 'Campaign progress unreadable', text: 'The stored profile was damaged and has been ignored.' }; }
+    Object.assign(ui, seatsFor(ui.mod), { match: null, filter: '', gallery: null, camp: null, profile });
     actions.go('home');
   },
   async loadZip(file: File) {
@@ -209,6 +212,35 @@ export const actions = {
     }
   },
   setTheme(t: UI['theme']) { ui.theme = t; store.set('ucb-theme', t); redraw(); },
+  exportSaves() {
+    const entries: Record<string, unknown> = {};
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i)!;
+        if (k.startsWith('ucb-')) entries[k] = JSON.parse(localStorage.getItem(k)!);
+      }
+    } catch (e) { ui.note = { title: 'Could not read saves', text: String(e) }; return redraw(); }
+    const b = makeBackup(entries);
+    const url = URL.createObjectURL(new Blob([JSON.stringify(b, null, 1)], { type: 'application/json' }));
+    const a = Object.assign(document.createElement('a'), { href: url, download: `ucb-saves-${b.exportedAt.slice(0, 10)}.json` });
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    ui.note = { title: 'Saves exported', text: `${Object.keys(b.entries).length} item(s): campaign progress, custom decks and saved matches.` };
+    redraw();
+  },
+  async importSaves(file: File) {
+    const { entries, problems } = readBackup(await file.text());
+    const n = Object.keys(entries).length;
+    if (!n) { ui.note = { title: 'Nothing imported', text: problems.join('\n') || 'The file has no saves.' }; return redraw(); }
+    if (!window.confirm(`Import ${n} item(s)? Existing saves with the same names will be replaced.`)) return;
+    let written = 0;
+    for (const [k, v] of Object.entries(entries)) if (store.set(k, v)) written++;
+    ui.theme = store.get<'light' | 'dark'>('ucb-theme', ui.theme) === 'light' ? 'light' : 'dark';
+    ui.note = { title: 'Saves imported', text: [`${written} item(s) restored.`, ...problems].join('\n') };
+    redraw();
+  },
   closeNote() { ui.note = null; redraw(); },
 
   // ---- match setup ----

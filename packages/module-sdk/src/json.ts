@@ -25,7 +25,10 @@ export function parseJson(text: string, file: string): Parsed {
     const s = i++;
     for (; i < text.length; i++) {
       const ch = text.charCodeAt(i);
-      if (ch === 34) { i++; return JSON.parse(text.slice(s, i)); }
+      if (ch === 34) {
+        i++;
+        try { return JSON.parse(text.slice(s, i)); } catch { return fail('invalid escape in string', s); }
+      }
       if (ch === 92) i++;
       else if (ch < 32) fail('control character in string');
     }

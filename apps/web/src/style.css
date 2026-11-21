@@ -271,3 +271,6 @@ h1, h2, h3 { margin: 0; letter-spacing: .02em; }
 .price { font-weight: 900; font-size: 18px; color: #f7c948; }
 .panel-pop.wide { max-width: min(760px, 100%); }
 @media (prefers-reduced-motion: reduce) { .flip { animation: none; } }
+.foot { gap: 10px; flex-wrap: wrap; align-items: center; }
+.file-btn { display: inline-flex; align-items: center; min-height: 42px; padding: 9px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); cursor: pointer; }
+.file-btn input { display: none; }

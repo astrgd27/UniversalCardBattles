@@ -6,7 +6,28 @@ import { EngineError, activeId, baseCtx, list, num, zoneIdOf } from './util.ts';
 export interface Chars { stats: Record<string, any>; kw: Set<string> }
 type CMap = Map<string, Chars>;
 interface Entry { ver: number; map: CMap }
-interface CE { key: string; ts: number; layer: number; st?: { def: StaticDef; ctx: Ctx }; targets?: string[]; mods?: any[] }
+interface CE { key: string; ts: number; layer: number; st?: { def: StaticDef; ctx: Ctx }; targets?: string[]; mods?: any[]; rw: RW }
+/** What an effect reads and writes: stat names and "kw:<keyword>"; "*" = unknown (script calls). */
+interface RW { reads: Set<string>; writes: Set<string> }
+const rwCache = new WeakMap<object, RW>();
+function scan(e: unknown, out: Set<string>) {
+  if (!Array.isArray(e)) return;
+  if (e[0] === 'get' && typeof e[2] === 'string') out.add(e[2]);
+  else if (e[0] === 'has' && typeof e[2] === 'string') out.add(`kw:${e[2]}`);
+  else if (e[0] === 'has' || e[0] === 'get' || e[0] === 'call') out.add('*');
+  for (const x of e) scan(x, out);
+}
+const writesOf = (mods: { op: string; stat?: string; kw?: string }[]) => new Set(mods.map((md) => (md.kw !== undefined ? `kw:${md.kw}` : md.stat!)));
+function rwStatic(def: StaticDef): RW {
+  let rw = rwCache.get(def);
+  if (!rw) {
+    const reads = new Set<string>();
+    scan(def.affects, reads); scan(def.if, reads); def.mods.forEach((md) => scan(md.value, reads));
+    rw = { reads, writes: writesOf(def.mods) };
+    rwCache.set(def, rw);
+  }
+  return rw;
+}
 type Res = [string, any[]][];
 
 const cache = new WeakMap<State, Entry>();
@@ -33,7 +54,7 @@ function collect(m: Mod, s: State): CE[] {
     return i;
   };
   const out: CE[] = [];
-  (m.rules.statics ?? []).forEach((def, i) => out.push({ key: `rule:${i}`, ts: 0, layer: li(def.layer), st: { def, ctx: baseCtx(s, activeId(s)) } }));
+  (m.rules.statics ?? []).forEach((def, i) => out.push({ key: `rule:${i}`, ts: 0, layer: li(def.layer), st: { def, ctx: baseCtx(s, activeId(s)) }, rw: rwStatic(def) }));
   for (const key in s.zones) {
     const zid = zoneIdOf(key);
     const zd = m.zone.get(zid)!;
@@ -42,11 +63,11 @@ function collect(m: Mod, s: State): CE[] {
       if (o.fd) continue;
       m.card.get(o.card)?.statics?.forEach((def, i) => {
         if (!(def.zones ? def.zones.includes(zid) : zd.abilities)) return;
-        out.push({ key: `${id}:${i}`, ts: tsOf(id), layer: li(def.layer), st: { def, ctx: { ...baseCtx(s, o.controller), $self: id } } });
+        out.push({ key: `${id}:${i}`, ts: tsOf(id), layer: li(def.layer), st: { def, ctx: { ...baseCtx(s, o.controller), $self: id } }, rw: rwStatic(def) });
       });
     }
   }
-  for (const e of s.effects) out.push({ key: e.id, ts: e.ts, layer: li(e.layer), targets: e.targets, mods: e.mods });
+  for (const e of s.effects) out.push({ key: e.id, ts: e.ts, layer: li(e.layer), targets: e.targets, mods: e.mods, rw: { reads: new Set(), writes: writesOf(e.mods) } });
   return out;
 }
 
@@ -72,15 +93,22 @@ function applyRes(map: CMap, res: Res) {
   }
 }
 
-const cloneMap = (map: CMap): CMap => new Map([...map].map(([k, c]) => [k, { stats: { ...c.stats }, kw: new Set(c.kw) }]));
+/** Copy-on-write: a shallow copy of the map where only the entries `res` touches are cloned. */
+function withApplied(map: CMap, res: Res): CMap {
+  const out = new Map(map);
+  for (const [t] of res) { const c = map.get(t); if (c) out.set(t, { stats: { ...c.stats }, kw: new Set(c.kw) }); }
+  applyRes(out, res);
+  return out;
+}
 
 /** a depends on b if applying b first changes what a affects or what it does. */
 function dependsOn(m: Mod, s: State, entry: Entry, a: CE, b: CE): boolean {
   if (!a.st) return false;
+  // Cheap pre-check: a can only depend on b if a reads something b writes.
+  if (!a.rw.reads.has('*') && ![...b.rw.writes].some((w) => a.rw.reads.has(w))) return false;
   const before = JSON.stringify(resolve(m, s, a));
   const saved = entry.map;
-  entry.map = cloneMap(saved);
-  applyRes(entry.map, resolve(m, s, b));
+  entry.map = withApplied(saved, resolve(m, s, b));
   const after = JSON.stringify(resolve(m, s, a));
   entry.map = saved;
   return before !== after;
@@ -115,11 +143,18 @@ export function chars(m: Mod, s: State): CMap | null {
 function layered(m: Mod, s: State, entry: Entry) {
   const ces = collect(m, s);
   for (let l = 0; l < (m.rules.layers ?? []).length; l++) {
+    const memo = new Map<string, boolean>();
     const group = ces.filter((c) => c.layer === l).sort((a, b) => a.ts - b.ts || (a.key < b.key ? -1 : 1));
     while (group.length) {
       let pick = 0;
       if (group.length > 1 && group.some((g) => g.st)) {
-        const i = group.findIndex((a) => !group.some((b) => b !== a && dependsOn(m, s, entry, a, b)));
+        // Dependencies are evaluated once per pair per layer pass (memoised).
+        const dep = (a: CE, b: CE) => {
+          const k = `${a.key}|${b.key}`;
+          if (!memo.has(k)) memo.set(k, dependsOn(m, s, entry, a, b));
+          return memo.get(k)!;
+        };
+        const i = group.findIndex((a) => !group.some((b) => b !== a && dep(a, b)));
         pick = i < 0 ? 0 : i; // dependency cycle: fall back to timestamp order
       }
       applyRes(entry.map, resolve(m, s, group.splice(pick, 1)[0]));

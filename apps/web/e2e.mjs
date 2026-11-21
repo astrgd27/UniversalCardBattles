@@ -13,6 +13,7 @@ try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   page.on('pageerror', (e) => fail.push(`pageerror: ${e.message}`));
   page.on('console', (m) => { if (m.type() === 'error') fail.push(`console: ${m.text()}`); });
+  page.on('dialog', (d) => d.accept());
   await page.goto(`http://localhost:${port}/`);
   const ids = await page.$$eval('[data-module]', (t) => t.map((x) => x.dataset.module));
   ok(ids.length === 6, `expected 6 game tiles, got ${ids.length}`);
@@ -136,8 +137,27 @@ try {
   // Phone width: library and table without horizontal scroll.
   await page.click('text=← The Ember Road');
   await page.click('text=← Spark Duel');
-  await page.setViewportSize({ width: 390, height: 844 });
   await page.click('text=← Library');
+
+  // Save export/import: download a backup, wipe storage, import it, campaign progress is back.
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.click('[data-act=export]')]);
+  const backupPath = await dl.path();
+  const exported = JSON.parse(await (await import('node:fs/promises')).readFile(backupPath, 'utf8'));
+  ok(exported.kind === 'saves' && 'ucb-profile:spark-duel' in exported.entries && 'ucb-decks:spark-duel' in exported.entries, 'backup contains profile and decks');
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await page.setInputFiles('[data-act=import] input', backupPath);
+  await page.waitForSelector('text=Saves imported');
+  await page.click('[data-module="spark-duel"]');
+  ok(await page.isVisible('text=10 Sparks to spend'), 'imported campaign currency');
+  await page.click('[data-menu=play]');
+  ok((await page.$$eval('.deck-select option', (o) => o.map((x) => x.textContent))).includes('★ Test Deck'), 'imported custom deck');
+  await page.click('text=← Spark Duel');
+  await page.click('text=← Library');
+  await page.setInputFiles('[data-act=import] input', { name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('{"__proto__": 1}') });
+  await page.waitForSelector('text=Nothing imported');
+
+  await page.setViewportSize({ width: 390, height: 844 });
   ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'library fits a phone');
   await open('arcane-duel');
   await page.click('[data-menu=play]');

@@ -3,14 +3,14 @@
 A universal, fully automated TCG simulator. The headless deterministic TypeScript rules engine runs any card game defined as a data module. The browser UI is in `apps/web`.
 
 - Spec: `docs/SPEC.md` (a condensed form of the design PDF; never re-read the PDF).
-- Rules DSL reference: `docs/DSL.md`.
+- Rules DSL reference: `docs/DSL.md`. Author guide: `docs/AUTHORING.md`.
 - Progress and the next step: `docs/STATUS.md`. **Read this first, and update it at the end of every session.**
 
 ## Token budget rules (follow strictly)
 
 1. **Orient from docs, not code.** Read `STATUS.md`, then only what the task needs. Use `grep -n` and line ranges instead of whole-file reads. Never re-read a file you just wrote.
 2. **No build step.** Node 22 runs `.ts` directly (type stripping). Use only erasable TS: no `enum`, `namespace` or parameter properties, and use `import type` for types.
-3. **Quiet tooling.** Use `npm run -s check` (typecheck plus tests, dot reporter, failures only), `npm run -s sim <game> -- --games=200` (a one-line summary) `npm run -s validate <dir|zip>` (`file:line:col` errors) `npm run -s events <game> <type...>` (event counts) and `npm run -s tourney <game> -- --agents=heuristic,random` (AI win rates). After an intended behaviour change, run `npm run -s golden`. Pipe anything long through `tail`/`grep`.
+3. **Quiet tooling.** Use `npm run -s check` (typecheck plus tests, dot reporter, failures only), `npm run -s sim <game> -- --games=200` (a one-line summary) `npm run -s validate <dir|zip>` (`file:line:col` errors) `npm run -s events <game> <type...>` (event counts) `npm run -s tourney <game> -- --agents=heuristic,random` (AI win rates) and `npm run -s bench` (large-board timings). After an intended behaviour change, run `npm run -s golden`. Pipe anything long through `tail`/`grep`.
 4. **Content is data.** Games, cards, decks and campaigns are compact JSON using the S-expression DSL, never TS code. Adding a game must not touch `packages/engine`.
 5. **Write whole files in one pass.** Plan the design in your head first, then write. Avoid edit-and-rerun churn.
 6. **No subagents.** Verify the UI with `npm run -s e2e` (Playwright, text output). Take at most one 1x screenshot, and only when the layout itself changed.

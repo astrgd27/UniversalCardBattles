@@ -145,12 +145,30 @@ Not done yet: card art (the module `art` field is validated but not rendered), a
 
 Not done yet: IndexedDB storage (localStorage is used), profile export/import, tournaments and quests, campaigns for the other reference games.
 
-## Next: M8, hardening
-- Performance check: matches with 100+ objects and many modifiers stay interactive (measure the `chars` cache and observe cost).
-- Save migrations (`saveMigrationVersion`) and profile export/import.
-- Security review of the zip and scripts paths; fuzz the JSON parser and validator.
-- Docs: a module author guide and a campaign guide.
-- Optional: campaigns for more reference games, the affected player choosing replacement order, undo where rules allow.
+## Done: M8, hardening
+- **Performance**: `npm run -s bench` uses a 160-object board with 48 statics.
+  - Statics now record which stats and keywords they read and write, so dependency checks run only when one writes what another reads.
+  - Dependency checks use copy-on-write and are memoised per layer pass.
+  - `observe`: 228 → 29 ms. A full attack round (3 commands): 1447 → 271 ms. A test enforces observe < 250 ms.
+- **Fuzzing** (`tests/hardening.test.ts`): the JSON parser, module validator, ZIP reader and package loader, campaign validator, profile migration and backup reader may only succeed or fail with their own error types. It found and fixed three crashes: bad string escapes in JSON, and campaign validation on malformed data (now structural checks plus a safety net).
+- **Saves**:
+  - Profiles are versioned (`v`), and `migrateProfile` upgrades and checks them.
+  - Browser **export/import of all saves** (campaign progress, custom decks, saved matches, theme) as one JSON backup, from the library screen.
+  - Imports are strict: size cap, safe JSON, key whitelist, per-entry validation; bad entries are skipped and reported.
+  - Saved matches still refuse to load into changed rules (rules hash).
+- **Docs**: `docs/AUTHORING.md` (module author guide).
+- 69 tests; e2e covers export, wipe, import and a malicious import.
+
+Security notes:
+- Module packages, backup files and saves are all treated as untrusted. Their limits are documented in `DSL.md` (Packages) and `apps/web/src/backup.ts`.
+- A tampered saved-match state that passes the module/version/hash check can still fail when continued. It only affects the user's own browser data and surfaces as an error note.
+
+## Possible next steps
+- Campaigns for the other reference games.
+- IndexedDB storage (localStorage today) and cloud sync of backups.
+- Card art pipeline: an asset browser in the gallery, using art in reference games.
+- Online multiplayer: the match API is already command-based and hidden-info safe.
+- The affected player choosing replacement order; undo where rules allow; animations driven by the event log.
 
 ## Planned reference games (each one exercises mechanics the others lack)
 | Game | Milestone | Unique stressors |
@@ -163,4 +181,3 @@ Not done yet: IndexedDB storage (localStorage is used), profile export/import, t
 | Ember Council | M4 ✓ | 3–4 players; voting/politics; directed elimination; shared market row (draft); alternating actions with initiative; dice as objects with faces; quest-score victory |
 
 ## Later
-- M8: hardening.

@@ -22,7 +22,11 @@ export function library(ui: UI, A: any) {
         h('span', { class: 'tile-title' }, 'Load a game'),
         h('span', { class: 'tile-tag' }, 'Open a module package (.zip)'),
         h('input', { type: 'file', accept: '.zip', onchange: (e: Event) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) A.loadZip(f); } }))),
-    h('footer', { class: 'foot' }, segmented(ui.theme, [['dark', 'Dark'], ['light', 'Light']], A.setTheme, 'Theme')));
+    h('footer', { class: 'foot' },
+      h('button', { onclick: A.exportSaves, 'data-act': 'export' }, '⬇ Export saves'),
+      h('label', { class: 'file-btn', 'data-act': 'import' }, '⬆ Import saves',
+        h('input', { type: 'file', accept: '.json,application/json', onchange: (e: Event) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) A.importSaves(f); } })),
+      segmented(ui.theme, [['dark', 'Dark'], ['light', 'Light']], A.setTheme, 'Theme')));
 }
 
 function meta(m: Mod): string[] {
