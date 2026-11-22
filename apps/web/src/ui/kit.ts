@@ -79,7 +79,9 @@ export function cardFace(m: Mod, cardId: string, o: FaceOpts = {}): HTMLElement 
   const placed = tpl.stats.filter((s) => typeof val(s.field) === 'number' && !hidden.has(s.field));
   const onFrame = new Set([...placed.map((s) => s.field), ...(tpl.level ? [tpl.level] : [])]);
   const chips = cardStats(def, o.stats).filter(([k]) => !hidden.has(k) && !onFrame.has(k));
-  const kw = (o.keywords ?? def.keywords ?? []).filter((k) => k !== def.type); // a keyword that repeats the type adds nothing on the type line
+  const hideKw = new Set(m.manifest.theme?.hideKeywords ?? []);
+  const kw = (o.keywords ?? def.keywords ?? []).filter((k) => k !== def.type && !hideKw.has(k)); // rules-only keywords and ones repeating the type stay off the type line
+  const name = (s: string) => m.manifest.theme?.labels?.[s] ?? title(s);
   const th = m.manifest.theme;
   const hideV = new Set(th?.hideVars ?? []);
   const badges = Object.entries(o.vars ?? {}).filter(([k, n]) => n !== (o.baseVars?.[k] ?? 0) && !hideV.has(k) && !(m.rules.grid && (k === 'x' || k === 'y' || k === 'z')));
@@ -123,7 +125,7 @@ export function cardFace(m: Mod, cardId: string, o: FaceOpts = {}): HTMLElement 
   h('span', { class: 'body' },
     h('span', { class: 'name' }, def.name),
     level > 0 && h('span', { class: 'stars', 'aria-label': `level ${level}` }, '★'.repeat(Math.min(12, level))),
-    h('span', { class: 'type' }, title(def.type), kw.length ? ` · ${kw.map(title).join(', ')}` : '', o.faceDown ? ' · face down' : '', o.note ? ` · ${o.note}` : ''),
+    h('span', { class: 'type' }, name(def.type), kw.length ? ` · ${kw.map(name).join(', ')}` : '', o.faceDown ? ' · face down' : '', o.note ? ` · ${o.note}` : ''),
     tpl.text && def.text && h('span', { class: 'text' }, def.text),
     chips.length > 0 && h('span', { class: 'stats' }, chips.map(([k, v]) => h('span', { class: cls('stat', `s-${k}`), title: k }, ICON[k] ? `${ICON[k]} ${v}` : `${k} ${v}`))),
     line.length > 0 && h('span', { class: 'statline' }, line.map((s) => `${s.label ?? s.field} ${val(s.field)}`).join(' / ')),

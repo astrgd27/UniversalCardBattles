@@ -1170,7 +1170,8 @@ MANIFEST = {
               'hideStats': ['num', 'fno', 'startRes', 'giftCost', 'gm', 'ge', 'gg', 'awaken', 'ripen', 'yield', 'gest', 'souls'],
               'hideVars': ['fresh', 'hunted', 'moves', 'last', 'amb', 'hz', 'shield', 'saved', 'stun', 'xprey', 'mayPrey', 'ended', 'claim', 'ex', 'faction', 'gcl', 'first',
                            'infPlayed', 'plantPlayed', 'lurks', 'velvet', 'extraLurk', 'grim', 'tunnel', 'morgue', 'sqA', 'sqB', 'sqC', 'sqD'],
-              'labels': {'frenzy': 'Frenzied', 'silver': 'silver wounds', 'dmg': 'wounds', 'cit': 'citizens', 'growth': 'growth', 'sc': 'sequel in', 'plus': '+1/+1', 'essence': 'Essence', 'claims': 'districts',
+              'hideKeywords': ['aloof', 'nohunt', 'token', 'shambler'],
+              'labels': {'oldone': 'Old One', 'child': 'Horror', 'frenzy': 'Frenzied', 'silver': 'silver wounds', 'dmg': 'wounds', 'cit': 'citizens', 'growth': 'growth', 'sc': 'sequel in', 'plus': '+1/+1', 'essence': 'Essence', 'claims': 'districts',
                          'trophies': 'trophies', 'bodycount': 'Body Count', 'gestation': 'Gestation', 'barrow': 'Offerings', 'season': 'season', 'thralls': 'Thralls', 'souls': 'Souls', 'pacts': 'Pacts'}},
     'presentation': {
         'templates': {

@@ -72,7 +72,15 @@
    "sqC",
    "sqD"
   ],
+  "hideKeywords": [
+   "aloof",
+   "nohunt",
+   "token",
+   "shambler"
+  ],
   "labels": {
+   "oldone": "Old One",
+   "child": "Horror",
    "frenzy": "Frenzied",
    "silver": "silver wounds",
    "dmg": "wounds",
