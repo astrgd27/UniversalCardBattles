@@ -10,7 +10,7 @@ import json, os
 # Balance levers (playtest-tuned; see docs/NIGHTFALL.md "Balance"). NF_<NAME>=value overrides for experiments.
 LEVERS = {'GATHER_CABAL': 1, 'GATHER_HARVEST': 2, 'GATHER_ZOMBIE': 1, 'GATHER_SLASHER': 2, 'GATHER_DEVIL': 2, 'GESTATION_RISE': 1,
           'STRIKE_PER_DISTRICT': 1, 'SACRIFICE_IS_DEATH': 0, 'STRIKE_DAMAGE': 2,
-          'SPREAD_MIN': 3, 'OVERRUN_RATIO': 2, 'BODYCOUNT_WIN': 11, 'AWAKEN': 8, 'LURKS': 1, 'CABAL_PREY': 2, 'SHAMBLER_RES': 1}
+          'SPREAD_MIN': 3, 'OVERRUN_RATIO': 2, 'BODYCOUNT_WIN': 11, 'AWAKEN': 8, 'LURKS': 1, 'CABAL_PREY': 2, 'SHAMBLER_RES': 1, 'DRAW_SLASHER': 0, 'DRAW_DEVIL': 0, 'DRAW_HARVEST': 0}
 BC, AW = LEVERS['BODYCOUNT_WIN'], LEVERS['AWAKEN']  # STRIKE_DAMAGE 0 = the unit's Menace, N = a fixed N
 for k in LEVERS:
     if os.environ.get('NF_' + k) is not None: LEVERS[k] = int(os.environ['NF_' + k])
@@ -320,10 +320,13 @@ proc('returnKiller', ['$k'], [
     choose(CITY, '$d', 'Sequel: where does the Killer return?'),
     ['inc', '$me', ['at', lit(SEQ), g('$k', 'card')], 1],
     ['move', '$k', 'units', {'faceDown': True, 'as': '$r'}], C('place', '$r', g('$d', 'x'), '$me'), emit('sequel', player='$me')])
-proc('drawStep', [], [
+proc('drawStep', [], [x for x in [
     IF(ne('$turn', 1), [['draw', '$me', 1]]),
+    IF(AND(ne('$turn', 1), isF('$me', 4)), [['draw', '$me', LEVERS['DRAW_SLASHER']]]) if LEVERS['DRAW_SLASHER'] else None,
+    IF(AND(ne('$turn', 1), isF('$me', 5)), [['draw', '$me', LEVERS['DRAW_DEVIL']]]) if LEVERS['DRAW_DEVIL'] else None,
+    IF(AND(ne('$turn', 1), isF('$me', 2)), [['draw', '$me', LEVERS['DRAW_HARVEST']]]) if LEVERS['DRAW_HARVEST'] else None,
     IF(C('claims', '$me', 'financial'), [['draw', '$me', 1]]),
-    IF(AND(isF('$me', 2), eq(g('$me', 'season'), 0)), [['draw', '$me', 2]])])
+    IF(AND(isF('$me', 2), eq(g('$me', 'season'), 0)), [['draw', '$me', 2]])] if x])
 proc('gather', [], [
     C('addRes', '$me', Q(isF('$me', 1), add(LEVERS['GATHER_CABAL'], g('$me', 'thralls')), ['at', lit({'2': LEVERS['GATHER_HARVEST'], '3': LEVERS['GATHER_ZOMBIE'], '4': LEVERS['GATHER_SLASHER'], '5': LEVERS['GATHER_DEVIL']}), g('$me', 'faction')])),
     IF(C('claims', '$me', 'docks'), [C('addRes', '$me', 1)]),
