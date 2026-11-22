@@ -117,7 +117,8 @@ export function cardFace(m: Mod, cardId: string, o: FaceOpts = {}): HTMLElement 
         Array.from({ length: n }, () => h('i', { class: 'pip', style: `--h:${hue(k)}` }, k[0].toUpperCase())))))
     : h('span', { class: `gem pos-${tpl.cost}` }, String(o.stats?.cost ?? def.cost))),
   o.count !== undefined && h('span', { class: 'count' }, `×${o.count}`),
-  h('span', { class: 'art' }, h('img', { src: art, alt: '', draggable: 'false' })),
+  h('span', { class: 'art', style: tpl.art ? `flex-basis:${tpl.art}%` : null },
+    h('img', { src: art, alt: '', draggable: 'false', style: typeof def.artPos === 'string' ? `object-position:${def.artPos}` : null })),
   h('span', { class: 'body' },
     h('span', { class: 'name' }, def.name),
     level > 0 && h('span', { class: 'stars', 'aria-label': `level ${level}` }, '★'.repeat(Math.min(12, level))),

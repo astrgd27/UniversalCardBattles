@@ -13,6 +13,7 @@ export interface CardTemplate {
   level?: string; // field drawn as a row of stars
   text: boolean;
   label: string; // human name (shown in the gallery)
+  art?: number; // picture window height in % of the card (default per family)
 }
 
 /** Generic defaults, named for their structure rather than any game. */

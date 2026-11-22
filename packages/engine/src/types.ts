@@ -18,7 +18,7 @@ export interface Manifest {
   theme?: { accent?: string; accent2?: string; glyph?: string; hideStats?: string[]; hideVars?: string[]; labels?: Record<string, string>; tapVar?: string };
   official?: boolean; // presentation: an official game (listed first in the library)
   /** Presentation only: card templates (see apps/web templates). byType maps card types to template names. */
-  presentation?: { templates?: Record<string, { base?: string; layout?: 'portrait' | 'landscape'; cost?: 'tl' | 'tr' | 'none'; stats?: { field: string; pos: string; icon?: string; label?: string }[]; level?: string; text?: boolean; label?: string }>; byType?: Record<string, string> };
+  presentation?: { templates?: Record<string, { base?: string; layout?: 'portrait' | 'landscape'; cost?: 'tl' | 'tr' | 'none'; stats?: { field: string; pos: string; icon?: string; label?: string }[]; level?: string; text?: boolean; label?: string; art?: number }>; byType?: Record<string, string> }; // art: picture window height, % of the card
 }
 export interface ZoneDef {
   id: string;

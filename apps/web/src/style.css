@@ -91,7 +91,7 @@ h1, h2, h3 { margin: 0; letter-spacing: .02em; }
 .card.size-lg { --w: 230px; font-size: 15px; padding: 10px; }
 .card .art { flex: 0 0 38%; border-radius: 8px; display: grid; place-items: center; overflow: hidden;
   background: radial-gradient(circle at 30% 30%, hsl(calc(var(--h) + 30) 80% 65%), transparent 55%), linear-gradient(135deg, hsl(var(--h) 70% 45%), hsl(calc(var(--h) + 60) 60% 28%)); }
-.card .art img { width: 100%; height: 100%; object-fit: cover; }
+.card .art img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 25%; }
 .card .glyph { font-size: calc(var(--w) * .28); color: rgba(255,255,255,.92); text-shadow: 0 2px 8px rgba(0,0,0,.45); }
 .card .gem { position: absolute; top: 3px; left: 3px; z-index: 1; min-width: 22px; height: 22px; padding: 0 5px; border-radius: 11px; display: grid; place-items: center; font-weight: 800; font-size: 12px; background: linear-gradient(135deg, #3e7bff, #9a5bff); border: 1.5px solid rgba(255,255,255,.7); }
 .card .count { position: absolute; top: 3px; right: 3px; z-index: 1; font-weight: 800; font-size: 12px; padding: 1px 6px; border-radius: 8px; background: rgba(0,0,0,.6); }
@@ -425,3 +425,6 @@ img { -webkit-user-drag: none; }
 .cell > .card + .card { margin-top: calc(var(--w) * -0.62); }
 .cell > .card:hover, .cell > .card:focus-visible, .cell > .card.target, .cell > .card.legal { z-index: 3; }
 .cell > .card { position: relative; box-shadow: 0 -2px 10px rgba(0, 0, 0, .45); }
+/* the up-close views (preview, details panel) grow to show all of a card's text; the art keeps its share of the frame */
+.peek .card.size-lg, .drawer .card.size-lg { height: auto; min-height: calc(var(--w) * 1.4); max-height: 92dvh; }
+.peek .card.size-lg .art, .drawer .card.size-lg .art { flex: 0 0 auto; height: calc(var(--w) * 1.4 * 0.55); }

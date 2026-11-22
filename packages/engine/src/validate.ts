@@ -58,6 +58,7 @@ export function validateIssues(def: ModuleDef): Issue[] {
           if (t.base !== undefined && !TEMPLATE_BASES.includes(t.base)) eM(`${p}/base`, `unknown base "${t.base}" (${TEMPLATE_BASES.join(', ')})`);
           if (t.layout !== undefined && !['portrait', 'landscape'].includes(t.layout)) eM(`${p}/layout`, 'must be portrait or landscape');
           if (t.cost !== undefined && !['tl', 'tr', 'none'].includes(t.cost)) eM(`${p}/cost`, 'must be tl, tr or none');
+          if (t.art !== undefined && !(typeof t.art === 'number' && t.art >= 15 && t.art <= 80)) eM(`${p}/art`, 'must be a percentage from 15 to 80');
           if (t.stats !== undefined && !(Array.isArray(t.stats) && t.stats.every((s: any) => isRec(s) && typeof s.field === 'string' && ['tl', 'tr', 'bl', 'br', 'line'].includes(s.pos)))) eM(`${p}/stats`, 'must be [{field, pos: tl|tr|bl|br|line, icon?, label?}]');
         }
         for (const [type, name] of Object.entries<any>(isRec(pr.byType) ? pr.byType : {})) {

@@ -96,6 +96,7 @@
   "templates": {
    "unit": {
     "base": "skirmisher",
+    "art": 55,
     "stats": [
      {
       "field": "menace",
@@ -112,6 +113,7 @@
    },
    "structure": {
     "base": "vital",
+    "art": 55,
     "stats": [
      {
       "field": "endurance",
@@ -133,6 +135,7 @@
    },
    "master": {
     "base": "leader",
+    "art": 55,
     "stats": [
      {
       "field": "essence",
@@ -141,6 +144,11 @@
      }
     ],
     "label": "Master — Essence"
+   },
+   "card": {
+    "base": "spell",
+    "art": 55,
+    "label": "Card — art upper 55%"
    },
    "district": {
     "base": "location",
@@ -167,20 +175,20 @@
    "effigy": "structure",
    "master": "master",
    "district": "district",
-   "event": "spell",
-   "scheme": "spell",
-   "rite": "spell",
-   "outbreak": "spell",
-   "scene": "spell",
-   "bargain": "spell",
-   "omen": "spell",
-   "mutation": "spell",
-   "weapon": "spell",
-   "relic": "spell",
-   "possession": "spell",
-   "strain": "spell",
+   "event": "card",
+   "scheme": "card",
+   "rite": "card",
+   "outbreak": "card",
+   "scene": "card",
+   "bargain": "card",
+   "omen": "card",
+   "mutation": "card",
+   "weapon": "card",
+   "relic": "card",
+   "possession": "card",
+   "strain": "card",
    "planting": "resource",
-   "trap": "spell"
+   "trap": "card"
   }
  }
 }
