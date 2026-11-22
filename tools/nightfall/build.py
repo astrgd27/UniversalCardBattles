@@ -538,12 +538,12 @@ card('NF-004', 'the-sommelier', 'The Sommelier', 'horror', 'cabal', 2, 1, 3, 'U'
 card('NF-005', 'mr-kessler', 'Mr. Kessler, Head of Security', 'horror', 'cabal', 4, 3, 5, 'U', 'Thirst 1. Guard.', ('vampire', 'unique', 'guard'))
 card('NF-006', 'countess-ilse-varga', 'Countess Ilse Varga, the Old Country', 'horror', 'cabal', 6, 5, 5, 'R', 'Thirst 2. When she Feeds, take a second Citizen from that district. Enemy Mortals in her district have −1 Menace.', ('vampire', 'elder', 'unique'))
 card('NF-007', 'silas-whitmore', 'Silas Whitmore, the Old Blood', 'horror', 'cabal', 7, 4, 7, 'L', 'Thirst 2. At your Toll, your opponent loses 1 Essence for each district where you have Influence.', ('vampire', 'elder', 'unique'))
-card('NF-008', 'the-familiar', 'The Familiar', 'puppet', 'cabal', 1, 1, 2, 'C', 'When it dies, gain 2 Vitae.', ('mortal', 'puppet'),
+card('NF-008', 'the-familiar', 'The Familiar', 'puppet', 'cabal', 1, 1, 2, 'C', 'When it dies, gain 2 Vitae.', ('mortal',),
      abilities=[dies(C('addRes', '$e.ctrl', 2), text='gain 2 Vitae')])
-card('NF-009', 'bought-detective', 'Bought Detective', 'puppet', 'cabal', 2, 2, 2, 'C', 'When it enters, Investigate a face-down card in its district.', ('mortal', 'puppet'),
+card('NF-009', 'bought-detective', 'Bought Detective', 'puppet', 'cabal', 2, 2, 2, 'C', 'When it enters, Investigate a face-down card in its district.', ('mortal',),
      abilities=[enter(choose(flt(ALLU, AND(g('$it', 'faceDown'), ne(g('$it', 'controller'), '$me'), eq(g('$it', 'x'), g('$self', 'x')))), '$t', 'Investigate which face-down card?', 0, 1),
                       C('investigate', '$self', '$t'), text='Investigate')])
-card('NF-010', 'councilman-doyle', 'Councilman Doyle', 'puppet', 'cabal', 3, 1, 3, 'U', 'Counts as 2 Influence in his district.', ('mortal', 'puppet', 'unique'), inf=2)
+card('NF-010', 'councilman-doyle', 'Councilman Doyle', 'puppet', 'cabal', 3, 1, 3, 'U', 'Counts as 2 Influence in his district.', ('mortal', 'unique'), inf=2)
 card('NF-011', 'blood-bank-holdings', 'Blood Bank Holdings', 'influence', 'cabal', 2, None, 3, 'C', 'At your Gather, gain 1 Vitae.', inf=1)
 card('NF-012', 'the-velvet-club', 'The Velvet Club', 'influence', 'cabal', 3, None, 3, 'U', 'Your Vampires here have +1 Menace. Once per turn, Mend one of them for free.', inf=1)
 card('NF-013', 'hostile-takeover', 'Hostile Takeover', 'influence', 'cabal', 4, None, 4, 'R', 'When it enters, move up to 2 Citizens from this district to adjacent districts.', inf=2,

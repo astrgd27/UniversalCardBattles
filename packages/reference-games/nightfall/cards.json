@@ -400,8 +400,7 @@
   "menace": 1,
   "endurance": 2,
   "keywords": [
-   "mortal",
-   "puppet"
+   "mortal"
   ],
   "abilities": [
    {
@@ -435,8 +434,7 @@
   "menace": 2,
   "endurance": 2,
   "keywords": [
-   "mortal",
-   "puppet"
+   "mortal"
   ],
   "abilities": [
    {
@@ -516,7 +514,6 @@
   "endurance": 3,
   "keywords": [
    "mortal",
-   "puppet",
    "unique"
   ],
   "maxCopies": 1,
