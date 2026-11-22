@@ -79,7 +79,7 @@ export function cardFace(m: Mod, cardId: string, o: FaceOpts = {}): HTMLElement 
   const placed = tpl.stats.filter((s) => typeof val(s.field) === 'number' && !hidden.has(s.field));
   const onFrame = new Set([...placed.map((s) => s.field), ...(tpl.level ? [tpl.level] : [])]);
   const chips = cardStats(def, o.stats).filter(([k]) => !hidden.has(k) && !onFrame.has(k));
-  const kw = o.keywords ?? def.keywords ?? [];
+  const kw = (o.keywords ?? def.keywords ?? []).filter((k) => k !== def.type); // a keyword that repeats the type adds nothing on the type line
   const th = m.manifest.theme;
   const hideV = new Set(th?.hideVars ?? []);
   const badges = Object.entries(o.vars ?? {}).filter(([k, n]) => n !== (o.baseVars?.[k] ?? 0) && !hideV.has(k) && !(m.rules.grid && (k === 'x' || k === 'y' || k === 'z')));
