@@ -49,16 +49,23 @@ def replace(par, old, new):
 
 def main(src, out):
     L = levers()
-    BC, AW, GS = L['BODYCOUNT_WIN'], L['AWAKEN'], L['GESTATION_RISE']
+    BC, AW, GS, FA, FB = L['BODYCOUNT_WIN'], L['AWAKEN'], L['GESTATION_RISE'], L['FINAL_ACT'], L['FA_BUFF']
+    final_act = (f'The Final Act: when your Body Count reaches {FA}, your Killers get +{FB}/+{FB}, Strike for their full Menace and can\'t be Ended, '
+                 'destroyed Killers return at your next Rise, and at your Toll each face-up Killer Slays a Citizen in its district. '
+                 'Strikes against Old Hollow deal at most 1. The Final Act doesn\'t win by itself.')
     n = lambda k: str(L[k])
     edits = [
         ('Game Design Document · v0.1 · Nov 21, 2026', 'Game Design Document · v1.1 (playtest balance) · Nov 22, 2026'),
         # Slasher Body Count
-        ('Body Count: 13 victims wins', f'Body Count: {BC} victims wins'),
-        ('Slasher Body Count reaches 13', f'Slasher Body Count reaches {BC}'),
-        ('a 13-step Body Count', f'a {BC}-step Body Count'),
-        ('At 13 Victims, you win.', f'At {BC} Victims, you win.'),
-        ('race to 13 Victims', f'race to {BC} Victims'),
+        ('Body Count: 13 victims wins', f'Body Count: {BC} victims wins' if BC else f'Body Count: at {FA} victims the Final Act makes the Killers nearly unstoppable'),
+        ("Signature victory: the Slasher Body Count reaches 13, or the Devil's Own Child survives to its owner's next Rise.",
+         f"Signature victory: the Slasher Body Count reaches {BC}, or the Devil's Own Child survives to its owner's next Rise." if BC else
+         f"Signature victory: the Devil's Own Child survives to its owner's next Rise. The Slashers have a signature turning point instead: the Final Act at {FA} Victims."),
+        ('a 13-step Body Count', f'a {BC or FA}-step Body Count'),
+        ('At 13 Victims, you win. Mortal units that Killers kill count as Victims too.',
+         f'At {BC} Victims, you win. Mortal units that Killers kill count as Victims too.' if BC else
+         'Mortal units that Killers kill count as Victims too. ' + final_act),
+        ('race to 13 Victims', f'race to {BC} Victims' if BC else f'race to the Final Act at {FA} Victims'),
         # Turn structure and Strikes
         ('Draw: draw 1 card.', 'Draw: draw 1 card (Slasher Killers and the Devil\'s Own draw 2).' if L['DRAW_SLASHER'] and L['DRAW_DEVIL'] else 'Draw: draw 1 card.'),
         ('Only if no ready enemy unit is in the district',
@@ -136,7 +143,8 @@ def main(src, out):
         ('Evacuation Order', 'Move 2 Citizens', 'Leaves at least 1 Citizen behind', 'Prey + Evacuation Order claimed the Subway on turn 1.'),
         ('Slasher Gather / Draw', '1 / 1 card', f'{n("GATHER_SLASHER")} / {1 + L["DRAW_SLASHER"]} cards',
          'Slashers ended games with 1.3 cards in hand: Lurking eats a card every turn.'),
-        ('Body Count', '13', str(BC), 'Average Body Count at game end was 5; 13 was out of reach.'),
+        ('Body Count', '13 Victims wins', str(BC) if BC else f'No instant win: the Final Act at {FA} empowers the Killers and Old Hollow',
+         'Average Body Count at game end was 5, so 13 was out of reach. A power spike is more interesting than a counter that ends the game.'),
         ('Harvest Gather', '1 + Yields', f'{n("GATHER_HARVEST")} + Yields', 'The Cult ended games with 6–8 unplayable cards and no Bounty.'),
         ('Awaken', '10', str(AW), 'Offerings averaged 2–4 at game end; the Old One woke in 1 game in 40.'),
         ('Devil Gather / Draw', '1 / 1 card', f'{n("GATHER_DEVIL")} / {1 + L["DRAW_DEVIL"]} cards', 'The Devil was short of cards to find Omens and its Vessel.'),

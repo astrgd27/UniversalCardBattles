@@ -70,7 +70,7 @@ Six scripted lessons on the module's Tutorials menu, each worth 10 Marks the fir
 - **Blood Cabal:** Feed, Influence and Domination, Drain, and a Fast Scheme on the opponent's turn.
 - **Harvest Cult:** the Wheel of the Year, Yields, Offerings and the Old One's Harvest.
 - **Zombie Horde:** Infect, Spread, sacrifices, Strains and Mutations, and Overrun.
-- **Slasher Killers:** Lurking, Traps, revealing, Slay and Panic, Vanish, and the winning Victim.
+- **Slasher Killers:** Lurking, Traps, revealing, Slay and Panic, Vanish, and the Final Act.
 - **Devil's Own:** the Vessel, Omens, Bargains and Pacts, the Nativity and the Child's victory.
 
 Each is a set piece built in `tools/nightfall/build.py` (procedures `tutCity`, `tutHand`, `tutPut`, `tutLurk`, `tutPlant`, `tutOmen`, and the game var `noMulligan`).
@@ -105,12 +105,18 @@ Tuned with AI-vs-AI playtests, every faction pairing played from both seats. The
 | Domination | Influence ≥ Citizens | also needs your Vampire there (the document's own lever) | Cabal won 84% by Dominating with Puppets and Influence |
 | Evacuation Order | move 2 Citizens | at least 1 stays behind | Prey + Evacuation claimed a District on turn 1 |
 | Slasher Gather / Draw | 1 / 1 | 3 / 2 | 1.3 cards in hand at the end of the game; Lurking eats a card a turn |
-| Body Count | 13 | 11 | it averaged 5 at the end of the game |
+| Body Count | 13 Victims wins | no instant win: the **Final Act** at 11 Victims (below) | it averaged 5 at the end of the game; a power spike plays better than a counter that ends the game |
 | Harvest Gather | 1 | 3 | 6–8 unplayable cards with no Bounty |
 | Awaken | 10 | 6 | the Old One woke in 1 game in 40 |
 | Devil Gather / Draw | 1 / 1 | 2 / 2 | too few cards to find Omens and the Vessel |
-| Gestation | starts at 0, Omens only | starts at 2, +2 at each Rise with a Vessel | the Nativity almost never happened |
+| Gestation | starts at 0, Omens only | still 0 to 9, plus 3 at each Rise with a Vessel | the Nativity almost never happened |
 | Augustin's Dark Gift | 3 Sin | 2 Sin | the Vessel search was too dear to use early |
+
+**The Final Act (Slashers):**
+- When the Body Count reaches 11, the Final Act begins (a banner announces it). It lasts for the rest of the game. Killers get +2 Menace and +2 Endurance, Strike for their full Menace (other units deal at most 2), and can't be Ended.
+- A destroyed Killer returns at the Slasher's next Rise, and each face-up Killer Slays a Citizen in its District at the Slasher's Toll.
+- Strikes against Old Hollow deal at most 1. The Final Act doesn't win by itself. The text is on Old Hollow's card, and the levers are `FINAL_ACT` and `FA_BUFF`.
+- `BODYCOUNT_WIN > 0` restores the old instant win.
 
 **AI fix found along the way:**
 - When the AI weighed a move against passing, the pass line ran on into Strikes and the opponent's Rise, while every other line was scored before them. Any neutral move therefore looked better than passing: the Slasher AI shuffled its Lurkers about 28 times a game.

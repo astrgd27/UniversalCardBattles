@@ -253,6 +253,8 @@ A survey of about 30 published TCG rulebooks (`docs/COVERAGE.md`, second table) 
   - Every tuning number is a `LEVERS` entry in `build.py`, overridable with `NF_<LEVER>`. `NF_OUT` builds a variant elsewhere.
   - Win rates moved from 100/88/44/38/6 to 53/63/50/38/47 (Zombie/Cabal/Harvest/Slasher/Devil, 80 games). The changes are in NIGHTFALL.md, "Balance".
 - **Design document:** `tools/nightfall/gdd_update.py` writes `docs/NIGHTFALL_GDD.docx` (v1.1) from the original GDD and the live levers, including a revision table.
+- **Slashers:** the Final Act at 11 Victims replaces the Body Count win. Devil Gestation runs 0 to 9 again, +3 at each Rise with a Vessel.
+- **Engine/UI:** theme `announce` shows a banner for chosen events (the Final Act, the Nativity, the Old One, a District falling). Banners queue and survive redraws.
 - **AI:** `ai.horizon: "pass"` fixes the scoring bias that made agents prefer any neutral move to passing.
 - **Engine:** zone `showIf` draws a player's empty zone while true (faction play areas from turn 1). Views carry it as `zones[key].show`.
 - **UI:**

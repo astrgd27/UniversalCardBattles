@@ -1406,7 +1406,7 @@
       "set",
       "p0",
       "gestation",
-      3
+      2
      ],
      [
       "set",
@@ -1424,7 +1424,7 @@
      "say": "Gestation only goes up while you control a Vessel: a unit with the Vessel keyword. Yours is Margaret Wells in Old Town. If your Vessel is destroyed, Gestation is cut in half, so protect it. Doting Neighbors stands guard beside her: its Guard keyword stops enemy units in that District from Preying or attacking your Master until they fight it."
     },
     {
-     "say": "You raise Gestation with Omen cards. An Omen sits in your Omen row with a condition; when the condition is met, you add its number to Gestation and discard it. The Blood Moon's condition is that it is midnight or later at the start of your turn. The clock reads 12 AM, so it just paid +3: Gestation went from 3 to 8 (+2 for starting your turn with a Vessel, +3 for the Blood Moon)."
+     "say": "You raise Gestation with Omen cards. An Omen sits in your Omen row with a condition; when the condition is met, you add its number to Gestation and discard it. The Blood Moon's condition is that it is midnight or later at the start of your turn. The clock reads 12 AM, so it just paid +3: Gestation went from 2 to 8 (+3 for starting your turn with a Vessel, +3 for the Blood Moon)."
     },
     {
      "say": "Bargains are cards your opponent must answer. Play The Crossroads Deal (it costs 0, because your Master makes Bargains 1 cheaper). Your opponent chooses: Accept (they draw 3 cards and take a Pact) or Refuse (you gain 3 Sin and draw a card).",

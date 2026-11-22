@@ -22,11 +22,11 @@ LEVERS = {
     'SACRIFICE_IS_DEATH': 0,
     # Slasher Killers
     # The Final Act: at FINAL_ACT Victims the Killers and Old Hollow are empowered (BODYCOUNT_WIN > 0 restores the old instant win)
-    'BODYCOUNT_WIN': 0, 'FINAL_ACT': 11, 'FA_BUFF': 2, 'LURKS': 1,
+    'BODYCOUNT_WIN': 0, 'FINAL_ACT': 11, 'FA_TERROR': 0, 'FA_BUFF': 2, 'LURKS': 1,
     # Harvest Cult
     'AWAKEN': 6,
     # Devil's Own: Gestation starts at GEST_START and gains GESTATION_RISE at each Rise with a Vessel
-    'GEST_START': 0, 'GESTATION_RISE': 2, 'VESSEL_HALVES': 1,
+    'GEST_START': 0, 'GESTATION_RISE': 3, 'VESSEL_HALVES': 1,
 }
 for k in LEVERS:
     if os.environ.get('NF_' + k) is not None: LEVERS[k] = int(os.environ['NF_' + k])
@@ -195,7 +195,7 @@ fn('trophyScore', ['$p'], add(['*', 30, g('$p', 'claims')], g('$p', 'essence'), 
 P = {}
 def proc(name, params, body): P[name] = {'params': params, 'do': body}
 
-proc('addRes', ['$p', '$n'], [['inc', '$p', C('rn', '$p'), '$n']])
+proc('addRes', ['$p', '$n'], [['inc', '$p', C('rn', '$p'), '$n']] + ([IF(AND(isF('$p', 4), ge(g('$p', 'terror'), LEVERS['FA_TERROR'])), [C('finalActFor', '$p')])] if LEVERS['FA_TERROR'] else []))
 proc('pay', ['$c'], [
     ['inc', '$me', C('rn', '$me'), ['neg', C('cost', '$c', '$me')]],
     IF(gt(g('$c', 'souls'), 0), [['inc', '$me', 'souls', ['neg', g('$c', 'souls')]]]),
@@ -220,7 +220,8 @@ proc('panic', ['$x', '$n'], [IF(NOT(C('livingIs', '$x', 'maple')), [EACH(['range
     ['inc', C('dAt', '$x'), 'cit', -1], ['inc', '$to', 'cit', 1]])])])])
 proc('victimFor', ['$p'], [['inc', '$p', 'bodycount', 1], C('addRes', '$p', 1)] +
     ([IF(ge(g('$p', 'bodycount'), BC), [['win', ['list', '$p']]])] if BC else []) +
-    ([IF(AND(eq(g('$p', 'finalAct'), 0), ge(g('$p', 'bodycount'), FA)), [['set', '$p', 'finalAct', 1], emit('finalAct', player='$p')])] if FA else []))
+    ([IF(ge(g('$p', 'bodycount'), FA), [C('finalActFor', '$p')])] if FA else []))
+proc('finalActFor', ['$p'], [IF(AND(isF('$p', 4), eq(g('$p', 'finalAct'), 0)), [['set', '$p', 'finalAct', 1], emit('finalAct', player='$p')])])
 proc('slay', ['$x'], [IF(gt(cit('$x'), 0), [C('took', '$x', '$me'), C('victimFor', '$me')])])
 # Prey: take a Citizen by the hunting unit's faction method.
 proc('take', ['$u', '$x'], [IF(gt(cit('$x'), 0), [
