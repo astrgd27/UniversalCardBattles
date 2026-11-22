@@ -446,3 +446,4 @@ img { -webkit-user-drag: none; }
 .coach-who { color: var(--accent); font-weight: 700; }
 .coach { background: color-mix(in srgb, var(--accent) 14%, var(--bg)); box-shadow: 0 -8px 24px rgba(0, 0, 0, .35); }
 .screen.table:has(.coach) { padding-bottom: 300px; }
+.coach p { max-height: 34vh; overflow-y: auto; }

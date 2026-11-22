@@ -916,127 +916,222 @@ CITY_B = ['the-docks', 'the-subway', 'whispering-pines-campground', 'st-agnes-ho
 CITY_C = ['the-docks', 'old-town', 'the-subway', 'whispering-pines-campground', 'st-agnes-hospital']
 TUTORIALS = [
     {'id': 'basics', 'name': 'Basics: The City at Night', 'icon': '☾', 'opponent': 'Lady Evangeline Marsh',
-     'blurb': 'Controls, Districts and Citizens, playing units, Hunting, Intercepts, the Toll and claiming a District.',
+     'blurb': 'Start here. How the board works, playing cards, attacking, defending, the end of a turn, and how to win.',
      'deck': 'outbreak-at-site-9', 'opponentDeck': 'the-marsh-whitcombe-trust', 'seed': 11, 'rewards': REWARD,
      'scenario': setpiece(CITY_A, {'p0': ['sprinter', 'fresh-turned', 'hazmat-shambler', 'containment-breach', 'blackout', 'pale-morning-light']},
                           put=[('p1', 'velvet-rope-fledgling', 2)], sets=[('p0', 'biomass', 6), ('p1', 'vitae', 5)]),
      'script': [{'action': 'prey', 'card': 'velvet-rope-fledgling'}],
      'steps': [
-        say('Welcome to NIGHTFALL. Two monsters race to claim a City of five Districts, the cards in the middle row, before Dawn. You play the Zombie Horde (bottom); the Blood Cabal sits across from you (top).'),
-        say('Each District shows its Citizens. Citizens are what everyone hunts. When a District has none left, it Falls at the Toll and someone claims it. Claim 3 Districts to win.'),
-        say('Your resource is Biomass (shown by your name). Glowing cards can be played: tap one to play it, then tap where it goes. A long press on any card shows it up close.'),
-        do('Play Sprinter into Old Town: tap Sprinter, then tap Old Town on the board, then Confirm.', 'deploy', 'sprinter', d=['old-town']),
-        do('Units Hunt by exhausting. Sprinter is Swift, so it can Hunt the turn it arrives. Tap Sprinter and choose Prey to take a Citizen. Zombies Infect: the Citizen rises as your Shambler.', 'prey', 'sprinter'),
-        do('Old Town now has a Shambler and one fewer Citizen. Play Fresh Turned into Old Town too.', 'deploy', 'fresh-turned', d=['old-town']),
-        do('A Vampire is lurking in the Subway. Play Hazmat Shambler there to stand guard.', 'deploy', 'hazmat-shambler', d=['the-subway']),
-        say('New units arrive Fresh: they can move to a neighbouring District, but they can\'t Hunt until your next turn unless they are Swift. That is all for this Night.'),
-        end('Tap End phase. Your Toll comes next, then your opponent\'s turn.'),
-        say('Your opponent\'s Vampire is Preying in the Subway. Your Hazmat Shambler is ready there, so you may Intercept: the Prey becomes a Clash between the two units instead.', wait=True),
-        do('Tap Hazmat Shambler and choose Intercept.', 'intercept', 'hazmat-shambler'),
-        end('Then tap Pass to let the Clash happen.'),
-        say('In a Clash both units deal their Menace (the dagger) to each other at once, as wounds. Wounds equal to Endurance (the heart) destroy a unit. The Vampire fell; Hazmat prevents its first wound each turn. Every death also feeds your Morgue: +1 Biomass.'),
-        say('A new turn. At Rise your units ready again. Spread: with 3 or more Zombies in a District, you Infect a Citizen there at every Rise. Old Town just lost another Citizen to it.', wait=True),
-        do('Prey with Sprinter in Old Town.', 'prey', 'sprinter'),
-        do('Prey with Fresh Turned too. It is no longer Fresh.', 'prey', 'fresh-turned'),
-        say('Old Town is empty. At your Toll, an empty District Falls to whoever has the most Dominion there: the total Menace of their units (plus structures). That is you.'),
-        end('End your Night to claim Old Town.'),
-        say('Old Town is yours: it turns to its Fallen side and gives you a bonus. You win by claiming 3 Districts, by bringing the rival Master to 0 Essence with Strikes, or by your faction\'s signature victory. At Dawn (after 5 AM on the Night Track) the most Districts wins. Try a faction tutorial next.'),
+        say("Welcome to NIGHTFALL, a two-player card game. You control the bottom of the screen; your opponent controls the top. "
+            "Each of you has a deck of 40 cards, a hand of cards only you can see, and a Master card in your Lair. "
+            "Your Master's Essence (shown next to your name) is your life total: if it reaches 0, you lose."),
+        say("The five cards in the middle row are Districts: the shared board. Units you play go into a District, on your side of it: "
+            "yours appear in the row below the Districts, your opponent's in the row above. Each District shows a number of Citizens. "
+            "Citizens are the main prize of the game. When a District has no Citizens left, someone takes control of it. Control 3 Districts and you win."),
+        say("Cards cost resources. Your resource is called Biomass, and you have 8 right now (shown next to your name). "
+            "A card's cost is the number in its top-left corner. Cards you can afford and play right now glow. "
+            "To play one, tap it, tap where it should go, then tap Confirm. Tip: press and hold any card to read it up close."),
+        do("Let's play a unit. Tap Sprinter in your hand (cost 2), tap the Old Town District in the middle row, then tap Confirm.",
+           'deploy', 'sprinter', d=['old-town']),
+        say("Sprinter is now on the board in Old Town, and your Biomass dropped from 8 to 6. A unit has two numbers along its bottom edge: "
+            "Menace (the dagger, how much damage it deals) and Endurance (the heart, how much damage it can take). "
+            "Sprinter has 3 Menace and 1 Endurance."),
+        do("Units attack by Hunting. Hunting turns the unit sideways (exhausted) until your next turn. Prey is the basic Hunt: "
+           "it takes 1 Citizen from the unit's District. Normally a newly played unit must wait a turn before it can Hunt, but Sprinter has the "
+           "Swift keyword, so it can Hunt right away. Tap Sprinter to Prey. (In a normal game, tapping a unit lists everything it can do; in a tutorial only the move being taught is offered, so it happens straight away.)", 'prey', 'sprinter'),
+        say("Old Town went from 4 Citizens to 3. What you gain from Prey depends on your faction. You are playing the Zombie Horde: "
+            "when one of your Zombie units Preys, the Citizen is turned into a Shambler, a small 1-Menace, 1-Endurance token unit that you control, "
+            "placed in that same District. You now have 2 units in Old Town, and Sprinter is turned sideways because it has Hunted."),
+        do("Play another unit: tap Fresh Turned (cost 1), tap Old Town, then Confirm.", 'deploy', 'fresh-turned', d=['old-town']),
+        do("Your opponent has a unit in the Subway District: a Vampire with 2 Menace. Play Hazmat Shambler (cost 2) into the Subway "
+           "so you have a defender there.", 'deploy', 'hazmat-shambler', d=['the-subway']),
+        say("Fresh Turned and Hazmat Shambler have no Swift keyword, so they are Fresh this turn: they can't Hunt until your next turn. "
+            "Units can also move once per turn to a neighbouring District, but we won't need that now. You have done everything for this turn."),
+        say("A turn has five steps. Rise: your units stand back up and start-of-turn effects happen. Draw: you draw a card. "
+            "Gather: you gain resources. Night: you play cards and Hunt (that's where we are). "
+            "Toll: end-of-turn checks, including which Districts are taken. Then your opponent takes a turn."),
+        end("Tap End phase to finish your Night. The Toll happens, then your opponent's turn begins."),
+        say("It's your opponent's turn, and their Vampire is Preying in the Subway, trying to take a Citizen there. "
+            "Because you have a unit in the Subway that is not turned sideways, you may Intercept: your unit steps in, "
+            "the Prey is cancelled, and the two units fight each other instead.", wait=True),
+        do("Tap Hazmat Shambler to Intercept. Intercepting does not turn your unit sideways.", 'intercept', 'hazmat-shambler'),
+        end("You can respond with more than one card in this moment, but that's all we need. Tap Pass to let the fight happen."),
+        say("That fight is called a Clash: both units deal their Menace to each other at the same time, as wounds. "
+            "Your Hazmat Shambler (2 Menace) dealt 2 wounds to the Vampire (1 Endurance), so the Vampire was destroyed and went to its owner's Grave pile. "
+            "The Vampire dealt 2 back, but Hazmat Shambler ignores the first wound it takes each turn, so it kept 1 wound and survived (3 Endurance)."),
+        say("Each faction has its own rules. One Zombie Horde rule is the Morgue: whenever any unit is destroyed, yours or the opponent's, "
+            "you gain 1 Biomass. Wounds stay on a unit until they are healed; a unit is destroyed when its wounds reach its Endurance."),
+        say("It's your turn again. At Rise, your units stood back up so they can Hunt again. Another Zombie Horde rule, Spread, also happened: "
+            "at the start of your turn, every District where you have 3 or more Zombie units (Shamblers count) loses 1 Citizen, "
+            "and that Citizen becomes another Shambler for you. Old Town went from 3 Citizens to 2.", wait=True),
+        do("Tap Sprinter to Prey again and take another Citizen from Old Town.", 'prey', 'sprinter'),
+        do("Fresh Turned arrived last turn, so it is no longer Fresh and can Hunt. Tap it to Prey.", 'prey', 'fresh-turned'),
+        say("Old Town has 0 Citizens. At the Toll (the end of your turn), any District with no Citizens left is claimed by whoever has the most "
+            "Dominion there. Dominion is the total Menace of your units in that District (some structures add more). "
+            "Your opponent has nothing in Old Town, so you will claim it."),
+        end("Tap End phase to finish your turn and claim Old Town."),
+        say("You claimed Old Town! A claimed District flips to its Fallen side, which gives its owner a bonus, and it stays yours for the rest of the game. "
+            "You win by claiming 3 Districts, by reducing your opponent's Essence to 0, or by your faction's own special victory. "
+            "If nobody has won by the end of the night (the clock at the top, from 8 PM to 5 AM), whoever claimed the most Districts wins. "
+            "Each faction plays very differently: try their tutorials next."),
      ]},
     {'id': 'cabal', 'name': 'Blood Cabal: Old Money', 'icon': '🩸', 'opponent': 'Patient Zero',
-     'blurb': 'Feed and Thralls, Vitae, Influence and Domination, Drain, and answering on your opponent\'s turn with a Fast Scheme.',
+     'blurb': 'Collecting Thralls for extra resources, Influence cards, claiming a District without emptying it, and playing cards during your opponent\'s turn.',
      'deck': 'the-marsh-whitcombe-trust', 'opponentDeck': 'outbreak-at-site-9', 'seed': 12, 'rewards': REWARD,
      'scenario': setpiece(CITY_B, {'p0': ['blood-bank-holdings', 'velvet-rope-fledgling', 'councilman-doyle', 'a-quiet-word-with-the-mayor', 'nothing-to-see-here', 'the-familiar'],
                                    'p1': ['containment-breach', 'sprinter', 'fresh-turned', 'blackout', 'hazmat-shambler', 'crawler-swarm']},
                           sets=[('p0', 'vitae', 5), ('p1', 'biomass', 4)]),
      'script': [{'action': 'cast', 'card': 'containment-breach'}],
      'steps': [
-        say('The Blood Cabal already owns the City. You pay with Vitae, keep fed humans as Thralls (each adds Vitae at Gather), and take Districts by buying them, not emptying them.'),
-        do('Old Money makes your first Influence each turn 1 cheaper. Raise Blood Bank Holdings in the Campground.', 'build', 'blood-bank-holdings', d=['whispering-pines-campground']),
-        do('Play Velvet Rope Fledgling (Swift) into the Campground.', 'deploy', 'velvet-rope-fledgling', d=['whispering-pines-campground']),
-        do('Prey with it. The Cabal Feeds: the Citizen becomes a Thrall and you gain 2 Vitae.', 'prey', 'velvet-rope-fledgling'),
-        say('Domination is your signature claim: at your Toll, if your Influence in a District is at least its remaining Citizens, you take them all and claim it, whatever anyone\'s Dominion. The Campground has 2 Citizens; your Influence there is 1.'),
-        do('Councilman Doyle counts as 2 Influence. Play him into the Campground.', 'deploy', 'councilman-doyle', d=['whispering-pines-campground']),
-        do('Drain turns a Thrall back into 2 Vitae whenever you need it. Tap your Master and choose Drain a Thrall.', 'drain', 'lady-evangeline-marsh'),
-        say('Remember Thirst: at each Rise, every Vampire costs Vitae (1, or 2 for Elders). An unpaid Vampire Frenzies and must Hunt.'),
-        end('End your Night. At your Toll, 3 Influence beats 2 Citizens.'),
-        say('Dominated: the Campground and its Citizens are yours. Now your opponent\'s turn begins.'),
-        say('They are playing Containment Breach. The Cabal is the only faction with Fast Schemes, which you may play on your opponent\'s turn.', wait=True),
-        do('Play A Quiet Word with the Mayor to cancel it.', 'cast', 'a-quiet-word-with-the-mayor'),
-        end('Then Pass.'),
-        say('Cancelled: their card goes to the Grave and they draw a replacement. Feed, hold Influence and keep a Scheme ready: that is the Cabal. Domination wins games before Dawn.'),
+        say("You are playing the Blood Cabal. Your resource is Vitae (6 right now). The Cabal's special ability is claiming Districts "
+            "without taking every Citizen: you place Influence cards, and if your Influence in a District is high enough, you take it over."),
+        say("Influence cards are structures: they stay in a District, add Influence there, and can be attacked like units (their Endurance is called Security). "
+            "Your Master, Lady Evangeline Marsh, has a passive ability called Old Money: the first Influence card you play each turn costs 1 less."),
+        do("Tap Blood Bank Holdings (normally cost 2, only 1 thanks to Old Money), tap the Whispering Pines Campground District, then Confirm. "
+           "It gives 1 Influence there, plus 1 extra Vitae at the start of each of your turns.", 'build', 'blood-bank-holdings', d=['whispering-pines-campground']),
+        do("Now play Velvet Rope Fledgling (cost 1) into the Campground. It has Swift, so it can Hunt this turn.", 'deploy', 'velvet-rope-fledgling', d=['whispering-pines-campground']),
+        do("Tap Velvet Rope Fledgling to Prey and take a Citizen.", 'prey', 'velvet-rope-fledgling'),
+        say("When a Blood Cabal unit Preys, the Citizen becomes a Thrall (you can hold up to 6) and you gain 2 Vitae. "
+            "Thralls are a second income: at the start of each turn you gain 1 Vitae, plus 1 more for every Thrall you hold. The Campground now has 2 Citizens."),
+        say("Here is the Cabal's main way to claim a District, called Domination. At the end of your turn, if your total Influence in a District is equal to "
+            "or more than the Citizens left there, you take all of those Citizens as Thralls and claim the District, no matter who has more units there. "
+            "Right now the Campground has 2 Citizens and you have 1 Influence there."),
+        do("Councilman Doyle is a unit that counts as 2 Influence in his District. Play him into the Campground (cost 3). That makes 3 Influence against 2 Citizens.",
+           'deploy', 'councilman-doyle', d=['whispering-pines-campground']),
+        do("You can also turn Thralls back into Vitae at any time. This is called Drain: 1 Thrall becomes 2 Vitae. Tap your Master card (Lady Evangeline Marsh, in your Lair) to Drain a Thrall.",
+           'drain', 'lady-evangeline-marsh'),
+        say("One cost to remember: at the start of each of your turns, every Vampire unit you control costs Vitae to keep (1 each, 2 for powerful Elders). "
+            "This is called Thirst. If you can't pay, that Vampire takes 1 wound and must attack that turn."),
+        end("Tap End phase. At the end of your turn, your 3 Influence beats the Campground's 2 Citizens."),
+        say("You Dominated the Whispering Pines Campground: its 2 Citizens became Thralls and the District is yours. Now it is your opponent's turn."),
+        say("Your opponent just played Containment Breach, a card that would put two of their units onto the board. The Blood Cabal has a unique advantage: "
+            "whenever your opponent plays a card or attacks, you get a chance to respond, using cards with the Fast keyword.", wait=True),
+        do("A Quiet Word with the Mayor is Fast. It cancels a card (other than a unit) as it is being played, and that card's owner draws a replacement card. "
+           "It costs 4 Vitae. Tap it and play it now.", 'cast', 'a-quiet-word-with-the-mayor'),
+        end("Tap Pass to finish responding."),
+        say("Containment Breach was cancelled: it went to your opponent's Grave pile without doing anything, and they drew a card instead. "
+            "To play the Cabal well, collect Thralls for income, place Influence where few Citizens are left, and keep Vitae saved for a Fast card on your opponent's turn."),
      ]},
     {'id': 'harvest', 'name': 'Harvest Cult: The Wheel Turns', 'icon': '🌾', 'opponent': 'Lady Evangeline Marsh',
-     'blurb': 'The Wheel of the Year, Plantings and Yields, Folk and Fae, Effigies, Offerings and the Old One\'s Harvest.',
+     'blurb': 'The four-turn season cycle, crops that pay out later, Offerings, structures, and summoning a giant that claims a District on its own.',
      'deck': 'the-barrow-wakes', 'opponentDeck': 'the-marsh-whitcombe-trust', 'seed': 13, 'rewards': REWARD,
      'scenario': setpiece(CITY_C, {'p0': ['maypole-dancers', 'the-little-people', 'the-standing-stone', 'rite-of-the-first-furrow', 'blood-barley', 'fallow-rest']},
                           put=[('p0', 'scarecrow-sentinel', 1), ('p0', 'hollow-eyed-farmhand', 0)], plant=[('p0', 'blood-barley', 1)],
                           sets=[('p0', 'bounty', 2), ('p0', 'season', 2), ('p0', 'barrow', 10), ('p1', 'vitae', 5)]),
      'steps': [
-        say('The Harvest Cult lives by the Wheel of the Year. At each of your Rises it turns: Sowing (first Planting free), Growing (Plantings grow faster), Reaping (Plantings Yield and Folk may Prey), Fallow (heal, draw extra, keep at most 2 Bounty). It is Reaping now.'),
-        say('Your Blood Barley in the Field ripened (Growth 2) and Yielded 3 Bounty at Gather. And because the Barrow held 10 Offerings at Rise, He Who Wears the Hill awoke at your Scarecrow in Old Town.'),
-        do('Folk are Mortals and may only Prey in Reaping. Prey with the Hollow-Eyed Farmhand at the Docks: the Citizen becomes an Offering in your Barrow.', 'prey', 'hollow-eyed-farmhand'),
-        do('Fae Horrors Prey in any season. Play The Little People at the Docks.', 'deploy', 'the-little-people', d=['the-docks']),
-        do('Effigies are structures with Dominion; enemies must Raid them. Raise The Standing Stone at the Docks.', 'build', 'the-standing-stone', d=['the-docks']),
-        say('At each of your Reaping Tolls, the Old One Harvests its District: every Citizen becomes an Offering and the District is yours, whatever the Dominion.'),
-        end('End your Night and let it Harvest Old Town.'),
-        say('Old Town is Harvested and claimed. Next comes Fallow: rest, draw and spend down your Bounty. Plant on Sowing, protect on Growing, strike on Reaping. Your opponent can see the Wheel too.'),
+        say("You are playing the Harvest Cult. Your resource is Bounty. The Cult follows a cycle of four seasons: at the start of each of your turns, the season "
+            "moves one step: Sowing, then Growing, then Reaping, then Fallow, then back to Sowing. Each season changes what your cards can do. "
+            "This turn the season is Reaping, the season where your plans pay off."),
+        say("Crops: Planting cards go into your Field (up to 3), not into a District. Each one gains Growth at the start of your turns. When its Growth reaches its "
+            "Ripen number, the next Reaping pays out its Yield and then it is discarded. Your Blood Barley ripened and paid 3 Bounty this turn, so you have 6 Bounty."),
+        say("When Harvest Cult units Prey, the Citizen becomes an Offering, counted on your Barrow. Offerings summon your most powerful card: He Who Wears the Hill, "
+            "which waits off to the side. At the start of your turn, if you have 10 Offerings and an Effigy (a Cult structure) in play, you spend the 10 to put it into the "
+            "Effigy's District. That just happened: it is now in Old Town, next to your Scarecrow Sentinel."),
+        do("Your Hollow-Eyed Farmhand is a Folk unit. Folk are human (Mortal) and can only Prey during Reaping. Tap it (at the Docks) to Prey: the Citizen becomes an Offering.",
+           'prey', 'hollow-eyed-farmhand'),
+        do("Fae units are monsters and can Prey in any season. Play The Little People (cost 2) into the Docks. Like most units, it must wait a turn before it can Hunt.",
+           'deploy', 'the-little-people', d=['the-docks']),
+        do("Effigies are your structures: they stay in a District and add Dominion there (strength for claiming that District when its Citizens run out). "
+           "Enemies have to attack them directly to remove them. Play The Standing Stone (cost 3) into the Docks.", 'build', 'the-standing-stone', d=['the-docks']),
+        say("He Who Wears the Hill has a special rule: at the end of each of your turns in the Reaping season, it Harvests its District. Every Citizen left there "
+            "becomes an Offering, and you claim the District, no matter how many units your opponent has there."),
+        end("Tap End phase to end your turn. He Who Wears the Hill will Harvest Old Town."),
+        say("Old Town is yours. Next turn the season moves to Fallow: you can hold at most 2 Bounty at its end, but you draw 2 extra cards and your units heal. "
+            "Plan around the cycle: play crops in Sowing (your first Planting each Sowing turn is free), protect them in Growing, and attack in Reaping. "
+            "Your opponent can see the season too, so expect them to defend before your Reaping."),
      ]},
     {'id': 'zombie', 'name': 'Zombie Horde: Outbreak', 'icon': '☣', 'opponent': 'Mother Bramble',
-     'blurb': 'Infect and Devour, Spread, the Morgue and sacrifices, Strains and Mutations, and Overrun.',
+     'blurb': 'Growing a swarm of tokens, gaining resources when units die, upgrades for all or one of your units, and claiming a District by outnumbering it.',
      'deck': 'outbreak-at-site-9', 'opponentDeck': 'the-barrow-wakes', 'seed': 14, 'rewards': REWARD,
      'scenario': setpiece(CITY_B, {'p0': ['crawler-swarm', 'chitin-plating', 'lazarus-7', 'containment-breach', 'sprinter', 'exposed-ribcage-maw']},
                           put=[('p0', 'sprinter', 1), ('p0', 'fresh-turned', 1), ('p0', 'hazmat-shambler', 1)], sets=[('p0', 'biomass', 3), ('p1', 'bounty', 2)]),
      'steps': [
-        say('The Zombie Horde never buys anything. It eats. Biomass comes from Gather, from the Morgue (+1 whenever any unit dies) and from your own Shamblers.'),
-        say('Spread: you had 3 Zombies in the Subway at Rise, so a Citizen there was Infected and rose as a Shambler.'),
-        do('Prey with Sprinter in the Subway: named Zombies Infect, adding another Shambler.', 'prey', 'sprinter'),
-        do('Bodies are currency. Sacrifice a Shambler for Biomass: +1 for the sacrifice, +1 from the Morgue, and +1 because Patient Zero feeds on his own.', 'sacrifice', 'shambler'),
-        do('Strains upgrade every Zombie you have. Install LAZARUS-7: your Shamblers get +1 Menace.', 'install', 'lazarus-7'),
-        do('Mutations upgrade one Zombie. Attach Chitin Plating to the Hazmat Shambler (+3 Endurance and Guard).', 'attach', 'chitin-plating', h=['hazmat-shambler']),
-        say('Overrun: at your Toll, if your Zombies in a District number at least twice its remaining Citizens and no enemy units are there, you Infect them all and claim it. The Subway has 1 Citizen and 4 of your Zombies.'),
-        end('End your Night to Overrun the Subway.'),
-        say('The Subway is overrun. Keep 3 Zombies together and the Horde snowballs, but watch for area damage like Molotov Cocktail, and keep a defender home: your Master has only 18 Essence.'),
+        say("You are playing the Zombie Horde. Your resource is Biomass. You gain 2 each turn, plus 1 every time any unit is destroyed (the Morgue rule). "
+            "The Horde wins by flooding Districts with lots of small units called Shamblers: 1 Menace, 1 Endurance tokens."),
+        say("At the start of this turn, a Horde rule called Spread happened. In every District where you have 3 or more Zombie units, 1 Citizen becomes a new "
+            "Shambler for you. You had 3 Zombies in the Subway, so the Subway went from 3 Citizens to 2 and you gained a Shambler there."),
+        do("Tap Sprinter in the Subway to Prey. When a Zombie with a name Preys, the Citizen becomes another Shambler for you (this is called Infect).",
+           'prey', 'sprinter'),
+        say("If a Shambler itself Preys, it doesn't make a new Shambler; you gain 1 Biomass instead (called Devour). Shamblers also can't move on their own: "
+            "they are Slow, and only card effects can move them."),
+        do("Shamblers are also currency. Sacrifice a Shambler: tap one of your Shamblers in the Subway. You gain 1 Biomass for the sacrifice, 1 more from the Morgue "
+           "because a unit died, and 1 more from your Master, Patient Zero, whose ability rewards your Shamblers dying.", 'sacrifice', 'shambler'),
+        do("Strains are upgrade cards that affect all your Zombies. They go into your Labs (2 spaces) instead of a District. Play LAZARUS-7 (cost 3): "
+           "all your Shamblers get +1 Menace.", 'install', 'lazarus-7'),
+        do("Mutations are upgrades you attach to one Zombie. Tap Chitin Plating (cost 2), then tap Hazmat Shambler on the board, then Confirm. It gives +3 Endurance "
+           "and Guard: while that unit is upright, enemy units in its District can't Prey or attack your Master until they fight it.", 'attach', 'chitin-plating', h=['hazmat-shambler']),
+        say("The Horde's special way to claim a District is called Overrun. At the end of your turn, if your Zombies in a District are at least twice the number of "
+            "Citizens left there, and your opponent has no units there, every remaining Citizen becomes a Shambler and you claim the District. "
+            "The Subway has 1 Citizen left and you have 4 Zombies there."),
+        end("Tap End phase. At the end of your turn, 4 Zombies against 1 Citizen is an Overrun."),
+        say("You Overran the Subway. To play the Horde well, get 3 Zombies into a District early so Spread starts working, and use every unit death for Biomass. "
+            "Watch out for cards that damage everything in a District, and keep a defender near your Master: the Horde's Master has the lowest Essence after the Slashers."),
      ]},
     {'id': 'slasher', 'name': 'Slasher Killers: Don\'t Go in There', 'icon': '🔪', 'opponent': 'Augustin Vale',
-     'blurb': 'Lurking face down, bluffs and Traps, revealing a Killer, Slay and Panic, Vanish, and the Body Count.',
+     'blurb': 'Playing cards face down, bluffing, traps, revealing a hidden Killer, scattering Citizens, hiding again, and winning by Body Count.',
      'deck': 'dont-go-in-there', 'opponentDeck': 'nine-moons', 'seed': 15, 'rewards': REWARD,
      'scenario': setpiece(CITY_C, {'p0': ['bear-trap', 'rusted-machete', 'the-party', 'just-the-cat', 'sheriff-dale-burke', 'dont-go-in-there']},
                           lurk=[('p0', 'the-groundskeeper', 0)], put=[('p1', 'hellhound', 2)],
                           sets=[('p0', 'terror', 8), ('p0', 'bodycount', 11), ('p1', 'sin', 4)]),
      'script': [{'action': 'move', 'card': 'hellhound', 'targets': {'$d': ['old-town']}}],
      'steps': [
-        say('The Slashers are a few legends that won\'t stay dead. Your opponent sees only face-down cards and must guess which one is the Killer. You need 13 Victims: you have 11.'),
-        do('Once per turn you may Lurk: place any card from your hand face down in a District, free. Lurk the Bear Trap in Old Town, next to their Hellhound.', 'lurk', 'bear-trap', d=['old-town']),
-        say('Your face-down Groundskeeper waits at the Docks. You pay a Killer\'s cost only when you reveal it, and a Killer revealed to Hunt gets Ambush +2.'),
-        do('Reveal The Groundskeeper.', 'reveal', 'the-groundskeeper'),
-        do('Prey with him. The Slashers Slay: the Citizen joins your Body Count and you gain Terror.', 'prey', 'the-groundskeeper'),
-        decide('Then Panic: another Citizen flees to a neighbouring District of your choice (The Groundskeeper makes 2 flee).'),
-        decide('Choose where the second Citizen flees.'),
-        say('12 Victims. At your Toll you may Vanish: pay 1 Terror to turn a revealed Killer face down again, and slip it to a neighbouring District.'),
-        end('End your Night.'),
-        decide('Vanish The Groundskeeper.', 'vanish'),
-        decide('Stay at the Docks or slip away: your choice.'),
-        say('On their turn, the Hellhound walked into Old Town and your Bear Trap sprang: 3 wounds, and it is gone. Traps cost their price only when they spring, and every spring pays you Terror. Any other card you Lurk is a bluff.', wait=True),
-        do('Reveal The Groundskeeper again.', 'reveal', 'the-groundskeeper'),
-        do('Slay once more for the 13th Victim.', 'prey', 'the-groundskeeper'),
-        say('Thirteen. The Body Count is complete and the Slashers win. Beware the Final Girl: a Killer she destroys is Ended for good instead of returning as a Sequel.', wait=True),
+        say("You are playing the Slasher Killers. Your resource is Terror. The Slashers have very few units but can win in a unique way: the Body Count. "
+            "Every Citizen your Killers take, and every human unit they destroy, adds 1 Victim. Reach 13 Victims and you win. You have 11 now."),
+        say("The Slashers hide their cards. Once per turn, you may Lurk: put any card from your hand face down in a District for free. "
+            "Your opponent only sees the card back. It might be a Killer, a Trap, or a bluff (any other card, which is simply discarded if your opponent checks it)."),
+        do("Lurk the Bear Trap: tap Bear Trap in your hand, tap Old Town, then Confirm. Their Hellhound is in the Subway, right next to it.",
+           'lurk', 'bear-trap', d=['old-town']),
+        say("A Trap springs when its condition happens. The Bear Trap springs when an enemy unit moves into its District, Hunts there, or Investigates it "
+            "(Investigate is a Hunt that flips a face-down card). You pay the Trap's cost only when it springs, and each spring gives you 1 Terror."),
+        say("Your face-down card at the Docks is a Killer: The Groundskeeper. You pay a Killer's cost only when you reveal it. "
+            "A Killer revealed this way also gets Ambush: +2 Menace for its attack that turn."),
+        do("Tap the face-down Groundskeeper at the Docks to reveal it. It costs 4 Terror.", 'reveal', 'the-groundskeeper'),
+        do("Now tap The Groundskeeper to Prey. For the Slashers this is called Slay: the Citizen becomes a Victim (+1 Body Count) and you gain 1 Terror.",
+           'prey', 'the-groundskeeper'),
+        decide("After a Slay comes Panic: another Citizen from that District runs to a neighbouring District that you choose. Use it to move Citizens away from "
+               "Districts your opponent is about to claim. The Groundskeeper's ability makes 2 Citizens flee. Choose where the first one goes."),
+        decide("Choose where the second Citizen flees."),
+        say("12 Victims. Your Killer is now face up, so your opponent knows where it is. At the end of your turn you may Vanish: pay 1 Terror per revealed Killer to "
+            "turn it face down again, and it may move to a neighbouring District. This keeps your opponent guessing."),
+        end("Tap End phase to end your turn."),
+        decide("The game asks whether to Vanish The Groundskeeper. Choose vanish.", 'vanish'),
+        decide("Choose a District: stay at the Docks or slip into a neighbouring District. Any choice works."),
+        say("During your opponent's turn their Hellhound moved into Old Town, so your Bear Trap sprang: you paid its cost of 1 Terror, gained 1 Terror back, and the "
+            "Hellhound took 3 wounds. With 3 Endurance, it was destroyed.", wait=True),
+        do("Your Groundskeeper is face down again. Tap it to reveal it once more (4 Terror).", 'reveal', 'the-groundskeeper'),
+        do("Tap The Groundskeeper to Prey and Slay the 13th Victim.", 'prey', 'the-groundskeeper'),
+        say("13 Victims: the Body Count is complete and you win. Two more Slasher rules to know: a destroyed Killer is not gone for good. It returns face down two turns "
+            "later and stronger (a Sequel), unless it was destroyed by The Final Girl, a neutral card that removes it from the game."),
      ]},
     {'id': 'devil', 'name': 'Devil\'s Own: Nine Moons', 'icon': '😈', 'opponent': 'Patient Zero',
-     'blurb': 'The Vessel and Gestation, Omens and Portents, Bargains and Pacts, the Nativity and the Child.',
+     'blurb': 'A countdown to a special victory, objective cards that advance it, offers your opponent must accept or refuse, and protecting a unit for one turn.',
      'deck': 'nine-moons', 'opponentDeck': 'outbreak-at-site-9', 'seed': 16, 'rewards': REWARD,
      'scenario': setpiece(CITY_C, {'p0': ['the-crossroads-deal', 'hellhound', 'the-jackals-birthmark', 'unclean-spirit', 'sister-abigail', 'ravens-on-the-steeple']},
                           put=[('p0', 'margaret-wells', 1), ('p0', 'doting-neighbors', 1)], omens=[('p0', 'the-blood-moon'), ('p0', 'tithe-of-souls')],
                           sets=[('game', 'hour', 4), ('p0', 'sin', 3), ('p0', 'souls', 3), ('p0', 'gestation', 5), ('p1', 'biomass', 2)]),
      'steps': [
-        say('The Devil\'s Own race a visible clock: Gestation, from 0 to 9. It only moves while you control a Vessel, here Margaret Wells in Old Town, guarded by her Doting Neighbors. If the Vessel dies, Gestation halves.'),
-        say('Omens advance Gestation when their Portent comes true. It is midnight, the Witching Hour, so The Blood Moon was Fulfilled at your Rise: +3, now 8 of 9.'),
-        do('Bargains make your opponent choose. Play The Crossroads Deal: they Accept (draw 3 and take a Pact) or Refuse (you gain Sin and draw).', 'cast', 'the-crossroads-deal'),
-        say('They accepted, so they carry a Pact. Each Pact pays you Sin at your Toll, and costs them 2 Essence when the Child is born.'),
-        do('Tithe of Souls is fulfilled by spending 3 Souls. Spend them now.', 'tithe', 'tithe-of-souls'),
-        say('Gestation 9: the Nativity. The Child is born in the Vessel\'s District. If it is still in play at your next Rise, you win.'),
-        do('Disciples and Demons beside the Child gain Guard. Play a Hellhound into Old Town to wall it in.', 'deploy', 'hellhound', d=['old-town']),
-        end('End your Night and survive their turn.'),
-        say('The Child lived to see your Rise: the Prophecy is fulfilled and the Devil\'s Own win. Your opponent gets one turn to stop this every time, so protect the Vessel early and spread your Omens.', wait=True),
+        say("You are playing the Devil's Own. Your resource is Sin. Your special victory works like a countdown called Gestation, from 0 to 9 (shown next to your name). "
+            "When it reaches 9, a powerful card called The Child enters play. If The Child is still in play at the start of your next turn, you win."),
+        say("Gestation only goes up while you control a Vessel: a unit with the Vessel keyword. Yours is Margaret Wells in Old Town. If your Vessel is destroyed, "
+            "Gestation is cut in half, so protect it. Doting Neighbors stands guard beside her: its Guard keyword stops enemy units in that District from Preying "
+            "or attacking your Master until they fight it."),
+        say("You raise Gestation with Omen cards. An Omen sits in your Omen row with a condition; when the condition is met, you add its number to Gestation and "
+            "discard it. The Blood Moon's condition is that it is midnight or later at the start of your turn. The clock reads 12 AM, so it just paid +3: "
+            "Gestation went from 5 to 8."),
+        do("Bargains are cards your opponent must answer. Play The Crossroads Deal (it costs 0, because your Master makes Bargains 1 cheaper). "
+           "Your opponent chooses: Accept (they draw 3 cards and take a Pact) or Refuse (you gain 3 Sin and draw a card).", 'cast', 'the-crossroads-deal'),
+        say("Your opponent accepted and took a Pact token. Each Pact gives you 1 Sin at the end of each of your turns, and when The Child is born, "
+            "your opponent loses 2 Essence for every Pact they hold."),
+        do("Tithe of Souls is an Omen whose condition is that you spend 3 Souls (you gain Souls when your units Prey). Tap it in your Omen row to spend 3 Souls: "
+           "Gestation +2.", 'tithe', 'tithe-of-souls'),
+        say("Gestation reached 9, so The Child entered play in your Vessel's District (Old Town), and your opponent lost 2 Essence for their Pact. "
+            "The Child has 0 Menace and 9 Endurance, can't move or attack, and can't be targeted by Event cards. "
+            "Your opponent has one turn to destroy it before your next turn starts."),
+        do("Make it harder for them. Your Disciple and Demon units in The Child's District gain Guard. Play Hellhound (cost 3) into Old Town.",
+           'deploy', 'hellhound', d=['old-town']),
+        end("Tap End phase and let your opponent take their turn."),
+        say("The Child survived to the start of your turn, so you win. When you play the Devil's Own, put a Vessel down early, protect it, and line up Omens. "
+            "Your opponent can see Gestation rising, so they will come for your Vessel. Expect it.", wait=True),
      ]},
 ]
 

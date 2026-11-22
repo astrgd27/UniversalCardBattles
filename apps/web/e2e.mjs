@@ -85,14 +85,14 @@ try {
   await page.click('[data-start=basics]');
   await page.waitForSelector('.coach');
   for (let i = 0; i < 3; i++) await page.click('[data-tut=next]');
-  ok((await page.textContent('.coach')).includes('Play Sprinter into Old Town'), 'coach asks for the first move');
+  ok((await page.textContent('.coach')).includes('Tap Sprinter in your hand'), 'coach asks for the first move');
   ok(await page.$$eval('.seat-area.me .hand .card.legal', (l) => l.length) === 1, 'only the expected card can be played');
   await page.click('.seat-area.me .hand .card.legal');
   ok(await page.$$eval('.gridboard .card.target', (l) => l.length) === 1, 'only the expected District is a target');
   await page.click('.gridboard .card.target');
   await page.click('.dock button:text-is("Confirm")');
   await page.waitForFunction(() => window.__ucb.tut?.step === 4);
-  ok((await page.textContent('.coach')).includes('Prey'), 'the next step is coached');
+  ok((await page.textContent('.coach')).includes('Menace'), 'the next step is coached');
   await page.click('button[aria-label=Menu]');
   await page.click('.panel-pop >> text=Quit to game menu');
   ok(await page.isVisible('[data-tutorial=basics]'), 'quitting returns to the tutorials');
