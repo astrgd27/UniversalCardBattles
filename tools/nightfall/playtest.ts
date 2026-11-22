@@ -2,12 +2,13 @@
 //   node tools/nightfall/playtest.ts [--games=4] [--agents=heuristic|random] [--log=deckA,deckB,seed]
 import { createMatch, eventsFor, listActions, observe } from '#engine';
 import { makeAgent } from '#ai';
-import { deckOpts, loadRef, playMatch } from '#harness';
+import { deckOpts, loadRef, playMatch, readModuleDir } from '#harness';
+import { compileModule } from '#engine';
 const args = process.argv.slice(2);
 const flag = (k: string, d: string) => args.find((a) => a.startsWith(`--${k}=`))?.split('=')[1] ?? d;
 const N = +flag('games', '4');
 const kind = flag('agents', 'heuristic');
-const M = loadRef('nightfall');
+const M = process.env.NF_OUT ? compileModule(readModuleDir(process.env.NF_OUT)) : loadRef('nightfall');
 const D = Object.keys(M.decks!);
 const FAC: Record<number, string> = { 1: 'cabal', 2: 'harvest', 3: 'zombie', 4: 'slasher', 5: 'devil' };
 const how = (g: any) => {

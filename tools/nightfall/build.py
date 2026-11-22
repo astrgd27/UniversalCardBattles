@@ -10,11 +10,11 @@ import json, os
 # Balance levers (playtest-tuned; see docs/NIGHTFALL.md "Balance"). NF_<NAME>=value overrides for experiments.
 LEVERS = {'GATHER_CABAL': 1, 'GATHER_HARVEST': 2, 'GATHER_ZOMBIE': 1, 'GATHER_SLASHER': 2, 'GATHER_DEVIL': 2, 'GESTATION_RISE': 1,
           'STRIKE_PER_DISTRICT': 1, 'SACRIFICE_IS_DEATH': 0, 'STRIKE_DAMAGE': 2,
-          'SPREAD_MIN': 3, 'OVERRUN_RATIO': 2, 'BODYCOUNT_WIN': 11, 'AWAKEN': 8}
+          'SPREAD_MIN': 3, 'OVERRUN_RATIO': 2, 'BODYCOUNT_WIN': 11, 'AWAKEN': 8, 'LURKS': 1, 'CABAL_PREY': 2, 'SHAMBLER_RES': 1}
 BC, AW = LEVERS['BODYCOUNT_WIN'], LEVERS['AWAKEN']  # STRIKE_DAMAGE 0 = the unit's Menace, N = a fixed N
 for k in LEVERS:
     if os.environ.get('NF_' + k) is not None: LEVERS[k] = int(os.environ['NF_' + k])
-OUT = os.path.join(os.path.dirname(__file__), '..', '..', 'packages', 'reference-games', 'nightfall')
+OUT = os.environ.get('NF_OUT') or os.path.join(os.path.dirname(__file__), '..', '..', 'packages', 'reference-games', 'nightfall')
 
 # ---------------------------------------------------------------- DSL helpers
 def lit(x): return ['lit', x]
@@ -203,13 +203,13 @@ proc('slay', ['$x'], [IF(gt(cit('$x'), 0), [C('took', '$x', '$me'), ['inc', '$me
 proc('take', ['$u', '$x'], [IF(gt(cit('$x'), 0), [
     LET('$p', g('$u', 'controller')),
     IF(isF('$p', 1), [C('took', '$x', '$p'),
-        IF(lt(g('$p', 'thralls'), 6), [['inc', '$p', 'thralls', 1], C('addRes', '$p', 2)], [C('addRes', '$p', 3)]),
+        IF(lt(g('$p', 'thralls'), 6), [['inc', '$p', 'thralls', 1], C('addRes', '$p', LEVERS['CABAL_PREY'])], [C('addRes', '$p', LEVERS['CABAL_PREY'] + 1)]),
         IF(eq(g('$u', 'card'), 'associate-of-the-firm'), [C('addRes', '$p', 1)])]),
     IF(isF('$p', 2), [C('took', '$x', '$p'), ['inc', '$p', 'barrow', 1],
         IF(eq(g('$u', 'card'), 'the-corn-bride'), [C('addRes', '$p', 2)]),
         IF(eq(g('$u', 'card'), 'the-little-people'), [['draw', '$p', 1]])]),
     IF(isF('$p', 3), [IF(AND(has('$u', 'shambler'), NOT(ANY(C('gearOn', '$u'), eq(g('$it', 'card'), 'exposed-ribcage-maw')))),
-        [C('took', '$x', '$p'), C('addRes', '$p', 1)], [C('infect', '$x', '$p')])]),
+        [C('took', '$x', '$p'), C('addRes', '$p', LEVERS['SHAMBLER_RES'])], [C('infect', '$x', '$p')])]),
     IF(isF('$p', 4), [C('slay', '$x'), C('panic', '$x', Q(eq(g('$u', 'card'), 'the-groundskeeper'), 2, 1))]),
     IF(isF('$p', 5), [C('took', '$x', '$p'), ['inc', '$p', 'souls', Q(eq(g('$u', 'card'), 'the-possessed-girl'), 2, 1)], C('addRes', '$p', 1),
         IF(ANY(C('mineAt', '$x', '$p'), has('$it', 'disciple')), [C('fulfill', ['first', flt(['cards', '$p', 'omens'], eq(g('$it', 'card'), 'the-jackals-birthmark'))])])])])])
@@ -444,7 +444,7 @@ A['install'] = {'label': 'Install Strain', 'phases': ['night'], 'source': src_ha
 A['omen'] = {'label': 'Place Omen', 'phases': ['night'], 'source': flt(src_hand('omen'), gt(cnt(['freeSlots', '$me', 'omens']), 0)),
     'cost': [C('pay', '$self')], 'do': [['move', '$self', 'omens']]}
 A['lurk'] = {'label': 'Lurk (face down)', 'phases': ['night'],
-    'source': flt(['cards', '$me', 'hand'], AND(isF('$me', 4), lt(g('$me', 'lurks'), add(1, g('$me', 'extraLurk'))))),
+    'source': flt(['cards', '$me', 'hand'], AND(isF('$me', 4), lt(g('$me', 'lurks'), add(LEVERS['LURKS'], g('$me', 'extraLurk'))))),
     'targets': [{'as': '$d', 'from': flt(CITY, lt(cnt(C('lurkersAt', g('$it', 'x'), '$me')), 2)), 'prompt': 'district'}],
     'do': [['inc', '$me', 'lurks', 1], ['move', '$self', 'units', {'faceDown': True, 'as': '$u'}], C('place', '$u', g('$d', 'x'), '$me'), ['set', '$u', 'fresh', 1]]}
 A['reveal'] = {'label': 'Reveal Killer', 'phases': ['night'],
