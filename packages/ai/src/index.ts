@@ -40,6 +40,7 @@ export interface HeuristicOpts {
   samples?: number; // possible worlds per candidate (default: module ai.samples or 2)
   maxCandidates?: number; // candidate commands considered per decision
   bias?: Record<string, number>; // per-action score bonus (added to module ai.bias)
+  horizon?: 'action' | 'pass'; // default: module ai.horizon or 'action'
 }
 
 /**
@@ -120,8 +121,17 @@ export function heuristicAgent(seed: number, opts: HeuristicOpts = {}): Agent {
       if (!info || tpls.length <= 1) return fallback.act(view, tpls);
       const n = opts.samples ?? info.mod.ai?.samples ?? 2;
       const bias = { ...(info.mod.ai?.bias ?? {}), ...(opts.bias ?? {}) };
-      return pickBest(candidates(tpls), (cmd, base) =>
-        evaluate(info, (g) => commitAction(g, info.player, cmd), n, base) + (bias[cmd.action] ?? 0));
+      // horizon "pass": a non-pass candidate is scored after the agent then passes too, so every line is compared at
+      // the same point and passing is not penalised for whatever the end of the step brings.
+      const thenPass = (opts.horizon ?? info.mod.ai?.horizon) === 'pass';
+      const run = (cmd: ActionCmd) => (g: Match) => {
+        let r = commitAction(g, info.player, cmd);
+        if (!thenPass || cmd.action === 'pass') return r;
+        r = settleOut(r, info.player);
+        if (r.s.result || r.s.pending || r.s.priority !== info.player) return r;
+        try { return commitAction(r, info.player, { action: 'pass' }); } catch { return r; }
+      };
+      return pickBest(candidates(tpls), (cmd, base) => evaluate(info, run(cmd), n, base) + (bias[cmd.action] ?? 0));
     },
     decide(view, info) {
       const pd = view.pending as Pending;

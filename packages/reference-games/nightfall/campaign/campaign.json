@@ -899,7 +899,7 @@
       "set",
       "p0",
       "barrow",
-      10
+      8
      ],
      [
       "set",
@@ -917,7 +917,7 @@
      "say": "Crops: Planting cards go into your Field (up to 3), not into a District. Each one gains Growth at the start of your turns. When its Growth reaches its Ripen number, the next Reaping pays out its Yield and then it is discarded. Your Blood Barley ripened and paid 3 Bounty this turn, so you have 6 Bounty."
     },
     {
-     "say": "When Harvest Cult units Prey, the Citizen becomes an Offering, counted on your Barrow. Offerings summon your most powerful card: He Who Wears the Hill, which waits off to the side. At the start of your turn, if you have 10 Offerings and an Effigy (a Cult structure) in play, you spend the 10 to put it into the Effigy's District. That just happened: it is now in Old Town, next to your Scarecrow Sentinel."
+     "say": "When Harvest Cult units Prey, the Citizen becomes an Offering, counted on your Barrow. Offerings summon your most powerful card: He Who Wears the Hill, which waits off to the side. At the start of your turn, if you have 8 Offerings and an Effigy (a Cult structure) in play, you spend the 8 to put it into the Effigy's District. That just happened: it is now in Old Town, next to your Scarecrow Sentinel."
     },
     {
      "say": "Your Hollow-Eyed Farmhand is a Folk unit. Folk are human (Mortal) and can only Prey during Reaping. Tap it (at the Docks) to Prey: the Citizen becomes an Offering.",
@@ -1190,7 +1190,7 @@
       "set",
       "p0",
       "bodycount",
-      11
+      9
      ],
      [
       "set",
@@ -1213,7 +1213,7 @@
    ],
    "steps": [
     {
-     "say": "You are playing the Slasher Killers. Your resource is Terror. The Slashers have very few units but can win in a unique way: the Body Count. Every Citizen your Killers take, and every human unit they destroy, adds 1 Victim. Reach 13 Victims and you win. You have 11 now."
+     "say": "You are playing the Slasher Killers. Your resource is Terror. The Slashers have very few units but can win in a unique way: the Body Count. Every Citizen your Killers take, and every human unit they destroy, adds 1 Victim. Reach 11 Victims and you win. You have 9 now."
     },
     {
      "say": "The Slashers hide their cards. Once per turn, you may Lurk: put any card from your hand face down in a District for free. Your opponent only sees the card back. It might be a Killer, a Trap, or a bluff (any other card, which is simply discarded if your opponent checks it)."
@@ -1259,7 +1259,7 @@
      "decide": []
     },
     {
-     "say": "12 Victims. Your Killer is now face up, so your opponent knows where it is. At the end of your turn you may Vanish: pay 1 Terror per revealed Killer to turn it face down again, and it may move to a neighbouring District. This keeps your opponent guessing."
+     "say": "10 Victims. Your Killer is now face up, so your opponent knows where it is. At the end of your turn you may Vanish: pay 1 Terror per revealed Killer to turn it face down again, and it may move to a neighbouring District. This keeps your opponent guessing."
     },
     {
      "say": "Tap End phase to end your turn.",
@@ -1287,14 +1287,14 @@
      }
     },
     {
-     "say": "Tap The Groundskeeper to Prey and Slay the 13th Victim.",
+     "say": "Tap The Groundskeeper to Prey and Slay the final Victim.",
      "do": {
       "action": "prey",
       "card": "the-groundskeeper"
      }
     },
     {
-     "say": "13 Victims: the Body Count is complete and you win. Two more Slasher rules to know: a destroyed Killer is not gone for good. It returns face down two turns later and stronger (a Sequel), unless it was destroyed by The Final Girl, a neutral card that removes it from the game."
+     "say": "11 Victims: the Body Count is complete and you win. Two more Slasher rules to know: a destroyed Killer is not gone for good. It returns face down two turns later and stronger (a Sequel), unless it was destroyed by The Final Girl, a neutral card that removes it from the game."
     }
    ]
   },
@@ -1403,7 +1403,7 @@
       "set",
       "p0",
       "gestation",
-      5
+      4
      ],
      [
       "set",
@@ -1421,7 +1421,7 @@
      "say": "Gestation only goes up while you control a Vessel: a unit with the Vessel keyword. Yours is Margaret Wells in Old Town. If your Vessel is destroyed, Gestation is cut in half, so protect it. Doting Neighbors stands guard beside her: its Guard keyword stops enemy units in that District from Preying or attacking your Master until they fight it."
     },
     {
-     "say": "You raise Gestation with Omen cards. An Omen sits in your Omen row with a condition; when the condition is met, you add its number to Gestation and discard it. The Blood Moon's condition is that it is midnight or later at the start of your turn. The clock reads 12 AM, so it just paid +3: Gestation went from 5 to 8."
+     "say": "You raise Gestation with Omen cards. An Omen sits in your Omen row with a condition; when the condition is met, you add its number to Gestation and discard it. The Blood Moon's condition is that it is midnight or later at the start of your turn. The clock reads 12 AM, so it just paid +3: Gestation went from 4 to 8 (+1 for starting your turn with a Vessel, +3 for the Blood Moon)."
     },
     {
      "say": "Bargains are cards your opponent must answer. Play The Crossroads Deal (it costs 0, because your Master makes Bargains 1 cheaper). Your opponent chooses: Accept (they draw 3 cards and take a Pact) or Refuse (you gain 3 Sin and draw a card).",
@@ -1644,7 +1644,7 @@
    "price": 0,
    "stock": 1,
    "group": "starter-promo",
-   "text": "Promo starter (Slasher Killers): bluffing, hidden Lurkers and a race to 13 Victims."
+   "text": "Promo starter (Slasher Killers): bluffing, hidden Lurkers and a race to 11 Victims."
   },
   {
    "id": "promo-barrow-wakes",

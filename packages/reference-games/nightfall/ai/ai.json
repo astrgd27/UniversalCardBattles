@@ -12,5 +12,11 @@
    "$opp"
   ]
  ],
- "samples": 1
+ "samples": 1,
+ "horizon": "pass",
+ "bias": {
+  "move": -0.2,
+  "tithe": 3,
+  "reveal": 0.5
+ }
 }

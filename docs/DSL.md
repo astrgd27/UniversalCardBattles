@@ -204,9 +204,10 @@ Effects run in effect lists `[[op...], [op...]]`.
 - `validateCampaign(mod, campaign)` checks references, deck legality and ownership, and scenarios. Package loading runs it.
 
 ## AI hints (`ai/ai.json`)
-- `{eval?, bias?, samples?}`.
+- `{eval?, bias?, samples?, horizon?}`.
 - `eval` is an expression valued from `$me`'s point of view (`$opp` = next player). Higher is better. Wins and losses are scored automatically.
 - `bias {actionName: number}` is added to that action's score. `samples` (1–16) sets the possible worlds per decision (default 2).
+- `horizon` is `"action"` (default: score the position right after the candidate) or `"pass"` (score a non-pass candidate after the agent also passes). Use `"pass"` when passing runs end-of-step effects such as upkeep, income or damage. Otherwise the AI sees any neutral action as better than passing, because only the pass line pays for the end of the step.
 - Without `eval`, the agent counts controlled objects in ability zones plus 0.3 per card in hand.
 - **Possible worlds:** `determinize(match, p, seed)` re-samples every identity p cannot see:
   - p's own hidden cards and shared pools are shuffled among themselves (p knows that multiset);

@@ -411,6 +411,7 @@ export function validateIssues(def: ModuleDef): Issue[] {
     else {
       expr(def.ai.eval, '/eval', eA);
       if (def.ai.bias !== undefined && (!isRec(def.ai.bias) || Object.values(def.ai.bias).some((v) => typeof v !== 'number'))) eA('/bias', 'must be an object of numbers');
+      if (def.ai.horizon !== undefined && def.ai.horizon !== 'action' && def.ai.horizon !== 'pass') eA('/horizon', 'must be "action" or "pass"');
       if (def.ai.samples !== undefined && !(Number.isInteger(def.ai.samples) && def.ai.samples >= 1 && def.ai.samples <= 16)) eA('/samples', 'must be an integer 1-16');
     }
   }

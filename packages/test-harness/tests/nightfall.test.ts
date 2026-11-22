@@ -41,7 +41,7 @@ test('nightfall: setup deals a City of 5 districts, sets factions, Essence, reso
   assert.equal(city.length, 5);
   assert.deepEqual(city.map((d) => d.vars.x), [0, 1, 2, 3, 4]);
   for (const d of city) assert.equal(d.vars.cit, (N.card.get(d.card) as any).population);
-  assert.deepEqual([vars(g, 'p0').faction, vars(g, 'p0').essence, vars(g, 'p0').biomass], [3, 18, 4], 'Zombie: 2 start + 2 at Gather');
+  assert.deepEqual([vars(g, 'p0').faction, vars(g, 'p0').essence, vars(g, 'p0').biomass], [3, 18, 3], 'Zombie: 2 start + 1 at Gather');
   assert.deepEqual([vars(g, 'p1').faction, vars(g, 'p1').essence, vars(g, 'p1').vitae], [1, 20, 4], 'Cabal: 3 start + 1 for going second');
   assert.equal(g.s.zones['p0:hand'].length, 6, 'first player skips the first draw');
   assert.equal(observe(g, 'p0').phase, 'night');
@@ -96,7 +96,7 @@ test('nightfall: without a possible response the hunt resolves at once; Infect m
   g.s.objects[sh].vars.ex = 1;
   invalidate(g.s);
   g = act(g, 'p0', 'strike', z2);
-  assert.equal(vars(g, 'p1').essence, 13, 'Old Hollow 16 - 3');
+  assert.equal(vars(g, 'p1').essence, 14, 'Old Hollow 16 - 2: a Strike deals at most 2 (Sprinter has 3 Menace)');
 });
 
 test('nightfall: Toll — an empty district Falls to the most Dominion; three claims win', () => {
@@ -156,7 +156,7 @@ test('nightfall: Harvest Cult — the Wheel turns, Plantings ripen and Yield, th
   put(g, 'p0', 'scarecrow-sentinel', x);
   const pl = place(g, 'p0', 'blood-barley', 'field');
   g.s.objects[pl].slot = 'furrow-1';
-  setVars(g, 'p0', { barrow: 10 });
+  setVars(g, 'p0', { barrow: 8 });
   g = settle(pass(g)); g = settle(pass(g)); // to p0's Growing Rise: the Old One awakens at the Effigy
   assert.equal(vars(g, 'p0').season, 2);
   const oo = g.s.zones['p0:units'].find((id) => g.s.objects[id].card === 'he-who-wears-the-hill');
@@ -166,7 +166,7 @@ test('nightfall: Harvest Cult — the Wheel turns, Plantings ripen and Yield, th
   const bounty = vars(g, 'p0').bounty;
   g = settle(pass(g)); g = settle(pass(g)); // Reaping: Blood Barley (Growth 3 >= Ripen 2) yields 3
   assert.equal(vars(g, 'p0').season, 3);
-  assert.equal(vars(g, 'p0').bounty, bounty + 1 + 3);
+  assert.equal(vars(g, 'p0').bounty, bounty + 2 + 3, 'Gather 2 plus the Blood Barley Yield');
   g = settle(pass(g)); // Reaping Toll: Harvest
   assert.equal(g.s.objects[dist(g, 'docks')].vars.claim, 1, 'the Old One Harvests its district');
 });
