@@ -80,6 +80,12 @@
    "shambler"
   ],
   "labels": {
+   "field": "Field · Plantings",
+   "labs": "Labs · Strains",
+   "omens": "Omens",
+   "lair": "Lair",
+   "gear": "Gear",
+   "dark": "In the Dark",
    "oldone": "Old One",
    "child": "Horror",
    "frenzy": "Frenzied",

@@ -2,7 +2,8 @@
 import type { GEvent, Match, Pending } from './types.ts';
 import { chars } from './layers.ts';
 import { cardNow, isBlank } from './identity.ts';
-import { activeId, curPhase, list, topWin, viewers } from './util.ts';
+import { activeId, baseCtx, curPhase, list, topWin, viewers, zoneIdOf, zoneOwnerOf } from './util.ts';
+import { ev } from './expr.ts';
 
 export interface ObjView {
   id: string;
@@ -29,7 +30,7 @@ export interface View {
   players: { id: string; vars: Record<string, number>; lost: boolean }[];
   vars: Record<string, number>; // game vars
   ext: Record<string, string | number>; // external inputs
-  zones: Record<string, { count: number; cards?: ObjView[] }>;
+  zones: Record<string, { count: number; cards?: ObjView[]; show?: boolean }>; // show: the zone's showIf holds
   stack: StackView[]; // bottom -> top
   pending: Pending | { player: string; prompt: string } | null;
   result: Match['s']['result'];
@@ -44,6 +45,10 @@ export function observe({ m, s }: Match, p: string): View {
     const ids = s.zones[key];
     const v = viewers(m, key);
     zones[key] = { count: ids.length };
+    const show = m.zone.get(zoneIdOf(key))?.showIf;
+    if (show !== undefined && key.includes(':')) {
+      try { zones[key].show = !!ev(m, s, show, baseCtx(s, zoneOwnerOf(key))); } catch { zones[key].show = false; }
+    }
     if (v === null || v.includes(p)) {
       zones[key].cards = ids.map((id) => {
         const o = s.objects[id];

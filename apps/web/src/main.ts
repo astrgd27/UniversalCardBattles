@@ -42,6 +42,7 @@ export interface UI {
   paused: boolean;
   fast: boolean;
   theme: 'light' | 'dark';
+  cardSize: 's' | 'm' | 'l'; // table card size (default m)
   edit: DeckEdit | null;
   filter: string;
   gallery: string | null; // card id enlarged in the gallery
@@ -118,7 +119,7 @@ function seatsFor(m: Mod, n = Math.max(2, m.rules.players.min)): Pick<UI, 'seats
 
 export const ui: UI = {
   screen: 'library', mod: null, seats: [], decks: [], match: null, agents: [], viewer: 'p0', cover: null, sel: null, menu: null,
-  note: null, inspect: null, peek: null, tut: null, drawer: null, pile: null, paused: false, fast: false, theme: store.get<'light' | 'dark'>('ucb-theme', 'dark') === 'light' ? 'light' : 'dark', edit: null,
+  note: null, inspect: null, peek: null, tut: null, drawer: null, pile: null, paused: false, fast: false, theme: store.get<'light' | 'dark'>('ucb-theme', 'dark') === 'light' ? 'light' : 'dark', cardSize: 'm', edit: null,
   filter: '', gallery: null, profile: null, camp: null, encounter: null, campDeck: '', dialog: null, dialogSeen: -1, reward: null, reveal: null, fxFrom: 0, counts: {}, sort: 'cost', sample: null, io: null,
 };
 (window as any).__ucb = ui; // test hook
@@ -303,6 +304,7 @@ export const actions = {
     }
   },
   setTheme(t: UI['theme']) { ui.theme = t; store.set('ucb-theme', t); redraw(); },
+  setCardSize(z: UI['cardSize']) { ui.cardSize = z; store.set('ucb-cards', z); redraw(); },
   exportSaves() {
     const b = makeBackup(store.all());
     const url = URL.createObjectURL(new Blob([JSON.stringify(b, null, 1)], { type: 'application/json' }));
@@ -700,6 +702,7 @@ openStore((msg) => { ui.note = { title: 'Storage problem', text: msg }; redraw()
   storageInfo.backend = b;
   migrateLegacySaves();
   ui.theme = store.get<'light' | 'dark'>('ucb-theme', 'dark') === 'light' ? 'light' : 'dark';
+  ui.cardSize = (['s', 'm', 'l'] as const).find((z) => z === store.get<string>('ucb-cards', 'm')) ?? 'm';
   redraw();
   await initSync(() => JSON.stringify(makeBackup(store.all()), null, 1), redraw);
   storageInfo.persisted = await persistStorage();

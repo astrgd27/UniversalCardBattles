@@ -10,6 +10,7 @@ const SCREENS = { library, home, setup, saves: savesScreen, tutorials: tutorials
 
 export function render(ui: UI, A: any) {
   document.documentElement.dataset.theme = ui.theme;
+  document.documentElement.dataset.cards = ui.cardSize;
   const app = document.getElementById('app')!;
   const active = document.activeElement as HTMLInputElement | null;
   const keep = active?.dataset?.keep;

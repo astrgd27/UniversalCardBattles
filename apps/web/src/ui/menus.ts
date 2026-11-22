@@ -30,7 +30,8 @@ export function library(ui: UI, A: any) {
       h('button', { onclick: A.exportSaves, 'data-act': 'export' }, '⬇ Export saves'),
       h('label', { class: 'file-btn', 'data-act': 'import' }, '⬆ Import saves',
         h('input', { type: 'file', accept: '.json,application/json', onchange: (e: Event) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) A.importSaves(f); } })),
-      segmented(ui.theme, [['dark', 'Dark'], ['light', 'Light']], A.setTheme, 'Theme')));
+      segmented(ui.theme, [['dark', 'Dark'], ['light', 'Light']], A.setTheme, 'Theme'),
+      segmented(ui.cardSize, [['s', 'Compact'], ['m', 'Large'], ['l', 'Huge']], A.setCardSize, 'Card size')));
 }
 
 function storageLine() {

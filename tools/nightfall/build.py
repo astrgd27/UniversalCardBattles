@@ -10,7 +10,7 @@ import json, os
 # Balance levers (playtest-tuned; see docs/NIGHTFALL.md "Balance"). NF_<NAME>=value overrides for experiments.
 LEVERS = {'GATHER_CABAL': 1, 'GATHER_HARVEST': 2, 'GATHER_ZOMBIE': 1, 'GATHER_SLASHER': 2, 'GATHER_DEVIL': 2, 'GESTATION_RISE': 1,
           'STRIKE_PER_DISTRICT': 1, 'SACRIFICE_IS_DEATH': 0, 'STRIKE_DAMAGE': 2,
-          'SPREAD_MIN': 3, 'OVERRUN_RATIO': 2, 'BODYCOUNT_WIN': 11, 'AWAKEN': 8, 'LURKS': 1, 'CABAL_PREY': 2, 'SHAMBLER_RES': 1, 'DRAW_SLASHER': 0, 'DRAW_DEVIL': 0, 'DRAW_HARVEST': 0}
+          'SPREAD_MIN': 3, 'OVERRUN_RATIO': 2, 'BODYCOUNT_WIN': 11, 'AWAKEN': 8, 'LURKS': 1, 'CABAL_PREY': 2, 'SHAMBLER_RES': 1, 'DRAW_SLASHER': 0, 'DRAW_DEVIL': 0, 'DRAW_HARVEST': 0, 'DOM_VAMPIRE': 0, 'SPREAD_ONCE': 0}
 BC, AW = LEVERS['BODYCOUNT_WIN'], LEVERS['AWAKEN']  # STRIKE_DAMAGE 0 = the unit's Menace, N = a fixed N
 for k in LEVERS:
     if os.environ.get('NF_' + k) is not None: LEVERS[k] = int(os.environ['NF_' + k])
@@ -311,8 +311,10 @@ proc('rise', [], [
             ['inc', '$me', 'barrow', -LEVERS['AWAKEN']],
             ['move', ['first', flt(['cards', '$me', 'aside'], eq(g('$it', 'type'), 'oldone'))], 'units', {'as': '$oo'}],
             C('place', '$oo', g('$d', 'x'), '$me'), emit('awakened', player='$me')])]),
-    IF(isF('$me', 3), [EACH(CITY, '$d', [IF(AND(C('living', g('$d', 'x')), ge(cnt(flt(C('mineAt', g('$d', 'x'), '$me'), has('$it', 'zombie'))),
-        Q(C('inPlay', '$me', 'vector-b'), LEVERS['SPREAD_MIN'] - 1, LEVERS['SPREAD_MIN']))), [C('infect', g('$d', 'x'), '$me')])])]),
+    IF(isF('$me', 3), [LET('$spr', flt(CITY, AND(C('living', g('$it', 'x')), gt(cit(g('$it', 'x')), 0), ge(cnt(flt(C('mineAt', g('$it', 'x'), '$me'), has('$it', 'zombie'))),
+        Q(C('inPlay', '$me', 'vector-b'), LEVERS['SPREAD_MIN'] - 1, LEVERS['SPREAD_MIN'])))))] + (
+        [IF(gt(cnt('$spr'), 0), [choose('$spr', '$d', 'Spread: which district?', 1, 1), C('infect', g('$d', 'x'), '$me')])] if LEVERS['SPREAD_ONCE'] else
+        [EACH('$spr', '$d', [C('infect', g('$d', 'x'), '$me')])])),
     IF(isF('$me', 4), [
         EACH(flt(['cards', '$me', 'units'], AND(g('$it', 'faceDown'), eq(g('$it', 'card'), 'the-caller'))), '$cl', [C('addRes', '$me', 1)]),
         EACH(['cards', '$me', 'dark'], '$k', [['inc', '$k', 'sc', -1], IF(le(g('$k', 'sc'), 0), [C('returnKiller', '$k')])])])])
@@ -365,7 +367,7 @@ proc('toll', [], [
                 choose(['concat', ['list', C('dAt', g('$k', 'x'))], C('adjD', g('$k', 'x'))], '$d', 'Vanish: stay or slip to an adjacent district'),
                 ['set', '$k', 'x', g('$d', 'x')]])])])]),
     EACH(CITY, '$d', [LET('$x', g('$d', 'x')), IF(AND(eq(g('$d', 'claim'), 0), gt(g('$d', 'cit'), 0)), [
-        IF(AND(isF('$me', 1), ge(C('influence', '$x', '$me'), g('$d', 'cit'))), [
+        IF(AND(isF('$me', 1), ge(C('influence', '$x', '$me'), g('$d', 'cit')), *([ANY(C('mineAt', '$x', '$me'), has('$it', 'vampire'))] if LEVERS['DOM_VAMPIRE'] else [])), [
             EACH(['range', g('$d', 'cit')], '$i', [C('took', '$x', '$me'), IF(lt(g('$me', 'thralls'), 6), [['inc', '$me', 'thralls', 1]], [C('addRes', '$me', 2)])]),
             emit('dominated', district=g('$d', 'card')), C('claim', '$d', '$me')]),
         IF(AND(isF('$me', 3), ge(cnt(flt(C('mineAt', '$x', '$me'), has('$it', 'zombie'))), ['*', LEVERS['OVERRUN_RATIO'], g('$d', 'cit')]), eq(cnt(C('enemyAt', '$x', '$me')), 0)), [
@@ -771,9 +773,9 @@ RULES = {
         {'id': 'lair', 'vis': 'public', 'abilities': True},
         {'id': 'units', 'vis': 'public', 'abilities': True},
         {'id': 'gear', 'vis': 'public', 'abilities': True, 'hideEmpty': True},
-        {'id': 'field', 'vis': 'public', 'hideEmpty': True, 'slots': [{'id': 'furrow-1'}, {'id': 'furrow-2'}, {'id': 'furrow-3'}]},
-        {'id': 'labs', 'vis': 'public', 'hideEmpty': True, 'slots': [{'id': 'lab-a'}, {'id': 'lab-b'}]},
-        {'id': 'omens', 'vis': 'public', 'hideEmpty': True, 'slots': [{'id': 'omen-1'}, {'id': 'omen-2'}, {'id': 'omen-3'}]},
+        {'id': 'field', 'vis': 'public', 'hideEmpty': True, 'showIf': eq(g('$me', 'faction'), 2), 'slots': [{'id': 'furrow-1'}, {'id': 'furrow-2'}, {'id': 'furrow-3'}]},
+        {'id': 'labs', 'vis': 'public', 'hideEmpty': True, 'showIf': eq(g('$me', 'faction'), 3), 'slots': [{'id': 'lab-a'}, {'id': 'lab-b'}]},
+        {'id': 'omens', 'vis': 'public', 'hideEmpty': True, 'showIf': eq(g('$me', 'faction'), 5), 'slots': [{'id': 'omen-1'}, {'id': 'omen-2'}, {'id': 'omen-3'}]},
         {'id': 'limbo', 'vis': 'public', 'hideEmpty': True},
         {'id': 'shown', 'vis': 'public', 'hideEmpty': True},
         {'id': 'aside', 'vis': 'public', 'hideEmpty': True},
@@ -1189,7 +1191,7 @@ MANIFEST = {
               'hideVars': ['fresh', 'hunted', 'moves', 'last', 'amb', 'hz', 'shield', 'saved', 'stun', 'xprey', 'mayPrey', 'ended', 'claim', 'ex', 'faction', 'gcl', 'first', 'struck',
                            'infPlayed', 'plantPlayed', 'lurks', 'velvet', 'extraLurk', 'grim', 'tunnel', 'morgue', 'sqA', 'sqB', 'sqC', 'sqD'],
               'hideKeywords': ['aloof', 'nohunt', 'token', 'shambler'],
-              'labels': {'oldone': 'Old One', 'child': 'Horror', 'frenzy': 'Frenzied', 'silver': 'silver wounds', 'dmg': 'wounds', 'cit': 'citizens', 'growth': 'growth', 'sc': 'sequel in', 'plus': '+1/+1', 'essence': 'Essence', 'claims': 'districts',
+              'labels': {'field': 'Field · Plantings', 'labs': 'Labs · Strains', 'omens': 'Omens', 'lair': 'Lair', 'gear': 'Gear', 'dark': 'In the Dark', 'oldone': 'Old One', 'child': 'Horror', 'frenzy': 'Frenzied', 'silver': 'silver wounds', 'dmg': 'wounds', 'cit': 'citizens', 'growth': 'growth', 'sc': 'sequel in', 'plus': '+1/+1', 'essence': 'Essence', 'claims': 'districts',
                          'trophies': 'trophies', 'bodycount': 'Body Count', 'gestation': 'Gestation', 'barrow': 'Offerings', 'season': 'season', 'thralls': 'Thralls', 'souls': 'Souls', 'pacts': 'Pacts'}},
     'presentation': {
         'templates': {

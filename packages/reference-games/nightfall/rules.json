@@ -80,6 +80,15 @@
    "id": "field",
    "vis": "public",
    "hideEmpty": true,
+   "showIf": [
+    "=",
+    [
+     "get",
+     "$me",
+     "faction"
+    ],
+    2
+   ],
    "slots": [
     {
      "id": "furrow-1"
@@ -96,6 +105,15 @@
    "id": "labs",
    "vis": "public",
    "hideEmpty": true,
+   "showIf": [
+    "=",
+    [
+     "get",
+     "$me",
+     "faction"
+    ],
+    3
+   ],
    "slots": [
     {
      "id": "lab-a"
@@ -109,6 +127,15 @@
    "id": "omens",
    "vis": "public",
    "hideEmpty": true,
+   "showIf": [
+    "=",
+    [
+     "get",
+     "$me",
+     "faction"
+    ],
+    5
+   ],
    "slots": [
     {
      "id": "omen-1"
@@ -6377,75 +6404,95 @@
      ],
      [
       [
-       "each",
+       "let",
+       "$spr",
        [
-        "cards",
-        "p0",
-        "city"
-       ],
-       "$d",
-       [
+        "filter",
         [
-         "if",
+         "cards",
+         "p0",
+         "city"
+        ],
+        [
+         "and",
          [
-          "and",
+          "call",
+          "living",
           [
-           "call",
-           "living",
-           [
-            "get",
-            "$d",
-            "x"
-           ]
-          ],
-          [
-           ">=",
-           [
-            "count",
-            [
-             "filter",
-             [
-              "call",
-              "mineAt",
-              [
-               "get",
-               "$d",
-               "x"
-              ],
-              "$me"
-             ],
-             [
-              "has",
-              "$it",
-              "zombie"
-             ]
-            ]
-           ],
-           [
-            "?",
-            [
-             "call",
-             "inPlay",
-             "$me",
-             "vector-b"
-            ],
-            2,
-            3
-           ]
+           "get",
+           "$it",
+           "x"
           ]
          ],
          [
+          ">",
           [
-           "call",
-           "infect",
+           "get",
            [
-            "get",
-            "$d",
-            "x"
+            "call",
+            "dAt",
+            [
+             "get",
+             "$it",
+             "x"
+            ]
            ],
-           "$me"
+           "cit"
+          ],
+          0
+         ],
+         [
+          ">=",
+          [
+           "count",
+           [
+            "filter",
+            [
+             "call",
+             "mineAt",
+             [
+              "get",
+              "$it",
+              "x"
+             ],
+             "$me"
+            ],
+            [
+             "has",
+             "$it",
+             "zombie"
+            ]
+           ]
+          ],
+          [
+           "?",
+           [
+            "call",
+            "inPlay",
+            "$me",
+            "vector-b"
+           ],
+           2,
+           3
           ]
          ]
+        ]
+       ]
+      ],
+      [
+       "each",
+       "$spr",
+       "$d",
+       [
+        [
+         "call",
+         "infect",
+         [
+          "get",
+          "$d",
+          "x"
+         ],
+         "$me"
         ]
        ]
       ]

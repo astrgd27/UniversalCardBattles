@@ -8,6 +8,7 @@ interface Fx {
   entered: Set<string>; // objects that just arrived in a visible zone
   hit: Map<string, number>; // object or player id -> damage just taken
   flipped: Set<string>;
+  tapped: Map<string, boolean>; // object -> just tapped (true) or untapped (false), from the theme's tapVar
   pulse: Map<string, Set<string>>; // player -> vars that just changed
   bump: Set<string>; // zone keys whose size just grew
   banner: string | null; // a new turn began
@@ -22,13 +23,15 @@ interface C {
 /** Animations come only from the viewer's redacted event log since the previous render. */
 function effectsSince(ui: UI, v: View): Fx {
   const m = ui.match!;
-  const fx: Fx = { entered: new Set(), hit: new Map(), flipped: new Set(), pulse: new Map(), bump: new Set(), banner: null };
+  const fx: Fx = { entered: new Set(), hit: new Map(), flipped: new Set(), tapped: new Map(), pulse: new Map(), bump: new Set(), banner: null };
+  const tapVar = m.m.manifest.theme?.tapVar;
   const from = Math.min(ui.fxFrom, m.s.events.length);
   const first = m.m.rules.phases[0].id;
   for (const e of eventsFor(m, ui.viewer, from)) {
     if ((e.type === 'moved' || e.type === 'created') && e.newObj) fx.entered.add(e.newObj);
     else if (e.type === 'damage' && e.target) fx.hit.set(e.target, (fx.hit.get(e.target) ?? 0) + e.amount);
     else if (e.type === 'flipped') fx.flipped.add(e.obj);
+    else if (e.type === 'changed' && tapVar && e.name === tapVar && e.ref && !/^p\d+$/.test(e.ref)) fx.tapped.set(e.ref, (e.to ?? 0) > 0);
     else if (e.type === 'changed' && /^p\d+$/.test(e.ref)) { if (!fx.pulse.has(e.ref)) fx.pulse.set(e.ref, new Set()); fx.pulse.get(e.ref)!.add(e.name); }
     else if (e.type === 'phase' && e.phase === first && from > 0) fx.banner = e.active === ui.viewer && ui.seats[+ui.viewer.slice(1)] === 'human' ? 'Your turn' : `${pname(e.active)}'s turn`;
   }
@@ -102,7 +105,7 @@ function hud(c: C, mine: boolean) {
 function obj(c: C, o: ObjView, size: 'sm' | 'md') {
   const hit = c.fx.hit.get(o.id);
   const state = cls(c.sources.has(o.id) && 'legal', c.targets.has(o.id) && 'target', c.picked.has(o.id) && 'picked', c.ui.inspect === o.id && 'inspected',
-    c.fx.entered.has(o.id) && 'fx-enter', !!hit && 'fx-hit', c.fx.flipped.has(o.id) && 'fx-flip', o.controller === c.ui.viewer ? 'own' : 'foe');
+    c.fx.entered.has(o.id) && 'fx-enter', !!hit && 'fx-hit', c.fx.flipped.has(o.id) && 'fx-flip', c.fx.tapped.get(o.id) === true && 'fx-tap', c.fx.tapped.get(o.id) === false && 'fx-untap', o.controller === c.ui.viewer ? 'own' : 'foe');
   const onclick = () => c.A.pick(o.id);
   const el = o.card
     ? cardFace(c.mod, o.card, { size, state, onclick, obj: o.id, stats: o.stats, vars: o.vars, baseVars: c.mod.rules.objectVars, keywords: o.blank ? [] : o.keywords, faceDown: o.faceDown, note: noteOf(c.mod, o) })
@@ -181,7 +184,7 @@ function pile(c: C, key: string, z: ZoneDef) {
   return h('button', {
     class: cls('pile', hot && 'hot', !zv.cards && 'hidden', c.fx.bump.has(key) && 'fx-bump'), disabled: !zv.cards,
     'aria-label': `${title(z.id)}: ${zv.count} cards${zv.cards ? '' : ' (hidden)'}`, onclick: () => c.A.drawer('pile', key),
-  }, h('span', { class: 'pile-n' }, String(zv.count)), h('span', { class: 'pile-l' }, title(z.id)));
+  }, h('span', { class: 'pile-n' }, String(zv.count)), h('span', { class: 'pile-l' }, c.mod.manifest.theme?.labels?.[z.id] ?? title(z.id)));
 }
 
 /** A zone with named slots: rows grouped by each slot's first tag; empty slots show their name and can be targets. */
@@ -189,7 +192,7 @@ function slotted(c: C, key: string, z: ZoneDef, cards: ObjView[]) {
   const mine = key.startsWith(`${c.ui.viewer}:`);
   const rows = new Map<string, NonNullable<ZoneDef['slots']>>();
   for (const sp of z.slots!) { const r = sp.tags?.[0] ?? ''; rows.set(r, [...(rows.get(r) ?? []), sp]); }
-  return h('div', { class: 'zone slotted' }, h('span', { class: 'zone-l' }, title(z.id)),
+  return h('div', { class: 'zone slotted' }, h('span', { class: 'zone-l' }, c.mod.manifest.theme?.labels?.[z.id] ?? title(z.id)),
     [...rows.values()].map((row) => h('div', { class: 'slot-row' }, row.map((sp) => {
       const here = cards.filter((o) => o.slot === sp.id);
       const t = mine && c.targets.has(sp.id);
@@ -204,10 +207,10 @@ function zoneBlock(c: C, key: string, z: ZoneDef) {
   const zv = c.v.zones[key];
   if (!zv) return null;
   if (!zv.cards) return pile(c, key, z);
-  if (z.hideEmpty && !zv.cards.length) return null;
+  if (z.hideEmpty && !zv.cards.length && !zv.show) return null;
   if (z.slots?.length) return slotted(c, key, z, zv.cards);
   if (!zv.cards.length && !z.abilities) return null;
-  return h('div', { class: 'zone' }, h('span', { class: 'zone-l' }, title(z.id)),
+  return h('div', { class: 'zone' }, h('span', { class: 'zone-l' }, c.mod.manifest.theme?.labels?.[z.id] ?? title(z.id)),
     h('div', { class: 'row' }, zv.cards.length ? zv.cards.map((o) => obj(c, o, 'sm')) : h('span', { class: 'empty-slot' }, 'empty')));
 }
 
@@ -324,6 +327,7 @@ function pause(c: C) {
       h('button', { onclick: A.save }, 'Save game'),
       h('label', { class: 'toggle' }, h('input', { type: 'checkbox', checked: ui.fast, onchange: (e: Event) => A.setFast((e.target as HTMLInputElement).checked) }), ' Fast AI'),
       segmented(ui.theme, [['dark', 'Dark'], ['light', 'Light']], A.setTheme, 'Theme'),
+      segmented(ui.cardSize, [['s', 'Compact'], ['m', 'Large'], ['l', 'Huge']], A.setCardSize, 'Card size'),
       h('button', { class: 'ghost', onclick: A.quit }, 'Quit to game menu')));
 }
 

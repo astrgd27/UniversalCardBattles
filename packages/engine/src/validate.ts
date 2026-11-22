@@ -405,6 +405,7 @@ export function validateIssues(def: ModuleDef): Issue[] {
   });
 
   // ---- AI hints ----
+  R.zones?.forEach?.((z: any, i: number) => { if (isRec(z) && z.showIf !== undefined) expr(z.showIf, `/zones/${i}/showIf`, eR); });
   if (def.ai !== undefined) {
     const eA = at('ai');
     if (!isRec(def.ai)) eA('', 'must be an object');
