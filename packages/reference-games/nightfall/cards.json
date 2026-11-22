@@ -1377,7 +1377,7 @@
   "faction": "harvest",
   "num": "NF-033",
   "rarity": "L",
-  "text": "Set aside. Awaken with 8 Offerings. Events can't target it. Dominion 4. Harvests its district at your Reaping Tolls.",
+  "text": "Set aside. Awaken with 6 Offerings. Events can't target it. Dominion 4. Harvests its district at your Reaping Tolls.",
   "menace": 8,
   "endurance": 12,
   "keywords": [
@@ -1385,7 +1385,7 @@
    "aloof"
   ],
   "maxCopies": 1,
-  "awaken": 8,
+  "awaken": 6,
   "dominion": 4
  },
  {

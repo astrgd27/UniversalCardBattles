@@ -248,8 +248,21 @@ A survey of about 30 published TCG rulebooks (`docs/COVERAGE.md`, second table) 
 - **App:** a Tutorials menu per module, a coach panel above the dock, only the expected move playable, a completion screen with the reward and "Keep playing".
 - **NIGHTFALL:** Basics plus one tutorial per faction, 10 Marks each on first completion. `tests/tutorials.test.ts` plays each one through and checks its outcome.
 
+## Done: NIGHTFALL balance v1.1 and table UI
+- **Playtests:** `tools/nightfall/playtest.ts` plays AI vs AI across every pairing and prints how games end, win rates and economy stats.
+  - Every tuning number is a `LEVERS` entry in `build.py`, overridable with `NF_<LEVER>`. `NF_OUT` builds a variant elsewhere.
+  - Win rates moved from 100/88/44/38/6 to 53/63/50/38/47 (Zombie/Cabal/Harvest/Slasher/Devil, 80 games). The changes are in NIGHTFALL.md, "Balance".
+- **Design document:** `tools/nightfall/gdd_update.py` writes `docs/NIGHTFALL_GDD.docx` (v1.1) from the original GDD and the live levers, including a revision table.
+- **AI:** `ai.horizon: "pass"` fixes the scoring bias that made agents prefer any neutral move to passing.
+- **Engine:** zone `showIf` draws a player's empty zone while true (faction play areas from turn 1). Views carry it as `zones[key].show`.
+- **UI:**
+  - Cards scale with the screen, with a Card size setting (Compact / Large / Huge, default Large). Table cards show their rules text from about 105px wide.
+  - Board cells hug their cards, player zones flow side by side, and zones use theme labels.
+  - Tall popups scroll.
+  - Tap/untap uses the CSS `rotate`/`scale` properties with event-log animation. This fixes the card showing untapped while hovered and then snapping to tapped.
+
 ## Possible next steps
-- NIGHTFALL: the art itself, playtest-driven balance.
+- NIGHTFALL: the remaining art; human playtests to confirm the AI-tuned numbers.
 - Campaigns for the other reference games, online multiplayer.
 - Campaigns for the other reference games.
 - IndexedDB storage (localStorage today) and cloud sync of backups.

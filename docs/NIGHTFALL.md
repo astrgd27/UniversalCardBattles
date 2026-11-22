@@ -70,10 +70,51 @@ Six scripted lessons on the module's Tutorials menu, each worth 10 Marks the fir
 - **Blood Cabal:** Feed, Influence and Domination, Drain, and a Fast Scheme on the opponent's turn.
 - **Harvest Cult:** the Wheel of the Year, Yields, Offerings and the Old One's Harvest.
 - **Zombie Horde:** Infect, Spread, sacrifices, Strains and Mutations, and Overrun.
-- **Slasher Killers:** Lurking, Traps, revealing, Slay and Panic, Vanish, and the 13th Victim.
+- **Slasher Killers:** Lurking, Traps, revealing, Slay and Panic, Vanish, and the winning Victim.
 - **Devil's Own:** the Vessel, Omens, Bargains and Pacts, the Nativity and the Child's victory.
 
 Each is a set piece built in `tools/nightfall/build.py` (procedures `tutCity`, `tutHand`, `tutPut`, `tutLurk`, `tutPlant`, `tutOmen`, and the game var `noMulligan`).
+
+## Balance (v1.1)
+Tuned with AI-vs-AI playtests, every faction pairing played from both seats. The AI sees only what a player sees.
+
+**Tooling:**
+- Run `cp tools/nightfall/playtest.ts packages/test-harness/tests/_pt.ts && node packages/test-harness/tests/_pt.ts --games=4`. It prints:
+  - how games end;
+  - win rate by faction and per pairing;
+  - unspent resource and hand size;
+  - faction counters and actions per game.
+- `--log=deckA,deckB,seed` prints one game turn by turn.
+- Every number below is a lever in `LEVERS` at the top of `tools/nightfall/build.py`.
+  - `NF_<LEVER>=n` overrides one for an experiment.
+  - `NF_OUT=<dir>` builds the variant elsewhere, so several can run in parallel.
+- `python3 tools/nightfall/gdd_update.py` rewrites the design document from the current levers. It reads the original `docs/NIGHTFALL_GDD_v0.1.docx` and writes `docs/NIGHTFALL_GDD.docx`.
+
+**Result:** win rate across all pairings went from Zombie 100% / Cabal 88% / Harvest 44% / Slasher 38% / Devil 6% to Zombie 53% / Cabal 63% / Harvest 50% / Slasher 38% / Devil 47% (80 games).
+- Every signature win now happens. In 80 games: 14 Prophecies, 10 Old One awakenings, 32 Dominations, 29 Overruns and 2 Body Count wins.
+- The Slashers are the faction to watch: Body Count averages about 5 of 11.
+- Games end by Dawn about half the time, by the City about a fifth of the time, and otherwise by Ruin or a signature win.
+
+| Change | v0.1 (document) | v1.1 | Evidence |
+|---|---|---|---|
+| Strikes | full Menace, any number | one per District per turn, at most 2 damage | Strikes decided two games in three; about 17 of 18 Citizens were still on the board at the end |
+| Shamblers | Prey (Devour) and Strike | Mindless: no Prey, no Strike (Feeding Frenzy still Devours) | every Infect made a free Shambler that Preyed next turn: an exponential snowball |
+| Spread | every District with 3+ Zombies | one District of your choice | the same snowball |
+| Zombie Gather | 2 | 0 (the Morgue, Devours and sacrifices only) | about 14 Biomass unspent per game; still about 65% with mindless Shamblers |
+| Sacrifice | a death | a payment | bug: sacrifice + Morgue + Patient Zero paid 3 Biomass per token |
+| Domination | Influence ≥ Citizens | also needs your Vampire there (the document's own lever) | Cabal won 84% by Dominating with Puppets and Influence |
+| Evacuation Order | move 2 Citizens | at least 1 stays behind | Prey + Evacuation claimed a District on turn 1 |
+| Slasher Gather / Draw | 1 / 1 | 3 / 2 | 1.3 cards in hand at the end of the game; Lurking eats a card a turn |
+| Body Count | 13 | 11 | it averaged 5 at the end of the game |
+| Harvest Gather | 1 | 3 | 6–8 unplayable cards with no Bounty |
+| Awaken | 10 | 6 | the Old One woke in 1 game in 40 |
+| Devil Gather / Draw | 1 / 1 | 2 / 2 | too few cards to find Omens and the Vessel |
+| Gestation | starts at 0, Omens only | starts at 2, +2 at each Rise with a Vessel | the Nativity almost never happened |
+| Augustin's Dark Gift | 3 Sin | 2 Sin | the Vessel search was too dear to use early |
+
+**AI fix found along the way:**
+- When the AI weighed a move against passing, the pass line ran on into Strikes and the opponent's Rise, while every other line was scored before them. Any neutral move therefore looked better than passing: the Slasher AI shuffled its Lurkers about 28 times a game.
+- The new `ai.horizon: "pass"` scores each move after the agent also passes (see `docs/DSL.md`).
 
 ## Art
 - Drop images in with `python3 tools/art/import.py nightfall <folder>`. Images are matched by collector number (`NF-012`), card id or card name.
@@ -93,4 +134,4 @@ Each is a set piece built in `tools/nightfall/build.py` (procedures `tutCity`, `
   - the Night Track and Dawn;
   - replays.
 - NIGHTFALL is also in the shared integrity suite: replay, save/restore, hidden information and termination.
-- Balance is untouched. The numbers are the design's first draft, and the document's own balance levers apply.
+- `nightfall balance` tests pin the v1.1 rule changes (mindless Shamblers, one Spread, Domination needs a Vampire, Gestation, the Vessel search).

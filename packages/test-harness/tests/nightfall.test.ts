@@ -41,7 +41,7 @@ test('nightfall: setup deals a City of 5 districts, sets factions, Essence, reso
   assert.equal(city.length, 5);
   assert.deepEqual(city.map((d) => d.vars.x), [0, 1, 2, 3, 4]);
   for (const d of city) assert.equal(d.vars.cit, (N.card.get(d.card) as any).population);
-  assert.deepEqual([vars(g, 'p0').faction, vars(g, 'p0').essence, vars(g, 'p0').biomass], [3, 18, 3], 'Zombie: 2 start + 1 at Gather');
+  assert.deepEqual([vars(g, 'p0').faction, vars(g, 'p0').essence, vars(g, 'p0').biomass], [3, 18, 2], 'Zombie: 2 start, no Gather income (the Morgue pays instead)');
   assert.deepEqual([vars(g, 'p1').faction, vars(g, 'p1').essence, vars(g, 'p1').vitae], [1, 20, 4], 'Cabal: 3 start + 1 for going second');
   assert.equal(g.s.zones['p0:hand'].length, 6, 'first player skips the first draw');
   assert.equal(observe(g, 'p0').phase, 'night');
@@ -156,7 +156,7 @@ test('nightfall: Harvest Cult — the Wheel turns, Plantings ripen and Yield, th
   put(g, 'p0', 'scarecrow-sentinel', x);
   const pl = place(g, 'p0', 'blood-barley', 'field');
   g.s.objects[pl].slot = 'furrow-1';
-  setVars(g, 'p0', { barrow: 8 });
+  setVars(g, 'p0', { barrow: 6 }); // Awaken 6
   g = settle(pass(g)); g = settle(pass(g)); // to p0's Growing Rise: the Old One awakens at the Effigy
   assert.equal(vars(g, 'p0').season, 2);
   const oo = g.s.zones['p0:units'].find((id) => g.s.objects[id].card === 'he-who-wears-the-hill');

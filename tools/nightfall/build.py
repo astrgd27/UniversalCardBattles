@@ -11,7 +11,7 @@ import json, os
 # NF_<NAME>=value overrides any of them for an experiment; NF_OUT=<dir> writes the module there instead.
 LEVERS = {
     # income: resource gained at Gather (Cabal also gains 1 per Thrall) and extra cards at Draw
-    'GATHER_CABAL': 1, 'GATHER_HARVEST': 3, 'GATHER_ZOMBIE': 1, 'GATHER_SLASHER': 3, 'GATHER_DEVIL': 2,
+    'GATHER_CABAL': 1, 'GATHER_HARVEST': 3, 'GATHER_ZOMBIE': 0, 'GATHER_SLASHER': 3, 'GATHER_DEVIL': 2,
     'DRAW_SLASHER': 1, 'DRAW_DEVIL': 1, 'DRAW_HARVEST': 0, 'CABAL_PREY': 2, 'SHAMBLER_RES': 1,
     # Strikes: at most this many per district per turn, each dealing at most STRIKE_DAMAGE (0 = full Menace)
     'STRIKE_PER_DISTRICT': 1, 'STRIKE_DAMAGE': 2,
@@ -23,7 +23,7 @@ LEVERS = {
     # Slasher Killers
     'BODYCOUNT_WIN': 11, 'LURKS': 1,
     # Harvest Cult
-    'AWAKEN': 8,
+    'AWAKEN': 6,
     # Devil's Own: Gestation starts at GEST_START and gains GESTATION_RISE at each Rise with a Vessel
     'GEST_START': 2, 'GESTATION_RISE': 2, 'VESSEL_HALVES': 1,
 }
@@ -1080,9 +1080,9 @@ TUTORIALS = [
      'blurb': 'Growing a swarm of tokens, gaining resources when units die, upgrades for all or one of your units, and claiming a District by outnumbering it.',
      'deck': 'outbreak-at-site-9', 'opponentDeck': 'the-barrow-wakes', 'seed': 14, 'rewards': REWARD,
      'scenario': setpiece(CITY_B, {'p0': ['crawler-swarm', 'chitin-plating', 'lazarus-7', 'containment-breach', 'sprinter', 'exposed-ribcage-maw']},
-                          put=[('p0', 'sprinter', 1), ('p0', 'fresh-turned', 1), ('p0', 'hazmat-shambler', 1)], sets=[('p0', 'biomass', 3), ('p1', 'bounty', 2)]),
+                          put=[('p0', 'sprinter', 1), ('p0', 'fresh-turned', 1), ('p0', 'hazmat-shambler', 1)], sets=[('p0', 'biomass', 4 - LEVERS['GATHER_ZOMBIE']), ('p1', 'bounty', 2)]),
      'steps': [
-        say(f"You are playing the Zombie Horde. Your resource is Biomass. You gain {LEVERS['GATHER_ZOMBIE']} each turn, plus 1 every time any unit is destroyed (the Morgue rule). "
+        say("You are playing the Zombie Horde. Your resource is Biomass. " + (f"You gain {LEVERS['GATHER_ZOMBIE']} each turn, plus 1 " if LEVERS['GATHER_ZOMBIE'] else "You don't gain it each turn like other factions: you gain 1 ") + "every time any unit is destroyed (the Morgue rule), yours or the opponent's. "
             "The Horde wins by flooding Districts with lots of small units called Shamblers: 1 Menace, 1 Endurance tokens."),
         say("At the start of this turn, a Horde rule called Spread happened. In one District where you have 3 or more Zombie units (you choose if there are several), "
             "1 Citizen becomes a new Shambler for you. You had 3 Zombies in the Subway, so the Subway went from 3 Citizens to 2 and you gained a Shambler there."),

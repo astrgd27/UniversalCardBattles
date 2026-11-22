@@ -899,7 +899,7 @@
       "set",
       "p0",
       "barrow",
-      8
+      6
      ],
      [
       "set",
@@ -917,7 +917,7 @@
      "say": "Crops: Planting cards go into your Field (up to 3), not into a District. Each one gains Growth at the start of your turns. When its Growth reaches its Ripen number, the next Reaping pays out its Yield and then it is discarded. Your Blood Barley ripened and paid 3 Bounty this turn, so you have 6 Bounty."
     },
     {
-     "say": "When Harvest Cult units Prey, the Citizen becomes an Offering, counted on your Barrow. Offerings summon your most powerful card: He Who Wears the Hill, which waits off to the side. At the start of your turn, if you have 8 Offerings and an Effigy (a Cult structure) in play, you spend the 8 to put it into the Effigy's District. That just happened: it is now in Old Town, next to your Scarecrow Sentinel."
+     "say": "When Harvest Cult units Prey, the Citizen becomes an Offering, counted on your Barrow. Offerings summon your most powerful card: He Who Wears the Hill, which waits off to the side. At the start of your turn, if you have 6 Offerings and an Effigy (a Cult structure) in play, you spend the 6 to put it into the Effigy's District. That just happened: it is now in Old Town, next to your Scarecrow Sentinel."
     },
     {
      "say": "Your Hollow-Eyed Farmhand is a Folk unit. Folk are human (Mortal) and can only Prey during Reaping. Tap it (at the Docks) to Prey: the Citizen becomes an Offering.",
@@ -1044,7 +1044,7 @@
       "set",
       "p0",
       "biomass",
-      3
+      4
      ],
      [
       "set",
@@ -1056,7 +1056,7 @@
    },
    "steps": [
     {
-     "say": "You are playing the Zombie Horde. Your resource is Biomass. You gain 1 each turn, plus 1 every time any unit is destroyed (the Morgue rule). The Horde wins by flooding Districts with lots of small units called Shamblers: 1 Menace, 1 Endurance tokens."
+     "say": "You are playing the Zombie Horde. Your resource is Biomass. You don't gain it each turn like other factions: you gain 1 every time any unit is destroyed (the Morgue rule), yours or the opponent's. The Horde wins by flooding Districts with lots of small units called Shamblers: 1 Menace, 1 Endurance tokens."
     },
     {
      "say": "At the start of this turn, a Horde rule called Spread happened. In one District where you have 3 or more Zombie units (you choose if there are several), 1 Citizen becomes a new Shambler for you. You had 3 Zombies in the Subway, so the Subway went from 3 Citizens to 2 and you gained a Shambler there."
