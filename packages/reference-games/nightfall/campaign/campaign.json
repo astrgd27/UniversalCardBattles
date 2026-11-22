@@ -590,7 +590,7 @@
      "say": "Each faction has its own rules. One Zombie Horde rule is the Morgue: whenever any unit is destroyed, yours or the opponent's, you gain 1 Biomass. Wounds stay on a unit until they are healed; a unit is destroyed when its wounds reach its Endurance."
     },
     {
-     "say": "It's your turn again. At Rise, your units stood back up so they can Hunt again. Another Zombie Horde rule, Spread, also happened: at the start of your turn, every District where you have 3 or more Zombie units (Shamblers count) loses 1 Citizen, and that Citizen becomes another Shambler for you. Old Town went from 3 Citizens to 2.",
+     "say": "It's your turn again. At Rise, your units stood back up so they can Hunt again. Another Zombie Horde rule, Spread, also happened: at the start of your turn, one District where you have 3 or more Zombie units (Shamblers count) loses 1 Citizen, and that Citizen becomes another Shambler for you. Old Town went from 3 Citizens to 2.",
      "wait": true
     },
     {
@@ -754,7 +754,7 @@
      "say": "When a Blood Cabal unit Preys, the Citizen becomes a Thrall (you can hold up to 6) and you gain 2 Vitae. Thralls are a second income: at the start of each turn you gain 1 Vitae, plus 1 more for every Thrall you hold. The Campground now has 2 Citizens."
     },
     {
-     "say": "Here is the Cabal's main way to claim a District, called Domination. At the end of your turn, if your total Influence in a District is equal to or more than the Citizens left there, you take all of those Citizens as Thralls and claim the District, no matter who has more units there. Right now the Campground has 2 Citizens and you have 1 Influence there."
+     "say": "Here is the Cabal's main way to claim a District, called Domination. At the end of your turn, if you have a Vampire in a District and your total Influence there is equal to or more than the Citizens left there, you take all of those Citizens as Thralls and claim the District, no matter who has more units there. Right now the Campground has 2 Citizens and you have 1 Influence there."
     },
     {
      "say": "Councilman Doyle is a unit that counts as 2 Influence in his District. Play him into the Campground (cost 3). That makes 3 Influence against 2 Citizens.",
@@ -1056,10 +1056,10 @@
    },
    "steps": [
     {
-     "say": "You are playing the Zombie Horde. Your resource is Biomass. You gain 2 each turn, plus 1 every time any unit is destroyed (the Morgue rule). The Horde wins by flooding Districts with lots of small units called Shamblers: 1 Menace, 1 Endurance tokens."
+     "say": "You are playing the Zombie Horde. Your resource is Biomass. You gain 1 each turn, plus 1 every time any unit is destroyed (the Morgue rule). The Horde wins by flooding Districts with lots of small units called Shamblers: 1 Menace, 1 Endurance tokens."
     },
     {
-     "say": "At the start of this turn, a Horde rule called Spread happened. In every District where you have 3 or more Zombie units, 1 Citizen becomes a new Shambler for you. You had 3 Zombies in the Subway, so the Subway went from 3 Citizens to 2 and you gained a Shambler there."
+     "say": "At the start of this turn, a Horde rule called Spread happened. In one District where you have 3 or more Zombie units (you choose if there are several), 1 Citizen becomes a new Shambler for you. You had 3 Zombies in the Subway, so the Subway went from 3 Citizens to 2 and you gained a Shambler there."
     },
     {
      "say": "Tap Sprinter in the Subway to Prey. When a Zombie with a name Preys, the Citizen becomes another Shambler for you (this is called Infect).",
@@ -1069,10 +1069,10 @@
      }
     },
     {
-     "say": "If a Shambler itself Preys, it doesn't make a new Shambler; you gain 1 Biomass instead (called Devour). Shamblers also can't move on their own: they are Slow, and only card effects can move them."
+     "say": "Shamblers are mindless: they can't Prey or attack the enemy Master on their own. They fight (Clash), block (Intercept), count toward Spread and Overrun, and pay for things. Some cards, like Feeding Frenzy, make Shamblers feed (called Devour): the Citizen is removed and you gain 1 Biomass. Shamblers are also Slow: only card effects can move them."
     },
     {
-     "say": "Shamblers are also currency. Sacrifice a Shambler: tap one of your Shamblers in the Subway. You gain 1 Biomass for the sacrifice, 1 more from the Morgue because a unit died, and 1 more from your Master, Patient Zero, whose ability rewards your Shamblers dying.",
+     "say": "Shamblers are also currency. Sacrifice a Shambler: tap one of your Shamblers in the Subway. It is removed and you gain 1 Biomass. A sacrifice is a payment, not a death, so the Morgue and Patient Zero don't pay extra for it.",
      "do": {
       "action": "sacrifice",
       "card": "shambler"
@@ -1403,7 +1403,7 @@
       "set",
       "p0",
       "gestation",
-      4
+      3
      ],
      [
       "set",
@@ -1421,7 +1421,7 @@
      "say": "Gestation only goes up while you control a Vessel: a unit with the Vessel keyword. Yours is Margaret Wells in Old Town. If your Vessel is destroyed, Gestation is cut in half, so protect it. Doting Neighbors stands guard beside her: its Guard keyword stops enemy units in that District from Preying or attacking your Master until they fight it."
     },
     {
-     "say": "You raise Gestation with Omen cards. An Omen sits in your Omen row with a condition; when the condition is met, you add its number to Gestation and discard it. The Blood Moon's condition is that it is midnight or later at the start of your turn. The clock reads 12 AM, so it just paid +3: Gestation went from 4 to 8 (+1 for starting your turn with a Vessel, +3 for the Blood Moon)."
+     "say": "You raise Gestation with Omen cards. An Omen sits in your Omen row with a condition; when the condition is met, you add its number to Gestation and discard it. The Blood Moon's condition is that it is midnight or later at the start of your turn. The clock reads 12 AM, so it just paid +3: Gestation went from 3 to 8 (+2 for starting your turn with a Vessel, +3 for the Blood Moon)."
     },
     {
      "say": "Bargains are cards your opponent must answer. Play The Crossroads Deal (it costs 0, because your Master makes Bargains 1 cheaper). Your opponent chooses: Accept (they draw 3 cards and take a Pact) or Refuse (you gain 3 Sin and draw a card).",

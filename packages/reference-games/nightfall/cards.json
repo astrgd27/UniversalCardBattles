@@ -248,11 +248,11 @@
   "faction": "devil",
   "num": "NF-066",
   "rarity": "L",
-  "text": "Your Bargains cost 1 less. Dark Gift (exhaust, 3 Sin): search your deck for a Vessel and put it into your hand.)",
+  "text": "Your Bargains cost 1 less. Dark Gift (exhaust, 2 Sin): search your deck for a Vessel and put it into your hand.)",
   "fno": 5,
   "essence": 20,
   "startRes": 2,
-  "giftCost": 3,
+  "giftCost": 2,
   "gift": [
    [
     "choose",
@@ -1939,7 +1939,7 @@
   "faction": "zombie",
   "num": "NF-T01",
   "rarity": "C",
-  "text": "Token. Slow: moves only through card effects.",
+  "text": "Token. Slow: moves only through card effects. Mindless: it can't Prey or Strike.",
   "cost": 0,
   "menace": 1,
   "endurance": 1,

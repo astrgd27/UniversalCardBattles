@@ -7,13 +7,29 @@ Rules live in RULES (functions/procedures), cards in CARDS. Everything is plain 
 """
 import json, os
 
-# Balance levers (playtest-tuned; see docs/NIGHTFALL.md "Balance"). NF_<NAME>=value overrides for experiments.
-LEVERS = {'GATHER_CABAL': 1, 'GATHER_HARVEST': 2, 'GATHER_ZOMBIE': 1, 'GATHER_SLASHER': 2, 'GATHER_DEVIL': 2, 'GESTATION_RISE': 1,
-          'STRIKE_PER_DISTRICT': 1, 'SACRIFICE_IS_DEATH': 0, 'STRIKE_DAMAGE': 2,
-          'SPREAD_MIN': 3, 'OVERRUN_RATIO': 2, 'BODYCOUNT_WIN': 11, 'AWAKEN': 8, 'LURKS': 1, 'CABAL_PREY': 2, 'SHAMBLER_RES': 1, 'DRAW_SLASHER': 0, 'DRAW_DEVIL': 0, 'DRAW_HARVEST': 0, 'DOM_VAMPIRE': 0, 'SPREAD_ONCE': 0}
-BC, AW = LEVERS['BODYCOUNT_WIN'], LEVERS['AWAKEN']  # STRIKE_DAMAGE 0 = the unit's Menace, N = a fixed N
+# Balance levers, tuned by AI-vs-AI playtests (tools/nightfall/playtest.ts; see docs/NIGHTFALL.md "Balance").
+# NF_<NAME>=value overrides any of them for an experiment; NF_OUT=<dir> writes the module there instead.
+LEVERS = {
+    # income: resource gained at Gather (Cabal also gains 1 per Thrall) and extra cards at Draw
+    'GATHER_CABAL': 1, 'GATHER_HARVEST': 3, 'GATHER_ZOMBIE': 1, 'GATHER_SLASHER': 3, 'GATHER_DEVIL': 2,
+    'DRAW_SLASHER': 1, 'DRAW_DEVIL': 1, 'DRAW_HARVEST': 0, 'CABAL_PREY': 2, 'SHAMBLER_RES': 1,
+    # Strikes: at most this many per district per turn, each dealing at most STRIKE_DAMAGE (0 = full Menace)
+    'STRIKE_PER_DISTRICT': 1, 'STRIKE_DAMAGE': 2,
+    # Blood Cabal: Domination also needs one of your Vampires in the district
+    'DOM_VAMPIRE': 1,
+    # Zombie Horde: Shamblers are mindless (no Prey, no Strike); Spread infects one chosen district per Rise
+    'SHAMBLER_PREY': 0, 'SHAMBLER_STRIKE': 0, 'SHAMBLER_DOMINION': 1, 'SPREAD_ONCE': 1, 'SPREAD_MIN': 3, 'OVERRUN_RATIO': 2,
+    'SACRIFICE_IS_DEATH': 0,
+    # Slasher Killers
+    'BODYCOUNT_WIN': 11, 'LURKS': 1,
+    # Harvest Cult
+    'AWAKEN': 8,
+    # Devil's Own: Gestation starts at GEST_START and gains GESTATION_RISE at each Rise with a Vessel
+    'GEST_START': 2, 'GESTATION_RISE': 2, 'VESSEL_HALVES': 1,
+}
 for k in LEVERS:
     if os.environ.get('NF_' + k) is not None: LEVERS[k] = int(os.environ['NF_' + k])
+BC, AW = LEVERS['BODYCOUNT_WIN'], LEVERS['AWAKEN']
 OUT = os.environ.get('NF_OUT') or os.path.join(os.path.dirname(__file__), '..', '..', 'packages', 'reference-games', 'nightfall')
 
 # ---------------------------------------------------------------- DSL helpers
@@ -121,7 +137,7 @@ fn('guarded', ['$x', '$p'], ANY(C('enemyAt', '$x', '$p'), C('guardOf', '$it')))
 # Guard holds a unit back until that unit has Clashed with a Guard this turn.
 fn('guardedFor', ['$u'], AND(ne(g('$u', 'gcl'), '$turn'), C('guarded', g('$u', 'x'), g('$u', 'controller'))))
 fn('readyEnemy', ['$x', '$p'], ANY(C('enemyAt', '$x', '$p'), eq(g('$it', 'ex'), 0)))
-fn('dominion', ['$x', '$p'], add(SUM(C('mineAt', '$x', '$p'), add(C('menace', '$it'), g('$it', 'dominion'))), SUM(C('structsAt', '$x', '$p'), g('$it', 'dominion'))))
+fn('dominion', ['$x', '$p'], add(SUM(C('mineAt', '$x', '$p'), (add(C('menace', '$it'), g('$it', 'dominion')) if LEVERS['SHAMBLER_DOMINION'] else Q(has('$it', 'shambler'), 0, add(C('menace', '$it'), g('$it', 'dominion'))))), SUM(C('structsAt', '$x', '$p'), g('$it', 'dominion'))))
 fn('influence', ['$x', '$p'], ['*', Q(C('livingIs', '$x', 'financial'), 2, 1),
     add(SUM(C('structsAt', '$x', '$p'), g('$it', 'inf')), SUM(C('mineAt', '$x', '$p'), g('$it', 'inf')))])
 fn('adj', ['$a', '$b'], AND(ne('$a', '$b'), OR(eq(['abs', sub('$a', '$b')], 1), eq(C('dkey', '$a'), 'subway'), eq(C('dkey', '$b'), 'subway'))))
@@ -140,7 +156,7 @@ fn('cost', ['$c', '$p'], Q(
 fn('canPay', ['$c', '$p'], AND(ge(C('res', '$p'), C('cost', '$c', '$p')), ge(g('$p', 'souls'), g('$c', 'souls'))))
 fn('uniqueOk', ['$c', '$p'], OR(NOT(has('$c', 'unique')), NOT(ANY(['concat', ['cards', '$p', 'units'], ['cards', '$p', 'gear']], eq(g('$it', 'card'), g('$c', 'card'))))))
 fn('canHunt', ['$u'], AND(C('isUnit', '$u'), mine('$u'), eq(g('$u', 'ex'), 0), OR(eq(g('$u', 'fresh'), 0), has('$u', 'swift')), NOT(has('$u', 'nohunt'))))
-fn('canPrey', ['$u'], AND(gt(cit(g('$u', 'x')), 0), NOT(C('guardedFor', '$u')), OR(
+fn('canPrey', ['$u'], AND(gt(cit(g('$u', 'x')), 0), NOT(C('guardedFor', '$u')), *([] if LEVERS['SHAMBLER_PREY'] else [NOT(has('$u', 'shambler'))]), OR(
     AND(C('canHunt', '$u'), OR(inl(g('$u', 'type'), lit(['horror', 'killer', 'oldone'])),
         AND(has('$u', 'folk'), OR(eq(g('$me', 'season'), 3), eq(g('$u', 'mayPrey'), 1))))),
     AND(C('isUnit', '$u'), mine('$u'), eq(g('$u', 'xprey'), 1)),
@@ -168,7 +184,7 @@ fn('trophyScore', ['$p'], add(['*', 30, g('$p', 'claims')], g('$p', 'essence'), 
     ['*', 2, SUM(flt(CITY, AND(eq(g('$it', 'claim'), 0), gt(C('dominion', g('$it', 'x'), '$p'), C('dominion', g('$it', 'x'), ['opp', '$p'])))),
                  sub(7, ['max', 0, g('$it', 'cit')]))],
     # faction engines: Souls feed Omens, Omens and a living Vessel are the Prophecy's clock
-    ['*', 2, g('$p', 'souls')], ['*', 3, cnt(['cards', '$p', 'omens'])], Q(['isObj', C('vessel', '$p')], 6, 0)))
+    ['*', 2, g('$p', 'souls')], ['*', 3, cnt(['cards', '$p', 'omens'])], Q(['isObj', C('vessel', '$p')], 6, Q(ANY(['cards', '$p', 'hand'], has('$it', 'vessel')), 3, 0))))
 
 # ---------------------------------------------------------------- procedures
 P = {}
@@ -399,7 +415,7 @@ proc('setupPlayer', ['$p'], [
     IF(isF('$p', 1), [['set', '$p', 'thralls', 0]]),
     IF(isF('$p', 2), [['set', '$p', 'season', 0], ['set', '$p', 'barrow', 0]]),
     IF(isF('$p', 4), [['set', '$p', 'bodycount', 0]]),
-    IF(isF('$p', 5), [['set', '$p', 'gestation', 0], ['set', '$p', 'souls', 0]]),
+    IF(isF('$p', 5), [['set', '$p', 'gestation', LEVERS['GEST_START']], ['set', '$p', 'souls', 0]]),
     ['shuffle', '$p', 'deck'], ['draw', '$p', 6],
     IF(eq(g('game', 'noMulligan'), 0), [
         choose(['cards', '$p', 'hand'], '$mul', 'Mulligan: choose any cards to shuffle back (once)', 0, 6, '$p'),
@@ -472,7 +488,7 @@ A['clash'] = {'label': 'Clash', 'phases': ['night'], 'source': flt(['cards', '$m
         NOT(AND(eq(g('$it', 'card'), 'margaret-wells'), ANY(C('mineAt', g('$it', 'x'), g('$it', 'controller')), AND(has('$it', 'disciple'), ne(g('$it', 'card'), 'margaret-wells'))))))) }],
     'do': [C('hunt', '$self', 'clash', '$t')]}
 A['strike'] = {'label': 'Strike the Master', 'phases': ['night'],
-    'source': flt(['cards', '$me', 'units'], AND(C('canHunt', '$it'), ne(g('$it', 'type'), 'hunter'),
+    'source': flt(['cards', '$me', 'units'], AND(C('canHunt', '$it'), ne(g('$it', 'type'), 'hunter'), *([] if LEVERS['SHAMBLER_STRIKE'] else [NOT(has('$it', 'shambler'))]),
         NOT(C('readyEnemy', g('$it', 'x'), '$me')), NOT(C('guardedFor', '$it')),
         lt(g(C('dAt', g('$it', 'x')), 'struck'), LEVERS['STRIKE_PER_DISTRICT']))),
     'do': [['inc', C('dAt', g('$self', 'x')), 'struck', 1], C('hunt', '$self', 'strike', None)]}
@@ -561,7 +577,7 @@ master('NF-034', 'patient-zero', 'Patient Zero, the First Mouth', 3, 'zombie', 1
     'Whenever one of your Shamblers dies, gain 1 extra Biomass.')
 master('NF-050', 'old-hollow', 'Old Hollow, the Story Told at Campfires', 4, 'slasher', 16, 2, 2, '2 Terror): place an extra Lurker this turn.',
     [['inc', '$me', 'extraLurk', 1]], 'When an enemy unit Strikes you, you may move one of your face-down Lurkers into that unit\'s district.')
-master('NF-066', 'augustin-vale', 'Augustin Vale, Ambassador of the Morning Star Society', 5, 'devil', 20, 2, 3, '3 Sin): search your deck for a Vessel and put it into your hand.',
+master('NF-066', 'augustin-vale', 'Augustin Vale, Ambassador of the Morning Star Society', 5, 'devil', 20, 2, 2, '2 Sin): search your deck for a Vessel and put it into your hand.',
     [choose(flt(['cards', '$me', 'deck'], has('$it', 'vessel')), '$v', 'Search for which Vessel?', 0, 1), ['move', '$v', 'hand'], ['shuffle', '$me', 'deck']],
     'Your Bargains cost 1 less.')
 
@@ -649,7 +665,7 @@ card('NF-049', 'cleanup-crew-lost', 'Cleanup Crew Lost', 'outbreak', 'zombie', 3
      effect=[choose(EV_UNITS(AND(has('$it', 'mortal'), le(C('endur', '$it'), 3))), '$t', 'Destroy which Mortal?', 0, 1),
              IF(['isObj', '$t'], [LET('$x', g('$t', 'x')), ['set', '$t', 'dmg', 99],
                  ['create', 'shambler', '$me', 'units', {'as': '$s'}], C('place', '$s', '$x', '$me'), ['set', '$s', 'fresh', 1]])])
-card('NF-T01', 'shambler', 'Shambler', 'horror', 'zombie', 0, 1, 1, 'C', 'Token. Slow: moves only through card effects.', ('zombie', 'shambler', 'slow', 'token'), maxCopies=0)
+card('NF-T01', 'shambler', 'Shambler', 'horror', 'zombie', 0, 1, 1, 'C', 'Token. Slow: moves only through card effects.' + (" Mindless: it can't Prey or Strike." if not (LEVERS['SHAMBLER_PREY'] or LEVERS['SHAMBLER_STRIKE']) else ''), ('zombie', 'shambler', 'slow', 'token'), maxCopies=0)
 
 # -- Slasher Killers
 def killer(num, cid, name, cost, m, e, text, **x):
@@ -856,7 +872,7 @@ RULES = {
 }
 
 # Vessel death halves Gestation (rounding down).
-proc('halve', ['$p'], [IF(isF('$p', 5), [['set', '$p', 'gestation', ['/', g('$p', 'gestation'), 2]]])])
+proc('halve', ['$p'], [IF(isF('$p', 5), [['set', '$p', 'gestation', ['/', g('$p', 'gestation'), 2] if LEVERS['VESSEL_HALVES'] else ['max', 0, sub(g('$p', 'gestation'), 2)]]])])
 
 # ---------------------------------------------------------------- decks (the five starters)
 def deck(master_id, entries, aside=None):
@@ -982,7 +998,7 @@ TUTORIALS = [
         say("Each faction has its own rules. One Zombie Horde rule is the Morgue: whenever any unit is destroyed, yours or the opponent's, "
             "you gain 1 Biomass. Wounds stay on a unit until they are healed; a unit is destroyed when its wounds reach its Endurance."),
         say("It's your turn again. At Rise, your units stood back up so they can Hunt again. Another Zombie Horde rule, Spread, also happened: "
-            "at the start of your turn, every District where you have 3 or more Zombie units (Shamblers count) loses 1 Citizen, "
+            "at the start of your turn, one District where you have 3 or more Zombie units (Shamblers count) loses 1 Citizen, "
             "and that Citizen becomes another Shambler for you. Old Town went from 3 Citizens to 2.", wait=True),
         do("Tap Sprinter to Prey again and take another Citizen from Old Town.", 'prey', 'sprinter'),
         do("Fresh Turned arrived last turn, so it is no longer Fresh and can Hunt. Tap it to Prey.", 'prey', 'fresh-turned'),
@@ -1013,7 +1029,7 @@ TUTORIALS = [
         do("Tap Velvet Rope Fledgling to Prey and take a Citizen.", 'prey', 'velvet-rope-fledgling'),
         say("When a Blood Cabal unit Preys, the Citizen becomes a Thrall (you can hold up to 6) and you gain 2 Vitae. "
             "Thralls are a second income: at the start of each turn you gain 1 Vitae, plus 1 more for every Thrall you hold. The Campground now has 2 Citizens."),
-        say("Here is the Cabal's main way to claim a District, called Domination. At the end of your turn, if your total Influence in a District is equal to "
+        say("Here is the Cabal's main way to claim a District, called Domination. At the end of your turn, if you have a Vampire in a District and your total Influence there is equal to "
             "or more than the Citizens left there, you take all of those Citizens as Thralls and claim the District, no matter who has more units there. "
             "Right now the Campground has 2 Citizens and you have 1 Influence there."),
         do("Councilman Doyle is a unit that counts as 2 Influence in his District. Play him into the Campground (cost 3). That makes 3 Influence against 2 Citizens.",
@@ -1066,16 +1082,17 @@ TUTORIALS = [
      'scenario': setpiece(CITY_B, {'p0': ['crawler-swarm', 'chitin-plating', 'lazarus-7', 'containment-breach', 'sprinter', 'exposed-ribcage-maw']},
                           put=[('p0', 'sprinter', 1), ('p0', 'fresh-turned', 1), ('p0', 'hazmat-shambler', 1)], sets=[('p0', 'biomass', 3), ('p1', 'bounty', 2)]),
      'steps': [
-        say("You are playing the Zombie Horde. Your resource is Biomass. You gain 2 each turn, plus 1 every time any unit is destroyed (the Morgue rule). "
+        say(f"You are playing the Zombie Horde. Your resource is Biomass. You gain {LEVERS['GATHER_ZOMBIE']} each turn, plus 1 every time any unit is destroyed (the Morgue rule). "
             "The Horde wins by flooding Districts with lots of small units called Shamblers: 1 Menace, 1 Endurance tokens."),
-        say("At the start of this turn, a Horde rule called Spread happened. In every District where you have 3 or more Zombie units, 1 Citizen becomes a new "
-            "Shambler for you. You had 3 Zombies in the Subway, so the Subway went from 3 Citizens to 2 and you gained a Shambler there."),
+        say("At the start of this turn, a Horde rule called Spread happened. In one District where you have 3 or more Zombie units (you choose if there are several), "
+            "1 Citizen becomes a new Shambler for you. You had 3 Zombies in the Subway, so the Subway went from 3 Citizens to 2 and you gained a Shambler there."),
         do("Tap Sprinter in the Subway to Prey. When a Zombie with a name Preys, the Citizen becomes another Shambler for you (this is called Infect).",
            'prey', 'sprinter'),
-        say("If a Shambler itself Preys, it doesn't make a new Shambler; you gain 1 Biomass instead (called Devour). Shamblers also can't move on their own: "
-            "they are Slow, and only card effects can move them."),
-        do("Shamblers are also currency. Sacrifice a Shambler: tap one of your Shamblers in the Subway. You gain 1 Biomass for the sacrifice, 1 more from the Morgue "
-           "because a unit died, and 1 more from your Master, Patient Zero, whose ability rewards your Shamblers dying.", 'sacrifice', 'shambler'),
+        say("Shamblers are mindless: they can't Prey or attack the enemy Master on their own. They fight (Clash), block (Intercept), count toward Spread "
+            "and Overrun, and pay for things. Some cards, like Feeding Frenzy, make Shamblers feed (called Devour): the Citizen is removed and you gain 1 Biomass. "
+            "Shamblers are also Slow: only card effects can move them."),
+        do("Shamblers are also currency. Sacrifice a Shambler: tap one of your Shamblers in the Subway. It is removed and you gain 1 Biomass. "
+           "A sacrifice is a payment, not a death, so the Morgue and Patient Zero don't pay extra for it.", 'sacrifice', 'shambler'),
         do("Strains are upgrade cards that affect all your Zombies. They go into your Labs (2 spaces) instead of a District. Play LAZARUS-7 (cost 3): "
            "all your Shamblers get +1 Menace.", 'install', 'lazarus-7'),
         do("Mutations are upgrades you attach to one Zombie. Tap Chitin Plating (cost 2), then tap Hazmat Shambler on the board, then Confirm. It gives +3 Endurance "

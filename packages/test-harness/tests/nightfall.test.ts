@@ -166,7 +166,7 @@ test('nightfall: Harvest Cult — the Wheel turns, Plantings ripen and Yield, th
   const bounty = vars(g, 'p0').bounty;
   g = settle(pass(g)); g = settle(pass(g)); // Reaping: Blood Barley (Growth 3 >= Ripen 2) yields 3
   assert.equal(vars(g, 'p0').season, 3);
-  assert.equal(vars(g, 'p0').bounty, bounty + 2 + 3, 'Gather 2 plus the Blood Barley Yield');
+  assert.equal(vars(g, 'p0').bounty, bounty + 3 + 3, 'Gather 3 plus the Blood Barley Yield');
   g = settle(pass(g)); // Reaping Toll: Harvest
   assert.equal(g.s.objects[dist(g, 'docks')].vars.claim, 1, 'the Old One Harvests its district');
 });
@@ -373,4 +373,54 @@ test('nightfall store: claim exactly one promo starter, earn Marks from AI battl
   const pack = openBooster(c, 'blood-dawn', [1, 2, 3, 4]);
   const rar = pack.map((id) => (N.card.get(id) as any).rarity);
   assert.deepEqual([rar.slice(0, 6).every((r) => r === 'C'), rar.slice(6, 9).every((r) => r === 'U'), ['R', 'L'].includes(rar[9])], [true, true, true], '6 common, 3 uncommon, 1 rare or Legendary');
+});
+
+test('nightfall balance: Shamblers are mindless (no Prey, no Strike), Spread infects one district, Domination needs a Vampire', () => {
+  let g = start('zombie', 'cabal');
+  /** A Shambler token at district x (a spare deck card turned into the token: test fixture). */
+  const shambler = (at: number) => {
+    const id = g.s.zones['p0:deck'].pop()!;
+    Object.assign(g.s.objects[id], { card: 'shambler', zone: 'p0:units' });
+    g.s.zones['p0:units'].push(id);
+    Object.assign(g.s.objects[id].vars, { x: at, y: 2 });
+    invalidate(g.s);
+    return id;
+  };
+  const x = dx(g, 'docks');
+  const sh = shambler(x);
+  g.s.objects[sh].vars.fresh = 0;
+  invalidate(g.s);
+  assert.equal(tpl(g, 'p0', 'prey', sh), undefined, 'a Shambler cannot Prey');
+  assert.equal(tpl(g, 'p0', 'strike', sh), undefined, 'a Shambler cannot Strike');
+  // Spread: 3 Zombies in two districts, but only one district is infected at the Rise
+  const [a, b] = [dx(g, 'subway'), dx(g, 'hospital')];
+  for (const at of [a, a, a, b, b, b]) shambler(at);
+  const cit = (k: string) => g.s.objects[dist(g, k)].vars.cit;
+  const before = cit('subway') + cit('hospital');
+  g = settle(pass(g)); g = settle(pass(g)); // p1's turn, then back to p0's Rise
+  assert.equal(cit('subway') + cit('hospital'), before - 1, 'Spread infects once per Rise');
+  // Domination: Influence alone is not enough without a Vampire in the district
+  let c = start('cabal', 'zombie');
+  const z = dx(c, 'subway');
+  put(c, 'p0', 'councilman-doyle', z);
+  put(c, 'p0', 'blood-bank-holdings', z, 'units');
+  c.s.objects[dist(c, 'subway')].vars.cit = 2;
+  c = settle(pass(c));
+  assert.equal(c.s.objects[dist(c, 'subway')].vars.claim, 0, 'no Vampire: no Domination');
+  put(c, 'p0', 'associate-of-the-firm', z);
+  c = settle(pass(c)); c = settle(pass(c));
+  assert.equal(c.s.objects[dist(c, 'subway')].vars.claim, 1, 'with a Vampire there: Dominated');
+});
+
+test('nightfall balance: Devil Gestation starts at 2 and rises by 2 at each Rise with a Vessel; Augustin finds a Vessel for 2 Sin', () => {
+  let g = start('devil', 'zombie');
+  assert.equal(vars(g, 'p0').gestation, 2);
+  put(g, 'p0', 'margaret-wells', dx(g, 'docks'));
+  g = settle(pass(g)); g = settle(pass(g));
+  assert.equal(vars(g, 'p0').gestation, 4);
+  const gift = listActions(g, 'p0').find((t) => t.action === 'darkGift');
+  assert.ok(gift, 'Dark Gift available');
+  const sin = vars(g, 'p0').sin;
+  g = settle(act(g, 'p0', 'darkGift', gift!.source));
+  assert.equal(vars(g, 'p0').sin, sin - 2);
 });
