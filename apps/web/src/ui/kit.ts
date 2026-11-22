@@ -107,7 +107,8 @@ export function cardFace(m: Mod, cardId: string, o: FaceOpts = {}): HTMLElement 
       badges.map(([k, v]) => h('span', { class: 'chip' }, `${th?.labels?.[k] ?? k} ${v}`))));
   }
   return h('button', {
-    class: cls('card', `tpl-${tpl.base}`, `layout-${tpl.layout}`, `size-${o.size ?? 'md'}`, `t-${def.type}`, o.faceDown && 'fd', tapped && 'tapped', o.state),
+    class: cls('card', `tpl-${tpl.base}`, `layout-${tpl.layout}`, `size-${o.size ?? 'md'}`, `t-${def.type}`, o.faceDown && 'fd', tapped && 'tapped',
+      (corners.has('bl') || corners.has('br')) && 'low-stats', o.state),
     style: `--h:${hue(def.id)}`, onclick: o.onclick, title: def.text ?? def.name, 'data-template': tpl.base, 'data-card': def.id, 'data-obj': o.obj,
     'aria-label': label,
   },

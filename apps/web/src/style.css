@@ -428,3 +428,5 @@ img { -webkit-user-drag: none; }
 /* the up-close views (preview, details panel) grow to show all of a card's text; the art keeps its share of the frame */
 .peek .card.size-lg, .drawer .card.size-lg { height: auto; min-height: calc(var(--w) * 1.4); max-height: 92dvh; }
 .peek .card.size-lg .art, .drawer .card.size-lg .art { flex: 0 0 auto; height: calc(var(--w) * 1.4 * 0.55); }
+/* text never runs under the stat badges in the bottom corners */
+.card.low-stats .body { padding-bottom: calc(var(--w) * 0.13); }
