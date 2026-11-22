@@ -12,7 +12,8 @@
  "gameVars": {
   "hour": 0,
   "cancel": 0,
-  "first": 0
+  "first": 0,
+  "noMulligan": 0
  },
  "objectVars": {
   "x": 0,
@@ -168,12 +169,14 @@
   {
    "id": "unused",
    "vis": "hidden",
-   "shared": true
+   "shared": true,
+   "offTable": true
   },
   {
    "id": "pool",
    "vis": "hidden",
-   "shared": true
+   "shared": true,
+   "offTable": true
   }
  ],
  "deckZone": "deck",
@@ -8363,37 +8366,339 @@
      6
     ],
     [
-     "choose",
-     {
-      "from": [
-       "cards",
-       "$p",
-       "hand"
+     "if",
+     [
+      "=",
+      [
+       "get",
+       "game",
+       "noMulligan"
       ],
-      "as": "$mul",
-      "prompt": "Mulligan: choose any cards to shuffle back (once)",
-      "min": 0,
-      "max": 6,
-      "who": "$p"
+      0
+     ],
+     [
+      [
+       "choose",
+       {
+        "from": [
+         "cards",
+         "$p",
+         "hand"
+        ],
+        "as": "$mul",
+        "prompt": "Mulligan: choose any cards to shuffle back (once)",
+        "min": 0,
+        "max": 6,
+        "who": "$p"
+       }
+      ],
+      [
+       "move",
+       "$mul",
+       "deck"
+      ],
+      [
+       "shuffle",
+       "$p",
+       "deck"
+      ],
+      [
+       "draw",
+       "$p",
+       [
+        "count",
+        "$mul"
+       ]
+      ]
+     ]
+    ]
+   ]
+  },
+  "tutCity": {
+   "params": [
+    "$ids"
+   ],
+   "do": [
+    [
+     "move",
+     [
+      "cards",
+      "p0",
+      "city"
+     ],
+     "pool"
+    ],
+    [
+     "each",
+     [
+      "range",
+      5
+     ],
+     "$i",
+     [
+      [
+       "move",
+       [
+        "first",
+        [
+         "filter",
+         [
+          "cards",
+          "p0",
+          "pool"
+         ],
+         [
+          "=",
+          [
+           "get",
+           "$it",
+           "card"
+          ],
+          [
+           "nth",
+           "$ids",
+           "$i"
+          ]
+         ]
+        ]
+       ],
+       "city",
+       {
+        "as": "$d"
+       }
+      ],
+      [
+       "call",
+       "setDistrict",
+       "$d",
+       "$i"
+      ]
+     ]
+    ]
+   ]
+  },
+  "tutHand": {
+   "params": [
+    "$p",
+    "$ids"
+   ],
+   "do": [
+    [
+     "move",
+     [
+      "cards",
+      "$p",
+      "hand"
+     ],
+     "deck"
+    ],
+    [
+     "each",
+     "$ids",
+     "$id",
+     [
+      [
+       "move",
+       [
+        "first",
+        [
+         "filter",
+         [
+          "cards",
+          "$p",
+          "deck"
+         ],
+         [
+          "=",
+          [
+           "get",
+           "$it",
+           "card"
+          ],
+          "$id"
+         ]
+        ]
+       ],
+       "hand"
+      ]
+     ]
+    ]
+   ]
+  },
+  "tutPut": {
+   "params": [
+    "$p",
+    "$card",
+    "$x"
+   ],
+   "do": [
+    [
+     "move",
+     [
+      "first",
+      [
+       "filter",
+       [
+        "concat",
+        [
+         "cards",
+         "$p",
+         "deck"
+        ],
+        [
+         "cards",
+         "$p",
+         "hand"
+        ]
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "card"
+        ],
+        "$card"
+       ]
+      ]
+     ],
+     "units",
+     {
+      "as": "$u"
      }
     ],
     [
+     "call",
+     "place",
+     "$u",
+     "$x",
+     "$p"
+    ]
+   ]
+  },
+  "tutLurk": {
+   "params": [
+    "$p",
+    "$card",
+    "$x"
+   ],
+   "do": [
+    [
      "move",
-     "$mul",
-     "deck"
-    ],
-    [
-     "shuffle",
-     "$p",
-     "deck"
-    ],
-    [
-     "draw",
-     "$p",
      [
-      "count",
-      "$mul"
-     ]
+      "first",
+      [
+       "filter",
+       [
+        "concat",
+        [
+         "cards",
+         "$p",
+         "deck"
+        ],
+        [
+         "cards",
+         "$p",
+         "hand"
+        ]
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "card"
+        ],
+        "$card"
+       ]
+      ]
+     ],
+     "units",
+     {
+      "faceDown": true,
+      "as": "$u"
+     }
+    ],
+    [
+     "call",
+     "place",
+     "$u",
+     "$x",
+     "$p"
+    ]
+   ]
+  },
+  "tutPlant": {
+   "params": [
+    "$p",
+    "$card",
+    "$g"
+   ],
+   "do": [
+    [
+     "move",
+     [
+      "first",
+      [
+       "filter",
+       [
+        "cards",
+        "$p",
+        "deck"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "card"
+        ],
+        "$card"
+       ]
+      ]
+     ],
+     "field",
+     {
+      "as": "$u"
+     }
+    ],
+    [
+     "set",
+     "$u",
+     "growth",
+     "$g"
+    ]
+   ]
+  },
+  "tutOmen": {
+   "params": [
+    "$p",
+    "$card"
+   ],
+   "do": [
+    [
+     "move",
+     [
+      "first",
+      [
+       "filter",
+       [
+        "cards",
+        "$p",
+        "deck"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "card"
+        ],
+        "$card"
+       ]
+      ]
+     ],
+     "omens"
     ]
    ]
   },

@@ -430,3 +430,19 @@ img { -webkit-user-drag: none; }
 .peek .card.size-lg .art, .drawer .card.size-lg .art { flex: 0 0 auto; height: calc(var(--w) * 1.4 * 0.55); }
 /* text never runs under the stat badges in the bottom corners */
 .card.low-stats .body { padding-bottom: calc(var(--w) * 0.13); }
+
+/* tutorials */
+.tut-list { display: flex; flex-direction: column; gap: 10px; max-width: 760px; margin: 16px auto; width: 100%; }
+.tut-card { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); }
+.tut-card.first { border-color: var(--accent); }
+.tut-card.done { opacity: .8; }
+.tut-icon { font-size: 28px; width: 40px; text-align: center; flex: none; }
+.tut-main { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.tut-meta { font-size: 12px; color: var(--accent2); }
+.coach { background: color-mix(in srgb, var(--accent) 16%, var(--panel)); border: 1px solid var(--accent); border-radius: 14px 14px 0 0; padding: 10px 14px; margin-bottom: -1px; }
+.coach.read { border-radius: 14px; margin-bottom: 8px; }
+.coach p { margin: 4px 0 6px; line-height: 1.45; }
+.coach-head { display: flex; justify-content: space-between; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+.coach-who { color: var(--accent); font-weight: 700; }
+.coach { background: color-mix(in srgb, var(--accent) 14%, var(--bg)); box-shadow: 0 -8px 24px rgba(0, 0, 0, .35); }
+.screen.table:has(.coach) { padding-bottom: 300px; }

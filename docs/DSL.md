@@ -94,7 +94,7 @@ Effects run in effect lists `[[op...], [op...]]`.
 ## rules.json
 - `players {min,max}`, `playerVars`, `objectVars` (reset on every zone change).
 - `zones[] {id, vis: public|owner|hidden, shared?, ordered?, abilities?, slots?}`. Card abilities function in zones with `abilities: true` unless the ability lists `zones`.
-  - `hideEmpty: true` (presentation): the table leaves the zone out while it is empty (faction-only zones in asymmetric games).
+  - `hideEmpty: true` (presentation): the table leaves the zone out while it is empty (faction-only zones in asymmetric games). `offTable: true`: an internal zone the table never draws.
   - `slots [{id, types?, kinds?, cap?=1, tags?, adj?}]` makes a **slotted zone** (equipment slots, front/back rows, circles, provinces). `types` limits card types, `kinds` the card field `kind` (string or list), `tags` group slots (the UI draws one row per first tag), `adj` lists neighbours. Objects carry their slot; it is cleared by a zone change.
 - `deckZone`, `handZone`, `graveZone`, `format {deckMin, deckMax, maxCopies, zones?}`, `damage?`, `turnLimit?`.
   - `format.zones [{zone, min, max, types?}]` declares deck sections. A deck is then `{zone: [ids]}`; a plain list is always the main deck.
@@ -190,6 +190,16 @@ Effects run in effect lists `[[op...], [op...]]`.
   - `ai {kind?, bias?, phaseVar?, phases {value: {bias}}}`: the boss changes its bias when a game var changes
   - `scenario?`, `rewards {first?, repeat?, loss?: {currency?, cards?, packs?}}` (`loss` is paid for every lost attempt)
   - Scenario triggers can `["emit", "dialogue", {speaker, text}]`; the UI shows it and holds the AI until it is dismissed.
+- `tutorials [{id, name, blurb?, icon?, deck, opponentDeck, opponent?, seed?, scenario?, steps, script?, rewards?}]`: **scripted lessons**, played from the module's Tutorials menu.
+  - `scenario` builds the set-piece board (any effects, including module procedures). `seed` fixes everything random.
+  - Each step has `say` (the coaching line) plus at most one of:
+    - `do {action, card?, targets?}`: the move the learner must make. The app offers only that move and only those targets.
+    - `pass: true`: the learner must pass.
+    - `decide [options or card ids]`: the expected answer to a pending decision; `[]` accepts any answer.
+    - neither: a read step that pauses the game until Continue. With `wait: true` it appears only once it is the learner's move again, so the opponent plays on first.
+  - Cards and targets are named by card id (`"$me"` / `"$opp"` for players), never by object id.
+  - `script` lists the opponent's moves in order. A move that isn't legal yet is kept for later and the opponent passes.
+  - `rewards` are paid once, on first completion (ledger key `tut:<id>`). The runtime lives in `packages/campaign/src/tutorial.ts`, and `tests/tutorials.test.ts` plays every tutorial of every module through as the app does.
 - Profiles are plain JSON. Rewards and purchases are idempotent through ledger keys (`enc:<id>:<attempt seq>`, `shop:<item>:<seq>`), so a reload can never grant twice. Boosters are seeded and deterministic.
 - `validateCampaign(mod, campaign)` checks references, deck legality and ownership, and scenarios. Package loading runs it.
 

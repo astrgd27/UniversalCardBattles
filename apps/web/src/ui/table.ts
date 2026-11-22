@@ -1,7 +1,7 @@
 // The game table. Renders strictly from observe()/eventsFor()/listActions() for the viewing player.
 import type { GEvent, Mod, ObjView, Template, View, ZoneDef } from '#engine';
 import { eventsFor, listActions, observe } from '#engine';
-import { actor, current, pendingDialogue, type UI } from '../main.ts';
+import { actor, current, pendingDialogue, playable, tutCoach, tutorial, type UI } from '../main.ts';
 import { cardBack, cardFace, cls, emblem, h, noteEl, pname, segmented, select, themeStyle, title } from './kit.ts';
 
 interface Fx {
@@ -47,7 +47,7 @@ export function table(ui: UI, A: any) {
   const mod = m.m;
   const v = observe(m, ui.viewer);
   const mine = actor(m) === ui.viewer && !ui.cover && !m.s.result && !ui.paused;
-  const tpls: Template[] = mine && !m.s.pending ? listActions(m, ui.viewer) : [];
+  const tpls: Template[] = mine && !m.s.pending ? playable(m) : [];
   const step = ui.sel ? current(ui.sel) : null;
   const names = new Map<string, string>();
   for (const z of Object.values(v.zones)) for (const c of z.cards ?? []) names.set(c.id, c.card ? mod.card.get(c.card)?.name ?? c.card : 'a face-down card');
@@ -61,7 +61,7 @@ export function table(ui: UI, A: any) {
     fx: effectsSince(ui, v),
   };
   const onGrid = new Set(mod.rules.grid?.zones ?? []);
-  const shared = mod.rules.zones.filter((z) => z.shared && !onGrid.has(z.id));
+  const shared = mod.rules.zones.filter((z) => z.shared && !onGrid.has(z.id) && !z.offTable);
   return h('div', { class: 'screen table', style: themeStyle(mod) },
     hud(c, mine),
     h('div', { class: 'felt' },
@@ -76,7 +76,8 @@ export function table(ui: UI, A: any) {
     ui.drawer && drawer(c),
     ui.paused && pause(c),
     !v.result && pendingDialogue() && banner(c),
-    v.result && gameOver(c),
+    v.result && !(ui.tut && !ui.tut.done) && !ui.tut?.done && gameOver(c),
+    ui.tut?.done && tutDone(c),
     ui.cover && h('div', { class: 'overlay cover', role: 'dialog', 'aria-modal': 'true' },
       h('div', { class: 'panel-pop' }, h('h2', {}, `Pass the device to ${pname(ui.cover)}`),
         h('button', { class: 'cta', onclick: A.reveal, autofocus: true }, `I am ${pname(ui.cover)}`))));
@@ -148,7 +149,7 @@ function gridBoard(c: C) {
 }
 
 function layout(mod: Mod) {
-  const zones = mod.rules.zones.filter((z) => !z.shared);
+  const zones = mod.rules.zones.filter((z) => !z.shared && !z.offTable);
   const hand = zones.find((z) => z.id === mod.rules.handZone);
   const onGrid = new Set(mod.rules.grid?.zones ?? []);
   const field = zones.filter((z) => z !== hand && z.vis === 'public' && !z.ordered && !onGrid.has(z.id));
@@ -224,6 +225,29 @@ function stack(c: C) {
     }, h('b', {}, it.label), ` · ${pname(it.ctrl)}`)));
 }
 
+/** The tutorial guide: the current coaching line; read-only steps pause the game until Continue. */
+function coach(c: C) {
+  const k = tutCoach();
+  if (!k) return null;
+  return h('div', { class: cls('coach', k.read && 'read'), role: 'status', 'aria-live': 'polite' },
+    h('div', { class: 'coach-head' }, h('span', { class: 'coach-who' }, k.speaker ?? 'Guide'), h('span', { class: 'muted' }, `${k.n} / ${k.of}`)),
+    h('p', {}, k.text),
+    k.read && h('div', { class: 'opts end' }, h('button', { class: 'cta small', onclick: c.A.tutNext, autofocus: true, 'data-tut': 'next' }, k.n === k.of ? 'Finish' : 'Continue')));
+}
+
+function tutDone(c: C) {
+  const { ui, A } = c;
+  const t = tutorial();
+  const g = ui.tut!.granted;
+  return h('div', { class: 'overlay gameover', role: 'dialog', 'aria-modal': 'true' },
+    h('div', { class: 'panel-pop' },
+      h('h1', { class: 'result win' }, 'Tutorial complete'),
+      h('p', {}, t?.name ?? ''),
+      h('p', { class: 'muted' }, g?.currency ? `+${g.currency} Marks added to your campaign.` : 'Reward already collected for this tutorial.'),
+      h('button', { class: 'cta', onclick: A.tutExit, 'data-tut': 'exit' }, 'Back to tutorials'),
+      !ui.match!.s.result && h('button', { onclick: A.tutKeepPlaying }, 'Keep playing against the AI')));
+}
+
 function dock(c: C, mine: boolean, tpls: Template[], step: ReturnType<typeof current> | null) {
   const { ui, A, label } = c;
   const body = ui.note ? noteEl(ui.note, A.closeNote)
@@ -232,7 +256,7 @@ function dock(c: C, mine: boolean, tpls: Template[], step: ReturnType<typeof cur
         h('div', { class: 'opts' }, ui.menu.tpls.map((t) => h('button', { class: 'opt', onclick: () => A.start(t) }, t.label)), h('button', { class: 'ghost', onclick: A.cancel }, 'Cancel')))
         : mine ? actionsBar(A, tpls)
           : h('div', { class: 'dock-body waiting' }, h('span', { class: 'spinner', 'aria-hidden': 'true' }), ui.match!.s.result ? 'Game over' : 'Opponent is playing…');
-  return h('div', { class: 'dock' }, body);
+  return h('div', { class: 'dock' }, coach(c), body);
 }
 
 function prompt(c: C, step: ReturnType<typeof current>) {

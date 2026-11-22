@@ -64,6 +64,17 @@ Also implemented exactly as written:
 - **Blood Dawn booster** (100 Marks), the core set: 6 commons, 3 uncommons (Districts included), and 1 rare or Legendary. Legendary cards are 1 in 5 of that slot and include the Masters, the Old One and the Child.
 - **Collection:** decks for campaign battles must be built from cards you own.
 
+## Tutorials
+Six scripted lessons on the module's Tutorials menu, each worth 10 Marks the first time it is completed:
+- **Basics:** controls, Districts and Citizens, playing units, Hunting, Intercepts, the Toll and claiming a District.
+- **Blood Cabal:** Feed, Influence and Domination, Drain, and a Fast Scheme on the opponent's turn.
+- **Harvest Cult:** the Wheel of the Year, Yields, Offerings and the Old One's Harvest.
+- **Zombie Horde:** Infect, Spread, sacrifices, Strains and Mutations, and Overrun.
+- **Slasher Killers:** Lurking, Traps, revealing, Slay and Panic, Vanish, and the 13th Victim.
+- **Devil's Own:** the Vessel, Omens, Bargains and Pacts, the Nativity and the Child's victory.
+
+Each is a set piece built in `tools/nightfall/build.py` (procedures `tutCity`, `tutHand`, `tutPut`, `tutLurk`, `tutPlant`, `tutOmen`, and the game var `noMulligan`).
+
 ## Art
 - Drop images in with `python3 tools/art/import.py nightfall <folder>`. Images are matched by collector number (`NF-012`), card id or card name.
 - Add `--full` for finished full-card images; without it, images are used as picture-window art.

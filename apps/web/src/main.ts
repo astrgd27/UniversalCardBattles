@@ -8,7 +8,7 @@ import { clearCustomArt, loadCustomArt, setCustomArt } from './art.ts';
 import { type SortKey, deckFromText, deckToText, toggleToken } from './search.ts';
 import { makeAgent, type Agent, type AgentInfo } from '#ai';
 import {
-  type Campaign, type Granted, type Line, type Profile, CampaignError, buy, campaignOf, encounterAgent, finishEncounter, migrateProfile, newProfile,
+  type Campaign, type Granted, type Line, type Profile, type Tutorial, CampaignError, allowedOptions, allowedTemplates, buy, campaignOf, finishTutorial, isExpected, readShowing, stepKind, tutorialAgent, encounterAgent, finishEncounter, migrateProfile, newProfile,
   ownedErrors, startEncounter,
 } from '#campaign';
 import { makeBackup, readBackup } from './backup.ts';
@@ -18,7 +18,7 @@ import { MODULES, loadZipModule } from './modules.ts';
 import { render } from './ui/render.ts';
 
 export type Seat = 'human' | 'heuristic' | 'random';
-export type Screen = 'library' | 'home' | 'setup' | 'game' | 'decks' | 'gallery' | 'campaign' | 'encounter' | 'reward' | 'shop' | 'saves';
+export type Screen = 'library' | 'home' | 'setup' | 'game' | 'decks' | 'gallery' | 'campaign' | 'encounter' | 'reward' | 'shop' | 'saves' | 'tutorials';
 /** Choosing targets for an action template, or answering a pending decision. */
 export interface Selection { tpl?: Template; slot: number; picks: Record<string, string[]> }
 export interface DeckEdit { name: string; original: string | null; deck: Record<string, string[]>; section: string; campaign?: boolean }
@@ -36,6 +36,7 @@ export interface UI {
   note: { title: string; reason?: Reason; text?: string } | null;
   inspect: string | null;
   peek: string | null; // card id shown up close (long-press / right-click)
+  tut: { id: string; step: number; done: boolean; granted: Granted | null } | null; // a running tutorial
   drawer: 'log' | 'card' | 'pile' | null;
   pile: string | null; // zone key shown in the drawer
   paused: boolean;
@@ -100,7 +101,7 @@ function autosaveNow() {
 /** Autosave at most about once a second while a match is being played. */
 function autosave() {
   const m = ui.match;
-  if (!m || !ui.mod || ui.screen !== 'game' || autoKey(m) === autoAt || autoTimer) return;
+  if (!m || !ui.mod || ui.tut || ui.screen !== 'game' || autoKey(m) === autoAt || autoTimer) return;
   autoTimer = setTimeout(autosaveNow, 800);
 }
 
@@ -117,7 +118,7 @@ function seatsFor(m: Mod, n = Math.max(2, m.rules.players.min)): Pick<UI, 'seats
 
 export const ui: UI = {
   screen: 'library', mod: null, seats: [], decks: [], match: null, agents: [], viewer: 'p0', cover: null, sel: null, menu: null,
-  note: null, inspect: null, peek: null, drawer: null, pile: null, paused: false, fast: false, theme: store.get<'light' | 'dark'>('ucb-theme', 'dark') === 'light' ? 'light' : 'dark', edit: null,
+  note: null, inspect: null, peek: null, tut: null, drawer: null, pile: null, paused: false, fast: false, theme: store.get<'light' | 'dark'>('ucb-theme', 'dark') === 'light' ? 'light' : 'dark', edit: null,
   filter: '', gallery: null, profile: null, camp: null, encounter: null, campDeck: '', dialog: null, dialogSeen: -1, reward: null, reveal: null, fxFrom: 0, counts: {}, sort: 'cost', sample: null, io: null,
 };
 (window as any).__ucb = ui; // test hook
@@ -126,12 +127,45 @@ let timer: ReturnType<typeof setTimeout> | undefined;
 const seatOf = (p: string) => ui.seats[+p.slice(1)];
 export const redraw = () => { decisionStart(); autosave(); render(ui, actions); };
 
+// ---------- tutorials ----------
+export const tutorial = (): Tutorial | null => (ui.tut ? campaign()?.tutorials?.find((t) => t.id === ui.tut!.id) ?? null : null);
+const tutStep = () => (ui.tut && !ui.tut.done ? tutorial()?.steps[ui.tut.step] : undefined);
+/** The coaching step currently on screen (a read step pauses the game until Continue). */
+export function tutCoach(): { text: string; speaker?: string; n: number; of: number; read: boolean } | null {
+  const t = tutorial();
+  const st = tutStep();
+  if (!t || !st || !ui.match) return null;
+  const read = stepKind(st) === 'read';
+  if (read && !readShowing(ui.match, ui.viewer, st)) return null;
+  return { text: st.say, speaker: st.speaker, n: ui.tut!.step + 1, of: t.steps.length, read };
+}
+const tutPaused = () => !!ui.tut && !ui.tut.done && !!tutStep() && stepKind(tutStep()) === 'read' && readShowing(ui.match!, ui.viewer, tutStep());
+/** Templates the player may use now (in a tutorial: only the expected move). */
+export function playable(m: Match): Template[] {
+  const all = listActions(m, ui.viewer);
+  if (!ui.tut || ui.tut.done) return all;
+  return allowedTemplates(m, ui.viewer, tutStep(), all);
+}
+function tutAfter() {
+  const t = tutorial();
+  if (!t || !ui.tut || ui.tut.done) return;
+  ui.tut.step++;
+  if (ui.tut.step < t.steps.length) return;
+  ui.tut.done = true;
+  const c = campaign()!;
+  if (!ui.profile) ui.profile = newProfile(ui.mod!, c, Math.floor(Math.random() * 2 ** 31));
+  const r = finishTutorial(c, ui.profile, t.id);
+  ui.profile = r.profile;
+  ui.tut.granted = r.granted;
+  saveProfile();
+}
+
 function advance() {
   clearTimeout(timer);
   ui.sel = null;
   ui.menu = null;
   const m = ui.match;
-  if (!m || m.s.result || ui.paused) return redraw();
+  if (!m || m.s.result || ui.paused || tutPaused()) return redraw();
   const p = actor(m);
   if (!p || pendingDialogue()) return redraw();
   if (seatOf(p) !== 'human') {
@@ -169,9 +203,15 @@ function aiStep() {
 }
 
 function commit(cmd: ActionCmd) {
+  const st = tutStep();
+  if (ui.tut && !ui.tut.done && (st === undefined || !isExpected(ui.match!, ui.viewer, st, cmd))) {
+    ui.note = { title: 'Follow the guide', text: st?.say ?? 'Continue the tutorial.' };
+    return advance();
+  }
   try {
     ui.match = commitAction(ui.match!, ui.viewer, cmd);
     ui.note = null;
+    if (ui.tut) tutAfter();
   } catch (e) {
     ui.note = e instanceof IllegalAction ? { title: 'Not allowed', reason: e.reason } : { title: 'Engine error', text: String(e) };
   }
@@ -197,7 +237,8 @@ export function current(sel: Selection): { options: string[]; min: number; max: 
     return { options: s.options, min: s.min, max: s.max, prompt: s.prompt, key: s.as };
   }
   const pd = ui.match!.s.pending!;
-  return { options: pd.options, min: pd.min, max: pd.max, prompt: pd.prompt, key: '$', divide: pd.kind === 'divide' };
+  const options = ui.tut && !ui.tut.done && stepKind(tutStep()) === 'decide' ? allowedOptions(ui.match!, tutStep(), pd) : pd.options;
+  return { options, min: Math.min(pd.min, options.length), max: Math.min(pd.max, options.length), prompt: pd.prompt, key: '$', divide: pd.kind === 'divide' };
 }
 
 /** Why can't this card be used? The engine's explanations for every action. */
@@ -361,7 +402,26 @@ export const actions = {
     redraw();
   },
   deleteSlot(key: string) { if (window.confirm('Delete this saved game?')) { store.del(key); redraw(); } },
-  quit() { if (!ui.camp || !ui.match?.s.result) autosaveNow(); else clearTimeout(autoTimer); ui.match = null; const back = ui.camp ? 'campaign' : 'home'; ui.camp = null; actions.go(back); },
+  startTutorial(id: string) {
+    const m = ui.mod!;
+    const c = campaign()!;
+    const t = c.tutorials!.find((x) => x.id === id)!;
+    const decks = { ...(m.decks ?? {}), ...(c.decks ?? {}) } as Record<string, Deck>;
+    try {
+      ui.match = createMatch(m, { decks: [structuredClone(decks[t.deck]), structuredClone(decks[t.opponentDeck])], seed: t.seed ?? 1, ...(t.scenario ? { scenario: t.scenario } : {}) });
+    } catch (e) { ui.note = { title: 'Cannot start the tutorial', text: String((e as Error).message) }; return redraw(); }
+    ui.seats = ['human', 'heuristic'];
+    ui.decks = [t.deck, t.opponentDeck];
+    ui.agents = [makeAgent('random', 1), tutorialAgent(t)];
+    ui.tut = { id, step: 0, done: false, granted: null };
+    Object.assign(ui, { camp: null, viewer: 'p0', dialogSeen: -1, fxFrom: 0, counts: {}, screen: 'game', cover: null, note: null, inspect: null, drawer: null, pile: null, paused: false });
+    advance();
+  },
+  tutNext() { if (tutPaused()) tutAfter(); advance(); },
+  tutKeepPlaying() { ui.agents[1] = makeAgent('heuristic', 77); ui.tut = null; advance(); },
+  tutExit() { ui.tut = null; ui.match = null; actions.go('tutorials'); },
+  quit() {
+    if (ui.tut) { ui.tut = null; ui.match = null; return actions.go('tutorials'); } if (!ui.camp || !ui.match?.s.result) autosaveNow(); else clearTimeout(autoTimer); ui.match = null; const back = ui.camp ? 'campaign' : 'home'; ui.camp = null; actions.go(back); },
   rematch() { if (ui.camp) actions.playEncounter(); else actions.newGame(); },
   setExternal(name: string, value: string) {
     const m = ui.match!;
@@ -381,9 +441,10 @@ export const actions = {
     if (m.s.objects[id]) ui.inspect = id;
     if (ui.sel) return toggle(id);
     if (actor(m) !== ui.viewer || m.s.pending) return redraw();
-    const tpls = listActions(m, ui.viewer).filter((t) => t.source === id);
+    const tpls = playable(m).filter((t) => t.source === id);
     if (tpls.length === 1) return actions.start(tpls[0]);
     if (tpls.length > 1) { ui.menu = { source: id, tpls }; return redraw(); }
+    if (ui.tut && !ui.tut.done) { ui.note = { title: 'Follow the guide', text: tutStep()?.say ?? '' }; return redraw(); }
     const o = m.s.objects[id];
     if (o && o.controller === ui.viewer) ui.note = explain(m, id);
     redraw();
@@ -400,7 +461,8 @@ export const actions = {
     const m = ui.match!;
     const sel = ui.sel!;
     if (!sel.tpl) {
-      try { ui.match = submitDecision(m, ui.viewer, m.s.pending!.id, sel.picks.$ ?? []); ui.note = null; } catch (e) { ui.note = { title: 'Not allowed', text: String((e as Error).message) }; }
+      const wasDecide = !!ui.tut && !ui.tut.done && stepKind(tutStep()) === 'decide';
+      try { ui.match = submitDecision(m, ui.viewer, m.s.pending!.id, sel.picks.$ ?? []); ui.note = null; if (wasDecide) tutAfter(); } catch (e) { ui.note = { title: 'Not allowed', text: String((e as Error).message) }; }
       return advance();
     }
     if (sel.slot + 1 < sel.tpl.slots.length) { sel.slot++; return redraw(); }

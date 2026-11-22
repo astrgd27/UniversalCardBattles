@@ -3,6 +3,8 @@
 import type { Deck, MatchOpts, Mod, ModuleDef, Result, Scenario, View } from '#engine';
 import { deckErrors, rand, seedRng, validateScenario } from '#engine';
 import { heuristicAgent, randomAgent, type Agent } from '#ai';
+import { type Tutorial, validateTutorials } from './tutorial.ts';
+export * from './tutorial.ts';
 
 export interface Line { speaker: string; text: string }
 export interface Reward { currency?: number; cards?: string[]; packs?: string[] }
@@ -36,6 +38,7 @@ export interface Campaign {
   encounters: Record<string, Encounter>;
   boosters?: Record<string, Booster>;
   shop?: ShopItem[];
+  tutorials?: Tutorial[]; // scripted lessons (see tutorial.ts); rewards are paid once, on first completion
 }
 export const PROFILE_VERSION = 1;
 export interface Profile {
@@ -131,6 +134,8 @@ function checkCampaign(m: Mod, c: Campaign): string[] {
       if (s.weights !== undefined && !(rec(s.weights) && Object.values(s.weights).every((w) => typeof w === 'number' && w >= 0))) e.push(`campaign/boosters/${id}: weights must be non-negative numbers`);
     }
   }
+  e.push(...validateTutorials(m, c.tutorials, decks, (sc) => validateScenario(m, sc as Scenario)));
+  for (const t of arr(c.tutorials) ? c.tutorials : []) if (rec(t)) reward(t.rewards, `campaign/tutorials/${t.id}/rewards`);
   if (c.shop !== undefined && !arr(c.shop)) e.push('campaign/shop: must be a list');
   for (const it of arr(c.shop) ? c.shop : []) {
     if (!rec(it) || typeof it.id !== 'string') { e.push('campaign/shop: each item needs an id'); continue; }
@@ -246,6 +251,20 @@ export function itemBlocked(c: Campaign, p: Profile, it: ShopItem): string | nul
   if (p.currency < it.price) return `Needs ${it.price} ${c.currency.name}`;
   return null;
 }
+
+/** Marks a tutorial complete. Its reward is granted exactly once (ledger key tut:<id>); later completions grant nothing. */
+export function finishTutorial(c: Campaign, p: Profile, id: string): { profile: Profile; granted: Granted | null } {
+  const t = c.tutorials?.find((x) => x.id === id);
+  if (!t) throw new CampaignError([`unknown tutorial "${id}"`]);
+  const key = `tut:${id}`;
+  if (p.ledger.includes(key)) return { profile: p, granted: null };
+  const np = structuredClone(p);
+  np.ledger.push(key);
+  np.wins[key] = 1;
+  const granted = t.rewards ? grant(c, np, t.rewards, seedRng((np.seed ^ 0x7475) >>> 0)) : null;
+  return { profile: np, granted };
+}
+export const tutorialDone = (p: Profile | null, id: string) => !!p?.ledger.includes(`tut:${id}`);
 
 export function buy(c: Campaign, p: Profile, itemId: string, m?: Mod): { profile: Profile; cards: string[] } {
   const it = c.shop?.find((x) => x.id === itemId);

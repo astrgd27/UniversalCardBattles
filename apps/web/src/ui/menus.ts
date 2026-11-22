@@ -4,6 +4,7 @@ import { deckErrors } from '#engine';
 import { MODULES } from '../modules.ts';
 import { allDecks, campaign, customDecks, hasSave, sections, slots, storageInfo, sync, type UI } from '../main.ts';
 import { syncSupported } from '../storage.ts';
+import { tutorialDone } from '#campaign';
 import { cardFace, cls, emblem, h, hue, segmented, select, themeStyle, title, topnav } from './kit.ts';
 
 export function library(ui: UI, A: any) {
@@ -49,6 +50,27 @@ function syncControls(A: any) {
     h('button', { class: 'ghost', onclick: A.unlinkSync, 'aria-label': 'Stop syncing' }, '×'));
 }
 
+/** Scripted lessons: the basics first, then one per faction; each pays its reward once. */
+export function tutorialsScreen(ui: UI, A: any) {
+  const m = ui.mod!;
+  const c = campaign()!;
+  const list = c.tutorials ?? [];
+  return h('div', { class: 'screen tutorials', style: themeStyle(m) },
+    topnav([m.manifest.displayName, () => A.go('home')], 'Tutorials'),
+    h('p', { class: 'muted center-row' }, 'Each lesson plays a short, scripted scene with a guide. Start with the basics.'),
+    h('div', { class: 'tut-list' }, list.map((t, i) => {
+      const done = tutorialDone(ui.profile, t.id);
+      const reward = t.rewards?.currency ? `${t.rewards.currency} ${c.currency.name}` : '';
+      return h('article', { class: cls('tut-card', done && 'done', i === 0 && 'first'), 'data-tutorial': t.id },
+        h('span', { class: 'tut-icon', 'aria-hidden': 'true' }, t.icon ?? '★'),
+        h('div', { class: 'tut-main' },
+          h('strong', {}, t.name),
+          t.blurb && h('span', { class: 'muted' }, t.blurb),
+          h('span', { class: 'tut-meta' }, `${t.steps.length} steps${t.opponent ? ` · vs ${t.opponent}` : ''}${reward ? ` · ${done ? 'reward collected' : `reward ${reward}`}` : ''}`)),
+        h('button', { class: cls(done ? 'ghost' : 'cta small'), onclick: () => A.startTutorial(t.id), 'data-start': t.id }, done ? 'Replay' : 'Start'));
+    })));
+}
+
 /** Save slots for the open game: autosave and manual saves, newest first. */
 export function savesScreen(ui: UI, A: any) {
   const m = ui.mod!;
@@ -74,6 +96,7 @@ export function home(ui: UI, A: any) {
   const camp = campaign();
   const items: [string, string, () => void, string][] = [
     ...(hasSave(m) ? [['Continue', `Resume ${slots(m)[0].auto ? 'where you left off' : slots(m)[0].name}`, () => A.continueGame(), 'continue'] as [string, string, () => void, string]] : []),
+    ...(camp?.tutorials?.length ? [['Tutorials', `${camp.tutorials.filter((t) => tutorialDone(ui.profile, t.id)).length}/${camp.tutorials.length} complete · learn each faction step by step`, () => A.go('tutorials'), 'tutorials'] as [string, string, () => void, string]] : []),
     ['Play', 'A match against the AI or friends on this device', () => A.go('setup'), 'play'],
     ...(slots(m).length > 1 ? [['Load game', `${slots(m).length} saved games`, () => A.go('saves'), 'load'] as [string, string, () => void, string]] : []),
     ['Deckbuilder', `Build decks from ${m.cards.length} cards`, () => A.go('decks'), 'decks'],

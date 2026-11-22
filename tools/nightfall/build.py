@@ -382,8 +382,22 @@ proc('setupPlayer', ['$p'], [
     IF(isF('$p', 4), [['set', '$p', 'bodycount', 0]]),
     IF(isF('$p', 5), [['set', '$p', 'gestation', 0], ['set', '$p', 'souls', 0]]),
     ['shuffle', '$p', 'deck'], ['draw', '$p', 6],
-    choose(['cards', '$p', 'hand'], '$mul', 'Mulligan: choose any cards to shuffle back (once)', 0, 6, '$p'),
-    ['move', '$mul', 'deck'], ['shuffle', '$p', 'deck'], ['draw', '$p', cnt('$mul')]])
+    IF(eq(g('game', 'noMulligan'), 0), [
+        choose(['cards', '$p', 'hand'], '$mul', 'Mulligan: choose any cards to shuffle back (once)', 0, 6, '$p'),
+        ['move', '$mul', 'deck'], ['shuffle', '$p', 'deck'], ['draw', '$p', cnt('$mul')]])])
+
+# ---- set pieces (tutorials and puzzles): arrange the City, hands and board from the players' own decks
+proc('tutCity', ['$ids'], [['move', ['cards', 'p0', 'city'], 'pool'],
+    EACH(['range', 5], '$i', [['move', ['first', flt(['cards', 'p0', 'pool'], eq(g('$it', 'card'), ['nth', '$ids', '$i']))], 'city', {'as': '$d'}], C('setDistrict', '$d', '$i')])])
+proc('tutHand', ['$p', '$ids'], [['move', ['cards', '$p', 'hand'], 'deck'],
+    EACH('$ids', '$id', [['move', ['first', flt(['cards', '$p', 'deck'], eq(g('$it', 'card'), '$id'))], 'hand']])])
+proc('tutPut', ['$p', '$card', '$x'], [
+    ['move', ['first', flt(['concat', ['cards', '$p', 'deck'], ['cards', '$p', 'hand']], eq(g('$it', 'card'), '$card'))], 'units', {'as': '$u'}], C('place', '$u', '$x', '$p')])
+proc('tutLurk', ['$p', '$card', '$x'], [
+    ['move', ['first', flt(['concat', ['cards', '$p', 'deck'], ['cards', '$p', 'hand']], eq(g('$it', 'card'), '$card'))], 'units', {'faceDown': True, 'as': '$u'}], C('place', '$u', '$x', '$p')])
+proc('tutPlant', ['$p', '$card', '$g'], [
+    ['move', ['first', flt(['cards', '$p', 'deck'], eq(g('$it', 'card'), '$card'))], 'field', {'as': '$u'}], ['set', '$u', 'growth', '$g']])
+proc('tutOmen', ['$p', '$card'], [['move', ['first', flt(['cards', '$p', 'deck'], eq(g('$it', 'card'), '$card'))], 'omens']])
 
 # ---------------------------------------------------------------- actions
 def src_hand(*types): return flt(['cards', '$me', 'hand'], AND(inl(g('$it', 'type'), lit(list(types))), C('canPay', '$it', '$me')))
@@ -729,7 +743,7 @@ NEUTRAL_MAX = 10
 RULES = {
     'players': {'min': 2, 'max': 2},
     'playerVars': {'essence': 0, 'claims': 0, 'trophies': 0, 'faction': 0},
-    'gameVars': {'hour': 0, 'cancel': 0, 'first': 0},
+    'gameVars': {'hour': 0, 'cancel': 0, 'first': 0, 'noMulligan': 0},
     'objectVars': {'x': 0, 'y': 0, 'dmg': 0, 'ex': 0, 'fresh': 0, 'hunted': 0, 'moves': 0, 'cit': -1, 'claim': 0, 'last': 0, 'growth': 0,
                    'plus': 0, 'amb': 0, 'hz': 0, 'shield': 0, 'saved': 0, 'stun': 0, 'xprey': 0, 'mayPrey': 0, 'ended': 0, 'sc': 0, 'frenzy': 0, 'gcl': 0, 'silver': 0},
     'grid': {'cols': 5, 'rows': 3, 'zones': ['units', 'city']},
@@ -751,8 +765,8 @@ RULES = {
         {'id': 'city', 'vis': 'public', 'shared': True},
         {'id': 'brought', 'vis': 'public', 'hideEmpty': True},
         {'id': 'draft', 'vis': 'public', 'shared': True, 'hideEmpty': True},
-        {'id': 'unused', 'vis': 'hidden', 'shared': True},
-        {'id': 'pool', 'vis': 'hidden', 'shared': True},
+        {'id': 'unused', 'vis': 'hidden', 'shared': True, 'offTable': True},
+        {'id': 'pool', 'vis': 'hidden', 'shared': True, 'offTable': True},
     ],
     'deckZone': 'deck', 'handZone': 'hand', 'graveZone': 'grave',
     'format': {
@@ -878,6 +892,154 @@ for fac_, deck_id, master_name, place_, icon, line in FOES:
         'scenario': {'setup': [['inc', '$opp', 'essence', 5], ['call', 'addRes', '$opp', 2]]},
         'rewards': {'first': {'currency': 300, 'packs': ['blood-dawn', 'blood-dawn']}, 'repeat': {'currency': 100}, 'loss': {'currency': 30}}}
     BASIC.append(f'{fac_}-dusk'); ELITE.append(f'{fac_}-witching')
+# ---------------------------------------------------------------- tutorials (scripted set pieces; see packages/campaign/src/tutorial.ts)
+def setpiece(city, hands, put=(), lurk=(), plant=(), omens=(), sets=()):
+    s = [['firstPlayer', 'p0'], ['set', 'game', 'first', 0], C('tutCity', lit(city))]
+    for p_, ids in hands.items(): s.append(C('tutHand', p_, lit(ids)))
+    for p_, cid, x in put: s.append(C('tutPut', p_, cid, x))
+    for p_, cid, x in lurk: s.append(C('tutLurk', p_, cid, x))
+    for p_, cid, gr in plant: s.append(C('tutPlant', p_, cid, gr))
+    for p_, cid in omens: s.append(C('tutOmen', p_, cid))
+    for ref, var, val in sets: s.append(['set', ref, var, val])
+    return {'vars': {'noMulligan': 1}, 'setup': s}
+def say(text, wait=False): return {'say': text, **({'wait': True} if wait else {})}
+def do(text, action, card=None, **targets):
+    mv = {'action': action}
+    if card: mv['card'] = card
+    if targets: mv['targets'] = {'$' + k: v for k, v in targets.items()}
+    return {'say': text, 'do': mv}
+def end(text): return {'say': text, 'pass': True}
+def decide(text, *opts): return {'say': text, 'decide': list(opts)}
+REWARD = {'currency': 10}
+CITY_A = ['old-town', 'the-docks', 'the-subway', 'whispering-pines-campground', 'st-agnes-hospital']
+CITY_B = ['the-docks', 'the-subway', 'whispering-pines-campground', 'st-agnes-hospital', 'old-town']
+CITY_C = ['the-docks', 'old-town', 'the-subway', 'whispering-pines-campground', 'st-agnes-hospital']
+TUTORIALS = [
+    {'id': 'basics', 'name': 'Basics: The City at Night', 'icon': '☾', 'opponent': 'Lady Evangeline Marsh',
+     'blurb': 'Controls, Districts and Citizens, playing units, Hunting, Intercepts, the Toll and claiming a District.',
+     'deck': 'outbreak-at-site-9', 'opponentDeck': 'the-marsh-whitcombe-trust', 'seed': 11, 'rewards': REWARD,
+     'scenario': setpiece(CITY_A, {'p0': ['sprinter', 'fresh-turned', 'hazmat-shambler', 'containment-breach', 'blackout', 'pale-morning-light']},
+                          put=[('p1', 'velvet-rope-fledgling', 2)], sets=[('p0', 'biomass', 6), ('p1', 'vitae', 5)]),
+     'script': [{'action': 'prey', 'card': 'velvet-rope-fledgling'}],
+     'steps': [
+        say('Welcome to NIGHTFALL. Two monsters race to claim a City of five Districts, the cards in the middle row, before Dawn. You play the Zombie Horde (bottom); the Blood Cabal sits across from you (top).'),
+        say('Each District shows its Citizens. Citizens are what everyone hunts. When a District has none left, it Falls at the Toll and someone claims it. Claim 3 Districts to win.'),
+        say('Your resource is Biomass (shown by your name). Glowing cards can be played: tap one to play it, then tap where it goes. A long press on any card shows it up close.'),
+        do('Play Sprinter into Old Town: tap Sprinter, then tap Old Town on the board, then Confirm.', 'deploy', 'sprinter', d=['old-town']),
+        do('Units Hunt by exhausting. Sprinter is Swift, so it can Hunt the turn it arrives. Tap Sprinter and choose Prey to take a Citizen. Zombies Infect: the Citizen rises as your Shambler.', 'prey', 'sprinter'),
+        do('Old Town now has a Shambler and one fewer Citizen. Play Fresh Turned into Old Town too.', 'deploy', 'fresh-turned', d=['old-town']),
+        do('A Vampire is lurking in the Subway. Play Hazmat Shambler there to stand guard.', 'deploy', 'hazmat-shambler', d=['the-subway']),
+        say('New units arrive Fresh: they can move to a neighbouring District, but they can\'t Hunt until your next turn unless they are Swift. That is all for this Night.'),
+        end('Tap End phase. Your Toll comes next, then your opponent\'s turn.'),
+        say('Your opponent\'s Vampire is Preying in the Subway. Your Hazmat Shambler is ready there, so you may Intercept: the Prey becomes a Clash between the two units instead.', wait=True),
+        do('Tap Hazmat Shambler and choose Intercept.', 'intercept', 'hazmat-shambler'),
+        end('Then tap Pass to let the Clash happen.'),
+        say('In a Clash both units deal their Menace (the dagger) to each other at once, as wounds. Wounds equal to Endurance (the heart) destroy a unit. The Vampire fell; Hazmat prevents its first wound each turn. Every death also feeds your Morgue: +1 Biomass.'),
+        say('A new turn. At Rise your units ready again. Spread: with 3 or more Zombies in a District, you Infect a Citizen there at every Rise. Old Town just lost another Citizen to it.', wait=True),
+        do('Prey with Sprinter in Old Town.', 'prey', 'sprinter'),
+        do('Prey with Fresh Turned too. It is no longer Fresh.', 'prey', 'fresh-turned'),
+        say('Old Town is empty. At your Toll, an empty District Falls to whoever has the most Dominion there: the total Menace of their units (plus structures). That is you.'),
+        end('End your Night to claim Old Town.'),
+        say('Old Town is yours: it turns to its Fallen side and gives you a bonus. You win by claiming 3 Districts, by bringing the rival Master to 0 Essence with Strikes, or by your faction\'s signature victory. At Dawn (after 5 AM on the Night Track) the most Districts wins. Try a faction tutorial next.'),
+     ]},
+    {'id': 'cabal', 'name': 'Blood Cabal: Old Money', 'icon': '🩸', 'opponent': 'Patient Zero',
+     'blurb': 'Feed and Thralls, Vitae, Influence and Domination, Drain, and answering on your opponent\'s turn with a Fast Scheme.',
+     'deck': 'the-marsh-whitcombe-trust', 'opponentDeck': 'outbreak-at-site-9', 'seed': 12, 'rewards': REWARD,
+     'scenario': setpiece(CITY_B, {'p0': ['blood-bank-holdings', 'velvet-rope-fledgling', 'councilman-doyle', 'a-quiet-word-with-the-mayor', 'nothing-to-see-here', 'the-familiar'],
+                                   'p1': ['containment-breach', 'sprinter', 'fresh-turned', 'blackout', 'hazmat-shambler', 'crawler-swarm']},
+                          sets=[('p0', 'vitae', 5), ('p1', 'biomass', 4)]),
+     'script': [{'action': 'cast', 'card': 'containment-breach'}],
+     'steps': [
+        say('The Blood Cabal already owns the City. You pay with Vitae, keep fed humans as Thralls (each adds Vitae at Gather), and take Districts by buying them, not emptying them.'),
+        do('Old Money makes your first Influence each turn 1 cheaper. Raise Blood Bank Holdings in the Campground.', 'build', 'blood-bank-holdings', d=['whispering-pines-campground']),
+        do('Play Velvet Rope Fledgling (Swift) into the Campground.', 'deploy', 'velvet-rope-fledgling', d=['whispering-pines-campground']),
+        do('Prey with it. The Cabal Feeds: the Citizen becomes a Thrall and you gain 2 Vitae.', 'prey', 'velvet-rope-fledgling'),
+        say('Domination is your signature claim: at your Toll, if your Influence in a District is at least its remaining Citizens, you take them all and claim it, whatever anyone\'s Dominion. The Campground has 2 Citizens; your Influence there is 1.'),
+        do('Councilman Doyle counts as 2 Influence. Play him into the Campground.', 'deploy', 'councilman-doyle', d=['whispering-pines-campground']),
+        do('Drain turns a Thrall back into 2 Vitae whenever you need it. Tap your Master and choose Drain a Thrall.', 'drain', 'lady-evangeline-marsh'),
+        say('Remember Thirst: at each Rise, every Vampire costs Vitae (1, or 2 for Elders). An unpaid Vampire Frenzies and must Hunt.'),
+        end('End your Night. At your Toll, 3 Influence beats 2 Citizens.'),
+        say('Dominated: the Campground and its Citizens are yours. Now your opponent\'s turn begins.'),
+        say('They are playing Containment Breach. The Cabal is the only faction with Fast Schemes, which you may play on your opponent\'s turn.', wait=True),
+        do('Play A Quiet Word with the Mayor to cancel it.', 'cast', 'a-quiet-word-with-the-mayor'),
+        end('Then Pass.'),
+        say('Cancelled: their card goes to the Grave and they draw a replacement. Feed, hold Influence and keep a Scheme ready: that is the Cabal. Domination wins games before Dawn.'),
+     ]},
+    {'id': 'harvest', 'name': 'Harvest Cult: The Wheel Turns', 'icon': '🌾', 'opponent': 'Lady Evangeline Marsh',
+     'blurb': 'The Wheel of the Year, Plantings and Yields, Folk and Fae, Effigies, Offerings and the Old One\'s Harvest.',
+     'deck': 'the-barrow-wakes', 'opponentDeck': 'the-marsh-whitcombe-trust', 'seed': 13, 'rewards': REWARD,
+     'scenario': setpiece(CITY_C, {'p0': ['maypole-dancers', 'the-little-people', 'the-standing-stone', 'rite-of-the-first-furrow', 'blood-barley', 'fallow-rest']},
+                          put=[('p0', 'scarecrow-sentinel', 1), ('p0', 'hollow-eyed-farmhand', 0)], plant=[('p0', 'blood-barley', 1)],
+                          sets=[('p0', 'bounty', 2), ('p0', 'season', 2), ('p0', 'barrow', 10), ('p1', 'vitae', 5)]),
+     'steps': [
+        say('The Harvest Cult lives by the Wheel of the Year. At each of your Rises it turns: Sowing (first Planting free), Growing (Plantings grow faster), Reaping (Plantings Yield and Folk may Prey), Fallow (heal, draw extra, keep at most 2 Bounty). It is Reaping now.'),
+        say('Your Blood Barley in the Field ripened (Growth 2) and Yielded 3 Bounty at Gather. And because the Barrow held 10 Offerings at Rise, He Who Wears the Hill awoke at your Scarecrow in Old Town.'),
+        do('Folk are Mortals and may only Prey in Reaping. Prey with the Hollow-Eyed Farmhand at the Docks: the Citizen becomes an Offering in your Barrow.', 'prey', 'hollow-eyed-farmhand'),
+        do('Fae Horrors Prey in any season. Play The Little People at the Docks.', 'deploy', 'the-little-people', d=['the-docks']),
+        do('Effigies are structures with Dominion; enemies must Raid them. Raise The Standing Stone at the Docks.', 'build', 'the-standing-stone', d=['the-docks']),
+        say('At each of your Reaping Tolls, the Old One Harvests its District: every Citizen becomes an Offering and the District is yours, whatever the Dominion.'),
+        end('End your Night and let it Harvest Old Town.'),
+        say('Old Town is Harvested and claimed. Next comes Fallow: rest, draw and spend down your Bounty. Plant on Sowing, protect on Growing, strike on Reaping. Your opponent can see the Wheel too.'),
+     ]},
+    {'id': 'zombie', 'name': 'Zombie Horde: Outbreak', 'icon': '☣', 'opponent': 'Mother Bramble',
+     'blurb': 'Infect and Devour, Spread, the Morgue and sacrifices, Strains and Mutations, and Overrun.',
+     'deck': 'outbreak-at-site-9', 'opponentDeck': 'the-barrow-wakes', 'seed': 14, 'rewards': REWARD,
+     'scenario': setpiece(CITY_B, {'p0': ['crawler-swarm', 'chitin-plating', 'lazarus-7', 'containment-breach', 'sprinter', 'exposed-ribcage-maw']},
+                          put=[('p0', 'sprinter', 1), ('p0', 'fresh-turned', 1), ('p0', 'hazmat-shambler', 1)], sets=[('p0', 'biomass', 3), ('p1', 'bounty', 2)]),
+     'steps': [
+        say('The Zombie Horde never buys anything. It eats. Biomass comes from Gather, from the Morgue (+1 whenever any unit dies) and from your own Shamblers.'),
+        say('Spread: you had 3 Zombies in the Subway at Rise, so a Citizen there was Infected and rose as a Shambler.'),
+        do('Prey with Sprinter in the Subway: named Zombies Infect, adding another Shambler.', 'prey', 'sprinter'),
+        do('Bodies are currency. Sacrifice a Shambler for Biomass: +1 for the sacrifice, +1 from the Morgue, and +1 because Patient Zero feeds on his own.', 'sacrifice', 'shambler'),
+        do('Strains upgrade every Zombie you have. Install LAZARUS-7: your Shamblers get +1 Menace.', 'install', 'lazarus-7'),
+        do('Mutations upgrade one Zombie. Attach Chitin Plating to the Hazmat Shambler (+3 Endurance and Guard).', 'attach', 'chitin-plating', h=['hazmat-shambler']),
+        say('Overrun: at your Toll, if your Zombies in a District number at least twice its remaining Citizens and no enemy units are there, you Infect them all and claim it. The Subway has 1 Citizen and 4 of your Zombies.'),
+        end('End your Night to Overrun the Subway.'),
+        say('The Subway is overrun. Keep 3 Zombies together and the Horde snowballs, but watch for area damage like Molotov Cocktail, and keep a defender home: your Master has only 18 Essence.'),
+     ]},
+    {'id': 'slasher', 'name': 'Slasher Killers: Don\'t Go in There', 'icon': '🔪', 'opponent': 'Augustin Vale',
+     'blurb': 'Lurking face down, bluffs and Traps, revealing a Killer, Slay and Panic, Vanish, and the Body Count.',
+     'deck': 'dont-go-in-there', 'opponentDeck': 'nine-moons', 'seed': 15, 'rewards': REWARD,
+     'scenario': setpiece(CITY_C, {'p0': ['bear-trap', 'rusted-machete', 'the-party', 'just-the-cat', 'sheriff-dale-burke', 'dont-go-in-there']},
+                          lurk=[('p0', 'the-groundskeeper', 0)], put=[('p1', 'hellhound', 2)],
+                          sets=[('p0', 'terror', 8), ('p0', 'bodycount', 11), ('p1', 'sin', 4)]),
+     'script': [{'action': 'move', 'card': 'hellhound', 'targets': {'$d': ['old-town']}}],
+     'steps': [
+        say('The Slashers are a few legends that won\'t stay dead. Your opponent sees only face-down cards and must guess which one is the Killer. You need 13 Victims: you have 11.'),
+        do('Once per turn you may Lurk: place any card from your hand face down in a District, free. Lurk the Bear Trap in Old Town, next to their Hellhound.', 'lurk', 'bear-trap', d=['old-town']),
+        say('Your face-down Groundskeeper waits at the Docks. You pay a Killer\'s cost only when you reveal it, and a Killer revealed to Hunt gets Ambush +2.'),
+        do('Reveal The Groundskeeper.', 'reveal', 'the-groundskeeper'),
+        do('Prey with him. The Slashers Slay: the Citizen joins your Body Count and you gain Terror.', 'prey', 'the-groundskeeper'),
+        decide('Then Panic: another Citizen flees to a neighbouring District of your choice (The Groundskeeper makes 2 flee).'),
+        decide('Choose where the second Citizen flees.'),
+        say('12 Victims. At your Toll you may Vanish: pay 1 Terror to turn a revealed Killer face down again, and slip it to a neighbouring District.'),
+        end('End your Night.'),
+        decide('Vanish The Groundskeeper.', 'vanish'),
+        decide('Stay at the Docks or slip away: your choice.'),
+        say('On their turn, the Hellhound walked into Old Town and your Bear Trap sprang: 3 wounds, and it is gone. Traps cost their price only when they spring, and every spring pays you Terror. Any other card you Lurk is a bluff.', wait=True),
+        do('Reveal The Groundskeeper again.', 'reveal', 'the-groundskeeper'),
+        do('Slay once more for the 13th Victim.', 'prey', 'the-groundskeeper'),
+        say('Thirteen. The Body Count is complete and the Slashers win. Beware the Final Girl: a Killer she destroys is Ended for good instead of returning as a Sequel.', wait=True),
+     ]},
+    {'id': 'devil', 'name': 'Devil\'s Own: Nine Moons', 'icon': '😈', 'opponent': 'Patient Zero',
+     'blurb': 'The Vessel and Gestation, Omens and Portents, Bargains and Pacts, the Nativity and the Child.',
+     'deck': 'nine-moons', 'opponentDeck': 'outbreak-at-site-9', 'seed': 16, 'rewards': REWARD,
+     'scenario': setpiece(CITY_C, {'p0': ['the-crossroads-deal', 'hellhound', 'the-jackals-birthmark', 'unclean-spirit', 'sister-abigail', 'ravens-on-the-steeple']},
+                          put=[('p0', 'margaret-wells', 1), ('p0', 'doting-neighbors', 1)], omens=[('p0', 'the-blood-moon'), ('p0', 'tithe-of-souls')],
+                          sets=[('game', 'hour', 4), ('p0', 'sin', 3), ('p0', 'souls', 3), ('p0', 'gestation', 5), ('p1', 'biomass', 2)]),
+     'steps': [
+        say('The Devil\'s Own race a visible clock: Gestation, from 0 to 9. It only moves while you control a Vessel, here Margaret Wells in Old Town, guarded by her Doting Neighbors. If the Vessel dies, Gestation halves.'),
+        say('Omens advance Gestation when their Portent comes true. It is midnight, the Witching Hour, so The Blood Moon was Fulfilled at your Rise: +3, now 8 of 9.'),
+        do('Bargains make your opponent choose. Play The Crossroads Deal: they Accept (draw 3 and take a Pact) or Refuse (you gain Sin and draw).', 'cast', 'the-crossroads-deal'),
+        say('They accepted, so they carry a Pact. Each Pact pays you Sin at your Toll, and costs them 2 Essence when the Child is born.'),
+        do('Tithe of Souls is fulfilled by spending 3 Souls. Spend them now.', 'tithe', 'tithe-of-souls'),
+        say('Gestation 9: the Nativity. The Child is born in the Vessel\'s District. If it is still in play at your next Rise, you win.'),
+        do('Disciples and Demons beside the Child gain Guard. Play a Hellhound into Old Town to wall it in.', 'deploy', 'hellhound', d=['old-town']),
+        end('End your Night and survive their turn.'),
+        say('The Child lived to see your Rise: the Prophecy is fulfilled and the Devil\'s Own win. Your opponent gets one turn to stop this every time, so protect the Vessel early and spread your Omens.', wait=True),
+     ]},
+]
+
 CAMPAIGN = {
     'name': 'The Long Night',
     'intro': [{'speaker': 'The Evening Herald', 'text': 'Five powers want the City. Claim a starter deck in the Store, then face them one by one before Dawn.'},
@@ -886,6 +1048,7 @@ CAMPAIGN = {
     'starter': {'collection': {}, 'decks': {}},
     'chapters': [{'id': 'dusk', 'name': 'Dusk: the five powers', 'nodes': BASIC}, {'id': 'witching', 'name': 'The Witching Hour (stronger rivals)', 'nodes': ELITE}],
     'encounters': ENCOUNTERS,
+    'tutorials': TUTORIALS,
     'boosters': {'blood-dawn': {'name': 'Blood Dawn', 'slots': [
         {'count': 6, 'pool': pool(['C'])}, {'count': 3, 'pool': pool(['U'], districts=True)},
         {'count': 1, 'pool': RARE, 'weights': {c['id']: (1 if c['rarity'] == 'L' else 4) for c in CARDS if c['id'] in RARE}}]}},

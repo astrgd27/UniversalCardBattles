@@ -78,6 +78,27 @@ try {
   await page.click('.panel-pop >> text=Quit to game menu');
   await page.click('text=← Library');
 
+  // NIGHTFALL tutorial: guided steps, only the expected move is playable, steps advance.
+  await open('nightfall');
+  await page.click('[data-menu=tutorials]');
+  ok(await page.$$eval('[data-tutorial]', (l) => l.length) === 6, 'six tutorials listed');
+  await page.click('[data-start=basics]');
+  await page.waitForSelector('.coach');
+  for (let i = 0; i < 3; i++) await page.click('[data-tut=next]');
+  ok((await page.textContent('.coach')).includes('Play Sprinter into Old Town'), 'coach asks for the first move');
+  ok(await page.$$eval('.seat-area.me .hand .card.legal', (l) => l.length) === 1, 'only the expected card can be played');
+  await page.click('.seat-area.me .hand .card.legal');
+  ok(await page.$$eval('.gridboard .card.target', (l) => l.length) === 1, 'only the expected District is a target');
+  await page.click('.gridboard .card.target');
+  await page.click('.dock button:text-is("Confirm")');
+  await page.waitForFunction(() => window.__ucb.tut?.step === 4);
+  ok((await page.textContent('.coach')).includes('Prey'), 'the next step is coached');
+  await page.click('button[aria-label=Menu]');
+  await page.click('.panel-pop >> text=Quit to game menu');
+  ok(await page.isVisible('[data-tutorial=basics]'), 'quitting returns to the tutorials');
+  await page.click('text=← NIGHTFALL');
+  await page.click('text=← Library');
+
   // Human vs AI on Spark Duel.
   await open('spark-duel');
   await page.click('[data-menu=play]');

@@ -29,6 +29,7 @@ export interface ZoneDef {
   /** Named positions inside the zone (equipment, circles, provinces): objects occupy one via `slot`. */
   slots?: SlotPos[];
   hideEmpty?: boolean; // presentation: the table leaves the zone out while it is empty
+  offTable?: boolean; // presentation: an internal zone the table never draws (e.g. unused setup cards)
 }
 /** types/kinds limit what may occupy the slot (card type / card field `kind`); cap = objects per slot (default 1). */
 export interface SlotPos { id: string; types?: string[]; kinds?: string[]; cap?: number; tags?: string[]; adj?: string[] }

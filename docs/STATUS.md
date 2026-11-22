@@ -243,6 +243,11 @@ A survey of about 30 published TCG rulebooks (`docs/COVERAGE.md`, second table) 
   - "Add to Home Screen" runs full screen (web manifest and icons).
   - e2e plays NIGHTFALL on an emulated iPad Pro by touch.
 
+## Done: scripted tutorials (reusable by any module)
+- **Campaign `tutorials`:** a set-piece scenario, coached steps that each expect one move, pass or decision (or pause for reading), and a scripted opponent. See DSL.md. The runtime is `packages/campaign/src/tutorial.ts`: `allowedTemplates`, `allowedOptions`, `isExpected`, `readShowing`, `tutorialAgent`, `finishTutorial`.
+- **App:** a Tutorials menu per module, a coach panel above the dock, only the expected move playable, a completion screen with the reward and "Keep playing".
+- **NIGHTFALL:** Basics plus one tutorial per faction, 10 Marks each on first completion. `tests/tutorials.test.ts` plays each one through and checks its outcome.
+
 ## Possible next steps
 - NIGHTFALL: the art itself, playtest-driven balance.
 - Campaigns for the other reference games, online multiplayer.

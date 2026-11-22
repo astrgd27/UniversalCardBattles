@@ -1,12 +1,12 @@
 // Screen dispatcher. Re-renders everything on each change and restores focus to inputs marked data-keep.
 import type { UI } from '../main.ts';
-import { home, library, savesScreen, setup } from './menus.ts';
+import { home, library, savesScreen, setup, tutorialsScreen } from './menus.ts';
 import { decks, gallery } from './decks.ts';
 import { cardFace, h, noteEl } from './kit.ts';
 import { table } from './table.ts';
 import { campaignScreen, encounterScreen, rewardScreen, shopScreen } from './campaign.ts';
 
-const SCREENS = { library, home, setup, saves: savesScreen, decks, gallery, game: table, campaign: campaignScreen, encounter: encounterScreen, reward: rewardScreen, shop: shopScreen };
+const SCREENS = { library, home, setup, saves: savesScreen, tutorials: tutorialsScreen, decks, gallery, game: table, campaign: campaignScreen, encounter: encounterScreen, reward: rewardScreen, shop: shopScreen };
 
 export function render(ui: UI, A: any) {
   document.documentElement.dataset.theme = ui.theme;
