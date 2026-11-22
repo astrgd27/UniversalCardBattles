@@ -4,7 +4,7 @@
     python3 tools/art/import.py nightfall <folder-or-files...> [--full] [--dry]
 
 Matching (case-insensitive, by file name): collector number ("NF-012", "nf012", "012"), card id ("the-velvet-club"),
-or card name ("The Velvet Club"). Special names: "back" (card back), "pack-<booster>" / "<booster name>" (booster
+or card name ("The Velvet Club"). A District's Fallen side: its number plus "F" or "Fallen" ("NF-096F", "NF-096 Fallen"). Special names: "back" (card back), "pack-<booster>" / "<booster name>" (booster
 art), "deck-<deck id>" (starter deck box art).
   default : art for the card's picture window -> assets/cards/<id>.webp (600 px wide)
   --full  : finished full-card images          -> assets/full/<id>.webp  (750 x 1050)
@@ -33,6 +33,9 @@ def main(argv):
         if n and not c['id'].endswith('-fallen'):
             d = re.sub(r'\D', '', n)
             for k in {slug(n), n.lower().replace('-', ''), d, d.lstrip('0')}: keys.setdefault(k, ('card', c['id']))
+        if n and c['id'].endswith('-fallen'):  # a District's Fallen side: "NF-096F", "NF-096 Fallen", "096f", "old-town-fallen"
+            d = re.sub(r'\D', '', n)
+            for k in {slug(n) + 'f', slug(n) + '-f', slug(n) + '-fallen', n.lower().replace('-', '') + 'f', d + 'f', d + '-fallen', c['id']}: keys[k] = ('card', c['id'])
     for b, v in boosters.items():
         for k in {b, slug(v['name']), 'pack-' + b, 'pack-' + slug(v['name'])}: keys[k] = ('pack', b)
     for d in decks:
