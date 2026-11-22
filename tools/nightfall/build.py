@@ -21,15 +21,18 @@ LEVERS = {
     'SHAMBLER_PREY': 0, 'SHAMBLER_STRIKE': 0, 'SHAMBLER_DOMINION': 1, 'SPREAD_ONCE': 1, 'SPREAD_MIN': 3, 'OVERRUN_RATIO': 2,
     'SACRIFICE_IS_DEATH': 0,
     # Slasher Killers
-    'BODYCOUNT_WIN': 11, 'LURKS': 1,
+    # The Final Act: at FINAL_ACT Victims the Killers and Old Hollow are empowered (BODYCOUNT_WIN > 0 restores the old instant win)
+    'BODYCOUNT_WIN': 0, 'FINAL_ACT': 11, 'FA_BUFF': 2, 'LURKS': 1,
     # Harvest Cult
     'AWAKEN': 6,
     # Devil's Own: Gestation starts at GEST_START and gains GESTATION_RISE at each Rise with a Vessel
-    'GEST_START': 2, 'GESTATION_RISE': 2, 'VESSEL_HALVES': 1,
+    'GEST_START': 0, 'GESTATION_RISE': 2, 'VESSEL_HALVES': 1,
 }
 for k in LEVERS:
     if os.environ.get('NF_' + k) is not None: LEVERS[k] = int(os.environ['NF_' + k])
-BC, AW = LEVERS['BODYCOUNT_WIN'], LEVERS['AWAKEN']
+BC, AW, FA = LEVERS['BODYCOUNT_WIN'], LEVERS['AWAKEN'], LEVERS['FINAL_ACT']
+FA_TEXT = (f"The Final Act: when your Body Count reaches {FA}, your Killers get +{LEVERS['FA_BUFF']}/+{LEVERS['FA_BUFF']}, Strike for their full Menace and can't be Ended, "
+           "destroyed Killers return at your next Rise, and at your Toll each revealed Killer Slays a Citizen in its district. Strikes against you deal at most 1.")
 OUT = os.environ.get('NF_OUT') or os.path.join(os.path.dirname(__file__), '..', '..', 'packages', 'reference-games', 'nightfall')
 
 # ---------------------------------------------------------------- DSL helpers
@@ -116,9 +119,11 @@ fn('menace', ['$o'], ['max', 0, add(
     Q(AND(eq(g('$o', 'type'), 'hunter'), ANY(C('unitsAt', g('$o', 'x')), eq(g('$it', 'card'), 'the-possessed-girl'))), -2, 0),
     Q(AND(OR(has('$o', 'demon'), has('$o', 'possessed')), ANY(C('unitsAt', g('$o', 'x')), eq(g('$it', 'card'), 'father-moreno'))), -2, 0),
     Q(C('livingIs', g('$o', 'x'), 'cathedral'), Q(eq(g('$o', 'type'), 'hunter'), 1, Q(has('$o', 'demon'), -1, 0)), 0),
-    Q(AND(eq(g('$o', 'card'), 'hollow-eyed-farmhand'), eq(g(g('$o', 'controller'), 'season'), 3)), 1, 0))])
+    Q(AND(eq(g('$o', 'card'), 'hollow-eyed-farmhand'), eq(g(g('$o', 'controller'), 'season'), 3)), 1, 0),
+    Q(C('finalKiller', '$o'), LEVERS['FA_BUFF'], 0))])
+fn('finalKiller', ['$o'], AND(eq(g('$o', 'type'), 'killer'), eq(g(g('$o', 'controller'), 'finalAct'), 1)))
 fn('endur', ['$o'], add(
-    g('$o', 'endurance'), g('$o', 'plus'), SUM(C('gearOn', '$o'), g('$it', 'ge')),
+    g('$o', 'endurance'), g('$o', 'plus'), SUM(C('gearOn', '$o'), g('$it', 'ge')), Q(C('finalKiller', '$o'), LEVERS['FA_BUFF'], 0),
     Q(AND(C('isUnit', '$o'), C('livingIs', g('$o', 'x'), 'oldtown')), 1, 0),
     Q(AND(has('$o', 'folk'), ANY(C('structsAt', g('$o', 'x'), g('$o', 'controller')), eq(g('$it', 'card'), 'the-standing-stone'))), 1, 0),
     Q(AND(eq(g('$o', 'type'), 'hunter'), C('livingIs', g('$o', 'x'), 'cathedral')), 1, 0),
@@ -179,7 +184,7 @@ fn('silver', ['$s'], AND(['isObj', '$s'], ANY(C('gearOn', '$s'), eq(g('$it', 'ca
 fn('trophyScore', ['$p'], add(['*', 30, g('$p', 'claims')], g('$p', 'essence'), ['*', 2, g('$p', 'trophies')],
     SUM(flt(['cards', '$p', 'units'], C('isUnit', '$it')), add(C('menace', '$it'), ['/', C('endur', '$it'), 2])),
     SUM(flt(['cards', '$p', 'units'], C('isStruct', '$it')), add(2, g('$it', 'dominion'), g('$it', 'inf'))),
-    ['*', 3, g('$p', 'bodycount')], ['*', 4, g('$p', 'gestation')], ['*', 2, g('$p', 'barrow')], g('$p', 'thralls'), ['/', C('res', '$p'), 2],
+    ['*', 3, g('$p', 'bodycount')], ['*', 15, g('$p', 'finalAct')], ['*', 4, g('$p', 'gestation')], ['*', 2, g('$p', 'barrow')], g('$p', 'thralls'), ['/', C('res', '$p'), 2],
     # progress toward claims: each living District where $p leads Dominion is worth more the fewer Citizens remain
     ['*', 2, SUM(flt(CITY, AND(eq(g('$it', 'claim'), 0), gt(C('dominion', g('$it', 'x'), '$p'), C('dominion', g('$it', 'x'), ['opp', '$p'])))),
                  sub(7, ['max', 0, g('$it', 'cit')]))],
@@ -213,8 +218,10 @@ proc('fulfill', ['$o'], [IF(['isObj', '$o'], [LET('$p', g('$o', 'controller')), 
 proc('panic', ['$x', '$n'], [IF(NOT(C('livingIs', '$x', 'maple')), [EACH(['range', '$n'], '$i', [IF(gt(cit('$x'), 0), [
     choose(C('adjD', '$x'), '$to', 'Panic: where does a Citizen flee?'),
     ['inc', C('dAt', '$x'), 'cit', -1], ['inc', '$to', 'cit', 1]])])])])
-proc('slay', ['$x'], [IF(gt(cit('$x'), 0), [C('took', '$x', '$me'), ['inc', '$me', 'bodycount', 1], C('addRes', '$me', 1),
-    IF(ge(g('$me', 'bodycount'), LEVERS['BODYCOUNT_WIN']), [['win', ['list', '$me']]])])])
+proc('victimFor', ['$p'], [['inc', '$p', 'bodycount', 1], C('addRes', '$p', 1)] +
+    ([IF(ge(g('$p', 'bodycount'), BC), [['win', ['list', '$p']]])] if BC else []) +
+    ([IF(AND(eq(g('$p', 'finalAct'), 0), ge(g('$p', 'bodycount'), FA)), [['set', '$p', 'finalAct', 1], emit('finalAct', player='$p')])] if FA else []))
+proc('slay', ['$x'], [IF(gt(cit('$x'), 0), [C('took', '$x', '$me'), C('victimFor', '$me')])])
 # Prey: take a Citizen by the hunting unit's faction method.
 proc('take', ['$u', '$x'], [IF(gt(cit('$x'), 0), [
     LET('$p', g('$u', 'controller')),
@@ -240,8 +247,7 @@ proc('clash', ['$a', '$b', '$bi'], [
     emit('clashed', a='$a', b='$b')])
 proc('victim', ['$k', '$v'], [IF(AND(['isObj', '$k'], eq(g('$k', 'type'), 'killer'), has('$v', 'mortal'), ge(g('$v', 'dmg'), C('endur', '$v')),
     NOT(AND(eq(g('$v', 'card'), 'the-final-girl'), eq(g('$v', 'saved'), 0)))), [
-    ['inc', g('$k', 'controller'), 'bodycount', 1], C('addRes', g('$k', 'controller'), 1),
-    IF(ge(g(g('$k', 'controller'), 'bodycount'), LEVERS['BODYCOUNT_WIN']), [['win', ['list', g('$k', 'controller')]]])])])
+    C('victimFor', g('$k', 'controller'))])])
 proc('spring', ['$t', '$v'], [IF(['isObj', '$t'], [
     LET('$o', g('$t', 'controller')),
     IF(ge(res('$o'), g('$t', 'cost')), [
@@ -260,7 +266,8 @@ proc('resolveHunt', [], [IF(['isObj', '$win.u'], [
         IF(eq('$win.kind', 'prey'), [C('take', '$u', '$win.x'),
             IF(OR(eq(g('$u', 'card'), 'countess-ilse-varga'), ANY(C('gearOn', '$u'), eq(g('$it', 'card'), 'chainsaw'))), [C('take', '$u', '$win.x')])]),
         IF(AND(eq('$win.kind', 'clash'), ['isObj', '$win.t']), [C('clash', '$u', '$win.t', 0)]),
-        IF(eq('$win.kind', 'strike'), [['damage', '$win.def', C('menace', '$u') if not LEVERS['STRIKE_DAMAGE'] else ['min', LEVERS['STRIKE_DAMAGE'], C('menace', '$u')], '$u'],
+        IF(eq('$win.kind', 'strike'), [['damage', '$win.def', Q(AND(isF('$win.def', 4), eq(g('$win.def', 'finalAct'), 1)), ['min', 1, C('menace', '$u')],
+            Q(C('finalKiller', '$u'), C('menace', '$u'), C('menace', '$u') if not LEVERS['STRIKE_DAMAGE'] else ['min', LEVERS['STRIKE_DAMAGE'], C('menace', '$u')])), '$u'],
             IF(AND(isF('$win.def', 4), gt(cnt(flt(['cards', '$win.def', 'units'], g('$it', 'faceDown'))), 0)), [
                 choose(flt(['cards', '$win.def', 'units'], g('$it', 'faceDown')), '$l', 'Old Hollow: move a Lurker into the striker\'s district?', 0, 1, '$win.def'),
                 IF(['isObj', '$l'], [['set', '$l', 'x', '$win.x']])])]),
@@ -285,8 +292,8 @@ proc('claim', ['$d', '$p'], [IF(eq(g('$d', 'claim'), 0), [
 proc('kill', ['$u'], [
     emit('dying', u='$u', x=g('$u', 'x'), ctrl=g('$u', 'controller'), card=g('$u', 'card'), type=g('$u', 'type'), mortal=has('$u', 'mortal'), vessel=has('$u', 'vessel')),
     IF(eq(g('$u', 'type'), 'killer'), [
-        IF(eq(g('$u', 'ended'), 1), [['move', '$u', 'removed'], emit('ended', card=g('$u', 'card'))],
-            [['move', '$u', 'dark', {'as': '$k'}], ['set', '$k', 'sc', 2]])], [
+        IF(AND(eq(g('$u', 'ended'), 1), eq(g(g('$u', 'owner'), 'finalAct'), 0)), [['move', '$u', 'removed'], emit('ended', card=g('$u', 'card'))],
+            [['move', '$u', 'dark', {'as': '$k'}], ['set', '$k', 'sc', Q(eq(g(g('$u', 'owner'), 'finalAct'), 1), 1, 2)]])], [
         IF(eq(g('$u', 'type'), 'oldone'), [['set', g('$u', 'owner'), 'barrow', 0], ['move', '$u', 'aside']], [
             IF(eq(g('$u', 'type'), 'child'), [['set', g('$u', 'owner'), 'gestation', 4], ['move', '$u', 'aside']], [
                 IF(has('$u', 'token'), [['move', '$u', 'removed']], [['destroy', '$u']])])])])])
@@ -361,6 +368,8 @@ proc('frenzied', ['$v'], [IF(C('canPrey', '$v'), [C('hunt', '$v', 'prey', None)]
         choose(C('enemyAt', g('$v', 'x'), '$me'), '$t', 'Frenzy: your Vampire must attack. Clash which unit?'), C('hunt', '$v', 'clash', '$t')], [
         IF(AND(C('canHunt', '$v'), NOT(C('readyEnemy', g('$v', 'x'), '$me')), NOT(C('guardedFor', '$v'))), [C('hunt', '$v', 'strike', None)])])])])
 proc('toll', [], [
+    IF(AND(isF('$me', 4), eq(g('$me', 'finalAct'), 1)), [EACH(flt(['cards', '$me', 'units'], AND(C('isUnit', '$it'), eq(g('$it', 'type'), 'killer'))), '$k', [
+        IF(C('living', g('$k', 'x')), [C('slay', g('$k', 'x'))])])]),
     IF(C('inPlay', '$me', 'silas-whitmore'), [['damage', '$opp', cnt(flt(CITY, ANY(C('structsAt', g('$it', 'x'), '$me'), eq(g('$it', 'type'), 'influence'))))]]),
     EACH(CITY, '$d', [
         IF(AND(eq(g('$d', 'claim'), 0), eq(g('$d', 'key'), 'docks'), ge(g('$d', 'cit'), 2), lt(g('$d', 'cit'), 6)), [['inc', '$d', 'cit', 1]]),
@@ -414,7 +423,7 @@ proc('setupPlayer', ['$p'], [
     ['set', '$p', C('rn', '$p'), add(g('$m', 'startRes'), Q(eq(g('$p', 'seat'), g('game', 'first')), 0, 1))],
     IF(isF('$p', 1), [['set', '$p', 'thralls', 0]]),
     IF(isF('$p', 2), [['set', '$p', 'season', 0], ['set', '$p', 'barrow', 0]]),
-    IF(isF('$p', 4), [['set', '$p', 'bodycount', 0]]),
+    IF(isF('$p', 4), [['set', '$p', 'bodycount', 0], ['set', '$p', 'finalAct', 0]]),
     IF(isF('$p', 5), [['set', '$p', 'gestation', LEVERS['GEST_START']], ['set', '$p', 'souls', 0]]),
     ['shuffle', '$p', 'deck'], ['draw', '$p', 6],
     IF(eq(g('game', 'noMulligan'), 0), [
@@ -576,7 +585,7 @@ master('NF-034', 'patient-zero', 'Patient Zero, the First Mouth', 3, 'zombie', 1
      EACH('$ss', '$s', [['set', '$s', 'x', g('$d', 'x')], emit('unitMoved', u='$s', x=g('$d', 'x'), p='$me')])],
     'Whenever one of your Shamblers dies, gain 1 extra Biomass.')
 master('NF-050', 'old-hollow', 'Old Hollow, the Story Told at Campfires', 4, 'slasher', 16, 2, 2, '2 Terror): place an extra Lurker this turn.',
-    [['inc', '$me', 'extraLurk', 1]], 'When an enemy unit Strikes you, you may move one of your face-down Lurkers into that unit\'s district.')
+    [['inc', '$me', 'extraLurk', 1]], 'When an enemy unit Strikes you, you may move one of your face-down Lurkers into that unit\'s district.' + (' ' + FA_TEXT if FA else ''))
 master('NF-066', 'augustin-vale', 'Augustin Vale, Ambassador of the Morning Star Society', 5, 'devil', 20, 2, 2, '2 Sin): search your deck for a Vessel and put it into your hand.',
     [choose(flt(['cards', '$me', 'deck'], has('$it', 'vessel')), '$v', 'Search for which Vessel?', 0, 1), ['move', '$v', 'hand'], ['shuffle', '$me', 'deck']],
     'Your Bargains cost 1 less.')
@@ -1105,15 +1114,16 @@ TUTORIALS = [
             "Watch out for cards that damage everything in a District, and keep a defender near your Master: the Horde's Master has the lowest Essence after the Slashers."),
      ]},
     {'id': 'slasher', 'name': 'Slasher Killers: Don\'t Go in There', 'icon': '🔪', 'opponent': 'Augustin Vale',
-     'blurb': 'Playing cards face down, bluffing, traps, revealing a hidden Killer, scattering Citizens, hiding again, and winning by Body Count.',
+     'blurb': 'Playing cards face down, bluffing, traps, revealing a hidden Killer, scattering Citizens, hiding again, and reaching the Final Act.',
      'deck': 'dont-go-in-there', 'opponentDeck': 'nine-moons', 'seed': 15, 'rewards': REWARD,
      'scenario': setpiece(CITY_C, {'p0': ['bear-trap', 'rusted-machete', 'the-party', 'just-the-cat', 'sheriff-dale-burke', 'dont-go-in-there']},
                           lurk=[('p0', 'the-groundskeeper', 0)], put=[('p1', 'hellhound', 2)],
-                          sets=[('p0', 'terror', 8), ('p0', 'bodycount', BC - 2), ('p1', 'sin', 4)]),
+                          sets=[('p0', 'terror', 8), ('p0', 'bodycount', FA - 2), ('p1', 'sin', 4)]),
      'script': [{'action': 'move', 'card': 'hellhound', 'targets': {'$d': ['old-town']}}],
      'steps': [
-        say("You are playing the Slasher Killers. Your resource is Terror. The Slashers have very few units but can win in a unique way: the Body Count. "
-            f"Every Citizen your Killers take, and every human unit they destroy, adds 1 Victim. Reach {BC} Victims and you win. You have {BC - 2} now."),
+        say("You are playing the Slasher Killers. Your resource is Terror. The Slashers have very few units, but they grow deadlier as the Body Count rises. "
+            f"Every Citizen your Killers take, and every human unit they destroy, adds 1 Victim. At {FA} Victims the Final Act begins and your Killers become "
+            f"monsters that are very hard to stop. You have {FA - 2} Victims now."),
         say("The Slashers hide their cards. Once per turn, you may Lurk: put any card from your hand face down in a District for free. "
             "Your opponent only sees the card back. It might be a Killer, a Trap, or a bluff (any other card, which is simply discarded if your opponent checks it)."),
         do("Lurk the Bear Trap: tap Bear Trap in your hand, tap Old Town, then Confirm. Their Hellhound is in the Subway, right next to it.",
@@ -1128,7 +1138,7 @@ TUTORIALS = [
         decide("After a Slay comes Panic: another Citizen from that District runs to a neighbouring District that you choose. Use it to move Citizens away from "
                "Districts your opponent is about to claim. The Groundskeeper's ability makes 2 Citizens flee. Choose where the first one goes."),
         decide("Choose where the second Citizen flees."),
-        say(f"{BC - 1} Victims. Your Killer is now face up, so your opponent knows where it is. At the end of your turn you may Vanish: pay 1 Terror per revealed Killer to "
+        say(f"{FA - 1} Victims. Your Killer is now face up, so your opponent knows where it is. At the end of your turn you may Vanish: pay 1 Terror per revealed Killer to "
             "turn it face down again, and it may move to a neighbouring District. This keeps your opponent guessing."),
         end("Tap End phase to end your turn."),
         decide("The game asks whether to Vanish The Groundskeeper. Choose vanish.", 'vanish'),
@@ -1136,9 +1146,13 @@ TUTORIALS = [
         say("During your opponent's turn their Hellhound moved into Old Town, so your Bear Trap sprang: you paid its cost of 1 Terror, gained 1 Terror back, and the "
             "Hellhound took 3 wounds. With 3 Endurance, it was destroyed.", wait=True),
         do("Your Groundskeeper is face down again. Tap it to reveal it once more (4 Terror).", 'reveal', 'the-groundskeeper'),
-        do("Tap The Groundskeeper to Prey and Slay the final Victim.", 'prey', 'the-groundskeeper'),
-        say(f"{BC} Victims: the Body Count is complete and you win. Two more Slasher rules to know: a destroyed Killer is not gone for good. It returns face down two turns "
-            "later and stronger (a Sequel), unless it was destroyed by The Final Girl, a neutral card that removes it from the game."),
+        do(f"Tap The Groundskeeper to Prey and Slay Victim number {FA}.", 'prey', 'the-groundskeeper'),
+        say(f"{FA} Victims: the Final Act has begun. For the rest of the game your Killers get +{LEVERS['FA_BUFF']} Menace and +{LEVERS['FA_BUFF']} Endurance and "
+            "Strike the enemy Master for their full Menace (other units deal at most 2). At the end of each of your turns, every face-up Killer Slays a Citizen "
+            "in its District. Strikes against your own Master deal at most 1 damage."),
+        say("The Final Act doesn't win by itself: you still win by claiming 3 Districts, by bringing the enemy Master to 0 Essence, or at Dawn. It just makes those "
+            "much easier. One more Slasher rule: a destroyed Killer is not gone for good. It returns face down two turns later and stronger (a Sequel), or at your "
+            "very next turn during the Final Act. Before the Final Act, The Final Girl (a neutral card) can remove a Killer from the game for good."),
      ]},
     {'id': 'devil', 'name': 'Devil\'s Own: Nine Moons', 'icon': '😈', 'opponent': 'Patient Zero',
      'blurb': 'A countdown to a special victory, objective cards that advance it, offers your opponent must accept or refuse, and protecting a unit for one turn.',
@@ -1205,7 +1219,8 @@ MANIFEST = {
     'tagline': 'The City Will Fall. Two monstrous factions race to claim five districts before Dawn.',
     'theme': {'accent': '#dc2626', 'accent2': '#a78bfa', 'glyph': '☾', 'tapVar': 'ex',
               'hideStats': ['num', 'fno', 'startRes', 'giftCost', 'gm', 'ge', 'gg', 'awaken', 'ripen', 'yield', 'gest', 'souls'],
-              'hideVars': ['fresh', 'hunted', 'moves', 'last', 'amb', 'hz', 'shield', 'saved', 'stun', 'xprey', 'mayPrey', 'ended', 'claim', 'ex', 'faction', 'gcl', 'first', 'struck',
+              'announce': {'finalAct': 'The Final Act', 'nativity': 'The Nativity', 'awakened': 'The Old One wakes', 'dominated': 'Dominated: {district}', 'overrun': 'Overrun: {district}', 'claimed': '{district} falls'},
+              'hideVars': ['finalAct', 'fresh', 'hunted', 'moves', 'last', 'amb', 'hz', 'shield', 'saved', 'stun', 'xprey', 'mayPrey', 'ended', 'claim', 'ex', 'faction', 'gcl', 'first', 'struck',
                            'infPlayed', 'plantPlayed', 'lurks', 'velvet', 'extraLurk', 'grim', 'tunnel', 'morgue', 'sqA', 'sqB', 'sqC', 'sqD'],
               'hideKeywords': ['aloof', 'nohunt', 'token', 'shambler'],
               'labels': {'field': 'Field · Plantings', 'labs': 'Labs · Strains', 'omens': 'Omens', 'lair': 'Lair', 'gear': 'Gear', 'dark': 'In the Dark', 'oldone': 'Old One', 'child': 'Horror', 'frenzy': 'Frenzied', 'silver': 'silver wounds', 'dmg': 'wounds', 'cit': 'citizens', 'growth': 'growth', 'sc': 'sequel in', 'plus': '+1/+1', 'essence': 'Essence', 'claims': 'districts',

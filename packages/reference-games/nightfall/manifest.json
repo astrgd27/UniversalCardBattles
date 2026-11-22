@@ -41,7 +41,16 @@
    "gest",
    "souls"
   ],
+  "announce": {
+   "finalAct": "The Final Act",
+   "nativity": "The Nativity",
+   "awakened": "The Old One wakes",
+   "dominated": "Dominated: {district}",
+   "overrun": "Overrun: {district}",
+   "claimed": "{district} falls"
+  },
   "hideVars": [
+   "finalAct",
    "fresh",
    "hunted",
    "moves",

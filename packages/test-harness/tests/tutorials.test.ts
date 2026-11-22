@@ -55,7 +55,7 @@ const OUTCOME: Record<string, (g: Match) => boolean> = {
   'nightfall/cabal': (g) => ev(g, 'dominated') && ev(g, 'cancelled'),
   'nightfall/harvest': (g) => ev(g, 'awakened') && g.s.players[0].vars.claims === 1,
   'nightfall/zombie': (g) => ev(g, 'overrun'),
-  'nightfall/slasher': (g) => ev(g, 'sprung') && g.s.result?.winners[0] === 'p0' && g.s.players[0].vars.bodycount >= 10,
+  'nightfall/slasher': (g) => ev(g, 'sprung') && ev(g, 'finalAct') && g.s.players[0].vars.finalAct === 1,
   'nightfall/devil': (g) => ev(g, 'nativity') && g.s.result?.winners[0] === 'p0',
 };
 

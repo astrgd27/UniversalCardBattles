@@ -15,7 +15,7 @@ const how = (g: any) => {
   const r = g.s.result; if (!r) return 'unfinished';
   const ev = (t: string) => g.s.events.some((e: any) => e.type === t);
   if (ev('dawn')) return 'dawn'; if (ev('prophecy')) return 'prophecy';
-  if (g.s.players.some((p: any) => (p.vars.bodycount ?? 0) >= +(process.env.NF_BODYCOUNT_WIN ?? 11))) return 'bodycount';
+  if (+(process.env.NF_BODYCOUNT_WIN ?? 0) > 0 && g.s.players.some((p: any) => (p.vars.bodycount ?? 0) >= +process.env.NF_BODYCOUNT_WIN!)) return 'bodycount';
   if (g.s.players.some((p: any) => p.vars.claims >= 3)) return 'city';
   if (g.s.players.some((p: any) => p.vars.essence <= 0)) return 'ruin';
   return r.reason;
@@ -62,7 +62,7 @@ for (let i = 0; i < D.length; i++) for (let j = 0; j < D.length; j++) if (i !== 
   stats.turns.push(g.s.turn.n);
   stats.claims.push(g.s.players.map((p: any) => p.vars.claims).join('-'));
   stats.citLeft.push(g.s.zones['shared:city'].reduce((a: number, id: string) => a + Math.max(0, g.s.objects[id].vars.cit), 0));
-  for (const e of g.s.events as any[]) if (['fulfilled', 'nativity', 'prophecy', 'awakened', 'dominated', 'overrun', 'sequel', 'sprung', 'frenzy', 'exposed', 'cancelled'].includes(e.type)) stats.sig[e.type] = (stats.sig[e.type] ?? 0) + 1;
+  for (const e of g.s.events as any[]) if (['fulfilled', 'nativity', 'prophecy', 'awakened', 'dominated', 'overrun', 'sequel', 'sprung', 'frenzy', 'exposed', 'cancelled', 'finalAct'].includes(e.type)) stats.sig[e.type] = (stats.sig[e.type] ?? 0) + 1;
   for (const p of g.s.players) { const f = FAC[p.vars.faction]; for (const v of ['gestation', 'bodycount', 'barrow', 'thralls', 'souls']) if (p.vars[v] !== undefined) (stats.end[`${f}.${v}`] ??= []).push(p.vars[v]); }
   for (const e of g.s.events as any[]) if (e.type === 'action') { const f = FAC[g.s.players[+e.player.slice(1)].vars.faction]; const k = `${f}:${e.action.split('#')[0]}`; stats.actions[k] = (stats.actions[k] ?? 0) + 1; }
 }

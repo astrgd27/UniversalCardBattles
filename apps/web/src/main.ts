@@ -58,6 +58,7 @@ export interface UI {
   sample: string[] | null; // sample opening hand in the deckbuilder
   io: { mode: 'import' | 'export'; text: string; errors: string[] } | null; // deck text dialog
   fxFrom: number; // first event not yet animated
+  banners?: { text: string; at: number }[]; // queued announcements (start times in ms), kept across redraws
   counts: Record<string, number>; // zone sizes at the last render (pile bumps)
 }
 

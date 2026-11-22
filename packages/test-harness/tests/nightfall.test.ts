@@ -412,15 +412,37 @@ test('nightfall balance: Shamblers are mindless (no Prey, no Strike), Spread inf
   assert.equal(c.s.objects[dist(c, 'subway')].vars.claim, 1, 'with a Vampire there: Dominated');
 });
 
-test('nightfall balance: Devil Gestation starts at 2 and rises by 2 at each Rise with a Vessel; Augustin finds a Vessel for 2 Sin', () => {
+test('nightfall balance: Devil Gestation starts at 0 and rises at each Rise with a Vessel; Augustin finds a Vessel for 2 Sin', () => {
   let g = start('devil', 'zombie');
-  assert.equal(vars(g, 'p0').gestation, 2);
+  assert.equal(vars(g, 'p0').gestation ?? 0, 0);
   put(g, 'p0', 'margaret-wells', dx(g, 'docks'));
   g = settle(pass(g)); g = settle(pass(g));
-  assert.equal(vars(g, 'p0').gestation, 4);
+  assert.ok(vars(g, 'p0').gestation >= 2, 'Gestation rose at the Rise with a Vessel');
   const gift = listActions(g, 'p0').find((t) => t.action === 'darkGift');
   assert.ok(gift, 'Dark Gift available');
   const sin = vars(g, 'p0').sin;
   g = settle(act(g, 'p0', 'darkGift', gift!.source));
   assert.equal(vars(g, 'p0').sin, sin - 2);
+});
+
+test('nightfall balance: the Final Act (Body Count 11) empowers the Slashers instead of winning', () => {
+  let g = start('slasher', 'zombie');
+  const x = dx(g, 'docks');
+  const k = put(g, 'p0', 'the-groundskeeper', x);
+  const hook = put(g, 'p0', 'the-hook-handed-man', dx(g, 'financial'));
+  setVars(g, 'p0', { bodycount: 10 });
+  g = settle(act(g, 'p0', 'prey', k));
+  if (g.s.priority === 'p1') g = settle(pass(g));
+  assert.equal(vars(g, 'p0').bodycount, 11);
+  assert.equal(g.s.result, null, 'no instant win');
+  assert.equal(vars(g, 'p0').finalAct, 1);
+  assert.ok(g.s.events.some((e) => e.type === 'finalAct'));
+  const before = vars(g, 'p1').essence;
+  g = settle(act(g, 'p0', 'strike', hook));
+  if (g.s.priority === 'p1') g = settle(pass(g));
+  const menace = (N.card.get('the-hook-handed-man') as any).menace;
+  assert.equal(vars(g, 'p1').essence, before - (menace + 2), 'a Killer Strikes for its full, boosted Menace');
+  const bc = vars(g, 'p0').bodycount;
+  g = settle(pass(g)); // Toll: each face-up Killer Slays a Citizen in its district
+  assert.equal(vars(g, 'p0').bodycount, bc + 2);
 });

@@ -11,7 +11,7 @@ interface Fx {
   tapped: Map<string, boolean>; // object -> just tapped (true) or untapped (false), from the theme's tapVar
   pulse: Map<string, Set<string>>; // player -> vars that just changed
   bump: Set<string>; // zone keys whose size just grew
-  banner: string | null; // a new turn began
+  banners: string[]; // announcements in order: module events (theme.announce), then a new turn
 }
 interface C {
   ui: UI; A: any; v: View; mod: Mod;
@@ -20,11 +20,13 @@ interface C {
   fx: Fx;
 }
 
+const BANNER_MS = 1400, BANNER_GAP = 1250;
 /** Animations come only from the viewer's redacted event log since the previous render. */
 function effectsSince(ui: UI, v: View): Fx {
   const m = ui.match!;
-  const fx: Fx = { entered: new Set(), hit: new Map(), flipped: new Set(), tapped: new Map(), pulse: new Map(), bump: new Set(), banner: null };
+  const fx: Fx = { entered: new Set(), hit: new Map(), flipped: new Set(), tapped: new Map(), pulse: new Map(), bump: new Set(), banners: [] };
   const tapVar = m.m.manifest.theme?.tapVar;
+  const announce = m.m.manifest.theme?.announce ?? {};
   const from = Math.min(ui.fxFrom, m.s.events.length);
   const first = m.m.rules.phases[0].id;
   for (const e of eventsFor(m, ui.viewer, from)) {
@@ -33,7 +35,8 @@ function effectsSince(ui: UI, v: View): Fx {
     else if (e.type === 'flipped') fx.flipped.add(e.obj);
     else if (e.type === 'changed' && tapVar && e.name === tapVar && e.ref && !/^p\d+$/.test(e.ref)) fx.tapped.set(e.ref, (e.to ?? 0) > 0);
     else if (e.type === 'changed' && /^p\d+$/.test(e.ref)) { if (!fx.pulse.has(e.ref)) fx.pulse.set(e.ref, new Set()); fx.pulse.get(e.ref)!.add(e.name); }
-    else if (e.type === 'phase' && e.phase === first && from > 0) fx.banner = e.active === ui.viewer && ui.seats[+ui.viewer.slice(1)] === 'human' ? 'Your turn' : `${pname(e.active)}'s turn`;
+    else if (announce[e.type] && from > 0) fx.banners.push(announce[e.type].replace(/\{(\w+)\}/g, (_: string, k: string) => (typeof e[k] === 'string' ? (/^p\d+$/.test(e[k]) ? pname(e[k]) : m.m.card.get(e[k])?.name ?? e[k]) : String(e[k] ?? ''))));
+    else if (e.type === 'phase' && e.phase === first && from > 0) fx.banners.push(e.active === ui.viewer && ui.seats[+ui.viewer.slice(1)] === 'human' ? 'Your turn' : `${pname(e.active)}'s turn`);
   }
   const counts: Record<string, number> = {};
   for (const [k, z] of Object.entries(v.zones)) {
@@ -42,6 +45,11 @@ function effectsSince(ui: UI, v: View): Fx {
   }
   ui.counts = counts;
   ui.fxFrom = m.s.events.length;
+  // announcements play one after another and survive redraws: each keeps its start time
+  const now = Date.now();
+  const q = (ui.banners ?? []).filter((b) => now < b.at + BANNER_MS);
+  for (const text of fx.banners) q.push({ text, at: Math.max(now, (q[q.length - 1]?.at ?? 0) + BANNER_GAP) });
+  ui.banners = q.slice(-4);
   return fx;
 }
 
@@ -75,7 +83,7 @@ export function table(ui: UI, A: any) {
         v.stack.length > 0 && stack(c)),
       seat(c, ui.viewer, true)),
     dock(c, mine, tpls, step),
-    c.fx.banner && h('div', { class: 'turn-banner', 'aria-hidden': 'true' }, c.fx.banner),
+    (c.ui.banners ?? []).map((b) => h('div', { class: 'turn-banner', style: `animation-delay:${(b.at - Date.now()) / 1000}s`, 'aria-hidden': 'true' }, b.text)),
     ui.drawer && drawer(c),
     ui.paused && pause(c),
     !v.result && pendingDialogue() && banner(c),

@@ -1114,7 +1114,7 @@
    "name": "Slasher Killers: Don't Go in There",
    "icon": "🔪",
    "opponent": "Augustin Vale",
-   "blurb": "Playing cards face down, bluffing, traps, revealing a hidden Killer, scattering Citizens, hiding again, and winning by Body Count.",
+   "blurb": "Playing cards face down, bluffing, traps, revealing a hidden Killer, scattering Citizens, hiding again, and reaching the Final Act.",
    "deck": "dont-go-in-there",
    "opponentDeck": "nine-moons",
    "seed": 15,
@@ -1213,7 +1213,7 @@
    ],
    "steps": [
     {
-     "say": "You are playing the Slasher Killers. Your resource is Terror. The Slashers have very few units but can win in a unique way: the Body Count. Every Citizen your Killers take, and every human unit they destroy, adds 1 Victim. Reach 11 Victims and you win. You have 9 now."
+     "say": "You are playing the Slasher Killers. Your resource is Terror. The Slashers have very few units, but they grow deadlier as the Body Count rises. Every Citizen your Killers take, and every human unit they destroy, adds 1 Victim. At 11 Victims the Final Act begins and your Killers become monsters that are very hard to stop. You have 9 Victims now."
     },
     {
      "say": "The Slashers hide their cards. Once per turn, you may Lurk: put any card from your hand face down in a District for free. Your opponent only sees the card back. It might be a Killer, a Trap, or a bluff (any other card, which is simply discarded if your opponent checks it)."
@@ -1287,14 +1287,17 @@
      }
     },
     {
-     "say": "Tap The Groundskeeper to Prey and Slay the final Victim.",
+     "say": "Tap The Groundskeeper to Prey and Slay Victim number 11.",
      "do": {
       "action": "prey",
       "card": "the-groundskeeper"
      }
     },
     {
-     "say": "11 Victims: the Body Count is complete and you win. Two more Slasher rules to know: a destroyed Killer is not gone for good. It returns face down two turns later and stronger (a Sequel), unless it was destroyed by The Final Girl, a neutral card that removes it from the game."
+     "say": "11 Victims: the Final Act has begun. For the rest of the game your Killers get +2 Menace and +2 Endurance and Strike the enemy Master for their full Menace (other units deal at most 2). At the end of each of your turns, every face-up Killer Slays a Citizen in its District. Strikes against your own Master deal at most 1 damage."
+    },
+    {
+     "say": "The Final Act doesn't win by itself: you still win by claiming 3 Districts, by bringing the enemy Master to 0 Essence, or at Dawn. It just makes those much easier. One more Slasher rule: a destroyed Killer is not gone for good. It returns face down two turns later and stronger (a Sequel), or at your very next turn during the Final Act. Before the Final Act, The Final Girl (a neutral card) can remove a Killer from the game for good."
     }
    ]
   },
@@ -1644,7 +1647,7 @@
    "price": 0,
    "stock": 1,
    "group": "starter-promo",
-   "text": "Promo starter (Slasher Killers): bluffing, hidden Lurkers and a race to 11 Victims."
+   "text": "Promo starter (Slasher Killers): bluffing, hidden Lurkers and a race to 0 Victims."
   },
   {
    "id": "promo-barrow-wakes",

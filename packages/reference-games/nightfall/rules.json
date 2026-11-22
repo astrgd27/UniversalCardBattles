@@ -1319,7 +1319,47 @@
       ],
       1,
       0
+     ],
+     [
+      "?",
+      [
+       "call",
+       "finalKiller",
+       "$o"
+      ],
+      2,
+      0
      ]
+    ]
+   ]
+  },
+  "finalKiller": {
+   "params": [
+    "$o"
+   ],
+   "body": [
+    "and",
+    [
+     "=",
+     [
+      "get",
+      "$o",
+      "type"
+     ],
+     "killer"
+    ],
+    [
+     "=",
+     [
+      "get",
+      [
+       "get",
+       "$o",
+       "controller"
+      ],
+      "finalAct"
+     ],
+     1
     ]
    ]
   },
@@ -1351,6 +1391,16 @@
       "$it",
       "ge"
      ]
+    ],
+    [
+     "?",
+     [
+      "call",
+      "finalKiller",
+      "$o"
+     ],
+     2,
+     0
     ],
     [
      "?",
@@ -3090,6 +3140,15 @@
     ],
     [
      "*",
+     15,
+     [
+      "get",
+      "$p",
+      "finalAct"
+     ]
+    ],
+    [
+     "*",
      4,
      [
       "get",
@@ -3786,6 +3845,64 @@
     ]
    ]
   },
+  "victimFor": {
+   "params": [
+    "$p"
+   ],
+   "do": [
+    [
+     "inc",
+     "$p",
+     "bodycount",
+     1
+    ],
+    [
+     "call",
+     "addRes",
+     "$p",
+     1
+    ],
+    [
+     "if",
+     [
+      "and",
+      [
+       "=",
+       [
+        "get",
+        "$p",
+        "finalAct"
+       ],
+       0
+      ],
+      [
+       ">=",
+       [
+        "get",
+        "$p",
+        "bodycount"
+       ],
+       11
+      ]
+     ],
+     [
+      [
+       "set",
+       "$p",
+       "finalAct",
+       1
+      ],
+      [
+       "emit",
+       "finalAct",
+       {
+        "player": "$p"
+       }
+      ]
+     ]
+    ]
+   ]
+  },
   "slay": {
    "params": [
     "$x"
@@ -3814,37 +3931,9 @@
        "$me"
       ],
       [
-       "inc",
-       "$me",
-       "bodycount",
-       1
-      ],
-      [
        "call",
-       "addRes",
-       "$me",
-       1
-      ],
-      [
-       "if",
-       [
-        ">=",
-        [
-         "get",
-         "$me",
-         "bodycount"
-        ],
-        11
-       ],
-       [
-        [
-         "win",
-         [
-          "list",
-          "$me"
-         ]
-        ]
-       ]
+       "victimFor",
+       "$me"
       ]
      ]
     ]
@@ -4471,52 +4560,12 @@
      ],
      [
       [
-       "inc",
-       [
-        "get",
-        "$k",
-        "controller"
-       ],
-       "bodycount",
-       1
-      ],
-      [
        "call",
-       "addRes",
+       "victimFor",
        [
         "get",
         "$k",
         "controller"
-       ],
-       1
-      ],
-      [
-       "if",
-       [
-        ">=",
-        [
-         "get",
-         [
-          "get",
-          "$k",
-          "controller"
-         ],
-         "bodycount"
-        ],
-        11
-       ],
-       [
-        [
-         "win",
-         [
-          "list",
-          [
-           "get",
-           "$k",
-           "controller"
-          ]
-         ]
-        ]
        ]
       ]
      ]
@@ -4943,12 +4992,58 @@
            "damage",
            "$win.def",
            [
-            "min",
-            2,
+            "?",
             [
-             "call",
-             "menace",
-             "$u"
+             "and",
+             [
+              "=",
+              [
+               "get",
+               "$win.def",
+               "faction"
+              ],
+              4
+             ],
+             [
+              "=",
+              [
+               "get",
+               "$win.def",
+               "finalAct"
+              ],
+              1
+             ]
+            ],
+            [
+             "min",
+             1,
+             [
+              "call",
+              "menace",
+              "$u"
+             ]
+            ],
+            [
+             "?",
+             [
+              "call",
+              "finalKiller",
+              "$u"
+             ],
+             [
+              "call",
+              "menace",
+              "$u"
+             ],
+             [
+              "min",
+              2,
+              [
+               "call",
+               "menace",
+               "$u"
+              ]
+             ]
             ]
            ],
            "$u"
@@ -5453,13 +5548,29 @@
       [
        "if",
        [
-        "=",
+        "and",
         [
-         "get",
-         "$u",
-         "ended"
+         "=",
+         [
+          "get",
+          "$u",
+          "ended"
+         ],
+         1
         ],
-        1
+        [
+         "=",
+         [
+          "get",
+          [
+           "get",
+           "$u",
+           "owner"
+          ],
+          "finalAct"
+         ],
+         0
+        ]
        ],
        [
         [
@@ -5492,7 +5603,24 @@
          "set",
          "$k",
          "sc",
-         2
+         [
+          "?",
+          [
+           "=",
+           [
+            "get",
+            [
+             "get",
+             "$u",
+             "owner"
+            ],
+            "finalAct"
+           ],
+           1
+          ],
+          1,
+          2
+         ]
         ]
        ]
       ]
@@ -7212,6 +7340,86 @@
     [
      "if",
      [
+      "and",
+      [
+       "=",
+       [
+        "get",
+        "$me",
+        "faction"
+       ],
+       4
+      ],
+      [
+       "=",
+       [
+        "get",
+        "$me",
+        "finalAct"
+       ],
+       1
+      ]
+     ],
+     [
+      [
+       "each",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "units"
+        ],
+        [
+         "and",
+         [
+          "call",
+          "isUnit",
+          "$it"
+         ],
+         [
+          "=",
+          [
+           "get",
+           "$it",
+           "type"
+          ],
+          "killer"
+         ]
+        ]
+       ],
+       "$k",
+       [
+        [
+         "if",
+         [
+          "call",
+          "living",
+          [
+           "get",
+           "$k",
+           "x"
+          ]
+         ],
+         [
+          [
+           "call",
+           "slay",
+           [
+            "get",
+            "$k",
+            "x"
+           ]
+          ]
+         ]
+        ]
+       ]
+      ]
+     ]
+    ],
+    [
+     "if",
+     [
       "call",
       "inPlay",
       "$me",
@@ -8617,6 +8825,12 @@
        "$p",
        "bodycount",
        0
+      ],
+      [
+       "set",
+       "$p",
+       "finalAct",
+       0
       ]
      ]
     ],
@@ -8636,7 +8850,7 @@
        "set",
        "$p",
        "gestation",
-       2
+       0
       ],
       [
        "set",
