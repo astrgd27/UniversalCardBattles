@@ -4,9 +4,24 @@ import { compileModule } from '#engine';
 import { loadPackage, readZip } from '#sdk';
 
 const files = import.meta.glob(['../../../packages/reference-games/*/*.json', '../../../packages/reference-games/*/ai/ai.json', '../../../packages/reference-games/*/campaign/campaign.json'], { eager: true, import: 'default' }) as Record<string, any>;
+// Images bundled with the built-in modules (packages/reference-games/<id>/assets/**), served as hashed files.
+const images = import.meta.glob('../../../packages/reference-games/*/assets/**/*.{png,jpg,jpeg,webp,avif}', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 export const MODULES = new Map<string, Mod>();
-/** Object URLs for assets of modules loaded from packages: moduleId -> path -> url. */
+/** Asset URLs by module: moduleId -> package path ("assets/...") -> url. Bundled modules and loaded packages alike. */
 export const ASSETS = new Map<string, Map<string, string>>();
+for (const [path, url] of Object.entries(images)) {
+  const m = path.match(/reference-games\/([^/]+)\/(assets\/.+)$/);
+  if (m) { if (!ASSETS.has(m[1])) ASSETS.set(m[1], new Map()); ASSETS.get(m[1])!.set(m[2], url); }
+}
+const IMG = ['webp', 'png', 'jpg', 'jpeg', 'avif'];
+/** An asset by explicit path, or by convention ("assets/cards/<card id>.<ext>", "assets/back.<ext>"). */
+export function assetUrl(moduleId: string, path: string | undefined, conventional?: string): string | undefined {
+  const a = ASSETS.get(moduleId);
+  if (!a) return undefined;
+  if (path && a.has(path)) return a.get(path);
+  if (conventional) for (const e of IMG) { const u = a.get(`${conventional}.${e}`); if (u) return u; }
+  return undefined;
+}
 const byId: Record<string, Record<string, any>> = {};
 for (const [path, data] of Object.entries(files)) {
   const m = path.match(/reference-games\/([^/]+)\/(?:ai\/|campaign\/)?([a-z]+)\.json$/);

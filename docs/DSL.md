@@ -83,6 +83,7 @@ Effects run in effect lists `[[op...], [op...]]`.
 | `become objs {copy?, blank?, until?: "turn"}` | **identity change**: the objects become a copy of a card (a card id, or an object's current card) and/or lose all abilities (abilities, statics, replacements, keywords and activated abilities). Copies apply first, then ability loss, whatever the order. `get obj card` is the current card and `get obj printed` the printed one; views show `printed` and `blank`. Emits `became` |
 | `divide {among, amount, as, each?, who?, prompt?}` | a **division decision**: the player splits `amount` among `among` (each recipient gets at least `each`), bound as `{recipient: points}`. The answer repeats an id once per point. One recipient resolves on its own |
 | `control objs p` | gain control: the same object (same id, no zone change events) moves to p's side of its zone, taking a free slot in slotted zones. Owner is unchanged, so it still goes to its owner's grave. Emits `controlled` |
+| `firstPlayer p` | setup only: player p takes the first turn (e.g. after `random {from: ["players"], as}`). Emits `firstPlayer` |
 | `setSlot obj slot` | repositions an object inside its slotted zone; a full one-object slot swaps the two. Emits `slotted` |
 | `flip objs up?` | turns face up (default) or face down. Emits `flipped` (with `card` when turned face up) |
 
@@ -182,11 +183,12 @@ Effects run in effect lists `[[op...], [op...]]`.
   - `name`, `intro [{speaker, text}]`, `currency {name, start}`
   - `starter {collection {card: n}, decks}`, `decks` (opponent decks)
   - `chapters [{id, name, nodes: [encounterId]}]`, `encounters {id: Encounter}`
-  - `boosters {id: {name, slots [{count, pool, weights?}]}}`, `shop [{id, name, price, booster | card, stock?}]`
+  - `boosters {id: {name, slots [{count, pool, weights?}]}}`, `shop [{id, name, price, booster | card | deck, stock?, group?, text?, art?}]`
+  - A `deck` item adds a whole deck (a module or campaign deck) to the collection and saves it as a ready deck. Items sharing a `group` are exclusive: once one is bought, the others are locked (e.g. "claim one free starter"). `starter.decks` may then be empty.
 - An encounter has:
   - `{name, opponent, portrait?, deck, requires?, repeatable?, intro?, outro?, defeat?}`
   - `ai {kind?, bias?, phaseVar?, phases {value: {bias}}}`: the boss changes its bias when a game var changes
-  - `scenario?`, `rewards {first?, repeat?: {currency?, cards?, packs?}}`
+  - `scenario?`, `rewards {first?, repeat?, loss?: {currency?, cards?, packs?}}` (`loss` is paid for every lost attempt)
   - Scenario triggers can `["emit", "dialogue", {speaker, text}]`; the UI shows it and holds the AI until it is dismissed.
 - Profiles are plain JSON. Rewards and purchases are idempotent through ledger keys (`enc:<id>:<attempt seq>`, `shop:<item>:<seq>`), so a reload can never grant twice. Boosters are seeded and deterministic.
 - `validateCampaign(mod, campaign)` checks references, deck legality and ownership, and scenarios. Package loading runs it.
@@ -221,6 +223,7 @@ Effects run in effect lists `[[op...], [op...]]`.
   - At most 8 MB per file, 64 MB total and 2000 entries.
 - **JSON** is parsed strictly: duplicate keys and `__proto__`, `constructor` and `prototype` keys are rejected, and nesting is capped at 256 levels.
 - **Errors** read `file:line:col: message`.
+- **Art** (bundled modules and packages): `assets/cards/<card id>.<ext>` is a card's picture-window art, `assets/full/<card id>` a finished full-card image (replaces the template; live state still shows), `assets/back` the card back, `assets/packs/<booster id>` and `assets/decks/<deck id>` store art. A card's `art` field or a shop item's `art` can name any asset path instead. `tools/art/import.py <module> <files>` matches images to cards (collector number, id or name) and converts them to WebP.
 - **Presentation** (optional manifest fields, no effect on rules): `tagline`, `official` (listed first, with a badge), `theme {accent, accent2, glyph, hideStats, hideVars, labels, tapVar}` and `presentation {templates, byType}`. `hideVars` keeps bookkeeping vars off card badges and player chips, `labels` renames vars for display (`{"dmg": "wounds"}`), and `tapVar` turns a card sideways while that object var is above 0 (exhausted, tapped).
   - **Card templates.** The built-in families, generic layouts based on common TCG card anatomy:
     - `classic`: cost top-right, stat box bottom-right

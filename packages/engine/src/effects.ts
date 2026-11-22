@@ -12,7 +12,7 @@ import {
 export const EFFECT_OPS = new Set([
   'draw', 'move', 'shuffle', 'set', 'inc', 'damage', 'destroy', 'lose', 'win', 'if', 'each', 'let', 'choose', 'run',
   'endPhase', 'emit', 'log', 'counter', 'modify', 'link', 'unlink', 'call', 'commit', 'random', 'flip', 'create', 'gotoPhase',
-  'openWindow', 'closeWindow', 'winSet', 'pay', 'gain', 'empty', 'setSlot', 'control', 'become', 'divide',
+  'openWindow', 'closeWindow', 'winSet', 'pay', 'gain', 'empty', 'setSlot', 'control', 'become', 'divide', 'firstPlayer',
 ]);
 const MAX_WINDOWS = 8;
 
@@ -531,6 +531,15 @@ export function apply(m: Mod, s: State, eff: Effect, f: Frame) {
         id: `d${s.nextDecision++}`, kind: 'divide', player: one(ev(m, s, o.who ?? '$me', ctx)), options: among, min: amount, max: amount, as: o.as,
         single: false, prompt: o.prompt ?? `Divide ${amount}`, ...(each ? { each } : {}),
       };
+      return;
+    }
+    case 'firstPlayer': {
+      // Setup only: who takes the first turn (e.g. chosen at random). Later it would rewrite turn order mid-game.
+      if (s.turn.n !== 1 || s.turn.phase !== 0 || s.phaseState !== 'enter') throw new EngineError('firstPlayer can only be used during setup');
+      const i = s.players.findIndex((p) => p.id === one(A(1)));
+      if (i < 0) throw new EngineError(`firstPlayer: unknown player ${A(1)}`);
+      s.turn.active = i;
+      emit(m, s, { type: 'firstPlayer', player: s.players[i].id });
       return;
     }
     case 'control': {

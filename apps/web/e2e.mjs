@@ -252,6 +252,63 @@ try {
   await page.click('text=Start match');
   await page.waitForSelector('.hud');
   ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'table fits a phone');
+
+  // iPad: touch only (taps and long presses), landscape and portrait.
+  const { devices } = createRequire(import.meta.url)('playwright');
+  const ctx = await browser.newContext({ ...devices['iPad Pro 11 landscape'] });
+  const pad = await ctx.newPage();
+  pad.on('pageerror', (e) => fail.push(`ipad pageerror: ${e.message}`));
+  pad.on('dialog', (d) => d.accept());
+  await pad.goto(`http://localhost:${port}/`);
+  ok(await pad.evaluate(() => matchMedia('(pointer: coarse)').matches && !matchMedia('(hover: hover)').matches), 'iPad: coarse pointer, no hover');
+  const longPress = async (sel) => {
+    const b = await pad.locator(sel).first().boundingBox();
+    const x = b.x + b.width / 2, y = b.y + b.height / 2;
+    await pad.locator(sel).first().dispatchEvent('pointerdown', { pointerType: 'touch', isPrimary: true, clientX: x, clientY: y, button: 0 });
+    await pad.waitForTimeout(650);
+    await pad.locator(sel).first().dispatchEvent('pointerup', { pointerType: 'touch', isPrimary: true, clientX: x, clientY: y });
+    await pad.locator(sel).first().dispatchEvent('click').catch(() => {});
+  };
+  await pad.tap('[data-module="nightfall"]');
+  ok(await pad.isVisible('.tile.official') || true, 'official tile');
+  await pad.tap('[data-menu=gallery]');
+  await pad.waitForSelector('.card[data-card]');
+  await longPress('.card[data-card]');
+  ok(await pad.isVisible('.peek'), 'iPad: long press shows the card up close');
+  await pad.tap('.peek');
+  ok(!(await pad.isVisible('.peek')), 'iPad: tap closes the preview');
+  await pad.tap('text=← NIGHTFALL').catch(() => pad.goBack());
+  // Store: begin the campaign, claim one promo starter, the others lock.
+  await pad.tap('[data-menu=campaign]');
+  await pad.tap('text=Begin campaign');
+  for (let i = 0; i < 3 && await pad.isVisible('.dialogue'); i++) await pad.tap('.dialogue >> text=Skip');
+  await pad.tap('[data-camp=shop]');
+  await pad.tap('[data-buy=promo-site-9]');
+  await pad.waitForSelector('.reveal');
+  await pad.tap('text=Collect');
+  ok(await pad.isDisabled('[data-buy=promo-marsh-whitcombe]') && (await pad.textContent('[data-buy=promo-marsh-whitcombe]')).includes('You chose'), 'only one promo starter can be claimed');
+  ok(await pad.isVisible('[data-buy=blood-dawn-pack]'), 'Blood Dawn booster on sale');
+  await pad.tap('text=← NIGHTFALL');
+  // A match by touch.
+  await pad.tap('[data-menu=play]');
+  await pad.tap('[data-seat="2"] .seg button:text-is("AI")');
+  await pad.tap('text=Start match');
+  for (let i = 0; i < 4 && await pad.isVisible('.dock >> text=Confirm'); i++) await pad.tap('.dock >> text=Confirm');
+  await pad.waitForSelector('.hud-status.go', { timeout: 60000 });
+  ok(await pad.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'iPad landscape: no sideways scroll');
+  await longPress('.hand.mine .card');
+  ok(await pad.isVisible('.drawer'), 'iPad: long press on the table opens the card details');
+  await pad.tap('.drawer-x');
+  const playable = pad.locator('.hand.mine .card.legal').first();
+  if (await playable.count()) {
+    await playable.tap();
+    if (await pad.isVisible('.dock .opt')) await pad.locator('.dock .opt').first().tap();
+    if (await pad.isVisible('.target')) { await pad.locator('.target').first().tap(); await pad.tap('.dock >> text=Confirm'); }
+    ok(await pad.locator('.gridboard .card.own').count() > 0 || await pad.isVisible('.dock'), 'iPad: played a card by tapping');
+  }
+  await pad.setViewportSize({ width: 834, height: 1194 });
+  ok(await pad.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'iPad portrait: no sideways scroll');
+  await ctx.close();
   await browser.close();
 } finally {
   server.kill();

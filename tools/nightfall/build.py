@@ -111,6 +111,8 @@ fn('guardOf', ['$o'], AND(C('isUnit', '$o'), eq(g('$o', 'ex'), 0), OR(
     C('fallenFor', g('$o', 'x'), 'maple', g('$o', 'controller')),
     AND(OR(has('$o', 'disciple'), has('$o', 'demon')), ANY(C('mineAt', g('$o', 'x'), g('$o', 'controller')), eq(g('$it', 'card'), 'the-child'))))))
 fn('guarded', ['$x', '$p'], ANY(C('enemyAt', '$x', '$p'), C('guardOf', '$it')))
+# Guard holds a unit back until that unit has Clashed with a Guard this turn.
+fn('guardedFor', ['$u'], AND(ne(g('$u', 'gcl'), '$turn'), C('guarded', g('$u', 'x'), g('$u', 'controller'))))
 fn('readyEnemy', ['$x', '$p'], ANY(C('enemyAt', '$x', '$p'), eq(g('$it', 'ex'), 0)))
 fn('dominion', ['$x', '$p'], add(SUM(C('mineAt', '$x', '$p'), add(C('menace', '$it'), g('$it', 'dominion'))), SUM(C('structsAt', '$x', '$p'), g('$it', 'dominion'))))
 fn('influence', ['$x', '$p'], ['*', Q(C('livingIs', '$x', 'financial'), 2, 1),
@@ -131,7 +133,7 @@ fn('cost', ['$c', '$p'], Q(
 fn('canPay', ['$c', '$p'], AND(ge(C('res', '$p'), C('cost', '$c', '$p')), ge(g('$p', 'souls'), g('$c', 'souls'))))
 fn('uniqueOk', ['$c', '$p'], OR(NOT(has('$c', 'unique')), NOT(ANY(['concat', ['cards', '$p', 'units'], ['cards', '$p', 'gear']], eq(g('$it', 'card'), g('$c', 'card'))))))
 fn('canHunt', ['$u'], AND(C('isUnit', '$u'), mine('$u'), eq(g('$u', 'ex'), 0), OR(eq(g('$u', 'fresh'), 0), has('$u', 'swift')), NOT(has('$u', 'nohunt'))))
-fn('canPrey', ['$u'], AND(gt(cit(g('$u', 'x')), 0), NOT(C('guarded', g('$u', 'x'), '$me')), OR(
+fn('canPrey', ['$u'], AND(gt(cit(g('$u', 'x')), 0), NOT(C('guardedFor', '$u')), OR(
     AND(C('canHunt', '$u'), OR(inl(g('$u', 'type'), lit(['horror', 'killer', 'oldone'])),
         AND(has('$u', 'folk'), OR(eq(g('$me', 'season'), 3), eq(g('$u', 'mayPrey'), 1))))),
     AND(C('isUnit', '$u'), mine('$u'), eq(g('$u', 'xprey'), 1)),
@@ -150,6 +152,7 @@ fn('hostOk', ['$c', '$h'], Q(eq(g('$c', 'type'), 'mutation'), AND(C('isUnit', '$
     Q(eq(g('$c', 'card'), 'the-black-grimoire'), AND(mine('$h'), eq(g('$h', 'type'), 'master')),
     Q(eq(g('$c', 'card'), 'unclean-spirit'), AND(C('isUnit', '$h'), NOT(mine('$h')), has('$h', 'mortal')),
       AND(C('isUnit', '$h'), NOT(mine('$h')), eq(g('$h', 'type'), 'horror'), le(g('$h', 'cost'), 4), NOT(has('$h', 'aloof')))))))))
+fn('silver', ['$s'], AND(['isObj', '$s'], ANY(C('gearOn', '$s'), eq(g('$it', 'card'), 'silver-etched-revolver'))))
 fn('trophyScore', ['$p'], add(['*', 30, g('$p', 'claims')], g('$p', 'essence'), ['*', 2, g('$p', 'trophies')],
     SUM(flt(['cards', '$p', 'units'], C('isUnit', '$it')), add(C('menace', '$it'), ['/', C('endur', '$it'), 2])),
     SUM(flt(['cards', '$p', 'units'], C('isStruct', '$it')), add(2, g('$it', 'dominion'), g('$it', 'inf'))),
@@ -201,6 +204,7 @@ proc('take', ['$u', '$x'], [IF(gt(cit('$x'), 0), [
 proc('clash', ['$a', '$b', '$bi'], [
     LET('$ma', C('mvs', '$a', '$b', 0)), LET('$mb', C('mvs', '$b', '$a', '$bi')),
     ['damage', '$b', '$ma', '$a'], ['damage', '$a', '$mb', '$b'],
+    IF(AND(['isObj', '$a'], C('guardOf', '$b')), [['set', '$a', 'gcl', '$turn']]),
     IF(AND(eq(g('$b', 'card'), 'the-final-girl'), eq(g('$a', 'type'), 'killer')), [['set', '$a', 'ended', 1]]),
     IF(AND(eq(g('$a', 'card'), 'the-final-girl'), eq(g('$b', 'type'), 'killer')), [['set', '$b', 'ended', 1]]),
     C('victim', '$a', '$b'), C('victim', '$b', '$a'),
@@ -273,7 +277,7 @@ proc('rise', [], [
     EACH(ALLU, '$o', [['set', '$o', 'hz', 0]]),
     EACH(['concat', ['cards', '$me', 'units'], ['cards', '$me', 'lair']], '$o', [
         IF(eq(g('$o', 'stun'), 1), [['set', '$o', 'stun', 0]], [['set', '$o', 'ex', 0]]),
-        ['set', '$o', 'fresh', 0], ['set', '$o', 'hunted', 0], ['set', '$o', 'moves', 0], ['set', '$o', 'xprey', 0], ['set', '$o', 'mayPrey', 0]]),
+        ['set', '$o', 'fresh', 0], ['set', '$o', 'hunted', 0], ['set', '$o', 'frenzy', 0], ['set', '$o', 'moves', 0], ['set', '$o', 'xprey', 0], ['set', '$o', 'mayPrey', 0]]),
     ['set', '$me', 'infPlayed', 0], ['set', '$me', 'plantPlayed', 0], ['set', '$me', 'lurks', 0], ['set', '$me', 'velvet', 0], ['set', '$me', 'extraLurk', 0], ['set', '$me', 'grim', 0], ['set', '$me', 'tunnel', 0],
     IF(isF('$me', 5), [
         IF(ANY(['cards', '$me', 'units'], eq(g('$it', 'card'), 'the-child')), [emit('prophecy', player='$me'), ['win', ['list', '$me']]]),
@@ -282,11 +286,11 @@ proc('rise', [], [
             IF(eq(g('$dn', 'x'), g(C('vessel', '$me'), 'x')), [C('addRes', '$me', 1)])])]),
     IF(isF('$me', 1), [EACH(flt(['cards', '$me', 'units'], AND(C('isUnit', '$it'), has('$it', 'vampire'))), '$v', [
         LET('$th', Q(has('$v', 'elder'), 2, 1)),
-        IF(ge(res('$me'), '$th'), [C('addRes', '$me', ['neg', '$th'])], [['damage', '$v', 1], emit('frenzy', u='$v')])])]),
+        IF(ge(res('$me'), '$th'), [C('addRes', '$me', ['neg', '$th'])], [['damage', '$v', 1], ['set', '$v', 'frenzy', 1], emit('frenzy', u='$v')])])]),
     IF(isF('$me', 2), [
         ['set', '$me', 'season', ['mod', add(g('$me', 'season'), 1), 4]],
         EACH(['cards', '$me', 'field'], '$pl', [['inc', '$pl', 'growth', Q(eq(g('$me', 'season'), 2), 2, 1)]]),
-        IF(eq(g('$me', 'season'), 0), [EACH(['cards', '$me', 'units'], '$o', [['set', '$o', 'dmg', 0]])]),
+        IF(eq(g('$me', 'season'), 0), [EACH(['cards', '$me', 'units'], '$o', [['set', '$o', 'dmg', 0], ['set', '$o', 'silver', 0]])]),
         IF(AND(ANY(['cards', '$me', 'aside'], eq(g('$it', 'type'), 'oldone')), ge(g('$me', 'barrow'), 10),
                ANY(['cards', '$me', 'units'], eq(g('$it', 'type'), 'effigy'))), [
             choose(flt(CITY, ANY(C('structsAt', g('$it', 'x'), '$me'), eq(g('$it', 'type'), 'effigy'))), '$d', 'Awaken the Old One: which district?'),
@@ -314,7 +318,13 @@ proc('gather', [], [
         C('addRes', '$me', g('$pl', 'yield')),
         IF(eq(g('$pl', 'card'), 'mandrake-patch'), [choose(CITY, '$d', 'Mandrake Patch: create a Mandrake where?'),
             ['create', 'mandrake', '$me', 'units', {'as': '$mk'}], C('place', '$mk', g('$d', 'x'), '$me'), ['set', '$mk', 'fresh', 1]]),
-        ['move', '$pl', 'grave']])])])
+        ['move', '$pl', 'grave']])]),
+    EACH(flt(['cards', '$me', 'units'], AND(eq(g('$it', 'frenzy'), 1), C('isUnit', '$it'))), '$v', [C('frenzied', '$v')])])
+# A Frenzied Vampire must Hunt this turn if it can, Preying if possible.
+proc('frenzied', ['$v'], [IF(C('canPrey', '$v'), [C('hunt', '$v', 'prey', None)], [
+    IF(AND(C('canHunt', '$v'), gt(cnt(C('enemyAt', g('$v', 'x'), '$me')), 0)), [
+        choose(C('enemyAt', g('$v', 'x'), '$me'), '$t', 'Frenzy: your Vampire must attack. Clash which unit?'), C('hunt', '$v', 'clash', '$t')], [
+        IF(AND(C('canHunt', '$v'), NOT(C('readyEnemy', g('$v', 'x'), '$me')), NOT(C('guardedFor', '$v'))), [C('hunt', '$v', 'strike', None)])])])])
 proc('toll', [], [
     IF(C('inPlay', '$me', 'silas-whitmore'), [['damage', '$opp', cnt(flt(CITY, ANY(C('structsAt', g('$it', 'x'), '$me'), eq(g('$it', 'type'), 'influence'))))]]),
     EACH(CITY, '$d', [
@@ -350,13 +360,23 @@ proc('toll', [], [
     IF(AND(isF('$me', 2), eq(g('$me', 'season'), 0), gt(res('$me'), 2)), [['set', '$me', 'bounty', 2]]),
     EACH(ALLU, '$o', [['set', '$o', 'amb', 0]]),
     C('discardTo7'),
-    IF(eq(g('$me', 'seat'), 1), [IF(ge(HOUR, 9), [C('dawn')], [['inc', 'game', 'hour', 1], emit('hour', hour=add(HOUR, 0))])])])
+    IF(ne(g('$me', 'seat'), g('game', 'first')), [IF(ge(HOUR, 9), [C('dawn')], [['inc', 'game', 'hour', 1], emit('hour', hour=add(HOUR, 0))])])])
 
 # ---- setup
+proc('setDistrict', ['$d', '$i'], [['set', '$d', 'x', '$i'], ['set', '$d', 'y', 1], ['set', '$d', 'cit', g('$d', 'population')]])
+# Advanced play: each player brings 3 Districts; one is removed at random and the other 5 are placed alternately,
+# starting with the second player.
+proc('draftCity', [], [
+    ['move', ['concat', ['cards', 'p0', 'brought'], ['cards', 'p1', 'brought']], 'draft'],
+    ['random', {'from': ['cards', 'p0', 'draft'], 'as': '$gone'}], ['move', '$gone', 'unused'], emit('districtRemoved', card=g('$gone', 'card')),
+    EACH(['range', 5], '$i', [
+        LET('$who', Q(eq(['mod', '$i', 2], 0), Q(eq(g('game', 'first'), 0), 'p1', 'p0'), Q(eq(g('game', 'first'), 0), 'p0', 'p1'))),
+        choose(['cards', 'p0', 'draft'], '$d', 'Place the next District of the City', 1, 1, '$who'),
+        ['move', '$d', 'city', {'as': '$nd'}], C('setDistrict', '$nd', '$i')])])
 proc('setupPlayer', ['$p'], [
     LET('$m', C('master', '$p')),
     ['set', '$p', 'faction', g('$m', 'fno')], ['set', '$p', 'essence', g('$m', 'essence')],
-    ['set', '$p', C('rn', '$p'), add(g('$m', 'startRes'), g('$p', 'seat'))],
+    ['set', '$p', C('rn', '$p'), add(g('$m', 'startRes'), Q(eq(g('$p', 'seat'), g('game', 'first')), 0, 1))],
     IF(isF('$p', 1), [['set', '$p', 'thralls', 0]]),
     IF(isF('$p', 2), [['set', '$p', 'season', 0], ['set', '$p', 'barrow', 0]]),
     IF(isF('$p', 4), [['set', '$p', 'bodycount', 0]]),
@@ -408,9 +428,10 @@ A['move'] = {'label': 'Move', 'phases': ['night'],
     'source': flt(['cards', '$me', 'units'], AND(OR(C('isUnit', '$it'), g('$it', 'faceDown')), NOT(has('$it', 'slow')),
         lt(g('$it', 'moves'), Q(eq(g('$it', 'card'), 'sprinter'), 2, 1)))),
     'targets': [{'as': '$d', 'prompt': 'district', 'from': flt(CITY, AND(ne(g('$it', 'x'), g('$self', 'x')), OR(
-        C('adj', g('$self', 'x'), g('$it', 'x')), C('claims', '$me', 'subway'),
+        C('adj', g('$self', 'x'), g('$it', 'x')), AND(C('claims', '$me', 'subway'), eq(g('$me', 'tunnel'), 0)),
         AND(eq(g('$self', 'card'), 'thing-in-the-hedgerow'), ANY(C('structsAt', g('$it', 'x'), '$me'), eq(g('$it', 'type'), 'effigy'))))))}],
-    'do': [['inc', '$self', 'moves', 1], ['set', '$self', 'x', g('$d', 'x')], emit('unitMoved', u='$self', x=g('$d', 'x'), p='$me')]}
+    'do': [IF(AND(NOT(C('adj', g('$self', 'x'), g('$d', 'x'))), C('claims', '$me', 'subway'), ne(g('$self', 'card'), 'thing-in-the-hedgerow')), [['set', '$me', 'tunnel', 1]]),
+        ['inc', '$self', 'moves', 1], ['set', '$self', 'x', g('$d', 'x')], emit('unitMoved', u='$self', x=g('$d', 'x'), p='$me')]}
 A['prey'] = {'label': 'Prey', 'phases': ['night'], 'source': flt(['cards', '$me', 'units'], C('canPrey', '$it')), 'do': [C('hunt', '$self', 'prey', None)]}
 A['clash'] = {'label': 'Clash', 'phases': ['night'], 'source': flt(['cards', '$me', 'units'], C('canHunt', '$it')),
     'targets': [{'as': '$t', 'prompt': 'enemy unit', 'from': flt(ALLU, AND(C('isUnit', '$it'), ne(g('$it', 'controller'), '$me'),
@@ -419,9 +440,9 @@ A['clash'] = {'label': 'Clash', 'phases': ['night'], 'source': flt(['cards', '$m
     'do': [C('hunt', '$self', 'clash', '$t')]}
 A['strike'] = {'label': 'Strike the Master', 'phases': ['night'],
     'source': flt(['cards', '$me', 'units'], AND(C('canHunt', '$it'), ne(g('$it', 'type'), 'hunter'),
-        NOT(C('readyEnemy', g('$it', 'x'), '$me')), NOT(C('guarded', g('$it', 'x'), '$me')))),
+        NOT(C('readyEnemy', g('$it', 'x'), '$me')), NOT(C('guardedFor', '$it')))),
     'do': [C('hunt', '$self', 'strike', None)]}
-A['raid'] = {'label': 'Raid', 'phases': ['night'], 'source': flt(['cards', '$me', 'units'], AND(C('canHunt', '$it'), NOT(C('guarded', g('$it', 'x'), '$me')))),
+A['raid'] = {'label': 'Raid', 'phases': ['night'], 'source': flt(['cards', '$me', 'units'], AND(C('canHunt', '$it'), NOT(C('guardedFor', '$it')))),
     'targets': [{'as': '$t', 'prompt': 'enemy structure', 'from': flt(ALLU, AND(C('isStruct', '$it'), ne(g('$it', 'controller'), '$me'), eq(g('$it', 'x'), g('$self', 'x'))))}],
     'do': [C('hunt', '$self', 'raid', '$t')]}
 A['investigate'] = {'label': 'Investigate', 'phases': ['night'], 'source': flt(['cards', '$me', 'units'], C('canHunt', '$it')),
@@ -438,7 +459,7 @@ A['drain'] = {'label': 'Drain a Thrall', 'phases': ['night', 'respond'],
     'source': flt(['cards', '$me', 'lair'], AND(isF('$me', 1), gt(g('$me', 'thralls'), 0), OR(eq('$phase', 'night'), inl('$me', '$win.who')))),
     'do': [['inc', '$me', 'thralls', -1], C('addRes', '$me', add(2, cnt(flt(['cards', '$me', 'units'], AND(C('isUnit', '$it'), eq(g('$it', 'card'), 'the-sommelier'))))))]}
 A['mend'] = {'label': 'Mend', 'phases': ['night', 'respond'],
-    'source': flt(['cards', '$me', 'units'], AND(C('isUnit', '$it'), has('$it', 'vampire'), gt(g('$it', 'dmg'), 0), OR(eq('$phase', 'night'), inl('$me', '$win.who')),
+    'source': flt(['cards', '$me', 'units'], AND(C('isUnit', '$it'), has('$it', 'vampire'), gt(g('$it', 'dmg'), g('$it', 'silver')), OR(eq('$phase', 'night'), inl('$me', '$win.who')),
         NOT(ANY(C('unitsAt', g('$it', 'x')), eq(g('$it', 'card'), 'professor-ida-kask'))),
         OR(ge(res('$me'), 1), AND(eq(g('$me', 'velvet'), 0), ANY(C('structsAt', g('$it', 'x'), '$me'), eq(g('$it', 'card'), 'the-velvet-club')))))),
     'do': [IF(AND(eq(g('$me', 'velvet'), 0), ANY(C('structsAt', g('$self', 'x'), '$me'), eq(g('$it', 'card'), 'the-velvet-club'))),
@@ -684,7 +705,7 @@ card('NF-092', 'evacuation-order', 'Evacuation Order', 'event', 'neutral', 1, No
                  LET('$n', ['min', 2, g('$f', 'cit')]), ['inc', '$f', 'cit', ['neg', '$n']], ['inc', '$to', 'cit', '$n']])])
 card('NF-093', 'blackout', 'Blackout', 'event', 'neutral', 1, None, None, 'U', 'Exhaust every unit in one district.',
      effect=[choose(CITY, '$d', 'Blackout: which district?'), EACH(flt(C('unitsAt', g('$d', 'x')), C('evOk', '$it', '$self')), '$o', [['set', '$o', 'ex', 1]])])
-card('NF-094', 'silver-etched-revolver', 'Silver-Etched Revolver', 'relic', 'neutral', 3, None, None, 'R', 'Attach to a Hunter: +2 Menace.', gm=2)
+card('NF-094', 'silver-etched-revolver', 'Silver-Etched Revolver', 'relic', 'neutral', 3, None, None, 'R', "Attach to a Hunter: +2 Menace. Wounds it deals can't be Mended or prevented.", gm=2)
 card('NF-095', 'the-black-grimoire', 'The Black Grimoire', 'relic', 'neutral', 2, None, None, 'U', 'Attach to your Master. Once per turn, pay 2 of your resource to draw a card.')
 card('NF-T02', 'mandrake', 'Mandrake', 'horror', 'harvest', 0, 2, 1, 'C', 'Token. Fae.', ('fae', 'token'), maxCopies=0)
 
@@ -700,17 +721,17 @@ DISTRICTS = [
     ('NF-103', 'the-subway', 'subway', 'The Subway', 3, 'Adjacent to every district.', 'The Deep Tunnels', 'Your units may move from any district to any district.'),
 ]
 for num, cid, key, name, pop, living, fname, fallen in DISTRICTS:
-    card(num, cid, name, 'district', 'city', None, None, None, 'C', f'Population {pop}. {living}', key=key, population=pop, fallen=cid + '-fallen', maxCopies=0)
-    card(num, cid + '-fallen', f'{fname} (Fallen)', 'district', 'city', None, None, None, 'C', f'Claimed. {fallen}', key=key, maxCopies=0)
+    card(num, cid, name, 'district', 'neutral', None, None, None, 'C', f'Population {pop}. {living}', key=key, population=pop, fallen=cid + '-fallen', maxCopies=1)
+    card(num, cid + '-fallen', f'{fname} (Fallen)', 'district', 'neutral', None, None, None, 'C', f'Claimed. {fallen}', key=key, maxCopies=0)
 
 # ---------------------------------------------------------------- rules
 NEUTRAL_MAX = 10
 RULES = {
     'players': {'min': 2, 'max': 2},
     'playerVars': {'essence': 0, 'claims': 0, 'trophies': 0, 'faction': 0},
-    'gameVars': {'hour': 0, 'cancel': 0},
+    'gameVars': {'hour': 0, 'cancel': 0, 'first': 0},
     'objectVars': {'x': 0, 'y': 0, 'dmg': 0, 'ex': 0, 'fresh': 0, 'hunted': 0, 'moves': 0, 'cit': -1, 'claim': 0, 'last': 0, 'growth': 0,
-                   'plus': 0, 'amb': 0, 'hz': 0, 'shield': 0, 'saved': 0, 'stun': 0, 'xprey': 0, 'mayPrey': 0, 'ended': 0, 'sc': 0},
+                   'plus': 0, 'amb': 0, 'hz': 0, 'shield': 0, 'saved': 0, 'stun': 0, 'xprey': 0, 'mayPrey': 0, 'ended': 0, 'sc': 0, 'frenzy': 0, 'gcl': 0, 'silver': 0},
     'grid': {'cols': 5, 'rows': 3, 'zones': ['units', 'city']},
     'zones': [
         {'id': 'deck', 'vis': 'hidden', 'ordered': True},
@@ -728,6 +749,9 @@ RULES = {
         {'id': 'removed', 'vis': 'public', 'hideEmpty': True},
         {'id': 'grave', 'vis': 'public', 'ordered': True},
         {'id': 'city', 'vis': 'public', 'shared': True},
+        {'id': 'brought', 'vis': 'public', 'hideEmpty': True},
+        {'id': 'draft', 'vis': 'public', 'shared': True, 'hideEmpty': True},
+        {'id': 'unused', 'vis': 'hidden', 'shared': True},
         {'id': 'pool', 'vis': 'hidden', 'shared': True},
     ],
     'deckZone': 'deck', 'handZone': 'hand', 'graveZone': 'grave',
@@ -738,12 +762,14 @@ RULES = {
             {'zone': 'deck', 'min': 40, 'max': 40, 'types': ['horror', 'hunter', 'puppet', 'folk', 'disciple', 'killer', 'influence', 'effigy', 'planting', 'event', 'scheme',
                                                             'rite', 'outbreak', 'scene', 'bargain', 'mutation', 'weapon', 'relic', 'possession', 'strain', 'omen', 'trap']},
             {'zone': 'aside', 'min': 0, 'max': 1, 'types': ['oldone', 'child']},
+            {'zone': 'brought', 'min': 0, 'max': 3, 'types': ['district'], 'maxCopies': 1},
         ],
         'rules': [
             {'if': ['all', '$deck', OR(eq(['def', '$it', 'faction'], 'neutral'), eq(['def', '$it', 'faction'], ['def', ['first', '$sections.lair'], 'faction']))],
              'why': "Every card must be neutral or from your Master's faction"},
             {'if': le(cnt(flt('$sections.deck', eq(['def', '$it', 'faction'], 'neutral'))), NEUTRAL_MAX), 'why': 'At most 10 neutral cards'},
             {'if': le(cnt(flt('$sections.deck', eq(['def', '$it', 'type'], 'killer'))), 4), 'why': 'At most 4 Killers'},
+            {'if': inl(cnt('$sections.brought'), lit([0, 3])), 'why': 'Advanced play: bring exactly 3 Districts (or none for the core-set City)'},
         ],
     },
     'turnLimit': 24,
@@ -755,9 +781,10 @@ RULES = {
         {'id': 'resolve', 'auto': True, 'do': [C('afterResp')]}]}},
     'targeting': {'deny': AND(['isObj', '$it'], ['isObj', '$self'], NOT(C('evOk', '$it', '$self')))},
     'setup': [
-        ['shuffle', 'p0', 'pool'],
-        EACH(['range', 5], '$i', [['move', ['first', ['cards', 'p0', 'pool']], 'city', {'as': '$d'}],
-                                  ['set', '$d', 'x', '$i'], ['set', '$d', 'y', 1], ['set', '$d', 'cit', g('$d', 'population')]]),
+        ['random', {'from': ['players'], 'as': '$f'}], ['firstPlayer', '$f'], ['set', 'game', 'first', g('$f', 'seat')],
+        IF(AND(eq(cnt(['cards', 'p0', 'brought']), 3), eq(cnt(['cards', 'p1', 'brought']), 3)), [C('draftCity')], [
+            ['shuffle', 'p0', 'pool'],
+            EACH(['range', 5], '$i', [['move', ['first', ['cards', 'p0', 'pool']], 'city', {'as': '$d'}], C('setDistrict', '$d', '$i')])]),
         EACH(['players'], '$p', [C('setupPlayer', '$p')])],
     'phases': [
         {'id': 'rise', 'auto': True, 'do': [C('rise')]},
@@ -768,8 +795,8 @@ RULES = {
     ],
     'actions': A,
     'replacements': [
-        {'replace': 'damage', 'if': AND(['isObj', '$e.target'], eq(g('$e.target', 'shield'), '$turn'), eq(g('$e.target', 'type'), 'influence')), 'instead': [], 'text': 'Nothing to See Here'},
-        {'replace': 'damage', 'if': AND(['isObj', '$e.target'], eq(g('$e.target', 'card'), 'hazmat-shambler'), eq(g('$e.target', 'hz'), 0)),
+        {'replace': 'damage', 'if': AND(['isObj', '$e.target'], NOT(C('silver', '$e.source')), eq(g('$e.target', 'shield'), '$turn'), eq(g('$e.target', 'type'), 'influence')), 'instead': [], 'text': 'Nothing to See Here'},
+        {'replace': 'damage', 'if': AND(['isObj', '$e.target'], NOT(C('silver', '$e.source')), eq(g('$e.target', 'card'), 'hazmat-shambler'), eq(g('$e.target', 'hz'), 0)),
          'instead': [['set', '$e.target', 'hz', 1], ['damage', '$e.target', sub('$e.amount', 1), '$e.source']], 'text': 'Hazmat'},
     ],
     'triggers': [
@@ -778,6 +805,7 @@ RULES = {
             EACH(flt(['players'], AND(C('claims', '$it', 'hospital'), ne(g('$it', 'morgue'), '$turn'))), '$h', [['set', '$h', 'morgue', '$turn'], C('addRes', '$h', 1)]),
             IF(eq('$e.type', 'hunter'), [EACH(flt(['players'], AND(isF('$it', 5), ne('$it', '$e.ctrl'))), '$dv', [
                 C('fulfill', ['first', flt(['cards', '$dv', 'omens'], eq(g('$it', 'card'), 'ravens-on-the-steeple'))])])])]},
+        {'on': 'damage', 'if': AND(['isObj', '$e.target'], C('silver', '$e.source')), 'do': [['inc', '$e.target', 'silver', '$e.amount']]},
         {'on': 'took', 'do': [EACH(flt(['players'], AND(isF('$it', 5), ne('$it', '$e.player'))), '$dv', [C('addRes', '$dv', 1)])]},
         {'on': 'hunt', 'do': [EACH(flt(['cards', ['opp', '$e.p'], 'units'], AND(g('$it', 'faceDown'), eq(g('$it', 'x'), '$e.x'), inl('hunt', g('$it', 'springOn')))), '$t', [C('spring', '$t', '$e.u')])]},
         {'on': 'unitMoved', 'if': C('isUnit', '$e.u'), 'do': [
@@ -824,16 +852,67 @@ DECKS = {
         (1, 'molotov-cocktail'), (1, 'blackout'), (1, 'evacuation-order'), (1, 'the-black-grimoire')], aside='the-child'),
 }
 
+# ---------------------------------------------------------------- campaign: AI battles, the store, Blood Dawn boosters
+def pool(rarities, types_out=('district',), districts=False):
+    out = []
+    for c in CARDS:
+        if c.get('maxCopies') == 0: continue
+        if c['type'] == 'district' and not districts: continue
+        if c['rarity'] in rarities: out.append(c['id'])
+    return out
+RARE = pool(['R', 'L'])
+FOES = [
+    ('cabal', 'the-marsh-whitcombe-trust', 'Lady Evangeline Marsh', 'The Boardroom', '🩸', 'They came for the blood. They stayed for the board meeting.'),
+    ('harvest', 'the-barrow-wakes', 'Mother Bramble', 'The Barrow Field', '🌾', 'The corn grows tall where the old gods are fed.'),
+    ('zombie', 'outbreak-at-site-9', 'Patient Zero', 'Site 9', '☣', 'It never buys anything. It eats.'),
+    ('slasher', 'dont-go-in-there', 'Old Hollow', 'Whispering Pines', '🔪', 'Four face-down cards. One of them is the machete.'),
+    ('devil', 'nine-moons', 'Augustin Vale', 'The Morning Star Society', '😈', 'Nine moons. One child. Every bargain brings him closer.'),
+]
+ENCOUNTERS, BASIC, ELITE = {}, [], []
+for fac_, deck_id, master_name, place_, icon, line in FOES:
+    ENCOUNTERS[f'{fac_}-dusk'] = {'name': place_, 'opponent': master_name, 'portrait': icon, 'deck': deck_id, 'repeatable': True,
+        'intro': [{'speaker': master_name, 'text': line}],
+        'rewards': {'first': {'currency': 150, 'packs': ['blood-dawn']}, 'repeat': {'currency': 60}, 'loss': {'currency': 20}}}
+    ENCOUNTERS[f'{fac_}-witching'] = {'name': f'{place_} at the Witching Hour', 'opponent': master_name, 'portrait': icon, 'deck': deck_id, 'repeatable': True,
+        'requires': [f'{fac_}-dusk'], 'intro': [{'speaker': master_name, 'text': 'You came back. Brave, or foolish. The night decides.'}],
+        'scenario': {'setup': [['inc', '$opp', 'essence', 5], ['call', 'addRes', '$opp', 2]]},
+        'rewards': {'first': {'currency': 300, 'packs': ['blood-dawn', 'blood-dawn']}, 'repeat': {'currency': 100}, 'loss': {'currency': 30}}}
+    BASIC.append(f'{fac_}-dusk'); ELITE.append(f'{fac_}-witching')
+CAMPAIGN = {
+    'name': 'The Long Night',
+    'intro': [{'speaker': 'The Evening Herald', 'text': 'Five powers want the City. Claim a starter deck in the Store, then face them one by one before Dawn.'},
+              {'speaker': 'The Evening Herald', 'text': 'Every battle pays Marks, win or lose. Spend them on Blood Dawn boosters to build your collection.'}],
+    'currency': {'name': 'Marks', 'start': 0},
+    'starter': {'collection': {}, 'decks': {}},
+    'chapters': [{'id': 'dusk', 'name': 'Dusk: the five powers', 'nodes': BASIC}, {'id': 'witching', 'name': 'The Witching Hour (stronger rivals)', 'nodes': ELITE}],
+    'encounters': ENCOUNTERS,
+    'boosters': {'blood-dawn': {'name': 'Blood Dawn', 'slots': [
+        {'count': 6, 'pool': pool(['C'])}, {'count': 3, 'pool': pool(['U'], districts=True)},
+        {'count': 1, 'pool': RARE, 'weights': {c['id']: (1 if c['rarity'] == 'L' else 4) for c in CARDS if c['id'] in RARE}}]}},
+    'shop': [
+        {'id': 'promo-site-9', 'name': 'Outbreak at Site 9', 'deck': 'outbreak-at-site-9', 'price': 0, 'stock': 1, 'group': 'starter-promo',
+         'text': 'Promo starter (Zombie Horde): a swarm that snowballs. The easiest deck to learn.'},
+        {'id': 'promo-marsh-whitcombe', 'name': 'The Marsh-Whitcombe Trust', 'deck': 'the-marsh-whitcombe-trust', 'price': 0, 'stock': 1, 'group': 'starter-promo',
+         'text': 'Promo starter (Blood Cabal): buy the City one district at a time.'},
+        {'id': 'promo-dont-go-in-there', 'name': "Don't Go in There", 'deck': 'dont-go-in-there', 'price': 0, 'stock': 1, 'group': 'starter-promo',
+         'text': 'Promo starter (Slasher Killers): bluffing, hidden Lurkers and a race to 13 Victims.'},
+        {'id': 'promo-barrow-wakes', 'name': 'The Barrow Wakes', 'deck': 'the-barrow-wakes', 'price': 0, 'stock': 1, 'group': 'starter-promo',
+         'text': 'Promo starter (Harvest Cult): plant, harvest, and wake the Old One.'},
+        {'id': 'blood-dawn-pack', 'name': 'Blood Dawn booster', 'booster': 'blood-dawn', 'price': 100,
+         'text': 'The NIGHTFALL core set: 10 cards (6 common, 3 uncommon, 1 rare or Legendary).'},
+    ],
+}
+
 MANIFEST = {
     'moduleId': 'nightfall', 'displayName': 'NIGHTFALL', 'semanticVersion': '0.1.0', 'engineApiRange': '^0.3.1', 'official': True,
     'requiredCapabilities': ['grid', 'windows', 'slots', 'faceDown', 'multiDeck', 'sharedDecks', 'gameVars', 'scripts', 'deckRules', 'limits', 'targeting', 'control', 'identity', 'relationships'],
     'licensing': 'Original game by @Astral. NIGHTFALL is a working title.',
     'tagline': 'The City Will Fall. Two monstrous factions race to claim five districts before Dawn.',
     'theme': {'accent': '#dc2626', 'accent2': '#a78bfa', 'glyph': '☾', 'tapVar': 'ex',
-              'hideStats': ['num', 'fno', 'startRes', 'giftCost', 'gm', 'ge', 'gg', 'awaken', 'ripen', 'yield', 'gest', 'souls', 'population', 'inf', 'dominion'],
-              'hideVars': ['fresh', 'hunted', 'moves', 'last', 'amb', 'hz', 'shield', 'saved', 'stun', 'xprey', 'mayPrey', 'ended', 'claim', 'ex', 'faction',
+              'hideStats': ['num', 'fno', 'startRes', 'giftCost', 'gm', 'ge', 'gg', 'awaken', 'ripen', 'yield', 'gest', 'souls'],
+              'hideVars': ['fresh', 'hunted', 'moves', 'last', 'amb', 'hz', 'shield', 'saved', 'stun', 'xprey', 'mayPrey', 'ended', 'claim', 'ex', 'faction', 'gcl', 'first',
                            'infPlayed', 'plantPlayed', 'lurks', 'velvet', 'extraLurk', 'grim', 'tunnel', 'morgue', 'sqA', 'sqB', 'sqC', 'sqD'],
-              'labels': {'dmg': 'wounds', 'cit': 'citizens', 'growth': 'growth', 'sc': 'sequel in', 'plus': '+1/+1', 'essence': 'Essence', 'claims': 'districts',
+              'labels': {'frenzy': 'Frenzied', 'silver': 'silver wounds', 'dmg': 'wounds', 'cit': 'citizens', 'growth': 'growth', 'sc': 'sequel in', 'plus': '+1/+1', 'essence': 'Essence', 'claims': 'districts',
                          'trophies': 'trophies', 'bodycount': 'Body Count', 'gestation': 'Gestation', 'barrow': 'Offerings', 'season': 'season', 'thralls': 'Thralls', 'souls': 'Souls', 'pacts': 'Pacts'}},
     'presentation': {
         'templates': {
@@ -859,4 +938,6 @@ dump('rules.json', RULES)
 dump('cards.json', CARDS)
 dump('decks.json', DECKS)
 dump('ai/ai.json', AI)
+os.makedirs(os.path.join(OUT, 'campaign'), exist_ok=True)
+dump('campaign/campaign.json', CAMPAIGN)
 print(f'nightfall: {len(CARDS)} cards, {len(F)} functions, {len(P)} procedures, {len(A)} actions')

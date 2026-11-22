@@ -14,6 +14,7 @@ const CITY = ['the-docks', 'the-subway', 'whispering-pines-campground', 'st-agne
 /** A match past both mulligans (kept hands), p0 in its Night phase, with a fixed City (test fixture). */
 function start(a: F, b: F, seed = 7): Match {
   let g = createMatch(N, deckOpts(N, [DK[a], DK[b]], seed));
+  while (g.s.turn.active !== 0) g = createMatch(N, deckOpts(N, [DK[a], DK[b]], ++seed)); // first player is random: use a seed where seat 1 starts
   while (g.s.pending) g = submitDecision(g, g.s.pending.player, g.s.pending.id, []);
   g.s.zones['shared:city'].forEach((id, i) => { const o = g.s.objects[id]; o.card = CITY[o.vars.x]; o.vars.cit = (N.card.get(CITY[o.vars.x]) as any).population; void i; });
   invalidate(g.s);
@@ -242,4 +243,134 @@ test('nightfall: whole games are deterministic and replayable', () => {
   assert.ok(end.s.result);
   assert.equal(replay(N, end.s.opts, end.s.cmds).hash, eventHash(end.s));
   assert.equal(proposeAction(end, 'p0', { action: 'pass' }).code, 'over');
+});
+
+test('nightfall: the first player is random; the second gets the extra resource and the hour turns after their Toll', () => {
+  const firsts = new Set<number>();
+  for (let seed = 1; seed <= 12; seed++) {
+    let g = createMatch(N, deckOpts(N, [DK.zombie, DK.cabal], seed));
+    g = settle(g);
+    firsts.add(g.s.turn.active);
+    const second = g.s.players[1 - g.s.turn.active];
+    assert.equal(second.vars[second.id === 'p0' ? 'biomass' : 'vitae'], second.id === 'p0' ? 3 : 4, 'second player: +1 starting resource');
+  }
+  assert.deepEqual([...firsts].sort(), [0, 1]);
+});
+
+test('nightfall: an unpaid Thirst Frenzies the Vampire, and it must Hunt (Preying if it can)', () => {
+  let g = start('cabal', 'zombie');
+  const x = dx(g, 'docks');
+  put(g, 'p0', 'associate-of-the-firm', x); // 3/3: survives the Frenzy wound (a 2/1 Fledgling would not)
+  g = settle(pass(g)); g = settle(pass(g));
+  assert.equal(vars(g, 'p0').thralls ?? 0, 0);
+  setVars(g, 'p0', { vitae: 0 });
+  g = settle(pass(g)); g = settle(pass(g)); // p0's Rise: Thirst unpaid, then the forced Prey
+  assert.ok(g.s.events.some((e) => e.type === 'frenzy'));
+  assert.equal(vars(g, 'p0').thralls, 1, 'the Frenzied Vampire Fed on its own');
+});
+
+test('nightfall: Guard holds a unit back only until that unit has Clashed with it', () => {
+  let g = start('zombie', 'cabal');
+  const x = dx(g, 'docks');
+  const lj = put(g, 'p0', 'subject-12-lockjaw', x, 'units', { dmg: -40 });
+  put(g, 'p1', 'mr-kessler', x, 'units', { plus: 20 });
+  assert.ok(!tpl(g, 'p0', 'prey', lj), 'Guard');
+  g = act(g, 'p0', 'clash', listActions(g, 'p0').find((t) => t.action === 'clash' && t.source === lj)!.source, { $t: [g.s.zones['p1:units'][0]] });
+  g = settle(pass(g));
+  assert.ok(tpl(g, 'p0', 'prey', lj), 'after Clashing the Guard, Relentless Lockjaw may Prey');
+});
+
+test('nightfall: Silver-Etched Revolver wounds can\'t be Mended; the Deep Tunnels work once per turn', () => {
+  let g = start('cabal', 'zombie');
+  const x = dx(g, 'docks');
+  const v = put(g, 'p0', 'silas-whitmore', x);
+  g = settle(pass(g));
+  const sh = put(g, 'p1', 'sheriff-dale-burke', x);
+  const gr = place(g, 'p1', 'blackout', 'gear');
+  g.s.objects[gr].card = 'silver-etched-revolver';
+  g.s.objects[gr].rel = { on: sh };
+  invalidate(g.s);
+  g = act(g, 'p1', 'clash', sh, { $t: [v] });
+  g = settle(pass(g));
+  assert.deepEqual([g.s.objects[v].vars.dmg, g.s.objects[v].vars.silver], [5, 5], 'Sheriff 3 + 2');
+  g = settle(pass(g));
+  setVars(g, 'p0', { vitae: 9 });
+  assert.ok(!tpl(g, 'p0', 'mend', v), 'silver wounds cannot be Mended');
+
+  let t = start('zombie', 'cabal');
+  t.s.objects[dist(t, 'the-subway'.replace('the-', ''))].vars.claim = 1;
+  const a = put(t, 'p0', 'sprinter', 0);
+  const b = put(t, 'p0', 'hazmat-shambler', 0);
+  const far = t.s.zones['shared:city'].find((id) => t.s.objects[id].vars.x === 3)!;
+  invalidate(t.s);
+  assert.ok(tpl(t, 'p0', 'move', a)!.slots[0].options.includes(far), 'any district through the Deep Tunnels');
+  t = act(t, 'p0', 'move', a, { $d: [far] });
+  assert.ok(!tpl(t, 'p0', 'move', b)!.slots[0].options.includes(far), 'once per turn');
+});
+
+test('nightfall: advanced play drafts the City from 3 Districts per player, alternating from the second player', () => {
+  const z = { ...(N.decks![DK.zombie] as Record<string, string[]>), brought: ['old-town', 'the-docks', 'the-subway'] };
+  const c = { ...(N.decks![DK.cabal] as Record<string, string[]>), brought: ['financial-district', 'maple-hollow-suburbs', 'holy-cross-cathedral'] };
+  assert.deepEqual(deckErrors(N, z), []);
+  assert.ok(deckErrors(N, { ...z, brought: ['old-town'] }).some((e) => e.startsWith('Advanced play')));
+  let g = createMatch(N, { decks: [z, c], seed: 4 });
+  const pickers: string[] = [];
+  while (g.s.pending && g.s.pending.prompt.startsWith('Place')) { pickers.push(g.s.pending.player); g = submitDecision(g, g.s.pending.player, g.s.pending.id, [g.s.pending.options[0]]); }
+  const second = `p${1 - g.s.turn.active}`;
+  assert.deepEqual(pickers, [second, `p${g.s.turn.active}`, second, `p${g.s.turn.active}`], 'the fifth District is the one left');
+  const placed = g.s.zones['shared:city'].map((id) => g.s.objects[id].card);
+  assert.equal(placed.length, 5);
+  assert.ok(placed.every((cid) => [...z.brought, ...c.brought].includes(cid)), 'only the brought Districts');
+  assert.ok(g.s.events.some((e) => e.type === 'districtRemoved'));
+});
+
+test('nightfall: the Final Girl survives her first death, and a Killer she destroys is Ended', () => {
+  let g = start('slasher', 'zombie');
+  const x = dx(g, 'docks');
+  const k = put(g, 'p0', 'the-groundskeeper', x);
+  const fg = put(g, 'p1', 'sheriff-dale-burke', x);
+  g.s.objects[fg].card = 'the-final-girl';
+  g.s.objects[k].vars.dmg = 4;
+  invalidate(g.s);
+  g = act(g, 'p0', 'clash', k, { $t: [fg] });
+  g = settle(g);
+  assert.ok(g.s.objects[fg], 'she survives her first death');
+  assert.equal(g.s.objects[fg].vars.saved, 1);
+  assert.equal(g.s.zones['p0:removed'].length, 1, 'the Killer is Ended, not sent to The Dark');
+  assert.equal(g.s.zones['p0:dark'].length, 0);
+});
+
+test('nightfall store: claim exactly one promo starter, earn Marks from AI battles (win or lose), buy Blood Dawn boosters', async () => {
+  const { buy, campaignOf, finishEncounter, itemBlocked, newProfile, nodeState, openBooster, startEncounter, validateCampaign } = await import('#campaign');
+  const c = campaignOf(N)!;
+  assert.deepEqual(validateCampaign(N, c), []);
+  let p = newProfile(N, c, 99);
+  assert.deepEqual([p.currency, Object.keys(p.decks).length], [0, 0], 'you start with nothing but the right to one free deck');
+  const promos = c.shop!.filter((x) => x.group === 'starter-promo');
+  assert.deepEqual(promos.map((x) => x.deck), ['outbreak-at-site-9', 'the-marsh-whitcombe-trust', 'dont-go-in-there', 'the-barrow-wakes'], 'the first four starters');
+  assert.ok(promos.every((x) => itemBlocked(c, p, x) === null && x.price === 0));
+  p = buy(c, p, 'promo-dont-go-in-there', N).profile;
+  assert.deepEqual(Object.keys(p.decks), ["Don't Go in There"]);
+  assert.equal(Object.values(p.collection).reduce((a, n) => a + n, 0), 41, '40 cards and the Master');
+  assert.equal(itemBlocked(c, p, promos[0]), "You chose Don't Go in There");
+  assert.equal(itemBlocked(c, p, promos[2]), 'Claimed');
+  assert.throws(() => buy(c, p, 'promo-site-9', N), /You chose/);
+  assert.equal(nodeState(c, p, 'zombie-witching'), 'locked', 'the Witching Hour rivals need a Dusk win first');
+
+  const s1 = startEncounter(N, c, p, 'zombie-dusk', "Don't Go in There", 5);
+  p = finishEncounter(c, s1.profile, 'zombie-dusk', s1.profile.active!.seq, { winners: ['p1'], reason: 'ruin' }).profile;
+  assert.equal(p.currency, 20, 'a loss still pays');
+  const s2 = startEncounter(N, c, p, 'zombie-dusk', "Don't Go in There", 6);
+  const won = finishEncounter(c, s2.profile, 'zombie-dusk', s2.profile.active!.seq, { winners: ['p0'], reason: 'city' });
+  p = won.profile;
+  assert.equal(p.currency, 170);
+  assert.equal(won.granted!.packs[0].cards.length, 10, 'first win: a Blood Dawn booster');
+  assert.equal(nodeState(c, p, 'zombie-witching'), 'open');
+  const before = Object.values(p.collection).reduce((a, n) => a + n, 0);
+  p = buy(c, p, 'blood-dawn-pack', N).profile;
+  assert.equal(p.currency, 70);
+  assert.equal(Object.values(p.collection).reduce((a, n) => a + n, 0), before + 10);
+  const pack = openBooster(c, 'blood-dawn', [1, 2, 3, 4]);
+  const rar = pack.map((id) => (N.card.get(id) as any).rarity);
+  assert.deepEqual([rar.slice(0, 6).every((r) => r === 'C'), rar.slice(6, 9).every((r) => r === 'U'), ['R', 'L'].includes(rar[9])], [true, true, true], '6 common, 3 uncommon, 1 rare or Legendary');
 });

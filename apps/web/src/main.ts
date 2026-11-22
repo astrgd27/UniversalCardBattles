@@ -35,6 +35,7 @@ export interface UI {
   menu: { source: string; tpls: Template[] } | null;
   note: { title: string; reason?: Reason; text?: string } | null;
   inspect: string | null;
+  peek: string | null; // card id shown up close (long-press / right-click)
   drawer: 'log' | 'card' | 'pile' | null;
   pile: string | null; // zone key shown in the drawer
   paused: boolean;
@@ -116,7 +117,7 @@ function seatsFor(m: Mod, n = Math.max(2, m.rules.players.min)): Pick<UI, 'seats
 
 export const ui: UI = {
   screen: 'library', mod: null, seats: [], decks: [], match: null, agents: [], viewer: 'p0', cover: null, sel: null, menu: null,
-  note: null, inspect: null, drawer: null, pile: null, paused: false, fast: false, theme: store.get<'light' | 'dark'>('ucb-theme', 'dark') === 'light' ? 'light' : 'dark', edit: null,
+  note: null, inspect: null, peek: null, drawer: null, pile: null, paused: false, fast: false, theme: store.get<'light' | 'dark'>('ucb-theme', 'dark') === 'light' ? 'light' : 'dark', edit: null,
   filter: '', gallery: null, profile: null, camp: null, encounter: null, campDeck: '', dialog: null, dialogSeen: -1, reward: null, reveal: null, fxFrom: 0, counts: {}, sort: 'cost', sample: null, io: null,
 };
 (window as any).__ucb = ui; // test hook
@@ -285,6 +286,7 @@ export const actions = {
     redraw();
   },
   closeNote() { ui.note = null; redraw(); },
+  closePeek() { ui.peek = null; redraw(); },
   async linkSync(pick: boolean) {
     try {
       const msg = await connectSync(pick, async (text) => {
@@ -573,10 +575,15 @@ export const actions = {
   },
   buyItem(id: string) {
     try {
-      const r = buy(campaign()!, ui.profile!, id);
+      const it = campaign()!.shop!.find((x) => x.group && x.id === id);
+      if (it?.group && !window.confirm(`Claim ${it.name}? You can only choose one of these.`)) return;
+      const before = Object.keys(ui.profile!.decks);
+      const r = buy(campaign()!, ui.profile!, id, ui.mod!);
       ui.profile = r.profile;
       saveProfile();
-      ui.reveal = r.cards;
+      const added = Object.keys(r.profile.decks).find((d) => !before.includes(d));
+      if (added) ui.campDeck = added;
+      ui.reveal = added ? [...new Set(r.cards)] : r.cards;
     } catch (e) {
       ui.note = campaignError(e);
     }
@@ -594,8 +601,30 @@ export const actions = {
   },
 };
 
+// Touch: a long press (or a right-click) shows a card up close; on the table it opens the card's live details.
+// Moving the finger cancels it (scrolling), and the tap that ends a long press is swallowed so it plays nothing.
+let press: { timer: ReturnType<typeof setTimeout>; x: number; y: number } | null = null;
+let swallowClick = false;
+function peekAt(el: HTMLElement) {
+  if (ui.screen === 'game' && el.dataset.obj) { ui.inspect = el.dataset.obj; ui.drawer = 'card'; } else ui.peek = el.dataset.card ?? null;
+  redraw();
+}
+document.addEventListener('pointerdown', (e) => {
+  const el = (e.target as HTMLElement).closest<HTMLElement>('[data-card]');
+  if (!el || e.button > 0) return;
+  press = { x: e.clientX, y: e.clientY, timer: setTimeout(() => { press = null; swallowClick = true; peekAt(el); }, 450) };
+}, { passive: true });
+document.addEventListener('pointermove', (e) => { if (press && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 10) { clearTimeout(press.timer); press = null; } }, { passive: true });
+for (const t of ['pointerup', 'pointercancel']) document.addEventListener(t, () => { if (press) { clearTimeout(press.timer); press = null; } });
+document.addEventListener('click', (e) => { if (swallowClick) { swallowClick = false; e.stopPropagation(); e.preventDefault(); } }, true);
+document.addEventListener('contextmenu', (e) => {
+  const el = (e.target as HTMLElement).closest<HTMLElement>('[data-card]');
+  if (el) { e.preventDefault(); clearTimeout(press?.timer); press = null; peekAt(el); }
+});
+
 window.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
+  if (ui.peek) return actions.closePeek();
   if (ui.gallery) actions.enlarge(null);
   else if (ui.reveal) actions.closeReveal();
   else if (ui.dialog) actions.dialogNext(true);

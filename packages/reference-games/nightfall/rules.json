@@ -11,7 +11,8 @@
  },
  "gameVars": {
   "hour": 0,
-  "cancel": 0
+  "cancel": 0,
+  "first": 0
  },
  "objectVars": {
   "x": 0,
@@ -34,7 +35,10 @@
   "xprey": 0,
   "mayPrey": 0,
   "ended": 0,
-  "sc": 0
+  "sc": 0,
+  "frenzy": 0,
+  "gcl": 0,
+  "silver": 0
  },
  "grid": {
   "cols": 5,
@@ -151,6 +155,22 @@
    "shared": true
   },
   {
+   "id": "brought",
+   "vis": "public",
+   "hideEmpty": true
+  },
+  {
+   "id": "draft",
+   "vis": "public",
+   "shared": true,
+   "hideEmpty": true
+  },
+  {
+   "id": "unused",
+   "vis": "hidden",
+   "shared": true
+  },
+  {
    "id": "pool",
    "vis": "hidden",
    "shared": true
@@ -210,6 +230,15 @@
      "oldone",
      "child"
     ]
+   },
+   {
+    "zone": "brought",
+    "min": 0,
+    "max": 3,
+    "types": [
+     "district"
+    ],
+    "maxCopies": 1
    }
   ],
   "rules": [
@@ -293,6 +322,23 @@
      4
     ],
     "why": "At most 4 Killers"
+   },
+   {
+    "if": [
+     "in",
+     [
+      "count",
+      "$sections.brought"
+     ],
+     [
+      "lit",
+      [
+       0,
+       3
+      ]
+     ]
+    ],
+    "why": "Advanced play: bring exactly 3 Districts (or none for the core-set City)"
    }
   ]
  },
@@ -1637,6 +1683,37 @@
     ]
    ]
   },
+  "guardedFor": {
+   "params": [
+    "$u"
+   ],
+   "body": [
+    "and",
+    [
+     "!=",
+     [
+      "get",
+      "$u",
+      "gcl"
+     ],
+     "$turn"
+    ],
+    [
+     "call",
+     "guarded",
+     [
+      "get",
+      "$u",
+      "x"
+     ],
+     [
+      "get",
+      "$u",
+      "controller"
+     ]
+    ]
+   ]
+  },
   "readyEnemy": {
    "params": [
     "$x",
@@ -2256,13 +2333,8 @@
      "not",
      [
       "call",
-      "guarded",
-      [
-       "get",
-       "$u",
-       "x"
-      ],
-      "$me"
+      "guardedFor",
+      "$u"
      ]
     ],
     [
@@ -2843,6 +2915,35 @@
         ]
        ]
       ]
+     ]
+    ]
+   ]
+  },
+  "silver": {
+   "params": [
+    "$s"
+   ],
+   "body": [
+    "and",
+    [
+     "isObj",
+     "$s"
+    ],
+    [
+     "any",
+     [
+      "call",
+      "gearOn",
+      "$s"
+     ],
+     [
+      "=",
+      [
+       "get",
+       "$it",
+       "card"
+      ],
+      "silver-etched-revolver"
      ]
     ]
    ]
@@ -3996,6 +4097,29 @@
      "$a",
      "$mb",
      "$b"
+    ],
+    [
+     "if",
+     [
+      "and",
+      [
+       "isObj",
+       "$a"
+      ],
+      [
+       "call",
+       "guardOf",
+       "$b"
+      ]
+     ],
+     [
+      [
+       "set",
+       "$a",
+       "gcl",
+       "$turn"
+      ]
+     ]
     ],
     [
      "if",
@@ -5548,6 +5672,12 @@
       [
        "set",
        "$o",
+       "frenzy",
+       0
+      ],
+      [
+       "set",
+       "$o",
        "moves",
        0
       ],
@@ -5841,6 +5971,12 @@
            1
           ],
           [
+           "set",
+           "$v",
+           "frenzy",
+           1
+          ],
+          [
            "emit",
            "frenzy",
            {
@@ -5938,6 +6074,12 @@
            "set",
            "$o",
            "dmg",
+           0
+          ],
+          [
+           "set",
+           "$o",
+           "silver",
            0
           ]
          ]
@@ -6616,6 +6758,167 @@
          "move",
          "$pl",
          "grave"
+        ]
+       ]
+      ]
+     ]
+    ],
+    [
+     "each",
+     [
+      "filter",
+      [
+       "cards",
+       "$me",
+       "units"
+      ],
+      [
+       "and",
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "frenzy"
+        ],
+        1
+       ],
+       [
+        "call",
+        "isUnit",
+        "$it"
+       ]
+      ]
+     ],
+     "$v",
+     [
+      [
+       "call",
+       "frenzied",
+       "$v"
+      ]
+     ]
+    ]
+   ]
+  },
+  "frenzied": {
+   "params": [
+    "$v"
+   ],
+   "do": [
+    [
+     "if",
+     [
+      "call",
+      "canPrey",
+      "$v"
+     ],
+     [
+      [
+       "call",
+       "hunt",
+       "$v",
+       "prey",
+       null
+      ]
+     ],
+     [
+      [
+       "if",
+       [
+        "and",
+        [
+         "call",
+         "canHunt",
+         "$v"
+        ],
+        [
+         ">",
+         [
+          "count",
+          [
+           "call",
+           "enemyAt",
+           [
+            "get",
+            "$v",
+            "x"
+           ],
+           "$me"
+          ]
+         ],
+         0
+        ]
+       ],
+       [
+        [
+         "choose",
+         {
+          "from": [
+           "call",
+           "enemyAt",
+           [
+            "get",
+            "$v",
+            "x"
+           ],
+           "$me"
+          ],
+          "as": "$t",
+          "prompt": "Frenzy: your Vampire must attack. Clash which unit?",
+          "min": 1,
+          "max": 1
+         }
+        ],
+        [
+         "call",
+         "hunt",
+         "$v",
+         "clash",
+         "$t"
+        ]
+       ],
+       [
+        [
+         "if",
+         [
+          "and",
+          [
+           "call",
+           "canHunt",
+           "$v"
+          ],
+          [
+           "not",
+           [
+            "call",
+            "readyEnemy",
+            [
+             "get",
+             "$v",
+             "x"
+            ],
+            "$me"
+           ]
+          ],
+          [
+           "not",
+           [
+            "call",
+            "guardedFor",
+            "$v"
+           ]
+          ]
+         ],
+         [
+          [
+           "call",
+           "hunt",
+           "$v",
+           "strike",
+           null
+          ]
+         ]
         ]
        ]
       ]
@@ -7668,13 +7971,17 @@
     [
      "if",
      [
-      "=",
+      "!=",
       [
        "get",
        "$me",
        "seat"
       ],
-      1
+      [
+       "get",
+       "game",
+       "first"
+      ]
      ],
      [
       [
@@ -7717,6 +8024,168 @@
          }
         ]
        ]
+      ]
+     ]
+    ]
+   ]
+  },
+  "setDistrict": {
+   "params": [
+    "$d",
+    "$i"
+   ],
+   "do": [
+    [
+     "set",
+     "$d",
+     "x",
+     "$i"
+    ],
+    [
+     "set",
+     "$d",
+     "y",
+     1
+    ],
+    [
+     "set",
+     "$d",
+     "cit",
+     [
+      "get",
+      "$d",
+      "population"
+     ]
+    ]
+   ]
+  },
+  "draftCity": {
+   "params": [],
+   "do": [
+    [
+     "move",
+     [
+      "concat",
+      [
+       "cards",
+       "p0",
+       "brought"
+      ],
+      [
+       "cards",
+       "p1",
+       "brought"
+      ]
+     ],
+     "draft"
+    ],
+    [
+     "random",
+     {
+      "from": [
+       "cards",
+       "p0",
+       "draft"
+      ],
+      "as": "$gone"
+     }
+    ],
+    [
+     "move",
+     "$gone",
+     "unused"
+    ],
+    [
+     "emit",
+     "districtRemoved",
+     {
+      "card": [
+       "get",
+       "$gone",
+       "card"
+      ]
+     }
+    ],
+    [
+     "each",
+     [
+      "range",
+      5
+     ],
+     "$i",
+     [
+      [
+       "let",
+       "$who",
+       [
+        "?",
+        [
+         "=",
+         [
+          "mod",
+          "$i",
+          2
+         ],
+         0
+        ],
+        [
+         "?",
+         [
+          "=",
+          [
+           "get",
+           "game",
+           "first"
+          ],
+          0
+         ],
+         "p1",
+         "p0"
+        ],
+        [
+         "?",
+         [
+          "=",
+          [
+           "get",
+           "game",
+           "first"
+          ],
+          0
+         ],
+         "p0",
+         "p1"
+        ]
+       ]
+      ],
+      [
+       "choose",
+       {
+        "from": [
+         "cards",
+         "p0",
+         "draft"
+        ],
+        "as": "$d",
+        "prompt": "Place the next District of the City",
+        "min": 1,
+        "max": 1,
+        "who": "$who"
+       }
+      ],
+      [
+       "move",
+       "$d",
+       "city",
+       {
+        "as": "$nd"
+       }
+      ],
+      [
+       "call",
+       "setDistrict",
+       "$nd",
+       "$i"
       ]
      ]
     ]
@@ -7772,9 +8241,22 @@
        "startRes"
       ],
       [
-       "get",
-       "$p",
-       "seat"
+       "?",
+       [
+        "=",
+        [
+         "get",
+         "$p",
+         "seat"
+        ],
+        [
+         "get",
+         "game",
+         "first"
+        ]
+       ],
+       0,
+       1
       ]
      ]
     ],
@@ -7999,53 +8481,98 @@
  },
  "setup": [
   [
-   "shuffle",
-   "p0",
-   "pool"
+   "random",
+   {
+    "from": [
+     "players"
+    ],
+    "as": "$f"
+   }
   ],
   [
-   "each",
+   "firstPlayer",
+   "$f"
+  ],
+  [
+   "set",
+   "game",
+   "first",
    [
-    "range",
-    5
-   ],
-   "$i",
+    "get",
+    "$f",
+    "seat"
+   ]
+  ],
+  [
+   "if",
    [
+    "and",
     [
-     "move",
+     "=",
      [
-      "first",
+      "count",
       [
        "cards",
        "p0",
-       "pool"
+       "brought"
       ]
      ],
-     "city",
-     {
-      "as": "$d"
-     }
+     3
     ],
     [
-     "set",
-     "$d",
-     "x",
-     "$i"
-    ],
-    [
-     "set",
-     "$d",
-     "y",
-     1
-    ],
-    [
-     "set",
-     "$d",
-     "cit",
+     "=",
      [
-      "get",
-      "$d",
-      "population"
+      "count",
+      [
+       "cards",
+       "p1",
+       "brought"
+      ]
+     ],
+     3
+    ]
+   ],
+   [
+    [
+     "call",
+     "draftCity"
+    ]
+   ],
+   [
+    [
+     "shuffle",
+     "p0",
+     "pool"
+    ],
+    [
+     "each",
+     [
+      "range",
+      5
+     ],
+     "$i",
+     [
+      [
+       "move",
+       [
+        "first",
+        [
+         "cards",
+         "p0",
+         "pool"
+        ]
+       ],
+       "city",
+       {
+        "as": "$d"
+       }
+      ],
+      [
+       "call",
+       "setDistrict",
+       "$d",
+       "$i"
+      ]
      ]
     ]
    ]
@@ -9170,10 +9697,22 @@
          ]
         ],
         [
-         "call",
-         "claims",
-         "$me",
-         "subway"
+         "and",
+         [
+          "call",
+          "claims",
+          "$me",
+          "subway"
+         ],
+         [
+          "=",
+          [
+           "get",
+           "$me",
+           "tunnel"
+          ],
+          0
+         ]
         ],
         [
          "and",
@@ -9215,6 +9754,52 @@
     }
    ],
    "do": [
+    [
+     "if",
+     [
+      "and",
+      [
+       "not",
+       [
+        "call",
+        "adj",
+        [
+         "get",
+         "$self",
+         "x"
+        ],
+        [
+         "get",
+         "$d",
+         "x"
+        ]
+       ]
+      ],
+      [
+       "call",
+       "claims",
+       "$me",
+       "subway"
+      ],
+      [
+       "!=",
+       [
+        "get",
+        "$self",
+        "card"
+       ],
+       "thing-in-the-hedgerow"
+      ]
+     ],
+     [
+      [
+       "set",
+       "$me",
+       "tunnel",
+       1
+      ]
+     ]
+    ],
     [
      "inc",
      "$self",
@@ -9477,13 +10062,8 @@
       "not",
       [
        "call",
-       "guarded",
-       [
-        "get",
-        "$it",
-        "x"
-       ],
-       "$me"
+       "guardedFor",
+       "$it"
       ]
      ]
     ]
@@ -9521,13 +10101,8 @@
       "not",
       [
        "call",
-       "guarded",
-       [
-        "get",
-        "$it",
-        "x"
-       ],
-       "$me"
+       "guardedFor",
+       "$it"
       ]
      ]
     ]
@@ -9951,7 +10526,11 @@
        "$it",
        "dmg"
       ],
-      0
+      [
+       "get",
+       "$it",
+       "silver"
+      ]
      ],
      [
       "or",
@@ -10619,6 +11198,14 @@
      "$e.target"
     ],
     [
+     "not",
+     [
+      "call",
+      "silver",
+      "$e.source"
+     ]
+    ],
+    [
      "=",
      [
       "get",
@@ -10647,6 +11234,14 @@
     [
      "isObj",
      "$e.target"
+    ],
+    [
+     "not",
+     [
+      "call",
+      "silver",
+      "$e.source"
+     ]
     ],
     [
      "=",
@@ -10847,6 +11442,29 @@
        ]
       ]
      ]
+    ]
+   ]
+  },
+  {
+   "on": "damage",
+   "if": [
+    "and",
+    [
+     "isObj",
+     "$e.target"
+    ],
+    [
+     "call",
+     "silver",
+     "$e.source"
+    ]
+   ],
+   "do": [
+    [
+     "inc",
+     "$e.target",
+     "silver",
+     "$e.amount"
     ]
    ]
   },

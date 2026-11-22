@@ -2,7 +2,7 @@
 import type { UI } from '../main.ts';
 import { home, library, savesScreen, setup } from './menus.ts';
 import { decks, gallery } from './decks.ts';
-import { noteEl } from './kit.ts';
+import { cardFace, h, noteEl } from './kit.ts';
 import { table } from './table.ts';
 import { campaignScreen, encounterScreen, rewardScreen, shopScreen } from './campaign.ts';
 
@@ -16,7 +16,11 @@ export function render(ui: UI, A: any) {
   const caret = keep ? active!.selectionStart : null;
   const screen = ui.screen !== 'library' && !ui.mod ? 'library' : ui.screen;
   const view = SCREENS[screen](ui, A);
-  app.replaceChildren(view, ...(ui.note && screen !== 'game' ? [noteEl(ui.note, A.closeNote)] : []));
+  const peek = ui.peek && ui.mod?.card.has(ui.peek)
+    ? h('div', { class: 'peek', role: 'dialog', 'aria-label': 'Card preview', onclick: A.closePeek },
+      cardFace(ui.mod, ui.peek, { size: 'lg', onclick: A.closePeek }), h('div', { class: 'peek-hint' }, 'Tap anywhere to close'))
+    : null;
+  app.replaceChildren(view, ...(ui.note && screen !== 'game' ? [noteEl(ui.note, A.closeNote)] : []), ...(peek ? [peek] : []));
   if (keep) {
     const el = app.querySelector<HTMLInputElement>(`[data-keep="${keep}"]`);
     el?.focus();

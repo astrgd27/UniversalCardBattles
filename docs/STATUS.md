@@ -229,8 +229,22 @@ A survey of about 30 published TCG rulebooks (`docs/COVERAGE.md`, second table) 
 - Engine: `timing.who` (a step only some players take part in, e.g. only the defender responds). Presentation: zone `hideEmpty`, theme `hideVars`/`labels`/`tapVar` (exhausted cards turn sideways), manifest `official` (listed first with a badge).
 - 12 focused tests plus the integrity suite; all 10 faction pairings run clean under random play; the strategic AI beats random.
 
+## Done: NIGHTFALL rules completed, store, art pipeline, iPad
+- **Rules:** every interpreted rule is now implemented as written except Fast "at any time" (own turn plus response steps). That covers the random first player (engine `firstPlayer`), the forced Frenzy Hunt, Guard until Clashed, the Revolver's silver wounds, the Deep Tunnels once per turn and the advanced District draft.
+- **Campaign runtime:** shop `deck` items, exclusive `group`s, `loss` rewards, an optional starter deck list, `itemBlocked`.
+- **NIGHTFALL campaign "The Long Night":**
+  - one free promo starter (choose one of four);
+  - ten replayable AI rivals paying Marks win or lose;
+  - Blood Dawn boosters (6C/3U/1R-or-L).
+- **Art pipeline:** bundled modules ship `assets/` (cards, full-card images, back, packs, decks). `tools/art/import.py` matches and converts images.
+- **iPad and touch:**
+  - hover only on hover devices; 44pt targets; safe areas; no double-tap zoom or callouts;
+  - long-press (or right-click) shows a card up close, or opens a table card's details;
+  - "Add to Home Screen" runs full screen (web manifest and icons).
+  - e2e plays NIGHTFALL on an emulated iPad Pro by touch.
+
 ## Possible next steps
-- NIGHTFALL: art from the document's prompts (art pipeline), the advanced District draft, playtest-driven balance.
+- NIGHTFALL: the art itself, playtest-driven balance.
 - Campaigns for the other reference games, online multiplayer.
 - Campaigns for the other reference games.
 - IndexedDB storage (localStorage today) and cloud sync of backups.

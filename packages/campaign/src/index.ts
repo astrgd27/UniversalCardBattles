@@ -16,12 +16,16 @@ export interface Encounter {
   outro?: Line[];
   defeat?: Line[];
   scenario?: Scenario;
-  rewards?: { first?: Reward; repeat?: Reward };
+  rewards?: { first?: Reward; repeat?: Reward; loss?: Reward }; // loss: paid for every lost attempt
   repeatable?: boolean;
   requires?: string[];
 }
 export interface Booster { name: string; slots: { count: number; pool: string[]; weights?: Record<string, number> }[] }
-export interface ShopItem { id: string; name: string; price: number; booster?: string; card?: string; stock?: number }
+/**
+ * A shop item sells a booster, a single card, or a whole deck (its cards join the collection and the deck is saved).
+ * group: items sharing a group are exclusive; once one is bought the others can't be (e.g. "claim one starter").
+ */
+export interface ShopItem { id: string; name: string; price: number; booster?: string; card?: string; deck?: string; stock?: number; group?: string; text?: string; art?: string }
 export interface Campaign {
   name: string;
   intro?: Line[];
@@ -82,7 +86,7 @@ function checkCampaign(m: Mod, c: Campaign): string[] {
     card(id, 'campaign/starter/collection');
     if (!Number.isInteger(n) || (n as number) < 0) e.push(`campaign/starter/collection/${id}: bad count`);
   }
-  if (!Object.keys(c.starter.decks).length) e.push('campaign/starter/decks: at least one deck');
+  if (!Object.keys(c.starter.decks).length && !(arr(c.shop) && c.shop.some((it: any) => rec(it) && it.deck))) e.push('campaign/starter/decks: at least one deck (or a deck item in the shop)');
   for (const [name, d] of Object.entries(c.starter.decks)) {
     const errs = deckErrors(m, d);
     for (const x of errs) e.push(`campaign/starter/decks/${name}: ${x}`);
@@ -117,7 +121,7 @@ function checkCampaign(m: Mod, c: Campaign): string[] {
     if (en.ai !== undefined && !rec(en.ai)) e.push(`${w}/ai: must be an object`);
     if (en.scenario !== undefined) for (const x of validateScenario(m, en.scenario)) e.push(`${w}/${x}`);
     if (en.rewards !== undefined && !rec(en.rewards)) e.push(`${w}/rewards: must be an object`);
-    else { reward(en.rewards?.first, `${w}/rewards/first`); reward(en.rewards?.repeat, `${w}/rewards/repeat`); }
+    else { reward(en.rewards?.first, `${w}/rewards/first`); reward(en.rewards?.repeat, `${w}/rewards/repeat`); reward(en.rewards?.loss, `${w}/rewards/loss`); }
   }
   for (const [id, b] of Object.entries(boosters)) {
     if (!rec(b) || !arr(b.slots)) { e.push(`campaign/boosters/${id}: needs {name, slots}`); continue; }
@@ -133,7 +137,9 @@ function checkCampaign(m: Mod, c: Campaign): string[] {
     if (!(Number.isInteger(it.price) && it.price >= 0)) e.push(`campaign/shop/${it.id}: bad price`);
     if (it.card !== undefined) card(it.card, `campaign/shop/${it.id}`);
     if (it.booster !== undefined && (typeof it.booster !== 'string' || !boosters[it.booster])) e.push(`campaign/shop/${it.id}: unknown booster "${it.booster}"`);
-    if ((it.card === undefined) === (it.booster === undefined)) e.push(`campaign/shop/${it.id}: needs exactly one of card or booster`);
+    if (it.deck !== undefined && (typeof it.deck !== 'string' || !decks[it.deck])) e.push(`campaign/shop/${it.id}: unknown deck "${it.deck}"`);
+    if ([it.card, it.booster, it.deck].filter((x) => x !== undefined).length !== 1) e.push(`campaign/shop/${it.id}: needs exactly one of card, booster or deck`);
+    if (it.group !== undefined && typeof it.group !== 'string') e.push(`campaign/shop/${it.id}/group: must be a string`);
   }
   return e;
 }
@@ -225,28 +231,41 @@ export function finishEncounter(c: Campaign, p: Profile, id: string, seq: number
   np.ledger.push(key);
   if (np.active?.encounter === id && np.active.seq === seq) np.active = null;
   let granted: Granted | null = null;
-  if (won) {
-    const en = c.encounters[id];
-    const r = np.wins[id] ? en.rewards?.repeat : en.rewards?.first;
-    np.wins[id] = (np.wins[id] ?? 0) + 1;
-    if (r) granted = grant(c, np, r, seedRng((np.seed ^ (seq * 2654435761)) >>> 0));
-  }
+  const en = c.encounters[id];
+  const r = won ? (np.wins[id] ? en.rewards?.repeat : en.rewards?.first) : en.rewards?.loss;
+  if (won) np.wins[id] = (np.wins[id] ?? 0) + 1;
+  if (r) granted = grant(c, np, r, seedRng((np.seed ^ (seq * 2654435761)) >>> 0));
   return { profile: np, won, granted };
 }
 
-export function buy(c: Campaign, p: Profile, itemId: string): { profile: Profile; cards: string[] } {
+/** Why an item can't be bought right now (null if it can). */
+export function itemBlocked(c: Campaign, p: Profile, it: ShopItem): string | null {
+  if (it.stock !== undefined && (p.bought[it.id] ?? 0) >= it.stock) return it.price === 0 ? 'Claimed' : 'Sold out';
+  const rival = it.group ? c.shop?.find((x) => x.group === it.group && x.id !== it.id && (p.bought[x.id] ?? 0) > 0) : undefined;
+  if (rival) return `You chose ${rival.name}`;
+  if (p.currency < it.price) return `Needs ${it.price} ${c.currency.name}`;
+  return null;
+}
+
+export function buy(c: Campaign, p: Profile, itemId: string, m?: Mod): { profile: Profile; cards: string[] } {
   const it = c.shop?.find((x) => x.id === itemId);
   if (!it) throw new CampaignError([`unknown shop item "${itemId}"`]);
-  const errs: string[] = [];
-  if (p.currency < it.price) errs.push(`not enough ${c.currency.name} (${p.currency}/${it.price})`);
-  if (it.stock !== undefined && (p.bought[it.id] ?? 0) >= it.stock) errs.push(`${it.name} is sold out`);
-  if (errs.length) throw new CampaignError(errs);
+  const why = itemBlocked(c, p, it);
+  if (why) throw new CampaignError([it.stock !== undefined && why === 'Sold out' ? `${it.name} is sold out` : why.startsWith('Needs') ? `not enough ${c.currency.name} (${p.currency}/${it.price})` : `${it.name}: ${why}`]);
   const np = structuredClone(p);
   np.seq++;
   np.ledger.push(`shop:${it.id}:${np.seq}`);
   np.currency -= it.price;
   np.bought[it.id] = (np.bought[it.id] ?? 0) + 1;
-  const cards = it.card ? [it.card] : openBooster(c, it.booster!, seedRng((np.seed ^ (np.seq * 40503)) >>> 0));
+  let cards: string[];
+  if (it.deck) {
+    const d = structuredClone({ ...(m?.decks ?? {}), ...(c.decks ?? {}) }[it.deck]);
+    if (!d) throw new CampaignError([`unknown deck "${it.deck}"`]);
+    cards = cardsOf(d);
+    let name = it.name;
+    for (let i = 2; name in np.decks; i++) name = `${it.name} ${i}`;
+    np.decks[name] = d;
+  } else cards = it.card ? [it.card] : openBooster(c, it.booster!, seedRng((np.seed ^ (np.seq * 40503)) >>> 0));
   add(np.collection, cards);
   return { profile: np, cards };
 }

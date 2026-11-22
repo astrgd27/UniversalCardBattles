@@ -1,0 +1,614 @@
+{
+ "name": "The Long Night",
+ "intro": [
+  {
+   "speaker": "The Evening Herald",
+   "text": "Five powers want the City. Claim a starter deck in the Store, then face them one by one before Dawn."
+  },
+  {
+   "speaker": "The Evening Herald",
+   "text": "Every battle pays Marks, win or lose. Spend them on Blood Dawn boosters to build your collection."
+  }
+ ],
+ "currency": {
+  "name": "Marks",
+  "start": 0
+ },
+ "starter": {
+  "collection": {},
+  "decks": {}
+ },
+ "chapters": [
+  {
+   "id": "dusk",
+   "name": "Dusk: the five powers",
+   "nodes": [
+    "cabal-dusk",
+    "harvest-dusk",
+    "zombie-dusk",
+    "slasher-dusk",
+    "devil-dusk"
+   ]
+  },
+  {
+   "id": "witching",
+   "name": "The Witching Hour (stronger rivals)",
+   "nodes": [
+    "cabal-witching",
+    "harvest-witching",
+    "zombie-witching",
+    "slasher-witching",
+    "devil-witching"
+   ]
+  }
+ ],
+ "encounters": {
+  "cabal-dusk": {
+   "name": "The Boardroom",
+   "opponent": "Lady Evangeline Marsh",
+   "portrait": "🩸",
+   "deck": "the-marsh-whitcombe-trust",
+   "repeatable": true,
+   "intro": [
+    {
+     "speaker": "Lady Evangeline Marsh",
+     "text": "They came for the blood. They stayed for the board meeting."
+    }
+   ],
+   "rewards": {
+    "first": {
+     "currency": 150,
+     "packs": [
+      "blood-dawn"
+     ]
+    },
+    "repeat": {
+     "currency": 60
+    },
+    "loss": {
+     "currency": 20
+    }
+   }
+  },
+  "cabal-witching": {
+   "name": "The Boardroom at the Witching Hour",
+   "opponent": "Lady Evangeline Marsh",
+   "portrait": "🩸",
+   "deck": "the-marsh-whitcombe-trust",
+   "repeatable": true,
+   "requires": [
+    "cabal-dusk"
+   ],
+   "intro": [
+    {
+     "speaker": "Lady Evangeline Marsh",
+     "text": "You came back. Brave, or foolish. The night decides."
+    }
+   ],
+   "scenario": {
+    "setup": [
+     [
+      "inc",
+      "$opp",
+      "essence",
+      5
+     ],
+     [
+      "call",
+      "addRes",
+      "$opp",
+      2
+     ]
+    ]
+   },
+   "rewards": {
+    "first": {
+     "currency": 300,
+     "packs": [
+      "blood-dawn",
+      "blood-dawn"
+     ]
+    },
+    "repeat": {
+     "currency": 100
+    },
+    "loss": {
+     "currency": 30
+    }
+   }
+  },
+  "harvest-dusk": {
+   "name": "The Barrow Field",
+   "opponent": "Mother Bramble",
+   "portrait": "🌾",
+   "deck": "the-barrow-wakes",
+   "repeatable": true,
+   "intro": [
+    {
+     "speaker": "Mother Bramble",
+     "text": "The corn grows tall where the old gods are fed."
+    }
+   ],
+   "rewards": {
+    "first": {
+     "currency": 150,
+     "packs": [
+      "blood-dawn"
+     ]
+    },
+    "repeat": {
+     "currency": 60
+    },
+    "loss": {
+     "currency": 20
+    }
+   }
+  },
+  "harvest-witching": {
+   "name": "The Barrow Field at the Witching Hour",
+   "opponent": "Mother Bramble",
+   "portrait": "🌾",
+   "deck": "the-barrow-wakes",
+   "repeatable": true,
+   "requires": [
+    "harvest-dusk"
+   ],
+   "intro": [
+    {
+     "speaker": "Mother Bramble",
+     "text": "You came back. Brave, or foolish. The night decides."
+    }
+   ],
+   "scenario": {
+    "setup": [
+     [
+      "inc",
+      "$opp",
+      "essence",
+      5
+     ],
+     [
+      "call",
+      "addRes",
+      "$opp",
+      2
+     ]
+    ]
+   },
+   "rewards": {
+    "first": {
+     "currency": 300,
+     "packs": [
+      "blood-dawn",
+      "blood-dawn"
+     ]
+    },
+    "repeat": {
+     "currency": 100
+    },
+    "loss": {
+     "currency": 30
+    }
+   }
+  },
+  "zombie-dusk": {
+   "name": "Site 9",
+   "opponent": "Patient Zero",
+   "portrait": "☣",
+   "deck": "outbreak-at-site-9",
+   "repeatable": true,
+   "intro": [
+    {
+     "speaker": "Patient Zero",
+     "text": "It never buys anything. It eats."
+    }
+   ],
+   "rewards": {
+    "first": {
+     "currency": 150,
+     "packs": [
+      "blood-dawn"
+     ]
+    },
+    "repeat": {
+     "currency": 60
+    },
+    "loss": {
+     "currency": 20
+    }
+   }
+  },
+  "zombie-witching": {
+   "name": "Site 9 at the Witching Hour",
+   "opponent": "Patient Zero",
+   "portrait": "☣",
+   "deck": "outbreak-at-site-9",
+   "repeatable": true,
+   "requires": [
+    "zombie-dusk"
+   ],
+   "intro": [
+    {
+     "speaker": "Patient Zero",
+     "text": "You came back. Brave, or foolish. The night decides."
+    }
+   ],
+   "scenario": {
+    "setup": [
+     [
+      "inc",
+      "$opp",
+      "essence",
+      5
+     ],
+     [
+      "call",
+      "addRes",
+      "$opp",
+      2
+     ]
+    ]
+   },
+   "rewards": {
+    "first": {
+     "currency": 300,
+     "packs": [
+      "blood-dawn",
+      "blood-dawn"
+     ]
+    },
+    "repeat": {
+     "currency": 100
+    },
+    "loss": {
+     "currency": 30
+    }
+   }
+  },
+  "slasher-dusk": {
+   "name": "Whispering Pines",
+   "opponent": "Old Hollow",
+   "portrait": "🔪",
+   "deck": "dont-go-in-there",
+   "repeatable": true,
+   "intro": [
+    {
+     "speaker": "Old Hollow",
+     "text": "Four face-down cards. One of them is the machete."
+    }
+   ],
+   "rewards": {
+    "first": {
+     "currency": 150,
+     "packs": [
+      "blood-dawn"
+     ]
+    },
+    "repeat": {
+     "currency": 60
+    },
+    "loss": {
+     "currency": 20
+    }
+   }
+  },
+  "slasher-witching": {
+   "name": "Whispering Pines at the Witching Hour",
+   "opponent": "Old Hollow",
+   "portrait": "🔪",
+   "deck": "dont-go-in-there",
+   "repeatable": true,
+   "requires": [
+    "slasher-dusk"
+   ],
+   "intro": [
+    {
+     "speaker": "Old Hollow",
+     "text": "You came back. Brave, or foolish. The night decides."
+    }
+   ],
+   "scenario": {
+    "setup": [
+     [
+      "inc",
+      "$opp",
+      "essence",
+      5
+     ],
+     [
+      "call",
+      "addRes",
+      "$opp",
+      2
+     ]
+    ]
+   },
+   "rewards": {
+    "first": {
+     "currency": 300,
+     "packs": [
+      "blood-dawn",
+      "blood-dawn"
+     ]
+    },
+    "repeat": {
+     "currency": 100
+    },
+    "loss": {
+     "currency": 30
+    }
+   }
+  },
+  "devil-dusk": {
+   "name": "The Morning Star Society",
+   "opponent": "Augustin Vale",
+   "portrait": "😈",
+   "deck": "nine-moons",
+   "repeatable": true,
+   "intro": [
+    {
+     "speaker": "Augustin Vale",
+     "text": "Nine moons. One child. Every bargain brings him closer."
+    }
+   ],
+   "rewards": {
+    "first": {
+     "currency": 150,
+     "packs": [
+      "blood-dawn"
+     ]
+    },
+    "repeat": {
+     "currency": 60
+    },
+    "loss": {
+     "currency": 20
+    }
+   }
+  },
+  "devil-witching": {
+   "name": "The Morning Star Society at the Witching Hour",
+   "opponent": "Augustin Vale",
+   "portrait": "😈",
+   "deck": "nine-moons",
+   "repeatable": true,
+   "requires": [
+    "devil-dusk"
+   ],
+   "intro": [
+    {
+     "speaker": "Augustin Vale",
+     "text": "You came back. Brave, or foolish. The night decides."
+    }
+   ],
+   "scenario": {
+    "setup": [
+     [
+      "inc",
+      "$opp",
+      "essence",
+      5
+     ],
+     [
+      "call",
+      "addRes",
+      "$opp",
+      2
+     ]
+    ]
+   },
+   "rewards": {
+    "first": {
+     "currency": 300,
+     "packs": [
+      "blood-dawn",
+      "blood-dawn"
+     ]
+    },
+    "repeat": {
+     "currency": 100
+    },
+    "loss": {
+     "currency": 30
+    }
+   }
+  }
+ },
+ "boosters": {
+  "blood-dawn": {
+   "name": "Blood Dawn",
+   "slots": [
+    {
+     "count": 6,
+     "pool": [
+      "velvet-rope-fledgling",
+      "associate-of-the-firm",
+      "the-familiar",
+      "bought-detective",
+      "blood-bank-holdings",
+      "nothing-to-see-here",
+      "hollow-eyed-farmhand",
+      "maypole-dancers",
+      "the-little-people",
+      "scarecrow-sentinel",
+      "blood-barley",
+      "rite-of-the-first-furrow",
+      "fallow-rest",
+      "fresh-turned",
+      "hazmat-shambler",
+      "sprinter",
+      "crawler-swarm",
+      "chitin-plating",
+      "containment-breach",
+      "cleanup-crew-lost",
+      "rusted-machete",
+      "bear-trap",
+      "just-the-cat",
+      "dont-go-in-there",
+      "doting-neighbors",
+      "hellhound",
+      "the-jackals-birthmark",
+      "sheriff-dale-burke",
+      "neighborhood-watch",
+      "pale-morning-light",
+      "molotov-cocktail",
+      "evacuation-order"
+     ]
+    },
+    {
+     "count": 3,
+     "pool": [
+      "the-sommelier",
+      "mr-kessler",
+      "councilman-doyle",
+      "the-velvet-club",
+      "a-quiet-word-with-the-mayor",
+      "the-corn-bride",
+      "sheaf-masked-elder",
+      "thing-in-the-hedgerow",
+      "the-standing-stone",
+      "mandrake-patch",
+      "bloated-carrier",
+      "exposed-ribcage-maw",
+      "tendril-lash",
+      "lazarus-7",
+      "feeding-frenzy",
+      "chainsaw",
+      "garden-shears",
+      "the-basement-door",
+      "the-phone-call",
+      "the-party",
+      "the-governess",
+      "the-black-priest",
+      "ravens-on-the-steeple",
+      "tithe-of-souls",
+      "unclean-spirit",
+      "the-crossroads-deal",
+      "professor-ida-kask",
+      "expose-in-the-evening-herald",
+      "blackout",
+      "the-black-grimoire"
+     ]
+    },
+    {
+     "count": 1,
+     "pool": [
+      "lady-evangeline-marsh",
+      "mother-bramble",
+      "patient-zero",
+      "old-hollow",
+      "augustin-vale",
+      "countess-ilse-varga",
+      "silas-whitmore",
+      "hostile-takeover",
+      "exsanguinate",
+      "something-in-the-stalks",
+      "the-wicker-colossus",
+      "the-reaping-hymn",
+      "he-who-wears-the-hill",
+      "subject-12-lockjaw",
+      "the-amalgam",
+      "vector-b",
+      "the-groundskeeper",
+      "mister-lullaby",
+      "the-hook-handed-man",
+      "the-caller",
+      "its-never-over",
+      "final-scream",
+      "margaret-wells",
+      "sister-abigail",
+      "the-possessed-girl",
+      "azrimoth",
+      "the-blood-moon",
+      "the-exorcism-fails",
+      "a-name-in-the-ledger",
+      "the-child",
+      "the-final-girl",
+      "father-moreno",
+      "silver-etched-revolver"
+     ],
+     "weights": {
+      "lady-evangeline-marsh": 1,
+      "mother-bramble": 1,
+      "patient-zero": 1,
+      "old-hollow": 1,
+      "augustin-vale": 1,
+      "countess-ilse-varga": 4,
+      "silas-whitmore": 1,
+      "hostile-takeover": 4,
+      "exsanguinate": 4,
+      "something-in-the-stalks": 4,
+      "the-wicker-colossus": 4,
+      "the-reaping-hymn": 4,
+      "he-who-wears-the-hill": 1,
+      "subject-12-lockjaw": 4,
+      "the-amalgam": 1,
+      "vector-b": 4,
+      "the-groundskeeper": 4,
+      "mister-lullaby": 4,
+      "the-hook-handed-man": 4,
+      "the-caller": 4,
+      "its-never-over": 4,
+      "final-scream": 4,
+      "margaret-wells": 4,
+      "sister-abigail": 4,
+      "the-possessed-girl": 4,
+      "azrimoth": 1,
+      "the-blood-moon": 4,
+      "the-exorcism-fails": 4,
+      "a-name-in-the-ledger": 4,
+      "the-child": 1,
+      "the-final-girl": 4,
+      "father-moreno": 4,
+      "silver-etched-revolver": 4
+     }
+    }
+   ]
+  }
+ },
+ "shop": [
+  {
+   "id": "promo-site-9",
+   "name": "Outbreak at Site 9",
+   "deck": "outbreak-at-site-9",
+   "price": 0,
+   "stock": 1,
+   "group": "starter-promo",
+   "text": "Promo starter (Zombie Horde): a swarm that snowballs. The easiest deck to learn."
+  },
+  {
+   "id": "promo-marsh-whitcombe",
+   "name": "The Marsh-Whitcombe Trust",
+   "deck": "the-marsh-whitcombe-trust",
+   "price": 0,
+   "stock": 1,
+   "group": "starter-promo",
+   "text": "Promo starter (Blood Cabal): buy the City one district at a time."
+  },
+  {
+   "id": "promo-dont-go-in-there",
+   "name": "Don't Go in There",
+   "deck": "dont-go-in-there",
+   "price": 0,
+   "stock": 1,
+   "group": "starter-promo",
+   "text": "Promo starter (Slasher Killers): bluffing, hidden Lurkers and a race to 13 Victims."
+  },
+  {
+   "id": "promo-barrow-wakes",
+   "name": "The Barrow Wakes",
+   "deck": "the-barrow-wakes",
+   "price": 0,
+   "stock": 1,
+   "group": "starter-promo",
+   "text": "Promo starter (Harvest Cult): plant, harvest, and wake the Old One."
+  },
+  {
+   "id": "blood-dawn-pack",
+   "name": "Blood Dawn booster",
+   "booster": "blood-dawn",
+   "price": 100,
+   "text": "The NIGHTFALL core set: 10 cards (6 common, 3 uncommon, 1 rare or Legendary)."
+  }
+ ]
+}

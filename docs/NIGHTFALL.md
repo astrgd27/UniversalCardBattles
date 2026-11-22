@@ -33,20 +33,41 @@ These are choices made where the document leaves room, or where a rule needs a p
 
 | Rule | In this version |
 |---|---|
-| First player chosen at random | Seat 1 goes first; the second seat gets the +1 resource |
 | Mulligan once | During setup, each player picks any cards to shuffle back |
-| Frenzy "must Hunt this turn if it can" | An unpaid Thirst deals 1 wound and logs a Frenzy; it does not force a Hunt |
+| Frenzy "must Hunt this turn if it can" | At the start of Night the Frenzied Vampire Hunts automatically: it Preys if it can, otherwise its owner picks a unit for it to Clash, otherwise it Strikes |
 | Fast, Drain and Mend "at any time" | On your own turn, and in response steps (when the opponent plays a card or declares a Hunt) |
-| Guard "until they Clash with it" | A ready Guard blocks Prey, Raid and Strike in its District (a Clash normally exhausts the attacker anyway) |
 | Reveal to Hunt (Lurkers) | Revealing is its own action (pay the cost, flip); Ambush +2 applies to that Killer's Hunts that turn. Dreamwalker moves Mister Lullaby when he reveals |
 | Traps | Every Trap springs when Investigated (Bear Trap wounds the investigator); a Trap you can't pay for fizzles |
 | The Phone Call "reveals their hand" | The opponent's hand is laid face up, you discard an Event, the rest go back |
 | Trophies | Every Citizen a player takes counts once (Thralls, Offerings, Infected/Devoured, Victims, Souls) |
-| The Deep Tunnels | Your units may move from any District to any District |
 | Hazmat "first wound each turn" | Resets at every Rise |
 | Exsanguinate X | X is chosen when it resolves: pay X Vitae, Drain X Thralls (each Drain gives 2 Vitae as usual), deal 2X wounds or X damage |
-| Silver-Etched Revolver | +2 Menace; "can't be Mended or prevented" is not modelled yet |
-| Advanced District draft | Not yet: the core-set deal (5 random of 8) is used |
+
+Also implemented exactly as written:
+- the random first player;
+- Guard holding a unit back until it has Clashed with a Guard;
+- the Revolver's silver wounds, which can't be Mended or prevented;
+- the Deep Tunnels once per turn;
+- the Final Girl Ending a Killer;
+- the advanced District draft. A deck may bring exactly 3 Districts (deck section `brought`). If both players do, one of the 6 is removed at random, and the players place the other 5 alternately, starting with the second player.
+
+## The store (campaign "The Long Night")
+- **Start:** you begin with nothing. In the Store you can claim one free promo starter: Outbreak at Site 9, The Marsh-Whitcombe Trust, Don't Go in There or The Barrow Wakes. Claiming one locks the others.
+- **Battles:** each starter deck is an AI rival, and every battle is replayable. Each battle pays Marks:
+  - first win: 150 and a Blood Dawn booster;
+  - later wins: 60;
+  - a loss: 20.
+- **The Witching Hour rivals:** these unlock after you beat their Dusk version. They start with +5 Essence and +2 resource, and pay:
+  - first win: 300 and two boosters;
+  - later wins: 100;
+  - a loss: 30.
+- **Blood Dawn booster** (100 Marks), the core set: 6 commons, 3 uncommons (Districts included), and 1 rare or Legendary. Legendary cards are 1 in 5 of that slot and include the Masters, the Old One and the Child.
+- **Collection:** decks for campaign battles must be built from cards you own.
+
+## Art
+- Drop images in with `python3 tools/art/import.py nightfall <folder>`. Images are matched by collector number (`NF-012`), card id or card name.
+- Add `--full` for finished full-card images; without it, images are used as picture-window art.
+- Name files `back`, `Blood Dawn`/`pack-blood-dawn` or `deck-<deck id>` for the card back, the booster and the starter-deck boxes.
 
 ## Tests
 - `packages/test-harness/tests/nightfall.test.ts` covers:

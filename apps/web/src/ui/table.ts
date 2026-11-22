@@ -104,7 +104,7 @@ function obj(c: C, o: ObjView, size: 'sm' | 'md') {
     c.fx.entered.has(o.id) && 'fx-enter', !!hit && 'fx-hit', c.fx.flipped.has(o.id) && 'fx-flip', o.controller === c.ui.viewer ? 'own' : 'foe');
   const onclick = () => c.A.pick(o.id);
   const el = o.card
-    ? cardFace(c.mod, o.card, { size, state, onclick, stats: o.stats, vars: o.vars, baseVars: c.mod.rules.objectVars, keywords: o.blank ? [] : o.keywords, faceDown: o.faceDown, note: noteOf(c.mod, o) })
+    ? cardFace(c.mod, o.card, { size, state, onclick, obj: o.id, stats: o.stats, vars: o.vars, baseVars: c.mod.rules.objectVars, keywords: o.blank ? [] : o.keywords, faceDown: o.faceDown, note: noteOf(c.mod, o) })
     : cardBack(c.mod, { size, state, onclick });
   if (hit) el.append(h('span', { class: 'dmg-float', 'aria-hidden': 'true' }, `-${hit}`));
   return el;

@@ -1,6 +1,6 @@
 // Shared UI building blocks: element helper, card faces, module theming.
 import type { CardDef, Mod, Reason } from '#engine';
-import { ASSETS } from '../modules.ts';
+import { assetUrl } from '../modules.ts';
 import { customArt, procArt } from '../art.ts';
 import { type StatSlot, templateFor } from '../templates.ts';
 import { costText, costTotal } from '../search.ts';
@@ -56,6 +56,7 @@ export function cardStats(def: CardDef, stats?: Record<string, any>): [string, u
 }
 
 export interface FaceOpts {
+  obj?: string; // game object id (long-press opens its live details)
   note?: string; // extra state on the type line (copy of…, no abilities, grid layer)
   stats?: Record<string, any>;
   vars?: Record<string, number>;
@@ -83,17 +84,32 @@ export function cardFace(m: Mod, cardId: string, o: FaceOpts = {}): HTMLElement 
   const hideV = new Set(th?.hideVars ?? []);
   const badges = Object.entries(o.vars ?? {}).filter(([k, n]) => n !== (o.baseVars?.[k] ?? 0) && !hideV.has(k) && !(m.rules.grid && (k === 'x' || k === 'y' || k === 'z')));
   const tapped = !!th?.tapVar && (o.vars?.[th.tapVar] ?? 0) > 0;
-  const art = customArt(m.manifest.moduleId, def.id) ?? (typeof def.art === 'string' ? ASSETS.get(m.manifest.moduleId)?.get(def.art) : undefined) ?? procArt(def, GLYPH[def.type] ?? '◆');
+  const mid = m.manifest.moduleId;
+  const full = assetUrl(mid, undefined, `assets/full/${def.id}`);
+  const art = customArt(mid, def.id) ?? assetUrl(mid, typeof def.art === 'string' ? def.art : undefined, `assets/cards/${def.id}`) ?? procArt(def, GLYPH[def.type] ?? '◆');
   const corners = new Map<string, StatSlot[]>();
   for (const s of placed) if (s.pos !== 'line') corners.set(s.pos, [...(corners.get(s.pos) ?? []), s]);
   const line = placed.filter((s) => s.pos === 'line');
   const level = tpl.level && typeof def[tpl.level] === 'number' ? (def[tpl.level] as number) : 0;
   const statText = (s: StatSlot) => (s.icon ? `${s.icon} ${val(s.field)}` : String(val(s.field)));
   const aria = [...placed.map((s) => `${s.label ?? s.field} ${val(s.field)}`), ...chips.map(([a, b]) => `${a} ${b}`)].join(', ');
+  const label = o.label ?? `${def.name}, ${def.type}${def.cost !== undefined ? `, cost ${costText(def.cost)}` : ''}${aria ? `, ${aria}` : ''}`;
+  // A finished full-card image replaces the template; live state (wounds, notes) still shows on top.
+  if (full && !customArt(mid, def.id)) {
+    return h('button', {
+      class: cls('card', 'full-art', `layout-${tpl.layout}`, `size-${o.size ?? 'md'}`, `t-${def.type}`, o.faceDown && 'fd', tapped && 'tapped', o.state),
+      onclick: o.onclick, title: def.text ?? def.name, 'aria-label': label, 'data-card': def.id, 'data-obj': o.obj,
+    },
+    h('img', { class: 'full-img', src: full, alt: '', draggable: 'false' }),
+    o.count !== undefined && h('span', { class: 'count' }, `×${o.count}`),
+    (badges.length > 0 || o.note) && h('span', { class: 'badges overlay' },
+      o.note && h('span', { class: 'chip' }, o.note),
+      badges.map(([k, v]) => h('span', { class: 'chip' }, `${th?.labels?.[k] ?? k} ${v}`))));
+  }
   return h('button', {
     class: cls('card', `tpl-${tpl.base}`, `layout-${tpl.layout}`, `size-${o.size ?? 'md'}`, `t-${def.type}`, o.faceDown && 'fd', tapped && 'tapped', o.state),
-    style: `--h:${hue(def.id)}`, onclick: o.onclick, title: def.text ?? def.name, 'data-template': tpl.base,
-    'aria-label': o.label ?? `${def.name}, ${def.type}${def.cost !== undefined ? `, cost ${costText(def.cost)}` : ''}${aria ? `, ${aria}` : ''}`,
+    style: `--h:${hue(def.id)}`, onclick: o.onclick, title: def.text ?? def.name, 'data-template': tpl.base, 'data-card': def.id, 'data-obj': o.obj,
+    'aria-label': label,
   },
   tpl.cost !== 'none' && def.cost !== undefined && (typeof def.cost === 'object'
     ? h('span', { class: `gem typed pos-${tpl.cost}`, title: `Cost: ${costText(def.cost)}` }, String(costTotal(def.cost)),
@@ -114,8 +130,9 @@ export function cardFace(m: Mod, cardId: string, o: FaceOpts = {}): HTMLElement 
 }
 
 export function cardBack(m: Mod, o: FaceOpts = {}): HTMLElement {
-  return h('button', { class: cls('card back', `size-${o.size ?? 'md'}`, o.state), onclick: o.onclick, 'aria-label': o.label ?? 'Face-down card' },
-    h('span', { class: 'emblem' }, emblem(m)));
+  const back = assetUrl(m.manifest.moduleId, undefined, 'assets/back');
+  return h('button', { class: cls('card back', back && 'art-back', `size-${o.size ?? 'md'}`, o.state), onclick: o.onclick, 'aria-label': o.label ?? 'Face-down card' },
+    back ? h('img', { class: 'back-img', src: back, alt: '', draggable: 'false' }) : h('span', { class: 'emblem' }, emblem(m)));
 }
 
 function reasonTree(r: Reason): HTMLElement {
