@@ -1175,7 +1175,7 @@ MANIFEST = {
     'presentation': {
         'templates': {
             'unit': {'base': 'skirmisher', 'art': 55, 'stats': [{'field': 'menace', 'pos': 'bl', 'icon': '🗡'}, {'field': 'endurance', 'pos': 'br', 'icon': '♥'}], 'label': 'Unit — Menace and Endurance'},
-            'structure': {'base': 'vital', 'art': 55, 'stats': [{'field': 'endurance', 'pos': 'tr', 'label': 'END'}, {'field': 'dominion', 'pos': 'bl', 'label': 'DOM'}, {'field': 'inf', 'pos': 'br', 'label': 'INF'}], 'label': 'Structure'},
+            'structure': {'base': 'vital', 'art': 55, 'stats': [{'field': 'endurance', 'pos': 'tr', 'icon': '♥', 'label': 'Security / Endurance'}, {'field': 'dominion', 'pos': 'bl', 'icon': '⛨', 'label': 'Dominion'}, {'field': 'inf', 'pos': 'br', 'icon': '✧', 'label': 'Influence'}], 'label': 'Structure'},
             'master': {'base': 'leader', 'art': 55, 'stats': [{'field': 'essence', 'pos': 'tr', 'icon': '☾'}], 'label': 'Master — Essence'},
             'card': {'base': 'spell', 'art': 55, 'label': 'Card — art upper 55%'},
             'district': {'base': 'location', 'stats': [{'field': 'population', 'pos': 'tl', 'icon': '👤'}], 'label': 'District — Population'},
@@ -1183,7 +1183,7 @@ MANIFEST = {
         'byType': {'horror': 'unit', 'hunter': 'unit', 'puppet': 'unit', 'folk': 'unit', 'disciple': 'unit', 'killer': 'unit', 'oldone': 'unit', 'child': 'unit',
                    'influence': 'structure', 'effigy': 'structure', 'master': 'master', 'district': 'district',
                    'event': 'card', 'scheme': 'card', 'rite': 'card', 'outbreak': 'card', 'scene': 'card', 'bargain': 'card', 'omen': 'card',
-                   'mutation': 'card', 'weapon': 'card', 'relic': 'card', 'possession': 'card', 'strain': 'card', 'planting': 'resource', 'trap': 'card'}},
+                   'mutation': 'card', 'weapon': 'card', 'relic': 'card', 'possession': 'card', 'strain': 'card', 'planting': 'card', 'trap': 'card'}},
 }
 AI = {'eval': sub(C('trophyScore', '$me'), C('trophyScore', '$opp')), 'samples': 1}
 

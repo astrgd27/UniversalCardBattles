@@ -118,17 +118,20 @@
      {
       "field": "endurance",
       "pos": "tr",
-      "label": "END"
+      "icon": "♥",
+      "label": "Security / Endurance"
      },
      {
       "field": "dominion",
       "pos": "bl",
-      "label": "DOM"
+      "icon": "⛨",
+      "label": "Dominion"
      },
      {
       "field": "inf",
       "pos": "br",
-      "label": "INF"
+      "icon": "✧",
+      "label": "Influence"
      }
     ],
     "label": "Structure"
@@ -187,7 +190,7 @@
    "relic": "card",
    "possession": "card",
    "strain": "card",
-   "planting": "resource",
+   "planting": "card",
    "trap": "card"
   }
  }
