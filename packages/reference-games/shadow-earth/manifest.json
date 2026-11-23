@@ -22,6 +22,7 @@
   "glyph": "◉",
   "tapVar": "ex",
   "hideStats": [
+   "tFac",
    "num",
    "fno",
    "archetype",

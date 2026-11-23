@@ -159,3 +159,16 @@ OPSTART = []        # effects run when an Operation or Response is played ($c2 =
 PRE_DEFEND = []     # effects after a mission is declared, before defenders are assigned
 AFTER_DEFEND = []   # effects after defenders are assigned
 DECKS = {}
+SAVE = []           # effects run when operative $o would be eliminated: SET game saved 1 to prevent it
+SHIELD = []         # terms (uses $o): damage prevented the first time $o is dealt damage each turn
+def gear_n(o, name): return cnt(flt(gearOn(o), isc('$it', name)))
+def look_hand(p='$opp'): return C('lookHand', '$me', p)
+def bearer_term(name, attr, n, cond=None):
+    """Attribute bonus for the operative an Asset named `name` is attached to."""
+    c = [A_(attr)] + ([cond] if cond is not None else [])
+    return Q(AND(*c), mul(gear_n('$o', name), n), 0)
+def self_term(name, attr, n, cond=None):
+    """Attribute bonus an operative named `name` gives itself."""
+    c = [isc('$o', name), A_(attr)] + ([cond] if cond is not None else [])
+    return Q(AND(*c), n, 0)
+NULL = ['lit', None]

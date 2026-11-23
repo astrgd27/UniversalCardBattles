@@ -2413,7 +2413,56 @@
   "trade": 2,
   "will": 1,
   "dur": 2,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "call",
+      "scry",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      2
+     ],
+     [
+      "=",
+      [
+       "get",
+       "$self",
+       "atk"
+      ],
+      1
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "street-informant",
@@ -2429,7 +2478,16 @@
   "trade": 1,
   "will": 1,
   "dur": 2,
-  "ready": 0
+  "deploy": [
+   [
+    "call",
+    "peekHand",
+    "$me",
+    "$opp"
+   ]
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "ex-military-bodyguard",
@@ -2445,7 +2503,7 @@
   "trade": 1,
   "will": 1,
   "dur": 5,
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "courier-with-no-name",
@@ -2461,7 +2519,7 @@
   "trade": 3,
   "will": 0,
   "dur": 2,
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "black-bag-specialist",
@@ -2477,7 +2535,7 @@
   "trade": 3,
   "will": 0,
   "dur": 4,
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "interrogation-officer",
@@ -2493,7 +2551,47 @@
   "trade": 2,
   "will": 2,
   "dur": 3,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "call",
+      "peekHand",
+      "$me",
+      "$opp"
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      3
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "emergency-physician",
@@ -2509,7 +2607,75 @@
   "trade": 2,
   "will": 2,
   "dur": 2,
-  "ready": 0
+  "abil": [
+   {
+    "label": "Heal 1 damage (pay 1)",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "do": [
+     [
+      "call",
+      "heal",
+      "$t",
+      1
+     ]
+    ],
+    "cost": [
+     [
+      "call",
+      "spend",
+      "$me",
+      1
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       ">=",
+       [
+        "call",
+        "avail",
+        "$me"
+       ],
+       1
+      ],
+      "why": "Needs 1 Influence"
+     }
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "*",
+        "ops"
+       ],
+       [
+        ">",
+        [
+         "get",
+         "$it",
+         "dmg"
+        ],
+        0
+       ]
+      ],
+      "prompt": "Heal which operative?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "communications-engineer",
@@ -2525,7 +2691,49 @@
   "trade": 3,
   "will": 1,
   "dur": 2,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "call",
+      "scry",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      ">",
+      [
+       "count",
+       [
+        "cards",
+        "$me",
+        "gear"
+       ]
+      ],
+      0
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "forensic-accountant",
@@ -2541,7 +2749,41 @@
   "trade": 3,
   "will": 1,
   "dur": 2,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "tmpGained",
+    "do": [
+     [
+      "call",
+      "gainTmp",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "!=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "!=",
+      "$phase",
+      "refresh"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "safehouse-custodian",
@@ -2557,7 +2799,7 @@
   "trade": 2,
   "will": 1,
   "dur": 3,
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "mercenary-sniper",
@@ -2573,7 +2815,104 @@
   "trade": 2,
   "will": 0,
   "dur": 6,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "filter",
+        [
+         "cards",
+         [
+          "opp",
+          [
+           "get",
+           "$self",
+           "controller"
+          ]
+         ],
+         "ops"
+        ],
+        [
+         "not",
+         [
+          "or",
+          [
+           "=",
+           [
+            "get",
+            "$it",
+            "atk"
+           ],
+           1
+          ],
+          [
+           "=",
+           [
+            "get",
+            "$it",
+            "dfn"
+           ],
+           1
+          ]
+         ]
+        ]
+       ],
+       "as": "$v",
+       "prompt": "Mercenary Sniper: 1 damage to which non-participating enemy operative?",
+       "min": 0,
+       "max": 1
+      }
+     ],
+     [
+      "call",
+      "hurt",
+      "$v",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      1
+     ],
+     [
+      "=",
+      [
+       "get",
+       "$self",
+       "atk"
+      ],
+      1
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "compromised-judge",
@@ -2589,7 +2928,7 @@
   "trade": 4,
   "will": 2,
   "dur": 2,
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "field-archaeologist",
@@ -2605,7 +2944,50 @@
   "trade": 3,
   "will": 2,
   "dur": 3,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "played",
+    "do": [
+     [
+      "call",
+      "loot",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "or",
+      [
+       "has",
+       "$e.c",
+       "artifact"
+      ],
+      [
+       "has",
+       "$e.c",
+       "scripture"
+      ]
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "crisis-negotiator",
@@ -2621,7 +3003,50 @@
   "trade": 3,
   "will": 3,
   "dur": 2,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "draw",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "!=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      0
+     ],
+     [
+      "=",
+      "$e.kind",
+      3
+     ],
+     [
+      "=",
+      [
+       "get",
+       "$self",
+       "dfn"
+      ],
+      1
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "professional-cleaner",
@@ -2637,7 +3062,65 @@
   "trade": 4,
   "will": 0,
   "dur": 4,
-  "ready": 0
+  "deploy": [
+   [
+    "choose",
+    {
+     "from": [
+      "filter",
+      [
+       "cards",
+       "*",
+       "ops"
+      ],
+      [
+       "and",
+       [
+        "!=",
+        "$it",
+        "$self"
+       ],
+       [
+        ">",
+        [
+         "get",
+         "$it",
+         "dmg"
+        ],
+        0
+       ]
+      ]
+     ],
+     "as": "$v",
+     "prompt": "Remove all damage from which operative?",
+     "min": 0,
+     "max": 1
+    }
+   ],
+   [
+    "if",
+    [
+     "isObj",
+     "$v"
+    ],
+    [
+     [
+      "set",
+      "$v",
+      "dmg",
+      0
+     ],
+     [
+      "set",
+      "$v",
+      "nomis",
+      "$turn"
+     ]
+    ]
+   ]
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "intelligence-defector",
@@ -2653,7 +3136,68 @@
   "trade": 4,
   "will": 2,
   "dur": 3,
-  "ready": 0
+  "deploy": [
+   [
+    "call",
+    "lookHand",
+    "$me",
+    "$opp"
+   ],
+   [
+    "choose",
+    {
+     "from": [
+      "filter",
+      [
+       "cards",
+       "$opp",
+       "hand"
+      ],
+      [
+       "in",
+       [
+        "get",
+        "$it",
+        "type"
+       ],
+       [
+        "lit",
+        [
+         "operation",
+         "response",
+         "mission"
+        ]
+       ]
+      ]
+     ],
+     "as": "$v",
+     "prompt": "Intelligence Defector: which Operation costs 1 more on their next turn?",
+     "min": 0,
+     "max": 1
+    }
+   ],
+   [
+    "if",
+    [
+     "isObj",
+     "$v"
+    ],
+    [
+     [
+      "set",
+      "$v",
+      "taxT",
+      [
+       "+",
+       "$turn",
+       1
+      ]
+     ]
+    ]
+   ]
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "rogue-systems-architect",
@@ -2685,7 +3229,7 @@
   "trade": 3,
   "will": 2,
   "dur": 3,
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "legendary-fixer",
@@ -2701,7 +3245,62 @@
   "trade": 5,
   "will": 3,
   "dur": 5,
-  "ready": 0
+  "deploy": [
+   [
+    "choose",
+    {
+     "from": [
+      "filter",
+      [
+       "cards",
+       "$me",
+       "grave"
+      ],
+      [
+       "and",
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "type"
+        ],
+        "asset"
+       ],
+       [
+        "<=",
+        [
+         "get",
+         "$it",
+         "cost"
+        ],
+        2
+       ]
+      ]
+     ],
+     "as": "$v",
+     "prompt": "Return which Asset (cost 2 or less) to your hand?",
+     "min": 0,
+     "max": 1
+    }
+   ],
+   [
+    "if",
+    [
+     "isObj",
+     "$v"
+    ],
+    [
+     [
+      "move",
+      "$v",
+      "hand"
+     ]
+    ]
+   ]
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "the-untraceable-asset",
@@ -2717,7 +3316,104 @@
   "trade": 5,
   "will": 4,
   "dur": 6,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "lit",
+        [
+         "Draw a card",
+         "Heal 2",
+         "Gain 2 temporary Influence"
+        ]
+       ],
+       "as": "$r",
+       "prompt": "The Untraceable Asset: choose one",
+       "min": 1,
+       "max": 1
+      }
+     ],
+     [
+      "if",
+      [
+       "=",
+       "$r",
+       "Draw a card"
+      ],
+      [
+       [
+        "draw",
+        "$me",
+        1
+       ]
+      ]
+     ],
+     [
+      "if",
+      [
+       "=",
+       "$r",
+       "Heal 2"
+      ],
+      [
+       [
+        "call",
+        "heal",
+        "$self",
+        2
+       ]
+      ]
+     ],
+     [
+      "if",
+      [
+       "=",
+       "$r",
+       "Gain 2 temporary Influence"
+      ],
+      [
+       [
+        "call",
+        "gainTmp",
+        "$me",
+        2
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "encrypted-radio",
@@ -2732,7 +3428,8 @@
   "keywords": [
    "loadout"
   ],
-  "ready": 0
+  "attach": 1,
+  "ready": 1
  },
  {
   "id": "silenced-sidearm",
@@ -2747,7 +3444,8 @@
   "keywords": [
    "loadout"
   ],
-  "ready": 0
+  "attach": 1,
+  "ready": 1
  },
  {
   "id": "body-armor",
@@ -2762,7 +3460,8 @@
   "keywords": [
    "loadout"
   ],
-  "ready": 0
+  "attach": 1,
+  "ready": 1
  },
  {
   "id": "forged-passport",
@@ -2777,7 +3476,8 @@
   "keywords": [
    "loadout"
   ],
-  "ready": 0
+  "attach": 1,
+  "ready": 1
  },
  {
   "id": "false-identity-file",
@@ -2792,7 +3492,8 @@
   "keywords": [
    "loadout"
   ],
-  "ready": 0
+  "attach": 1,
+  "ready": 1
  },
  {
   "id": "burner-phone-network",
@@ -2804,7 +3505,50 @@
   "text": "Once per turn after you play a Response, Scry 1.",
   "archetype": "Equipment and Tools",
   "cost": 2,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "played",
+    "do": [
+     [
+      "call",
+      "scry",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      [
+       "get",
+       "$e.c",
+       "type"
+      ],
+      "response"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "surveillance-van",
@@ -2816,7 +3560,41 @@
   "text": "Once per turn before Infiltrate, look at a random card in opponent's hand.",
   "archetype": "Equipment and Tools",
   "cost": 2,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionDeclared",
+    "do": [
+     [
+      "call",
+      "peekHand",
+      "$me",
+      "$opp"
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.kind",
+      2
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "explosive-charges",
@@ -2831,7 +3609,195 @@
   "keywords": [
    "loadout"
   ],
-  "ready": 0
+  "attach": 1,
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "call",
+      "disable",
+      [
+       "first",
+       [
+        "filter",
+        [
+         "concat",
+         [
+          "concat",
+          [
+           "cards",
+           "*",
+           "ops"
+          ],
+          [
+           "cards",
+           "*",
+           "sites"
+          ],
+          [
+           "cards",
+           "*",
+           "gear"
+          ]
+         ],
+         [
+          "cards",
+          "*",
+          "agenda"
+         ]
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "tgt"
+         ],
+         1
+        ]
+       ]
+      ]
+     ],
+     [
+      "call",
+      "sacrifice",
+      "$self"
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "=",
+      "$e.kind",
+      1
+     ],
+     [
+      "=",
+      [
+       "get",
+       [
+        "get",
+        "$self",
+        "bearer"
+       ],
+       "atk"
+      ],
+      1
+     ],
+     [
+      "isObj",
+      [
+       "first",
+       [
+        "filter",
+        [
+         "concat",
+         [
+          "concat",
+          [
+           "cards",
+           "*",
+           "ops"
+          ],
+          [
+           "cards",
+           "*",
+           "sites"
+          ],
+          [
+           "cards",
+           "*",
+           "gear"
+          ]
+         ],
+         [
+          "cards",
+          "*",
+          "agenda"
+         ]
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "tgt"
+         ],
+         1
+        ]
+       ]
+      ]
+     ],
+     [
+      "=",
+      [
+       "get",
+       [
+        "first",
+        [
+         "filter",
+         [
+          "concat",
+          [
+           "concat",
+           [
+            "cards",
+            "*",
+            "ops"
+           ],
+           [
+            "cards",
+            "*",
+            "sites"
+           ],
+           [
+            "cards",
+            "*",
+            "gear"
+           ]
+          ],
+          [
+           "cards",
+           "*",
+           "agenda"
+          ]
+         ],
+         [
+          "=",
+          [
+           "get",
+           "$it",
+           "tgt"
+          ],
+          1
+         ]
+        ]
+       ],
+       "type"
+      ],
+      "facility"
+     ]
+    ],
+    "optional": true,
+    "text": "Sacrifice Explosive Charges to Disable the Facility?"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "medical-supply-cache",
@@ -2843,7 +3809,70 @@
   "text": "At Refresh, heal 1 from up to two different operatives.",
   "archetype": "Equipment and Tools",
   "cost": 2,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         ">",
+         [
+          "get",
+          "$it",
+          "dmg"
+         ],
+         0
+        ]
+       ],
+       "as": "$hs",
+       "prompt": "Medical Supply Cache: heal 1 from up to two operatives",
+       "min": 0,
+       "max": 2
+      }
+     ],
+     [
+      "each",
+      "$hs",
+      "$h",
+      [
+       [
+        "call",
+        "heal",
+        "$h",
+        1
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "encrypted-hard-drive",
@@ -2855,7 +3884,33 @@
   "text": "Once per turn, when you discard a card for a cost, draw a card, then discard a card.",
   "archetype": "Equipment and Tools",
   "cost": 2,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "costDiscard",
+    "do": [
+     [
+      "call",
+      "loot",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "=",
+     "$e.p",
+     [
+      "get",
+      "$self",
+      "controller"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "prototype-exoskeleton",
@@ -2870,7 +3925,8 @@
   "keywords": [
    "loadout"
   ],
-  "ready": 0
+  "attach": 1,
+  "ready": 1
  },
  {
   "id": "improvised-scrambler",
@@ -2897,7 +3953,8 @@
   "keywords": [
    "loadout"
   ],
-  "ready": 0
+  "attach": 1,
+  "ready": 1
  },
  {
   "id": "portable-containment-rig",
@@ -2909,7 +3966,8 @@
   "text": "Attach to an operative. If attached operative would be eliminated, return that operative to its owner's hand and discard this Asset instead.",
   "archetype": "Equipment and Tools",
   "cost": 3,
-  "ready": 0
+  "attach": 1,
+  "ready": 1
  },
  {
   "id": "experimental-stimulant",
@@ -2924,7 +3982,70 @@
   "keywords": [
    "loadout"
   ],
-  "ready": 0
+  "attach": 1,
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "set",
+      [
+       "get",
+       "$self",
+       "bearer"
+      ],
+      "ex",
+      0
+     ],
+     [
+      "call",
+      "hurt",
+      [
+       "get",
+       "$self",
+       "bearer"
+      ],
+      2
+     ]
+    ],
+    "if": [
+     "or",
+     [
+      "=",
+      [
+       "get",
+       [
+        "get",
+        "$self",
+        "bearer"
+       ],
+       "atk"
+      ],
+      1
+     ],
+     [
+      "=",
+      [
+       "get",
+       [
+        "get",
+        "$self",
+        "bearer"
+       ],
+       "dfn"
+      ],
+      1
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    },
+    "optional": true,
+    "text": "Ready the bearer, then deal 2 damage to it?"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "unmarked-cargo-plane",
@@ -2936,7 +4057,58 @@
   "text": "Once per turn, an operative can join Infiltrate without exhausting, then returns to its owner's hand after resolution.",
   "archetype": "Equipment and Tools",
   "cost": 4,
-  "ready": 0
+  "abil": [
+   {
+    "label": "Fly an operative into an Infiltrate (it joins without exhausting, then returns to hand)",
+    "phases": [
+     "operations"
+    ],
+    "do": [
+     [
+      "set",
+      "$t",
+      "freeJoin",
+      "$turn"
+     ],
+     [
+      "set",
+      "$t",
+      "cargo",
+      "$turn"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "ops"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "ex"
+        ],
+        0
+       ]
+      ],
+      "prompt": "Which operative?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "plasma-cutter",
@@ -2951,7 +4123,8 @@
   "keywords": [
    "loadout"
   ],
-  "ready": 0
+  "attach": 1,
+  "ready": 1
  },
  {
   "id": "archive-of-stolen-files",
@@ -2963,7 +4136,154 @@
   "text": "At Refresh, look at a random opponent hand card; if it is an Operation you may pay 1 to draw a card.",
   "archetype": "Equipment and Tools",
   "cost": 4,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "if",
+      [
+       ">",
+       [
+        "count",
+        [
+         "cards",
+         "$opp",
+         "hand"
+        ]
+       ],
+       0
+      ],
+      [
+       [
+        "random",
+        {
+         "from": [
+          "cards",
+          "$opp",
+          "hand"
+         ],
+         "as": "$r"
+        }
+       ],
+       [
+        "emit",
+        "peeked",
+        {
+         "card": [
+          "get",
+          "$r",
+          "card"
+         ],
+         "p": "$me",
+         "from": "hand"
+        },
+        {
+         "to": [
+          "list",
+          "$me"
+         ]
+        }
+       ],
+       [
+        "set",
+        "$me",
+        "sawT",
+        1
+       ],
+       [
+        "if",
+        [
+         "and",
+         [
+          "in",
+          [
+           "get",
+           "$r",
+           "type"
+          ],
+          [
+           "lit",
+           [
+            "operation",
+            "response",
+            "mission"
+           ]
+          ]
+         ],
+         [
+          ">=",
+          [
+           "call",
+           "avail",
+           "$me"
+          ],
+          1
+         ]
+        ],
+        [
+         [
+          "choose",
+          {
+           "from": [
+            "lit",
+            [
+             "Pay 1 to draw",
+             "No"
+            ]
+           ],
+           "as": "$y",
+           "prompt": "It is an Operation: pay 1 to draw a card?",
+           "min": 1,
+           "max": 1
+          }
+         ],
+         [
+          "if",
+          [
+           "=",
+           "$y",
+           "Pay 1 to draw"
+          ],
+          [
+           [
+            "call",
+            "spend",
+            "$me",
+            1
+           ],
+           [
+            "draw",
+            "$me",
+            1
+           ]
+          ]
+         ]
+        ]
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "portable-null-field",
@@ -2987,7 +4307,100 @@
   "text": "At Refresh choose Force, Tradecraft or Will; operatives you control get +1 in the chosen attribute this turn. Also draw one card if you control five Assets.",
   "archetype": "Equipment and Tools",
   "cost": 6,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "lit",
+        [
+         "Force",
+         "Tradecraft",
+         "Will"
+        ]
+       ],
+       "as": "$r",
+       "prompt": "The Black Case: your operatives get +1 to which attribute this turn?",
+       "min": 1,
+       "max": 1
+      }
+     ],
+     [
+      "set",
+      "$me",
+      "bcA",
+      [
+       "?",
+       [
+        "=",
+        "$r",
+        "Force"
+       ],
+       1,
+       [
+        "?",
+        [
+         "=",
+         "$r",
+         "Tradecraft"
+        ],
+        2,
+        3
+       ]
+      ]
+     ],
+     [
+      "set",
+      "$me",
+      "bcT",
+      "$turn"
+     ],
+     [
+      "if",
+      [
+       ">=",
+       [
+        "count",
+        [
+         "cards",
+         "$me",
+         "gear"
+        ]
+       ],
+       5
+      ],
+      [
+       [
+        "draw",
+        "$me",
+        1
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "ambush",
@@ -2999,7 +4412,124 @@
   "text": "One defender gets +2 Force in this Strike.",
   "archetype": "Operations and Reactions",
   "cost": 1,
-  "ready": 0
+  "resp": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "inc",
+        "$t",
+        "mb",
+        2
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "ops"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "dfn"
+        ],
+        1
+       ]
+      ],
+      "prompt": "Which defender gets +2 Force?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "req": [
+     {
+      "if": [
+       "and",
+       [
+        "and",
+        [
+         ">",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         0
+        ],
+        [
+         "!=",
+         [
+          "nth",
+          [
+           "players"
+          ],
+          [
+           "-",
+           [
+            "get",
+            "game",
+            "mp"
+           ],
+           1
+          ]
+         ],
+         "$me"
+        ]
+       ],
+       [
+        "and",
+        [
+         ">",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         0
+        ],
+        [
+         "=",
+         [
+          "get",
+          "game",
+          "mk"
+         ],
+         1
+        ]
+       ]
+      ],
+      "why": "Only while defending a Strike"
+     }
+    ],
+    "label": "Ambush"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "forced-entry",
@@ -3011,7 +4541,148 @@
   "text": "Your attacking team gains +2 Force against a Facility.",
   "archetype": "Operations and Reactions",
   "cost": 1,
-  "ready": 0
+  "resp": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "inc",
+        "game",
+        "am",
+        2
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       "and",
+       [
+        "and",
+        [
+         ">",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         0
+        ],
+        [
+         "=",
+         [
+          "nth",
+          [
+           "players"
+          ],
+          [
+           "-",
+           [
+            "get",
+            "game",
+            "mp"
+           ],
+           1
+          ]
+         ],
+         "$me"
+        ]
+       ],
+       [
+        "and",
+        [
+         ">",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         0
+        ],
+        [
+         "=",
+         [
+          "get",
+          "game",
+          "ma"
+         ],
+         1
+        ]
+       ],
+       [
+        "=",
+        [
+         "get",
+         [
+          "first",
+          [
+           "filter",
+           [
+            "concat",
+            [
+             "concat",
+             [
+              "cards",
+              "*",
+              "ops"
+             ],
+             [
+              "cards",
+              "*",
+              "sites"
+             ],
+             [
+              "cards",
+              "*",
+              "gear"
+             ]
+            ],
+            [
+             "cards",
+             "*",
+             "agenda"
+            ]
+           ],
+           [
+            "=",
+            [
+             "get",
+             "$it",
+             "tgt"
+            ],
+            1
+           ]
+          ]
+         ],
+         "type"
+        ],
+        "facility"
+       ]
+      ],
+      "why": "Only in your Force mission against a Facility"
+     }
+    ],
+    "label": "Forced Entry"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "inside-tip",
@@ -3023,7 +4694,99 @@
   "text": "Your team gains +2 Tradecraft during Infiltrate.",
   "archetype": "Operations and Reactions",
   "cost": 1,
-  "ready": 0
+  "resp": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "inc",
+        "game",
+        "am",
+        2
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       "and",
+       [
+        "and",
+        [
+         ">",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         0
+        ],
+        [
+         "=",
+         [
+          "nth",
+          [
+           "players"
+          ],
+          [
+           "-",
+           [
+            "get",
+            "game",
+            "mp"
+           ],
+           1
+          ]
+         ],
+         "$me"
+        ]
+       ],
+       [
+        "and",
+        [
+         ">",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         0
+        ],
+        [
+         "=",
+         [
+          "get",
+          "game",
+          "mk"
+         ],
+         2
+        ]
+       ]
+      ],
+      "why": "Only in your Infiltrate"
+     }
+    ],
+    "label": "Inside Tip"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "mental-fortitude",
@@ -3035,7 +4798,99 @@
   "text": "Your defending team gains +2 Will during Subvert.",
   "archetype": "Operations and Reactions",
   "cost": 1,
-  "ready": 0
+  "resp": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "inc",
+        "game",
+        "dm",
+        2
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       "and",
+       [
+        "and",
+        [
+         ">",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         0
+        ],
+        [
+         "!=",
+         [
+          "nth",
+          [
+           "players"
+          ],
+          [
+           "-",
+           [
+            "get",
+            "game",
+            "mp"
+           ],
+           1
+          ]
+         ],
+         "$me"
+        ]
+       ],
+       [
+        "and",
+        [
+         ">",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         0
+        ],
+        [
+         "=",
+         [
+          "get",
+          "game",
+          "mk"
+         ],
+         3
+        ]
+       ]
+      ],
+      "why": "Only while defending a Subvert"
+     }
+    ],
+    "label": "Mental Fortitude"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "false-alarm",
@@ -3047,7 +4902,180 @@
   "text": "After an opposing mission is declared, force its controller to pay 1 or cancel the mission.",
   "archetype": "Operations and Reactions",
   "cost": 1,
-  "ready": 0
+  "resp": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "if",
+        [
+         ">=",
+         [
+          "call",
+          "avail",
+          [
+           "nth",
+           [
+            "players"
+           ],
+           [
+            "-",
+            [
+             "get",
+             "game",
+             "mp"
+            ],
+            1
+           ]
+          ]
+         ],
+         1
+        ],
+        [
+         [
+          "choose",
+          {
+           "from": [
+            "lit",
+            [
+             "Pay 1",
+             "Cancel the mission"
+            ]
+           ],
+           "as": "$y",
+           "prompt": "False Alarm: pay 1 or cancel your mission?",
+           "min": 1,
+           "max": 1,
+           "who": [
+            "nth",
+            [
+             "players"
+            ],
+            [
+             "-",
+             [
+              "get",
+              "game",
+              "mp"
+             ],
+             1
+            ]
+           ]
+          }
+         ]
+        ],
+        [
+         [
+          "let",
+          "$y",
+          "Cancel the mission"
+         ]
+        ]
+       ],
+       [
+        "if",
+        [
+         "=",
+         "$y",
+         "Pay 1"
+        ],
+        [
+         [
+          "call",
+          "spend",
+          [
+           "nth",
+           [
+            "players"
+           ],
+           [
+            "-",
+            [
+             "get",
+             "game",
+             "mp"
+            ],
+            1
+           ]
+          ],
+          1
+         ]
+        ],
+        [
+         [
+          "set",
+          "game",
+          "mcan",
+          1
+         ],
+         [
+          "emit",
+          "missionCancelled",
+          {
+           "by": "$me"
+          }
+         ]
+        ]
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       "and",
+       [
+        ">",
+        [
+         "get",
+         "game",
+         "mp"
+        ],
+        0
+       ],
+       [
+        "!=",
+        [
+         "nth",
+         [
+          "players"
+         ],
+         [
+          "-",
+          [
+           "get",
+           "game",
+           "mp"
+          ],
+          1
+         ]
+        ],
+        "$me"
+       ]
+      ],
+      "why": "Only against an opposing mission"
+     }
+    ],
+    "label": "False Alarm"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "quiet-extraction",
@@ -3059,7 +5087,75 @@
   "text": "Return a damaged operative you own to your hand.",
   "archetype": "Operations and Reactions",
   "cost": 1,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "call",
+        "toHand",
+        "$t"
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "ops"
+       ],
+       [
+        "and",
+        [
+         ">",
+         [
+          "get",
+          "$it",
+          "dmg"
+         ],
+         0
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "owner"
+         ],
+         "$me"
+        ]
+       ]
+      ],
+      "prompt": "Return which damaged operative?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "label": "Quiet Extraction"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "routine-surveillance",
@@ -3071,7 +5167,45 @@
   "text": "Scry 3, then draw one card and discard one card.",
   "archetype": "Operations and Reactions",
   "cost": 1,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "call",
+        "scry",
+        "$me",
+        3
+       ],
+       [
+        "call",
+        "loot",
+        "$me",
+        1
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "label": "Routine Surveillance"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "interrogation",
@@ -3083,7 +5217,63 @@
   "text": "Will mission. Target the opposing Headquarters. On success, look at that opponent's hand and choose one card in it; that player discards the chosen card. Gain no Dominance.",
   "archetype": "Operations and Reactions",
   "cost": 2,
-  "ready": 0
+  "mattr": 3,
+  "mop": [
+   {
+    "label": "Interrogation (Will mission)",
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "list",
+       "$opp"
+      ],
+      "prompt": "Target: the opposing Headquarters",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "do": []
+   }
+  ],
+  "succ": [
+   [
+    "call",
+    "lookHand",
+    "$me",
+    "$opp"
+   ],
+   [
+    "choose",
+    {
+     "from": [
+      "cards",
+      "$opp",
+      "hand"
+     ],
+     "as": "$v",
+     "prompt": "Interrogation: which card do they discard?",
+     "min": 0,
+     "max": 1
+    }
+   ],
+   [
+    "if",
+    [
+     "isObj",
+     "$v"
+    ],
+    [
+     [
+      "move",
+      "$v",
+      "grave"
+     ]
+    ]
+   ]
+  ],
+  "ready": 1,
+  "hasSucc": 1
  },
  {
   "id": "smash-and-grab",
@@ -3095,7 +5285,150 @@
   "text": "Force mission. Declare an opposing Asset or the opposing Headquarters as target. On success, choose one: return the targeted Asset to its owner's hand (regardless of printed cost), OR gain 1 Dominance. You cannot choose the return option if targeting Headquarters.",
   "archetype": "Operations and Reactions",
   "cost": 2,
-  "ready": 0
+  "mattr": 1,
+  "mop": [
+   {
+    "label": "Smash and Grab (Force mission)",
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "concat",
+       [
+        "list",
+        "$opp"
+       ],
+       [
+        "filter",
+        [
+         "cards",
+         "$opp",
+         "gear"
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "type"
+         ],
+         "asset"
+        ]
+       ]
+      ],
+      "prompt": "Target: an opposing Asset or the Headquarters",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "do": []
+   }
+  ],
+  "succ": [
+   [
+    "let",
+    "$t",
+    [
+     "first",
+     [
+      "filter",
+      [
+       "concat",
+       [
+        "concat",
+        [
+         "cards",
+         "*",
+         "ops"
+        ],
+        [
+         "cards",
+         "*",
+         "sites"
+        ],
+        [
+         "cards",
+         "*",
+         "gear"
+        ]
+       ],
+       [
+        "cards",
+        "*",
+        "agenda"
+       ]
+      ],
+      [
+       "=",
+       [
+        "get",
+        "$it",
+        "tgt"
+       ],
+       1
+      ]
+     ]
+    ]
+   ],
+   [
+    "if",
+    [
+     "isObj",
+     "$t"
+    ],
+    [
+     [
+      "choose",
+      {
+       "from": [
+        "lit",
+        [
+         "Return the Asset",
+         "1 Dominance"
+        ]
+       ],
+       "as": "$r",
+       "prompt": "Smash and Grab: choose one",
+       "min": 1,
+       "max": 1
+      }
+     ],
+     [
+      "if",
+      [
+       "=",
+       "$r",
+       "1 Dominance"
+      ],
+      [
+       [
+        "call",
+        "gainDom",
+        "$me",
+        1
+       ]
+      ],
+      [
+       [
+        "call",
+        "toHand",
+        "$t"
+       ]
+      ]
+     ]
+    ],
+    [
+     [
+      "call",
+      "gainDom",
+      "$me",
+      1
+     ]
+    ]
+   ]
+  ],
+  "ready": 1,
+  "hasSucc": 1
  },
  {
   "id": "covert-transfer",
@@ -3107,7 +5440,123 @@
   "text": "Move one Asset you control to another legal operative, then ready that operative if it cost 2 or less.",
   "archetype": "Operations and Reactions",
   "cost": 2,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "choose",
+        {
+         "from": [
+          "filter",
+          [
+           "cards",
+           "$me",
+           "ops"
+          ],
+          [
+           "and",
+           [
+            "!=",
+            "$it",
+            [
+             "get",
+             "$t",
+             "bearer"
+            ]
+           ],
+           [
+            "call",
+            "bearerOk",
+            "$t",
+            "$it"
+           ]
+          ]
+         ],
+         "as": "$b",
+         "prompt": "Move it to which operative?",
+         "min": 1,
+         "max": 1
+        }
+       ],
+       [
+        "unlink",
+        "$t",
+        "bearer"
+       ],
+       [
+        "link",
+        "$t",
+        "bearer",
+        "$b"
+       ],
+       [
+        "if",
+        [
+         "<=",
+         [
+          "get",
+          "$b",
+          "cost"
+         ],
+         2
+        ],
+        [
+         [
+          "set",
+          "$b",
+          "ex",
+          0
+         ]
+        ]
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "gear"
+       ],
+       [
+        "isObj",
+        [
+         "get",
+         "$it",
+         "bearer"
+        ]
+       ]
+      ],
+      "prompt": "Move which attached Asset?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "label": "Covert Transfer"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "sabotage",
@@ -3119,7 +5568,294 @@
   "text": "Tradecraft mission: on success, disable an opposing Facility until its controller's next Refresh; gain 1 Dominance.",
   "archetype": "Operations and Reactions",
   "cost": 2,
-  "ready": 0
+  "mattr": 2,
+  "mop": [
+   {
+    "label": "Sabotage (Tradecraft mission)",
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "concat",
+       [
+        "list",
+        "$opp"
+       ],
+       [
+        "filter",
+        [
+         "cards",
+         "$opp",
+         "sites"
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "type"
+         ],
+         "facility"
+        ]
+       ]
+      ],
+      "prompt": "Target: an opposing Facility (or the Headquarters)",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "do": []
+   }
+  ],
+  "succ": [
+   [
+    "let",
+    "$t",
+    [
+     "?",
+     [
+      "isObj",
+      [
+       "first",
+       [
+        "filter",
+        [
+         "concat",
+         [
+          "concat",
+          [
+           "cards",
+           "*",
+           "ops"
+          ],
+          [
+           "cards",
+           "*",
+           "sites"
+          ],
+          [
+           "cards",
+           "*",
+           "gear"
+          ]
+         ],
+         [
+          "cards",
+          "*",
+          "agenda"
+         ]
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "tgt"
+         ],
+         1
+        ]
+       ]
+      ]
+     ],
+     [
+      "first",
+      [
+       "filter",
+       [
+        "concat",
+        [
+         "concat",
+         [
+          "cards",
+          "*",
+          "ops"
+         ],
+         [
+          "cards",
+          "*",
+          "sites"
+         ],
+         [
+          "cards",
+          "*",
+          "gear"
+         ]
+        ],
+        [
+         "cards",
+         "*",
+         "agenda"
+        ]
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "tgt"
+        ],
+        1
+       ]
+      ]
+     ],
+     [
+      "first",
+      [
+       "filter",
+       [
+        "cards",
+        "$opp",
+        "sites"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "type"
+        ],
+        "facility"
+       ]
+      ]
+     ]
+    ]
+   ],
+   [
+    "if",
+    [
+     "isObj",
+     [
+      "first",
+      [
+       "filter",
+       [
+        "concat",
+        [
+         "concat",
+         [
+          "cards",
+          "*",
+          "ops"
+         ],
+         [
+          "cards",
+          "*",
+          "sites"
+         ],
+         [
+          "cards",
+          "*",
+          "gear"
+         ]
+        ],
+        [
+         "cards",
+         "*",
+         "agenda"
+        ]
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "tgt"
+        ],
+        1
+       ]
+      ]
+     ]
+    ],
+    [
+     [
+      "call",
+      "disable",
+      [
+       "first",
+       [
+        "filter",
+        [
+         "concat",
+         [
+          "concat",
+          [
+           "cards",
+           "*",
+           "ops"
+          ],
+          [
+           "cards",
+           "*",
+           "sites"
+          ],
+          [
+           "cards",
+           "*",
+           "gear"
+          ]
+         ],
+         [
+          "cards",
+          "*",
+          "agenda"
+         ]
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "tgt"
+         ],
+         1
+        ]
+       ]
+      ]
+     ]
+    ],
+    [
+     [
+      "choose",
+      {
+       "from": [
+        "filter",
+        [
+         "cards",
+         "$opp",
+         "sites"
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "type"
+         ],
+         "facility"
+        ]
+       ],
+       "as": "$f",
+       "prompt": "Sabotage: Disable which Facility?",
+       "min": 0,
+       "max": 1
+      }
+     ],
+     [
+      "call",
+      "disable",
+      "$f"
+     ]
+    ]
+   ],
+   [
+    "call",
+    "gainDom",
+    "$me",
+    1
+   ]
+  ],
+  "ready": 1,
+  "hasSucc": 1
  },
  {
   "id": "emergency-lockdown",
@@ -3131,7 +5867,192 @@
   "text": "Cancel a mission targeting your HQ unless its controller pays 2 extra Influence.",
   "archetype": "Operations and Reactions",
   "cost": 2,
-  "ready": 0
+  "resp": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "if",
+        [
+         ">=",
+         [
+          "call",
+          "avail",
+          [
+           "nth",
+           [
+            "players"
+           ],
+           [
+            "-",
+            [
+             "get",
+             "game",
+             "mp"
+            ],
+            1
+           ]
+          ]
+         ],
+         2
+        ],
+        [
+         [
+          "choose",
+          {
+           "from": [
+            "lit",
+            [
+             "Pay 2",
+             "Cancel the mission"
+            ]
+           ],
+           "as": "$y",
+           "prompt": "Emergency Lockdown: pay 2 or cancel your mission?",
+           "min": 1,
+           "max": 1,
+           "who": [
+            "nth",
+            [
+             "players"
+            ],
+            [
+             "-",
+             [
+              "get",
+              "game",
+              "mp"
+             ],
+             1
+            ]
+           ]
+          }
+         ]
+        ],
+        [
+         [
+          "let",
+          "$y",
+          "Cancel the mission"
+         ]
+        ]
+       ],
+       [
+        "if",
+        [
+         "=",
+         "$y",
+         "Pay 2"
+        ],
+        [
+         [
+          "call",
+          "spend",
+          [
+           "nth",
+           [
+            "players"
+           ],
+           [
+            "-",
+            [
+             "get",
+             "game",
+             "mp"
+            ],
+            1
+           ]
+          ],
+          2
+         ]
+        ],
+        [
+         [
+          "set",
+          "game",
+          "mcan",
+          1
+         ],
+         [
+          "emit",
+          "missionCancelled",
+          {
+           "by": "$me"
+          }
+         ]
+        ]
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       "and",
+       [
+        "and",
+        [
+         ">",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         0
+        ],
+        [
+         "!=",
+         [
+          "nth",
+          [
+           "players"
+          ],
+          [
+           "-",
+           [
+            "get",
+            "game",
+            "mp"
+           ],
+           1
+          ]
+         ],
+         "$me"
+        ]
+       ],
+       [
+        "=",
+        [
+         "get",
+         "game",
+         "hqT"
+        ],
+        1
+       ]
+      ],
+      "why": "Only against a mission targeting your Headquarters"
+     }
+    ],
+    "label": "Emergency Lockdown"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "disinformation",
@@ -3143,7 +6064,109 @@
   "text": "An opposing team gets -2 total Tradecraft in the current mission.",
   "archetype": "Operations and Reactions",
   "cost": 2,
-  "ready": 0
+  "resp": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "if",
+        [
+         "and",
+         [
+          ">",
+          [
+           "get",
+           "game",
+           "mp"
+          ],
+          0
+         ],
+         [
+          "=",
+          [
+           "nth",
+           [
+            "players"
+           ],
+           [
+            "-",
+            [
+             "get",
+             "game",
+             "mp"
+            ],
+            1
+           ]
+          ],
+          "$me"
+         ]
+        ],
+        [
+         [
+          "inc",
+          "game",
+          "dm",
+          -2
+         ]
+        ],
+        [
+         [
+          "inc",
+          "game",
+          "am",
+          -2
+         ]
+        ]
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       "and",
+       [
+        ">",
+        [
+         "get",
+         "game",
+         "mp"
+        ],
+        0
+       ],
+       [
+        "=",
+        [
+         "get",
+         "game",
+         "ma"
+        ],
+        2
+       ]
+      ],
+      "why": "Only in a Tradecraft mission"
+     }
+    ],
+    "label": "Disinformation"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "tactical-withdrawal",
@@ -3155,7 +6178,102 @@
   "text": "Remove one of your operatives from a mission; prevent all damage to it this turn.",
   "archetype": "Operations and Reactions",
   "cost": 2,
-  "ready": 0
+  "resp": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "set",
+        "$t",
+        "atk",
+        0
+       ],
+       [
+        "set",
+        "$t",
+        "dfn",
+        0
+       ],
+       [
+        "set",
+        "$t",
+        "pv",
+        99
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "ops"
+       ],
+       [
+        "or",
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "atk"
+         ],
+         1
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "dfn"
+         ],
+         1
+        ]
+       ]
+      ],
+      "prompt": "Withdraw which operative?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "req": [
+     {
+      "if": [
+       ">",
+       [
+        "get",
+        "game",
+        "mp"
+       ],
+       0
+      ],
+      "why": "Only during a mission"
+     }
+    ],
+    "label": "Tactical Withdrawal"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "extraction-team",
@@ -3167,7 +6285,75 @@
   "text": "Return an operative costing 3 or less from discard to your hand.",
   "archetype": "Operations and Reactions",
   "cost": 3,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "move",
+        "$t",
+        "hand"
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "grave"
+       ],
+       [
+        "and",
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "type"
+         ],
+         "operative"
+        ],
+        [
+         "<=",
+         [
+          "get",
+          "$it",
+          "cost"
+         ],
+         3
+        ]
+       ]
+      ],
+      "prompt": "Return which operative?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "label": "Extraction Team"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "planted-evidence",
@@ -3179,7 +6365,35 @@
   "text": "Tradecraft mission. Target the opposing Headquarters. On success, that opponent discards two cards of their choice. Gain no Dominance.",
   "archetype": "Operations and Reactions",
   "cost": 3,
-  "ready": 0
+  "mattr": 2,
+  "mop": [
+   {
+    "label": "Planted Evidence (Tradecraft mission)",
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "list",
+       "$opp"
+      ],
+      "prompt": "Target: the opposing Headquarters",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "do": []
+   }
+  ],
+  "succ": [
+   [
+    "call",
+    "discardN",
+    "$opp",
+    2
+   ]
+  ],
+  "ready": 1,
+  "hasSucc": 1
  },
  {
   "id": "counterintelligence-sweep",
@@ -3191,7 +6405,7 @@
   "text": "During a mission, cancel an opponent’s Operation unless they discard one card; cannot cancel an Agenda completion or an activated Project ability.",
   "archetype": "Operations and Reactions",
   "cost": 3,
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "coordinated-raid",
@@ -3203,7 +6417,73 @@
   "text": "Force mission: on success, disable two different opposing Facilities until next Refresh; gain 1 Dominance.",
   "archetype": "Operations and Reactions",
   "cost": 4,
-  "ready": 0
+  "mattr": 1,
+  "mop": [
+   {
+    "label": "Coordinated Raid (Force mission)",
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "list",
+       "$opp"
+      ],
+      "prompt": "Target: the opposing Headquarters",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "do": []
+   }
+  ],
+  "succ": [
+   [
+    "choose",
+    {
+     "from": [
+      "filter",
+      [
+       "cards",
+       "$opp",
+       "sites"
+      ],
+      [
+       "=",
+       [
+        "get",
+        "$it",
+        "type"
+       ],
+       "facility"
+      ]
+     ],
+     "as": "$fs",
+     "prompt": "Coordinated Raid: Disable two different opposing Facilities",
+     "min": 0,
+     "max": 2
+    }
+   ],
+   [
+    "each",
+    "$fs",
+    "$f",
+    [
+     [
+      "call",
+      "disable",
+      "$f"
+     ]
+    ]
+   ],
+   [
+    "call",
+    "gainDom",
+    "$me",
+    1
+   ]
+  ],
+  "ready": 1,
+  "hasSucc": 1
  },
  {
   "id": "contingency-plan",
@@ -3215,7 +6495,7 @@
   "text": "After your mission fails, ready both attackers and draw one card. You cannot declare another mission this turn.",
   "archetype": "Operations and Reactions",
   "cost": 4,
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "the-perfect-cover-up",
@@ -3227,7 +6507,132 @@
   "text": "Remove up to three counters from opposing cards, then draw two cards; does not remove Dominance or completed Agenda status.",
   "archetype": "Operations and Reactions",
   "cost": 5,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "choose",
+        {
+         "from": [
+          "filter",
+          [
+           "concat",
+           [
+            "concat",
+            [
+             "cards",
+             "$opp",
+             "ops"
+            ],
+            [
+             "cards",
+             "$opp",
+             "sites"
+            ],
+            [
+             "cards",
+             "$opp",
+             "gear"
+            ]
+           ],
+           [
+            "cards",
+            "$opp",
+            "agenda"
+           ]
+          ],
+          [
+           "or",
+           [
+            ">",
+            [
+             "get",
+             "$it",
+             "ctl"
+            ],
+            0
+           ],
+           [
+            ">",
+            [
+             "get",
+             "$it",
+             "prog"
+            ],
+            0
+           ]
+          ]
+         ],
+         "as": "$xs",
+         "prompt": "Remove a counter from up to three opposing cards",
+         "min": 0,
+         "max": 3
+        }
+       ],
+       [
+        "each",
+        "$xs",
+        "$x",
+        [
+         [
+          "if",
+          [
+           ">",
+           [
+            "get",
+            "$x",
+            "prog"
+           ],
+           0
+          ],
+          [
+           [
+            "inc",
+            "$x",
+            "prog",
+            -1
+           ]
+          ],
+          [
+           [
+            "set",
+            "$x",
+            "ctl",
+            0
+           ]
+          ]
+         ]
+        ]
+       ],
+       [
+        "draw",
+        "$me",
+        2
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "label": "The Perfect Cover-Up"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "safehouse",
@@ -3239,7 +6644,118 @@
   "text": "Once per turn, pay 1 to prevent 1 damage to an operative.",
   "archetype": "Facilities and Economy",
   "cost": 1,
-  "ready": 0
+  "abil": [
+   {
+    "label": "Prevent 1 damage to an operative (pay 1)",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "do": [
+     [
+      "inc",
+      "$t",
+      "pv",
+      1
+     ]
+    ],
+    "cost": [
+     [
+      "call",
+      "spend",
+      "$me",
+      1
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       ">=",
+       [
+        "call",
+        "avail",
+        "$me"
+       ],
+       1
+      ],
+      "why": "Needs 1 Influence"
+     }
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "cards",
+       "$me",
+       "ops"
+      ],
+      "prompt": "Protect which operative?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "rabil": [
+   {
+    "label": "Prevent 1 damage to an operative (pay 1)",
+    "phases": [
+     "respond"
+    ],
+    "do": [
+     [
+      "inc",
+      "$t",
+      "pv",
+      1
+     ]
+    ],
+    "cost": [
+     [
+      "call",
+      "spend",
+      "$me",
+      1
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       ">=",
+       [
+        "call",
+        "avail",
+        "$me"
+       ],
+       1
+      ],
+      "why": "Needs 1 Influence"
+     }
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "cards",
+       "$me",
+       "ops"
+      ],
+      "prompt": "Protect which operative?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "shell-corporation",
@@ -3251,7 +6767,61 @@
   "text": "At Refresh, gain 1 temporary Influence if you control two Facilities.",
   "archetype": "Facilities and Economy",
   "cost": 2,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "call",
+      "gainTmp",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      ">=",
+      [
+       "count",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "sites"
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "type"
+         ],
+         "facility"
+        ]
+       ]
+      ],
+      2
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "st-louis-police-liaison-desk",
@@ -3263,7 +6833,7 @@
   "text": "Your HQ Security gets +1 against Strike missions.",
   "archetype": "Facilities and Economy",
   "cost": 2,
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "westgate-data-brokerage-office",
@@ -3275,7 +6845,51 @@
   "text": "When you succeed at Infiltrate, Scry 1 (once per turn).",
   "archetype": "Facilities and Economy",
   "cost": 2,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "call",
+      "scry",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      2
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "private-clinic",
@@ -3287,7 +6901,63 @@
   "text": "At Refresh, heal 1 damage from an operative.",
   "archetype": "Facilities and Economy",
   "cost": 2,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         ">",
+         [
+          "get",
+          "$it",
+          "dmg"
+         ],
+         0
+        ]
+       ],
+       "as": "$h",
+       "prompt": "Private Clinic: heal 1 from which operative?",
+       "min": 0,
+       "max": 1
+      }
+     ],
+     [
+      "call",
+      "heal",
+      "$h",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "the-anonymous-donor-network",
@@ -3299,7 +6969,49 @@
   "text": "At your Refresh, if you control at least three operatives, gain 1 temporary Influence.",
   "archetype": "Facilities and Economy",
   "cost": 2,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "call",
+      "gainTmp",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      ">=",
+      [
+       "count",
+       [
+        "cards",
+        "$me",
+        "ops"
+       ]
+      ],
+      3
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "secure-archive",
@@ -3311,7 +7023,7 @@
   "text": "Your Assets cannot be targeted by opposing missions while you control a ready operative with Tradecraft 3 or greater.",
   "archetype": "Facilities and Economy",
   "cost": 2,
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "the-luxembourg-regional-office",
@@ -3323,7 +7035,50 @@
   "text": "At Refresh gain 1 temporary Influence; if you did not declare a mission last turn, gain 1 more.",
   "archetype": "Facilities and Economy",
   "cost": 3,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "call",
+      "gainTmp",
+      "$me",
+      [
+       "?",
+       [
+        "=",
+        [
+         "get",
+         "$me",
+         "lastMiss"
+        ],
+        0
+       ],
+       2,
+       1
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "the-halden-street-laboratory",
@@ -3335,7 +7090,50 @@
   "text": "Once per turn after you deploy an operative costing 4 or more, Scry 2.",
   "archetype": "Facilities and Economy",
   "cost": 3,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "deployed",
+    "do": [
+     [
+      "call",
+      "scry",
+      "$me",
+      2
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.type",
+      "operative"
+     ],
+     [
+      ">=",
+      [
+       "get",
+       "$e.c",
+       "cost"
+      ],
+      4
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "arms-depot",
@@ -3347,7 +7145,51 @@
   "text": "Once per turn after your Strike succeeds, draw then discard one card.",
   "archetype": "Facilities and Economy",
   "cost": 3,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "call",
+      "loot",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      1
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "encrypted-server-farm",
@@ -3359,7 +7201,55 @@
   "text": "After each of your first two Responses per turn, gain 1 temporary Influence.",
   "archetype": "Facilities and Economy",
   "cost": 3,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "played",
+    "do": [
+     [
+      "call",
+      "gainTmp",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      [
+       "get",
+       "$e.c",
+       "type"
+      ],
+      "response"
+     ],
+     [
+      "<=",
+      [
+       "get",
+       "$me",
+       "pl_response"
+      ],
+      2
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "emergency-bunker",
@@ -3371,7 +7261,7 @@
   "text": "Your HQ Security gets +2 against Strike; once per turn prevent 1 damage to an operative defending a Facility.",
   "archetype": "Facilities and Economy",
   "cost": 3,
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "the-lydian-auction-house",
@@ -3383,7 +7273,70 @@
   "text": "Once per turn, discard an Asset: draw two cards then discard one.",
   "archetype": "Facilities and Economy",
   "cost": 4,
-  "ready": 0
+  "abil": [
+   {
+    "label": "Discard an Asset: draw two, then discard one",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "do": [
+     [
+      "move",
+      "$t",
+      "grave"
+     ],
+     [
+      "emit",
+      "costDiscard",
+      {
+       "p": "$me"
+      }
+     ],
+     [
+      "draw",
+      "$me",
+      2
+     ],
+     [
+      "call",
+      "discardN",
+      "$me",
+      1
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "hand"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "type"
+        ],
+        "asset"
+       ]
+      ],
+      "prompt": "Discard which Asset?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "offshore-research-platform",
@@ -3395,7 +7348,37 @@
   "text": "Your first Asset costing 4 or more each turn costs 1 less; at Refresh Scry 1.",
   "archetype": "Facilities and Economy",
   "cost": 4,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "call",
+      "scry",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "crown-vale-legal-offices",
@@ -3407,7 +7390,7 @@
   "text": "Once per turn, when an opponent targets a Facility with an Operation, they pay 2 additional Influence or cancel it.",
   "archetype": "Facilities and Economy",
   "cost": 4,
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "private-intelligence-firm",
@@ -3419,7 +7402,50 @@
   "text": "When you succeed at Infiltrate, draw one card once per turn.",
   "archetype": "Facilities and Economy",
   "cost": 4,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "draw",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      2
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "the-third-rail-arms-bazaar",
@@ -3431,7 +7457,7 @@
   "text": "Once per turn when your operative is eliminated, draw one and gain 1 temporary Influence.",
   "archetype": "Facilities and Economy",
   "cost": 4,
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "global-shipping-network",
@@ -3443,7 +7469,74 @@
   "text": "The first operative you deploy each turn can join missions immediately; at Refresh gain 1 temporary Influence.",
   "archetype": "Facilities and Economy",
   "cost": 5,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "call",
+      "gainTmp",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ]
+   },
+   {
+    "on": "deployed",
+    "do": [
+     [
+      "set",
+      "$e.c",
+      "hasteT",
+      "$turn"
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.type",
+      "operative"
+     ],
+     [
+      "=",
+      [
+       "get",
+       "$me",
+       "pl_operative"
+      ],
+      1
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "disaster-recovery-trust",
@@ -3455,7 +7548,40 @@
   "text": "When one of your Facilities is disabled, you may ready another Facility and draw a card (once per turn).",
   "archetype": "Facilities and Economy",
   "cost": 5,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "disabled",
+    "do": [
+     [
+      "draw",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "!=",
+      "$e.o",
+      "$self"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "the-hidden-treasury",
@@ -3467,7 +7593,37 @@
   "text": "At Refresh gain 3 temporary Influence; you cannot spend temporary Influence on Responses.",
   "archetype": "Facilities and Economy",
   "cost": 7,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "call",
+      "gainTmp",
+      "$me",
+      3
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "the-whistleblower",
@@ -3483,7 +7639,7 @@
   "trade": 2,
   "will": 1,
   "dur": 2,
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "martyr-s-manifesto",
@@ -3495,7 +7651,42 @@
   "text": "Deploy: Draw then discard a card. Once per turn, when you sacrifice an operative as a cost, draw then discard one.",
   "archetype": "Strategy Engines",
   "cost": 2,
-  "ready": 0
+  "deploy": [
+   [
+    "call",
+    "loot",
+    "$me",
+    1
+   ]
+  ],
+  "abilities": [
+   {
+    "on": "sacrificed",
+    "do": [
+     [
+      "call",
+      "loot",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "=",
+     "$e.p",
+     [
+      "get",
+      "$self",
+      "controller"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "backroom-bargain",
@@ -3507,7 +7698,87 @@
   "text": "You may discard up to two cards; gain 2 temporary Influence per card discarded.",
   "archetype": "Strategy Engines",
   "cost": 1,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "choose",
+        {
+         "from": [
+          "cards",
+          "$me",
+          "hand"
+         ],
+         "as": "$ds",
+         "prompt": "Discard up to two cards (2 temporary Influence each)",
+         "min": 0,
+         "max": 2
+        }
+       ],
+       [
+        "let",
+        "$n",
+        [
+         "count",
+         "$ds"
+        ]
+       ],
+       [
+        "move",
+        "$ds",
+        "grave"
+       ],
+       [
+        "if",
+        [
+         ">",
+         "$n",
+         0
+        ],
+        [
+         [
+          "emit",
+          "costDiscard",
+          {
+           "p": "$me"
+          }
+         ]
+        ]
+       ],
+       [
+        "call",
+        "gainTmp",
+        "$me",
+        [
+         "*",
+         2,
+         "$n"
+        ]
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "label": "Backroom Bargain"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "public-scapegoat",
@@ -3523,7 +7794,100 @@
   "trade": 1,
   "will": 0,
   "dur": 2,
-  "ready": 0
+  "abil": [
+   {
+    "label": "Sacrifice: prevent the next 2 damage to another operative",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "do": [
+     [
+      "inc",
+      "$t",
+      "pv",
+      2
+     ],
+     [
+      "call",
+      "sacrifice",
+      "$self"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "ops"
+       ],
+       [
+        "!=",
+        "$it",
+        "$self"
+       ]
+      ],
+      "prompt": "Protect which operative?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "rabil": [
+   {
+    "label": "Sacrifice: prevent the next 2 damage to another operative",
+    "phases": [
+     "respond"
+    ],
+    "do": [
+     [
+      "inc",
+      "$t",
+      "pv",
+      2
+     ],
+     [
+      "call",
+      "sacrifice",
+      "$self"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "ops"
+       ],
+       [
+        "!=",
+        "$it",
+        "$self"
+       ]
+      ],
+      "prompt": "Protect which operative?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "citizen-intercept-clearinghouse",
@@ -3535,7 +7899,65 @@
   "text": "Once per turn, if you look at an opponent's hand, draw one then discard one.",
   "archetype": "Strategy Engines",
   "cost": 3,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "lookedHand",
+    "do": [
+     [
+      "call",
+      "loot",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "=",
+     "$e.p",
+     [
+      "get",
+      "$self",
+      "controller"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   },
+   {
+    "on": "peeked",
+    "do": [
+     [
+      "call",
+      "loot",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.from",
+      "hand"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "false-flag-contractors",
@@ -3554,7 +7976,7 @@
   "keywords": [
    "contractor"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "operation-long-view",
@@ -3566,7 +7988,97 @@
   "text": "At Refresh put one Plot counter here, max 3. Remove three: draw two cards and gain 1 Dominance.",
   "archetype": "Strategy Engines",
   "cost": 2,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "if",
+      [
+       "<",
+       [
+        "get",
+        "$self",
+        "prog"
+       ],
+       3
+      ],
+      [
+       [
+        "inc",
+        "$self",
+        "prog",
+        1
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ]
+   }
+  ],
+  "abil": [
+   {
+    "label": "Remove three Plot counters: draw two and gain 1 Dominance",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "do": [
+     [
+      "inc",
+      "$self",
+      "prog",
+      -3
+     ],
+     [
+      "draw",
+      "$me",
+      2
+     ],
+     [
+      "call",
+      "gainDom",
+      "$me",
+      1
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       ">=",
+       [
+        "get",
+        "$self",
+        "prog"
+       ],
+       3
+      ],
+      "why": "Needs three Plot counters"
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "the-frankfurt-tip-network",
@@ -3590,7 +8102,45 @@
   "text": "Gain 4 temporary Influence. At Cleanup discard two cards or lose 2 Dominance (minimum 0).",
   "archetype": "Strategy Engines",
   "cost": 2,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "call",
+        "gainTmp",
+        "$me",
+        4
+       ],
+       [
+        "set",
+        "$me",
+        "riskyT",
+        "$turn"
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "label": "Risky Funding"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "open-recruitment-drive",
@@ -3602,7 +8152,82 @@
   "text": "Create two 1/1/1 Recruit tokens; eliminate them at Cleanup unless you pay 1 per token.",
   "archetype": "Strategy Engines",
   "cost": 3,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "call",
+        "makeTokens",
+        "$me",
+        "tok-recruit",
+        2,
+        0
+       ],
+       [
+        "each",
+        [
+         "filter",
+         [
+          "cards",
+          "$me",
+          "ops"
+         ],
+         [
+          "and",
+          [
+           "=",
+           [
+            "get",
+            "$it",
+            "card"
+           ],
+           "recruit"
+          ],
+          [
+           "=",
+           [
+            "get",
+            "$it",
+            "newT"
+           ],
+           "$turn"
+          ]
+         ]
+        ],
+        "$x",
+        [
+         [
+          "set",
+          "$x",
+          "upkeep",
+          1
+         ]
+        ]
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "label": "Open Recruitment Drive"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "deep-cover",
@@ -3614,7 +8239,102 @@
   "text": "Choose an operative: it has Force 0, Tradecraft 5, and Covert this mission; draw then discard one card. Play only after a mission is declared.",
   "archetype": "Strategy Engines",
   "cost": 2,
-  "ready": 0
+  "resp": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "set",
+        "$t",
+        "oF",
+        1
+       ],
+       [
+        "set",
+        "$t",
+        "oT",
+        6
+       ],
+       [
+        "call",
+        "loot",
+        "$me",
+        1
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "ops"
+       ],
+       [
+        "or",
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "atk"
+         ],
+         1
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "dfn"
+         ],
+         1
+        ]
+       ]
+      ],
+      "prompt": "Which operative goes deep?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "req": [
+     {
+      "if": [
+       ">",
+       [
+        "get",
+        "game",
+        "mp"
+       ],
+       0
+      ],
+      "why": "Only after a mission is declared"
+     }
+    ],
+    "label": "Deep Cover"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "the-untraceable-funding-protocol",
@@ -3626,7 +8346,7 @@
   "text": "Your first basic mission each turn costs 0 Influence to initiate (other mission costs remain unchanged). Your Headquarters Security is reduced by 1, minimum 0.",
   "archetype": "Strategy Engines",
   "cost": 4,
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "memetic-contagion-program",
@@ -3638,7 +8358,51 @@
   "text": "Once per turn when you successfully Subvert, the opposing team gets -1 Will until its controller's next Refresh.",
   "archetype": "Strategy Engines",
   "cost": 3,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "set",
+      "$opp",
+      "memeT",
+      "$turn"
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      3
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "contingency-insurance-pact",
@@ -3650,7 +8414,7 @@
   "text": "The first time your operative would be eliminated or Facility would be destroyed each turn, pay 2 to prevent it; exhaust the operative or disable the Facility.",
   "archetype": "Strategy Engines",
   "cost": 4,
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "counter-cabal-alliance",
@@ -3662,7 +8426,94 @@
   "text": "Choose Force, Tradecraft or Will. Your team gets +3 in that attribute this turn; you cannot gain more than 2 Dominance this turn.",
   "archetype": "Strategy Engines",
   "cost": 3,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "choose",
+        {
+         "from": [
+          "lit",
+          [
+           "Force",
+           "Tradecraft",
+           "Will"
+          ]
+         ],
+         "as": "$r",
+         "prompt": "Counter-Cabal Alliance: your mission teams get +3 in which attribute this turn?",
+         "min": 1,
+         "max": 1
+        }
+       ],
+       [
+        "set",
+        "$me",
+        "ccA",
+        [
+         "?",
+         [
+          "=",
+          "$r",
+          "Force"
+         ],
+         1,
+         [
+          "?",
+          [
+           "=",
+           "$r",
+           "Tradecraft"
+          ],
+          2,
+          3
+         ]
+        ]
+       ],
+       [
+        "set",
+        "$me",
+        "ccT",
+        "$turn"
+       ],
+       [
+        "set",
+        "$me",
+        "domMax",
+        [
+         "max",
+         2,
+         [
+          "get",
+          "$me",
+          "domT"
+         ]
+        ]
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "label": "Counter-Cabal Alliance"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "alias-renewal-program",
@@ -3674,7 +8525,76 @@
   "text": "Once per turn, discard an operative card: a friendly operative gets +3 Tradecraft until Cleanup.",
   "archetype": "Strategy Engines",
   "cost": 4,
-  "ready": 0
+  "abil": [
+   {
+    "label": "Discard an operative card: an operative gets +3 Tradecraft until Cleanup",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "do": [
+     [
+      "move",
+      "$d",
+      "grave"
+     ],
+     [
+      "emit",
+      "costDiscard",
+      {
+       "p": "$me"
+      }
+     ],
+     [
+      "inc",
+      "$t",
+      "cT",
+      3
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$d",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "hand"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "type"
+        ],
+        "operative"
+       ]
+      ],
+      "prompt": "Discard which operative card?",
+      "min": 1,
+      "max": 1
+     },
+     {
+      "as": "$t",
+      "from": [
+       "cards",
+       "$me",
+       "ops"
+      ],
+      "prompt": "Which operative gets +3 Tradecraft?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "scorched-earth-protocol",
@@ -3686,7 +8606,186 @@
   "text": "Destroy one Facility you control and one opposing Facility costing no more than 2 above its cost.",
   "archetype": "Strategy Engines",
   "cost": 5,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "choose",
+        {
+         "from": [
+          "filter",
+          [
+           "cards",
+           "$me",
+           "sites"
+          ],
+          [
+           "=",
+           [
+            "get",
+            "$it",
+            "type"
+           ],
+           "facility"
+          ]
+         ],
+         "as": "$a",
+         "prompt": "Destroy which of your Facilities?",
+         "min": 1,
+         "max": 1
+        }
+       ],
+       [
+        "let",
+        "$lim",
+        [
+         "+",
+         [
+          "get",
+          "$a",
+          "cost"
+         ],
+         2
+        ]
+       ],
+       [
+        "call",
+        "gone",
+        "$a"
+       ],
+       [
+        "choose",
+        {
+         "from": [
+          "filter",
+          [
+           "filter",
+           [
+            "cards",
+            "$opp",
+            "sites"
+           ],
+           [
+            "=",
+            [
+             "get",
+             "$it",
+             "type"
+            ],
+            "facility"
+           ]
+          ],
+          [
+           "<=",
+           [
+            "get",
+            "$it",
+            "cost"
+           ],
+           "$lim"
+          ]
+         ],
+         "as": "$b",
+         "prompt": "Destroy which opposing Facility?",
+         "min": 0,
+         "max": 1
+        }
+       ],
+       [
+        "if",
+        [
+         "isObj",
+         "$b"
+        ],
+        [
+         [
+          "call",
+          "gone",
+          "$b"
+         ]
+        ]
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       "and",
+       [
+        ">",
+        [
+         "count",
+         [
+          "filter",
+          [
+           "cards",
+           "$me",
+           "sites"
+          ],
+          [
+           "=",
+           [
+            "get",
+            "$it",
+            "type"
+           ],
+           "facility"
+          ]
+         ]
+        ],
+        0
+       ],
+       [
+        ">",
+        [
+         "count",
+         [
+          "filter",
+          [
+           "cards",
+           "$opp",
+           "sites"
+          ],
+          [
+           "=",
+           [
+            "get",
+            "$it",
+            "type"
+           ],
+           "facility"
+          ]
+         ]
+        ],
+        0
+       ]
+      ],
+      "why": "Needs a Facility on each side"
+     }
+    ],
+    "label": "Scorched Earth Protocol"
+   }
+  ],
+  "tFac": 1,
+  "ready": 1
  },
  {
   "id": "the-other-side-of-the-table",
@@ -3698,7 +8797,162 @@
   "text": "Deploy: Draw one card, then discard one card. Response (once during each opponent turn): Pay 2 Influence to assign one additional ready operative as a defender after defenders are declared, without exceeding two assigned defenders total.",
   "archetype": "Strategy Engines",
   "cost": 5,
-  "ready": 0
+  "deploy": [
+   [
+    "call",
+    "loot",
+    "$me",
+    1
+   ]
+  ],
+  "rabil": [
+   {
+    "label": "Pay 2: assign one more defender",
+    "phases": [
+     "respond"
+    ],
+    "do": [
+     [
+      "set",
+      "$t",
+      "dfn",
+      1
+     ],
+     [
+      "set",
+      "$t",
+      "ex",
+      1
+     ]
+    ],
+    "cost": [
+     [
+      "call",
+      "spend",
+      "$me",
+      2
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       "and",
+       [
+        "and",
+        [
+         ">",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         0
+        ],
+        [
+         "!=",
+         [
+          "nth",
+          [
+           "players"
+          ],
+          [
+           "-",
+           [
+            "get",
+            "game",
+            "mp"
+           ],
+           1
+          ]
+         ],
+         "$me"
+        ]
+       ],
+       [
+        "<",
+        [
+         "count",
+         [
+          "filter",
+          [
+           "cards",
+           "*",
+           "ops"
+          ],
+          [
+           "=",
+           [
+            "get",
+            "$it",
+            "dfn"
+           ],
+           1
+          ]
+         ]
+        ],
+        2
+       ],
+       [
+        ">=",
+        [
+         "call",
+         "avail",
+         "$me"
+        ],
+        2
+       ]
+      ],
+      "why": "Only while defending with fewer than two defenders"
+     }
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "ops"
+       ],
+       [
+        "and",
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "ex"
+         ],
+         0
+        ],
+        [
+         "not",
+         [
+          "=",
+          [
+           "get",
+           "$it",
+           "dfn"
+          ],
+          1
+         ]
+        ]
+       ]
+      ],
+      "prompt": "Which ready operative joins the defense?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "shadow-procurement-office",
@@ -3710,7 +8964,198 @@
   "text": "Once during your Development, play one Asset with printed cost 2 or less from your discard pile for its printed cost plus 1. If it would leave play, exile it instead. You cannot play any other Asset from a discard pile that turn.",
   "archetype": "Strategy Engines",
   "cost": 5,
-  "ready": 0
+  "abil": [
+   {
+    "label": "Play an Asset (cost 2 or less) from your discard pile for its cost + 1",
+    "phases": [
+     "development"
+    ],
+    "do": [
+     [
+      "call",
+      "spend",
+      "$me",
+      [
+       "+",
+       [
+        "get",
+        "$t",
+        "cost"
+       ],
+       1
+      ]
+     ],
+     [
+      "move",
+      "$t",
+      "gear",
+      {
+       "as": "$c"
+      }
+     ],
+     [
+      "set",
+      "$c",
+      "exileOnLeave",
+      1
+     ],
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "$c",
+        "attach"
+       ],
+       1
+      ],
+      [
+       [
+        "choose",
+        {
+         "from": [
+          "filter",
+          [
+           "cards",
+           "$me",
+           "ops"
+          ],
+          [
+           "call",
+           "bearerOk",
+           "$c",
+           "$it"
+          ]
+         ],
+         "as": "$b",
+         "prompt": "Attach to which operative?",
+         "min": 1,
+         "max": 1
+        }
+       ],
+       [
+        "link",
+        "$c",
+        "bearer",
+        "$b"
+       ]
+      ]
+     ],
+     [
+      "call",
+      "played",
+      "$c",
+      "$me"
+     ],
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "$c",
+        "hasDeploy"
+       ],
+       1
+      ],
+      [
+       [
+        "run",
+        "$c",
+        "deploy"
+       ]
+      ]
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "grave"
+       ],
+       [
+        "and",
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "type"
+         ],
+         "asset"
+        ],
+        [
+         "<=",
+         [
+          "get",
+          "$it",
+          "cost"
+         ],
+         2
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "ready"
+         ],
+         1
+        ],
+        [
+         ">=",
+         [
+          "call",
+          "avail",
+          "$me"
+         ],
+         [
+          "+",
+          [
+           "get",
+           "$it",
+           "cost"
+          ],
+          1
+         ]
+        ],
+        [
+         "or",
+         [
+          "!=",
+          [
+           "get",
+           "$it",
+           "attach"
+          ],
+          1
+         ],
+         [
+          "call",
+          "canAttachAny",
+          "$it",
+          "$me"
+         ]
+        ]
+       ]
+      ],
+      "prompt": "Play which Asset?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "a-favor-called-in",
