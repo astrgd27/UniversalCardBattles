@@ -124,3 +124,58 @@ test('shadow-earth 2.0: Responses in the mission window, defender first; private
   assert.equal(g.s.priority, 'p1', 'the defender has the first Response priority');
   void listActions;
 });
+
+test('shadow-earth 2.1: dual-attribute Agendas use the team\'s better attribute', () => {
+  let g = start('psy', 'pren');
+  const a = row(g)[0];
+  g.s.objects[a].card = 'steal-the-prototype'; // Tradecraft or Force, 3 progress
+  invalidate(g.s);
+  const v = put(g, 'p0', 'precog-analyst'); // 0/3/2
+  g = settle(act(g, 'p0', 'mission', null, { $t: [a], $team: [v] }));
+  const r = g.s.events.find((e: any) => e.type === 'missionResult') as any;
+  assert.equal(r.attr, 2, 'Tradecraft 3 beats Force 0');
+});
+
+test('shadow-earth 2.1 Doctrines: PsyList Wetwork uses Will and plants Control; Prendick harvests Specimens', () => {
+  let g = start('psy', 'pren');
+  const zero = put(g, 'p0', 'communal-mind'); // Will 4
+  const hound = put(g, 'p1', 'razorback-hybrid', 'ops', { ex: 1 }); // Will 0, Health 3
+  g = settle(act(g, 'p0', 'mission', null, { $t: [hound], $team: [zero] }));
+  const r = g.s.events.find((e: any) => e.type === 'missionResult') as any;
+  assert.equal(r.attr, 3, 'PsyList Wetwork is a Will mission');
+  assert.equal(r.ok, 1);
+  let h = start('pren', 'psy');
+  const beast = put(h, 'p0', 'alpha-predator');
+  const viewer = put(h, 'p1', 'remote-viewer', 'ops', { ex: 1 });
+  h = settle(act(h, 'p0', 'mission', null, { $t: [viewer], $team: [beast] }));
+  assert.ok(!h.s.objects[viewer]);
+  assert.ok(h.s.zones['p0:ops'].some((id) => h.s.objects[id].card === 'specimen'), 'Harvest: a Specimen token');
+});
+
+test('shadow-earth 2.1 Doctrines: Children send up to 5; Illuminati bribe; Dawn Star Blood Rite', () => {
+  let g = start('child', 'psy');
+  const crowd = ['ecstatic-convert', 'ecstatic-convert', 'ecstatic-convert', 'street-preacher', 'street-preacher'].map((c) => put(g, 'p0', c));
+  const a = row(g)[0];
+  const n = g.s.zones['p0:ops'].length;
+  g = settle(act(g, 'p0', 'mission', null, { $t: [a], $team: crowd }));
+  assert.ok(g.s.events.some((e: any) => e.type === 'missionDeclared' && e.n === 5), 'a five-operative mission');
+  void n;
+  let h = start('illu', 'psy');
+  const b = row(h)[0];
+  const fixer = put(h, 'p0', 'municipal-fixer');
+  h = act(h, 'p0', 'mission', null, { $t: [b], $team: [fixer] });
+  while (h.s.pending) h = submitDecision(h, h.s.pending.player, h.s.pending.id, []);
+  h = act(h, 'p1', 'pass', null);
+  const bribe = listActions(h, 'p0').find((x: any) => x.label?.startsWith('Bribery') || /Bribery/.test(JSON.stringify(x)));
+  assert.ok(bribe, 'Bribery is offered during Responses');
+  let d = start('dawn', 'psy');
+  const imp = put(d, 'p0', 'lesser-imp');
+  const adept = put(d, 'p0', 'senior-adept');
+  const c = row(d)[0];
+  d = act(d, 'p0', 'mission', null, { $t: [c], $team: [adept] });
+  while (d.s.pending) d = submitDecision(d, d.s.pending.player, d.s.pending.id, []);
+  d = act(d, 'p1', 'pass', null);
+  const rite = listActions(d, 'p0').find((x: any) => /Blood Rite/.test(JSON.stringify(x)));
+  assert.ok(rite, 'Blood Rite is offered during Responses');
+  void imp;
+});

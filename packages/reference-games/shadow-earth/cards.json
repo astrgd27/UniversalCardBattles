@@ -4,9 +4,10 @@
   "name": "Silence the Witness",
   "type": "agenda",
   "faction": "neutral",
-  "text": "Force. 2 progress, worth 1 Dominance. When scored: deal 2 damage to an operative.",
+  "text": "Force or Tradecraft (your team's better one). 2 progress, worth 1 Dominance. When scored: deal 2 damage to an operative.",
   "flavor": "She saw the plates on the black sedan. She will not testify.",
   "mattr": 1,
+  "mattr2": 2,
   "need": 2,
   "res": 2,
   "dom": 1,
@@ -41,9 +42,10 @@
   "name": "Doctor the Archives",
   "type": "agenda",
   "faction": "neutral",
-  "text": "Tradecraft. 2 progress, worth 1 Dominance. When scored: look at the opponent's hand; they discard a card of your choice.",
+  "text": "Tradecraft or Will (your team's better one). 2 progress, worth 1 Dominance. When scored: look at the opponent's hand; they discard a card of your choice.",
   "flavor": "History is a file. Files can be edited.",
   "mattr": 2,
+  "mattr2": 3,
   "need": 2,
   "res": 2,
   "dom": 1,
@@ -96,9 +98,10 @@
   "name": "Seize the Broadcast",
   "type": "agenda",
   "faction": "neutral",
-  "text": "Will. 2 progress, worth 1 Dominance. When scored: Scry 3, then draw a card.",
+  "text": "Will or Force (your team's better one). 2 progress, worth 1 Dominance. When scored: Scry 3, then draw a card.",
   "flavor": "At 9:14 p.m. every television in the hemisphere showed the same symbol.",
   "mattr": 3,
+  "mattr2": 1,
   "need": 2,
   "res": 2,
   "dom": 1,
@@ -124,9 +127,10 @@
   "name": "Rig the Election",
   "type": "agenda",
   "faction": "neutral",
-  "text": "Will. 3 progress, worth 2 Dominance. When scored: gain 1 progress on your Master Plan.",
+  "text": "Will or Tradecraft (your team's better one). 3 progress, worth 2 Dominance. When scored: gain 1 progress on your Master Plan.",
   "flavor": "The people chose. They were always going to choose.",
   "mattr": 3,
+  "mattr2": 2,
   "need": 3,
   "res": 3,
   "dom": 2,
@@ -155,9 +159,10 @@
   "name": "Steal the Prototype",
   "type": "agenda",
   "faction": "neutral",
-  "text": "Tradecraft. 3 progress, worth 2 Dominance. When scored: draw 2 cards.",
+  "text": "Tradecraft or Force (your team's better one). 3 progress, worth 2 Dominance. When scored: draw 2 cards.",
   "flavor": "Lockheed reported it as a fire. There was no fire.",
   "mattr": 2,
+  "mattr2": 1,
   "need": 3,
   "res": 3,
   "dom": 2,
@@ -177,9 +182,10 @@
   "name": "Assassinate the Ambassador",
   "type": "agenda",
   "faction": "neutral",
-  "text": "Force. 3 progress, worth 2 Dominance. When scored: eliminate a damaged operative.",
+  "text": "Force or Will (your team's better one). 3 progress, worth 2 Dominance. When scored: eliminate a damaged operative.",
   "flavor": "Officially, a heart attack. Unofficially, a message.",
   "mattr": 1,
+  "mattr2": 3,
   "need": 3,
   "res": 3,
   "dom": 2,
@@ -225,9 +231,10 @@
   "name": "Turn the Senator",
   "type": "agenda",
   "faction": "neutral",
-  "text": "Will. 3 progress, worth 2 Dominance. When scored: ready all your operatives.",
+  "text": "Will or Force (your team's better one). 3 progress, worth 2 Dominance. When scored: ready all your operatives.",
   "flavor": "Everyone has a price. His was a photograph.",
   "mattr": 3,
+  "mattr2": 1,
   "need": 3,
   "res": 3,
   "dom": 2,
@@ -259,9 +266,10 @@
   "name": "Poison the Reservoir",
   "type": "agenda",
   "faction": "neutral",
-  "text": "Force. 3 progress, worth 2 Dominance. When scored: deal 1 damage to each enemy operative.",
+  "text": "Force or Tradecraft (your team's better one). 3 progress, worth 2 Dominance. When scored: deal 1 damage to each enemy operative.",
   "flavor": "Boil-water notices were issued for six counties. Four were too late.",
   "mattr": 1,
+  "mattr2": 2,
   "need": 3,
   "res": 3,
   "dom": 2,
@@ -293,9 +301,10 @@
   "name": "Blackout in the Capital",
   "type": "agenda",
   "faction": "neutral",
-  "text": "Tradecraft. 3 progress, worth 2 Dominance. When scored: exhaust up to two enemy operatives.",
+  "text": "Tradecraft or Will (your team's better one). 3 progress, worth 2 Dominance. When scored: exhaust up to two enemy operatives.",
   "flavor": "For eleven hours, the most powerful city on Earth went dark. Things were moved.",
   "mattr": 2,
+  "mattr2": 3,
   "need": 3,
   "res": 3,
   "dom": 2,
@@ -337,9 +346,10 @@
   "name": "Topple the Regime",
   "type": "agenda",
   "faction": "neutral",
-  "text": "Force. 4 progress, worth 3 Dominance. When scored: the opponent discards 2 cards.",
+  "text": "Force or Tradecraft (your team's better one). 4 progress, worth 3 Dominance. When scored: the opponent discards 2 cards.",
   "flavor": "The colonels were very sure it was their idea.",
   "mattr": 1,
+  "mattr2": 2,
   "need": 4,
   "res": 4,
   "dom": 3,
@@ -360,9 +370,10 @@
   "name": "Crash the Markets",
   "type": "agenda",
   "faction": "neutral",
-  "text": "Tradecraft. 4 progress, worth 3 Dominance. When scored: the opponent loses 2 progress on their Master Plan.",
+  "text": "Tradecraft or Will (your team's better one). 4 progress, worth 3 Dominance. When scored: the opponent loses 2 progress on their Master Plan.",
   "flavor": "Somebody always knows on Thursday what everybody learns on Monday.",
   "mattr": 2,
+  "mattr2": 3,
   "need": 4,
   "res": 4,
   "dom": 3,
@@ -391,9 +402,10 @@
   "name": "The Vatican Files",
   "type": "agenda",
   "faction": "neutral",
-  "text": "Will. 4 progress, worth 3 Dominance. When scored: draw 3 cards.",
+  "text": "Will or Force (your team's better one). 4 progress, worth 3 Dominance. When scored: draw 3 cards.",
   "flavor": "Shelf 1,138 of the Secret Archive is not on any floor plan.",
   "mattr": 3,
+  "mattr2": 1,
   "need": 4,
   "res": 4,
   "dom": 3,
@@ -533,7 +545,7 @@
   "name": "PsyList Central Station",
   "type": "headquarters",
   "faction": "psylist",
-  "text": "Security 3. Enemy operatives with Control counters get -1 Force, Tradecraft and Will. At the start of your turn, look at the top card of the opponent's deck.",
+  "text": "Security 3. Doctrine (Psychic Assault): your Wetwork missions use Will instead of Force, and when you win one, put a Control counter on the target. Enemy operatives with Control counters get -1 Force, Tradecraft and Will. At the start of your turn, look at the top card of the opponent's deck.",
   "flavor": "A disused weather station in Nevada. The antennas point down.",
   "rarity": "S",
   "abilities": [
@@ -1827,14 +1839,82 @@
   "rarity": "C"
  },
  {
+  "id": "mass-suggestion",
+  "name": "Mass Suggestion",
+  "type": "operation",
+  "faction": "psylist",
+  "text": "Put a Control counter on each exhausted enemy operative.",
+  "flavor": "The broadcast lasted four seconds. The orders lasted for years.",
+  "cost": 3,
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "each",
+        [
+         "filter",
+         [
+          "cards",
+          "$opp",
+          "ops"
+         ],
+         [
+          "=",
+          [
+           "get",
+           "$it",
+           "ex"
+          ],
+          1
+         ]
+        ],
+        "$x",
+        [
+         [
+          "call",
+          "putCtl",
+          "$x"
+         ]
+        ]
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$cx"
+     ]
+    ],
+    "label": "Mass Suggestion",
+    "phases": [
+     "main"
+    ]
+   }
+  ],
+  "num": "SE2-039",
+  "rarity": "C"
+ },
+ {
   "id": "prendick-holdings-tower",
   "name": "Prendick Holdings Tower",
   "type": "headquarters",
   "faction": "prendick",
-  "text": "Security 3. Your Mutations cost 1 less.",
+  "text": "Security 3. Doctrine (Harvest): whenever an enemy operative is eliminated during your turn, create a 1/1/1 Specimen token. Your Mutations cost 1 less.",
   "flavor": "Forty floors of glass. Nine more underground.",
   "rarity": "S",
-  "num": "SE2-039",
+  "num": "SE2-040",
   "fno": 2,
   "security": 3
  },
@@ -1847,7 +1927,7 @@
   "flavor": "Patent pending: the next human.",
   "mattr": 1,
   "rarity": "S",
-  "num": "SE2-040",
+  "num": "SE2-041",
   "need": 4,
   "res": 2,
   "dom": 3
@@ -1867,7 +1947,7 @@
   "trade": 0,
   "will": 1,
   "hp": 2,
-  "num": "SE2-041",
+  "num": "SE2-042",
   "rarity": "C"
  },
  {
@@ -1885,7 +1965,7 @@
   "trade": 0,
   "will": 0,
   "hp": 3,
-  "num": "SE2-042",
+  "num": "SE2-043",
   "rarity": "C"
  },
  {
@@ -1903,7 +1983,7 @@
   "trade": 1,
   "will": 1,
   "hp": 4,
-  "num": "SE2-043",
+  "num": "SE2-044",
   "rarity": "C"
  },
  {
@@ -1924,7 +2004,7 @@
   "will": 1,
   "hp": 6,
   "rarity": "M",
-  "num": "SE2-044"
+  "num": "SE2-045"
  },
  {
   "id": "break-containment",
@@ -2056,7 +2136,7 @@
     "label": "Break Containment"
    }
   ],
-  "num": "SE2-045",
+  "num": "SE2-046",
   "rarity": "C"
  },
  {
@@ -2072,7 +2152,7 @@
   ],
   "attach": 1,
   "bearerKw": "specimen",
-  "num": "SE2-046",
+  "num": "SE2-047",
   "rarity": "C"
  },
  {
@@ -2088,7 +2168,7 @@
   ],
   "attach": 1,
   "bearerKw": "specimen",
-  "num": "SE2-047",
+  "num": "SE2-048",
   "rarity": "C"
  },
  {
@@ -2166,7 +2246,7 @@
     }
    }
   ],
-  "num": "SE2-048",
+  "num": "SE2-049",
   "rarity": "C"
  },
  {
@@ -2182,7 +2262,7 @@
   ],
   "attach": 1,
   "bearerKw": "specimen",
-  "num": "SE2-049",
+  "num": "SE2-050",
   "rarity": "C"
  },
  {
@@ -2229,7 +2309,7 @@
     ]
    }
   ],
-  "num": "SE2-050",
+  "num": "SE2-051",
   "rarity": "C"
  },
  {
@@ -2293,7 +2373,7 @@
     ]
    }
   ],
-  "num": "SE2-051",
+  "num": "SE2-052",
   "rarity": "C"
  },
  {
@@ -2352,7 +2432,7 @@
     ]
    }
   ],
-  "num": "SE2-052",
+  "num": "SE2-053",
   "rarity": "C"
  },
  {
@@ -2371,7 +2451,7 @@
   "trade": 4,
   "will": 1,
   "hp": 3,
-  "num": "SE2-053",
+  "num": "SE2-054",
   "rarity": "C"
  },
  {
@@ -2397,7 +2477,7 @@
     1
    ]
   ],
-  "num": "SE2-054",
+  "num": "SE2-055",
   "rarity": "C",
   "has_deploy": 1
  },
@@ -2434,7 +2514,7 @@
     ]
    }
   ],
-  "num": "SE2-055",
+  "num": "SE2-056",
   "rarity": "C"
  },
  {
@@ -2471,7 +2551,7 @@
     }
    }
   ],
-  "num": "SE2-056",
+  "num": "SE2-057",
   "rarity": "C"
  },
  {
@@ -2538,7 +2618,7 @@
     ]
    }
   ],
-  "num": "SE2-057",
+  "num": "SE2-058",
   "rarity": "C"
  },
  {
@@ -2596,7 +2676,125 @@
     ]
    }
   ],
-  "num": "SE2-058",
+  "num": "SE2-059",
+  "rarity": "C"
+ },
+ {
+  "id": "regenerative-tissue",
+  "name": "Regenerative Tissue",
+  "type": "asset",
+  "faction": "prendick",
+  "text": "Mutation. Attach to a Specimen: +1 Health. At the start of your turn, remove all damage from it.",
+  "flavor": "Cut it. Burn it. Come back Tuesday.",
+  "cost": 2,
+  "keywords": [
+   "mutation"
+  ],
+  "attach": 1,
+  "bearerKw": "specimen",
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "call",
+      "heal",
+      [
+       "get",
+       "$self",
+       "bearer"
+      ],
+      99
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ]
+    ]
+   }
+  ],
+  "num": "SE2-060",
+  "rarity": "C"
+ },
+ {
+  "id": "feeding-frenzy",
+  "name": "Feeding Frenzy",
+  "type": "operation",
+  "faction": "prendick",
+  "text": "Ready a Specimen. It gets +2 Force until end of turn.",
+  "flavor": "Nobody fed them for three days. That was the experiment.",
+  "cost": 2,
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "set",
+        "$t",
+        "ex",
+        0
+       ],
+       [
+        "inc",
+        "$t",
+        "cF",
+        2
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$cx"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "ops"
+       ],
+       [
+        "has",
+        "$it",
+        "specimen"
+       ]
+      ],
+      "prompt": "Which Specimen?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "label": "Feeding Frenzy",
+    "phases": [
+     "main"
+    ]
+   }
+  ],
+  "num": "SE2-061",
   "rarity": "C"
  },
  {
@@ -2604,7 +2802,7 @@
   "name": "Dawn Star Grand Lodge",
   "type": "headquarters",
   "faction": "dawnstar",
-  "text": "Security 3. The first time you sacrifice an operative each turn, gain 1 temporary Influence.",
+  "text": "Security 3. Doctrine (Blood Rite): once per mission, during Responses, sacrifice an operative: your side gets +3 to the mission's attribute. Whenever you sacrifice an operative, gain 1 temporary Influence.",
   "flavor": "Founded 1717. Membership: unchanged since 1717.",
   "rarity": "S",
   "abilities": [
@@ -2626,14 +2824,120 @@
       "$self",
       "controller"
      ]
-    ],
-    "limit": {
-     "per": "turn",
-     "by": "source"
-    }
+    ]
    }
   ],
-  "num": "SE2-059",
+  "rabil": [
+   {
+    "label": "Blood Rite: sacrifice an operative for +3",
+    "phases": [
+     "respond"
+    ],
+    "do": [
+     [
+      "set",
+      "game",
+      "brt",
+      1
+     ],
+     [
+      "call",
+      "sacrifice",
+      "$t"
+     ],
+     [
+      "if",
+      [
+       "=",
+       [
+        "nth",
+        [
+         "players"
+        ],
+        [
+         "-",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         1
+        ]
+       ],
+       "$me"
+      ],
+      [
+       [
+        "inc",
+        "game",
+        "am",
+        3
+       ]
+      ],
+      [
+       [
+        "inc",
+        "game",
+        "dm",
+        3
+       ]
+      ]
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       "and",
+       [
+        ">",
+        [
+         "get",
+         "game",
+         "mp"
+        ],
+        0
+       ],
+       [
+        "=",
+        [
+         "get",
+         "game",
+         "brt"
+        ],
+        0
+       ]
+      ],
+      "why": "Once per mission, during a mission"
+     }
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "ops"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "ctlT"
+        ],
+        0
+       ]
+      ],
+      "prompt": "Blood Rite: sacrifice which operative?",
+      "min": 1,
+      "max": 1
+     }
+    ]
+   }
+  ],
+  "num": "SE2-062",
   "fno": 3,
   "security": 3
  },
@@ -2656,7 +2960,7 @@
     1
    ]
   ],
-  "num": "SE2-060",
+  "num": "SE2-063",
   "need": 4,
   "res": 2,
   "dom": 3,
@@ -2677,7 +2981,7 @@
   "trade": 1,
   "will": 2,
   "hp": 2,
-  "num": "SE2-061",
+  "num": "SE2-064",
   "rarity": "C"
  },
  {
@@ -2752,7 +3056,7 @@
     ]
    }
   ],
-  "num": "SE2-062",
+  "num": "SE2-065",
   "rarity": "C"
  },
  {
@@ -2871,7 +3175,7 @@
     "label": "Blood Offering"
    }
   ],
-  "num": "SE2-063",
+  "num": "SE2-066",
   "rarity": "C"
  },
  {
@@ -2968,7 +3272,7 @@
     ]
    }
   ],
-  "num": "SE2-064",
+  "num": "SE2-067",
   "rarity": "C"
  },
  {
@@ -3016,14 +3320,14 @@
     }
    }
   ],
-  "num": "SE2-065"
+  "num": "SE2-068"
  },
  {
   "id": "lesser-imp",
   "name": "Lesser Imp",
   "type": "operative",
   "faction": "dawnstar",
-  "text": "Demon. When eliminated, deal 1 damage to an enemy operative.",
+  "text": "Demon. When eliminated or sacrificed, deal 1 damage to an enemy operative.",
   "flavor": "Small. Spiteful. Bound by contract.",
   "cost": 1,
   "keywords": [
@@ -3033,7 +3337,7 @@
   "trade": 0,
   "will": 1,
   "hp": 1,
-  "num": "SE2-066",
+  "num": "SE2-069",
   "rarity": "C"
  },
  {
@@ -3051,7 +3355,7 @@
   "trade": 1,
   "will": 2,
   "hp": 4,
-  "num": "SE2-067",
+  "num": "SE2-070",
   "rarity": "C"
  },
  {
@@ -3070,7 +3374,7 @@
   "will": 3,
   "hp": 5,
   "rarity": "R",
-  "num": "SE2-068"
+  "num": "SE2-071"
  },
  {
   "id": "pact-summoner",
@@ -3087,7 +3391,7 @@
   "trade": 1,
   "will": 3,
   "hp": 2,
-  "num": "SE2-069",
+  "num": "SE2-072",
   "rarity": "C"
  },
  {
@@ -3101,7 +3405,7 @@
   "keywords": [
    "ritual"
   ],
-  "num": "SE2-070",
+  "num": "SE2-073",
   "rarity": "C"
  },
  {
@@ -3117,7 +3421,7 @@
   ],
   "attach": 0,
   "bearerKw": 0,
-  "num": "SE2-071",
+  "num": "SE2-074",
   "rarity": "C"
  },
  {
@@ -3133,7 +3437,7 @@
   ],
   "attach": 0,
   "bearerKw": 0,
-  "num": "SE2-072",
+  "num": "SE2-075",
   "rarity": "C"
  },
  {
@@ -3189,7 +3493,7 @@
     ]
    ]
   ],
-  "num": "SE2-073",
+  "num": "SE2-076",
   "rarity": "C",
   "has_deploy": 1
  },
@@ -3200,15 +3504,15 @@
   "faction": "dawnstar",
   "text": "Occultist.",
   "flavor": "Thirty-second degree. Still climbing.",
-  "cost": 3,
+  "cost": 2,
   "keywords": [
    "occultist"
   ],
   "force": 1,
-  "trade": 2,
+  "trade": 1,
   "will": 4,
   "hp": 3,
-  "num": "SE2-074",
+  "num": "SE2-077",
   "rarity": "C"
  },
  {
@@ -3229,7 +3533,7 @@
   "will": 5,
   "hp": 4,
   "rarity": "M",
-  "num": "SE2-075"
+  "num": "SE2-078"
  },
  {
   "id": "the-seventh-circle",
@@ -3295,7 +3599,7 @@
     ]
    }
   ],
-  "num": "SE2-076",
+  "num": "SE2-079",
   "rarity": "C"
  },
  {
@@ -3373,7 +3677,101 @@
     ]
    }
   ],
-  "num": "SE2-077",
+  "num": "SE2-080",
+  "rarity": "C"
+ },
+ {
+  "id": "return-of-the-faithful",
+  "name": "Return of the Faithful",
+  "type": "operation",
+  "faction": "dawnstar",
+  "text": "Return up to two Occultists or Demons that cost 2 or less from your discard pile to your hand.",
+  "flavor": "Death is a leave of absence.",
+  "cost": 2,
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "choose",
+        {
+         "from": [
+          "filter",
+          [
+           "cards",
+           "$me",
+           "grave"
+          ],
+          [
+           "and",
+           [
+            "or",
+            [
+             "has",
+             "$it",
+             "occultist"
+            ],
+            [
+             "has",
+             "$it",
+             "demon"
+            ]
+           ],
+           [
+            "<=",
+            [
+             "get",
+             "$it",
+             "cost"
+            ],
+            2
+           ]
+          ]
+         ],
+         "as": "$xs",
+         "prompt": "Return which (up to two)?",
+         "min": 0,
+         "max": 2
+        }
+       ],
+       [
+        "each",
+        "$xs",
+        "$x",
+        [
+         [
+          "move",
+          "$x",
+          "hand"
+         ]
+        ]
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$cx"
+     ]
+    ],
+    "label": "Return of the Faithful",
+    "phases": [
+     "main"
+    ]
+   }
+  ],
+  "num": "SE2-081",
   "rarity": "C"
  },
  {
@@ -3381,7 +3779,7 @@
   "name": "The Central Committee",
   "type": "headquarters",
   "faction": "illuminati",
-  "text": "Security 3. At the start of your turn, gain 1 temporary Influence.",
+  "text": "Security 3. Doctrine (Bribery): during Responses, pay 2 Influence: your side gets +1 to the mission's attribute (up to three times each mission). Your Blackmail missions use Tradecraft, and winning one also gives you 2 temporary Influence. At the start of your turn, gain 1 temporary Influence.",
   "flavor": "The pyramid on the dollar is a floor plan.",
   "rarity": "S",
   "abilities": [
@@ -3409,7 +3807,104 @@
     ]
    }
   ],
-  "num": "SE2-078",
+  "rabil": [
+   {
+    "label": "Bribery: pay 2 for +1",
+    "phases": [
+     "respond"
+    ],
+    "do": [
+     [
+      "inc",
+      "game",
+      "brb",
+      1
+     ],
+     [
+      "if",
+      [
+       "=",
+       [
+        "nth",
+        [
+         "players"
+        ],
+        [
+         "-",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         1
+        ]
+       ],
+       "$me"
+      ],
+      [
+       [
+        "inc",
+        "game",
+        "am",
+        1
+       ]
+      ],
+      [
+       [
+        "inc",
+        "game",
+        "dm",
+        1
+       ]
+      ]
+     ]
+    ],
+    "cost": [
+     [
+      "call",
+      "spend",
+      "$me",
+      2
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       "and",
+       [
+        ">",
+        [
+         "get",
+         "game",
+         "mp"
+        ],
+        0
+       ],
+       [
+        "<",
+        [
+         "get",
+         "game",
+         "brb"
+        ],
+        3
+       ],
+       [
+        ">=",
+        [
+         "call",
+         "avail",
+         "$me"
+        ],
+        2
+       ]
+      ],
+      "why": "During a mission, up to three times, with 2 Influence"
+     }
+    ]
+   }
+  ],
+  "num": "SE2-082",
   "fno": 4,
   "security": 3
  },
@@ -3422,7 +3917,7 @@
   "flavor": "Signed in Davos. Ratified nowhere. Enforced everywhere.",
   "mattr": 2,
   "rarity": "S",
-  "num": "SE2-079",
+  "num": "SE2-083",
   "need": 4,
   "res": 2,
   "dom": 3
@@ -3477,7 +3972,7 @@
     ]
    }
   ],
-  "num": "SE2-080",
+  "num": "SE2-084",
   "rarity": "C"
  },
  {
@@ -3516,7 +4011,7 @@
     ]
    }
   ],
-  "num": "SE2-081",
+  "num": "SE2-085",
   "rarity": "C"
  },
  {
@@ -3562,7 +4057,7 @@
     ]
    }
   ],
-  "num": "SE2-082",
+  "num": "SE2-086",
   "rarity": "C"
  },
  {
@@ -3635,7 +4130,7 @@
     ]
    }
   ],
-  "num": "SE2-083",
+  "num": "SE2-087",
   "rarity": "C"
  },
  {
@@ -3729,7 +4224,7 @@
     ]
    }
   ],
-  "num": "SE2-084",
+  "num": "SE2-088",
   "rarity": "C"
  },
  {
@@ -3801,7 +4296,7 @@
     ]
    }
   ],
-  "num": "SE2-085",
+  "num": "SE2-089",
   "rarity": "C"
  },
  {
@@ -3855,7 +4350,7 @@
     ]
    }
   ],
-  "num": "SE2-086",
+  "num": "SE2-090",
   "rarity": "C"
  },
  {
@@ -4002,7 +4497,7 @@
     "label": "Emergency Injunction"
    }
   ],
-  "num": "SE2-087",
+  "num": "SE2-091",
   "rarity": "C"
  },
  {
@@ -4074,7 +4569,7 @@
     ]
    }
   ],
-  "num": "SE2-088",
+  "num": "SE2-092",
   "rarity": "C"
  },
  {
@@ -4092,7 +4587,7 @@
   "trade": 2,
   "will": 0,
   "hp": 2,
-  "num": "SE2-089",
+  "num": "SE2-093",
   "rarity": "C"
  },
  {
@@ -4111,7 +4606,7 @@
   "trade": 2,
   "will": 1,
   "hp": 2,
-  "num": "SE2-090",
+  "num": "SE2-094",
   "rarity": "C"
  },
  {
@@ -4126,7 +4621,7 @@
   "trade": 3,
   "will": 1,
   "hp": 3,
-  "num": "SE2-091",
+  "num": "SE2-095",
   "rarity": "C"
  },
  {
@@ -4155,7 +4650,7 @@
     1
    ]
   ],
-  "num": "SE2-092",
+  "num": "SE2-096",
   "has_deploy": 1
  },
  {
@@ -4263,7 +4758,7 @@
     "label": "Deniable Payment"
    }
   ],
-  "num": "SE2-093",
+  "num": "SE2-097",
   "rarity": "C"
  },
  {
@@ -4282,7 +4777,7 @@
   "trade": 2,
   "will": 1,
   "hp": 3,
-  "num": "SE2-094",
+  "num": "SE2-098",
   "rarity": "C"
  },
  {
@@ -4297,7 +4792,65 @@
   "trade": 3,
   "will": 1,
   "hp": 2,
-  "num": "SE2-095",
+  "num": "SE2-099",
+  "rarity": "C"
+ },
+ {
+  "id": "hostile-takeover",
+  "name": "Hostile Takeover",
+  "type": "operation",
+  "faction": "illuminati",
+  "text": "Take control of an enemy Facility.",
+  "flavor": "The board voted unanimously. The board did not know it had been sold.",
+  "cost": 4,
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "control",
+        "$t",
+        "$me"
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$cx"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "cards",
+       "$opp",
+       "sites"
+      ],
+      "prompt": "Acquire which Facility?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "label": "Hostile Takeover",
+    "phases": [
+     "main"
+    ]
+   }
+  ],
+  "num": "SE2-100",
   "rarity": "C"
  },
  {
@@ -4305,7 +4858,7 @@
   "name": "The First Contact House",
   "type": "headquarters",
   "faction": "children",
-  "text": "Security 3. At the start of your turn, gain 1 Revelation.",
+  "text": "Security 3. Doctrine (Congregation): you may send up to 5 operatives on a mission. Whenever a Cultist you control is eliminated, gain 1 Revelation. At the start of your turn, gain 1 Revelation.",
   "flavor": "A farmhouse in New Mexico. The crop circles started in 1947.",
   "rarity": "S",
   "abilities": [
@@ -4333,7 +4886,7 @@
     ]
    }
   ],
-  "num": "SE2-096",
+  "num": "SE2-101",
   "fno": 5,
   "security": 3
  },
@@ -4373,7 +4926,7 @@
     ]
    ]
   ],
-  "num": "SE2-097",
+  "num": "SE2-102",
   "need": 4,
   "res": 2,
   "dom": 3,
@@ -4435,7 +4988,7 @@
     ]
    }
   ],
-  "num": "SE2-098",
+  "num": "SE2-103",
   "rarity": "C"
  },
  {
@@ -4483,7 +5036,7 @@
     ]
    }
   ],
-  "num": "SE2-099",
+  "num": "SE2-104",
   "rarity": "C"
  },
  {
@@ -4501,7 +5054,7 @@
   "trade": 1,
   "will": 2,
   "hp": 3,
-  "num": "SE2-100",
+  "num": "SE2-105",
   "rarity": "C"
  },
  {
@@ -4519,7 +5072,7 @@
   "trade": 2,
   "will": 3,
   "hp": 3,
-  "num": "SE2-101",
+  "num": "SE2-106",
   "rarity": "C"
  },
  {
@@ -4557,7 +5110,7 @@
     ]
    }
   ],
-  "num": "SE2-102",
+  "num": "SE2-107",
   "rarity": "C"
  },
  {
@@ -4660,7 +5213,7 @@
     ]
    }
   ],
-  "num": "SE2-103",
+  "num": "SE2-108",
   "rarity": "C"
  },
  {
@@ -4735,7 +5288,7 @@
     ]
    }
   ],
-  "num": "SE2-104",
+  "num": "SE2-109",
   "rarity": "C"
  },
  {
@@ -4751,7 +5304,7 @@
   ],
   "attach": 1,
   "bearerKw": 0,
-  "num": "SE2-105",
+  "num": "SE2-110",
   "rarity": "C"
  },
  {
@@ -4767,7 +5320,7 @@
   ],
   "attach": 1,
   "bearerKw": 0,
-  "num": "SE2-106",
+  "num": "SE2-111",
   "rarity": "C"
  },
  {
@@ -4785,7 +5338,7 @@
   "trade": 2,
   "will": 3,
   "hp": 3,
-  "num": "SE2-107",
+  "num": "SE2-112",
   "rarity": "C"
  },
  {
@@ -4801,7 +5354,7 @@
   ],
   "attach": 1,
   "bearerKw": 0,
-  "num": "SE2-108",
+  "num": "SE2-113",
   "rarity": "C"
  },
  {
@@ -4819,7 +5372,7 @@
   "trade": 1,
   "will": 2,
   "hp": 2,
-  "num": "SE2-109",
+  "num": "SE2-114",
   "rarity": "C"
  },
  {
@@ -4837,7 +5390,7 @@
   "trade": 1,
   "will": 3,
   "hp": 3,
-  "num": "SE2-110",
+  "num": "SE2-115",
   "rarity": "C"
  },
  {
@@ -4980,7 +5533,7 @@
     ]
    }
   ],
-  "num": "SE2-111",
+  "num": "SE2-116",
   "rarity": "C"
  },
  {
@@ -5028,7 +5581,7 @@
     ]
    ]
   ],
-  "num": "SE2-112",
+  "num": "SE2-117",
   "has_deploy": 1
  },
  {
@@ -5141,7 +5694,7 @@
     "label": "Scream Across Dimensions"
    }
   ],
-  "num": "SE2-113",
+  "num": "SE2-118",
   "rarity": "C"
  },
  {
@@ -5213,7 +5766,174 @@
    }
   ],
   "rarity": "M",
-  "num": "SE2-114"
+  "num": "SE2-119"
+ },
+ {
+  "id": "night-of-the-lights",
+  "name": "Night of the Lights",
+  "type": "response",
+  "faction": "children",
+  "text": "Your side gets +1 to the mission's attribute for each Cultist you control on the mission.",
+  "flavor": "Ten thousand people looked up at once.",
+  "cost": 2,
+  "resp": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "if",
+        [
+         "=",
+         [
+          "nth",
+          [
+           "players"
+          ],
+          [
+           "-",
+           [
+            "get",
+            "game",
+            "mp"
+           ],
+           1
+          ]
+         ],
+         "$me"
+        ],
+        [
+         [
+          "inc",
+          "game",
+          "am",
+          [
+           "count",
+           [
+            "filter",
+            [
+             "filter",
+             [
+              "cards",
+              "$me",
+              "ops"
+             ],
+             [
+              "or",
+              [
+               "=",
+               [
+                "get",
+                "$it",
+                "atk"
+               ],
+               1
+              ],
+              [
+               "=",
+               [
+                "get",
+                "$it",
+                "dfn"
+               ],
+               1
+              ]
+             ]
+            ],
+            [
+             "has",
+             "$it",
+             "cultist"
+            ]
+           ]
+          ]
+         ]
+        ],
+        [
+         [
+          "inc",
+          "game",
+          "dm",
+          [
+           "count",
+           [
+            "filter",
+            [
+             "filter",
+             [
+              "cards",
+              "$me",
+              "ops"
+             ],
+             [
+              "or",
+              [
+               "=",
+               [
+                "get",
+                "$it",
+                "atk"
+               ],
+               1
+              ],
+              [
+               "=",
+               [
+                "get",
+                "$it",
+                "dfn"
+               ],
+               1
+              ]
+             ]
+            ],
+            [
+             "has",
+             "$it",
+             "cultist"
+            ]
+           ]
+          ]
+         ]
+        ]
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$cx"
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       ">",
+       [
+        "get",
+        "game",
+        "mp"
+       ],
+       0
+      ],
+      "why": "Only during a mission"
+     }
+    ],
+    "label": "Night of the Lights"
+   }
+  ],
+  "num": "SE2-120",
+  "rarity": "C"
  },
  {
   "id": "freelance-investigator",
@@ -5266,7 +5986,7 @@
     ]
    }
   ],
-  "num": "SE2-115",
+  "num": "SE2-121",
   "rarity": "C"
  },
  {
@@ -5281,7 +6001,7 @@
   "trade": 1,
   "will": 1,
   "hp": 3,
-  "num": "SE2-116",
+  "num": "SE2-122",
   "rarity": "C"
  },
  {
@@ -5304,7 +6024,7 @@
     "$opp"
    ]
   ],
-  "num": "SE2-117",
+  "num": "SE2-123",
   "rarity": "C",
   "has_deploy": 1
  },
@@ -5363,7 +6083,7 @@
     ]
    }
   ],
-  "num": "SE2-118",
+  "num": "SE2-124",
   "rarity": "C"
  },
  {
@@ -5381,7 +6101,7 @@
   "trade": 3,
   "will": 0,
   "hp": 2,
-  "num": "SE2-119",
+  "num": "SE2-125",
   "rarity": "C"
  },
  {
@@ -5396,7 +6116,7 @@
   "trade": 2,
   "will": 0,
   "hp": 2,
-  "num": "SE2-120",
+  "num": "SE2-126",
   "rarity": "C"
  },
  {
@@ -5488,7 +6208,7 @@
     ]
    }
   ],
-  "num": "SE2-121"
+  "num": "SE2-127"
  },
  {
   "id": "silenced-sidearm",
@@ -5503,7 +6223,7 @@
   ],
   "attach": 1,
   "bearerKw": 0,
-  "num": "SE2-122",
+  "num": "SE2-128",
   "rarity": "C"
  },
  {
@@ -5519,7 +6239,7 @@
   ],
   "attach": 1,
   "bearerKw": 0,
-  "num": "SE2-123",
+  "num": "SE2-129",
   "rarity": "C"
  },
  {
@@ -5535,7 +6255,7 @@
   ],
   "attach": 1,
   "bearerKw": 0,
-  "num": "SE2-124",
+  "num": "SE2-130",
   "rarity": "C"
  },
  {
@@ -5639,7 +6359,7 @@
     "label": "Ambush"
    }
   ],
-  "num": "SE2-125",
+  "num": "SE2-131",
   "rarity": "C"
  },
  {
@@ -5743,7 +6463,7 @@
     "label": "Inside Tip"
    }
   ],
-  "num": "SE2-126",
+  "num": "SE2-132",
   "rarity": "C"
  },
  {
@@ -5924,7 +6644,7 @@
     "label": "False Alarm"
    }
   ],
-  "num": "SE2-127",
+  "num": "SE2-133",
   "rarity": "C"
  },
  {
@@ -6030,7 +6750,7 @@
     "label": "Tactical Withdrawal"
    }
   ],
-  "num": "SE2-128",
+  "num": "SE2-134",
   "rarity": "C"
  },
  {
@@ -6151,7 +6871,7 @@
     }
    }
   ],
-  "num": "SE2-129",
+  "num": "SE2-135",
   "rarity": "C"
  },
  {
@@ -6221,7 +6941,7 @@
     ]
    }
   ],
-  "num": "SE2-130",
+  "num": "SE2-136",
   "rarity": "C"
  },
  {
@@ -6272,7 +6992,7 @@
     ]
    }
   ],
-  "num": "SE2-131",
+  "num": "SE2-137",
   "rarity": "C"
  },
  {
@@ -6345,7 +7065,7 @@
     ]
    }
   ],
-  "num": "SE2-132",
+  "num": "SE2-138",
   "rarity": "C"
  },
  {
@@ -6475,7 +7195,7 @@
     "label": "Plausible Deniability"
    }
   ],
-  "num": "SE2-133",
+  "num": "SE2-139",
   "rarity": "C"
  }
 ]

@@ -1,7 +1,7 @@
 {
  "moduleId": "shadow-earth",
  "displayName": "Shadow Earth",
- "semanticVersion": "2.0.0",
+ "semanticVersion": "2.1.0",
  "engineApiRange": "^0.3.1",
  "official": true,
  "requiredCapabilities": [
@@ -15,7 +15,7 @@
   "control",
   "relationships"
  ],
- "licensing": "Original game by @Astral. Shadow Earth 2.0.",
+ "licensing": "Original game by @Astral. Shadow Earth 2.1.",
  "tagline": "Five conspiracies. Three Agendas on the table. First to 7 Dominance rewrites history.",
  "theme": {
   "accent": "#b45309",
@@ -31,6 +31,7 @@
    "has_onScore",
    "has_onEnact",
    "mattr",
+   "mattr2",
    "need",
    "res",
    "dom",

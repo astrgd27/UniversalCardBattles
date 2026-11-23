@@ -1,4 +1,4 @@
-# Shadow Earth 2.0 (official module)
+# Shadow Earth 2.1 (official module)
 
 *The world you know is a stage set. Behind it, five conspiracies wage a silent war for the levers of history.*
 
@@ -37,7 +37,7 @@ Version 2.0 is a full redesign of the Core 1.7 prototype (archived in `tools/sha
 - An operative played this turn can defend but **cannot attack** until your next turn, unless a card says it can.
 
 ## Missions
-1. **Choose a target, then send 1–3 ready operatives.** They are exhausted. Missions are free; your operatives are the limit.
+1. **Choose a target, then send 1–3 ready operatives** (the Children of the High-Ones: up to 5). They are exhausted. Missions are free; your operatives are the limit.
 2. **Defence:** the opponent may assign up to 3 ready operatives. Defending does not exhaust them, so a defender can guard against every mission that turn.
    - A Wetwork target defends itself even when exhausted and doesn't count toward the 3.
    - A lone attacker with **Covert** allows only one defender.
@@ -50,12 +50,12 @@ Version 2.0 is a full redesign of the Core 1.7 prototype (archived in `tools/sha
 
 | Target | Attribute | Resistance if undefended | Reward |
 |---|---|---|---|
-| A **Conspiracy Agenda** in the row | the Agenda's (F, T or W) | its progress threshold (2, 3 or 4) | +1 progress for you (+2 if decisive). At its threshold, you **score** it |
+| A **Conspiracy Agenda** in the row | the better of its two (see below) | its progress threshold (2, 3 or 4) | +1 progress for you (+2 if decisive). At its threshold, you **score** it |
 | **Your Master Plan** | the Plan's | 2 | +1 progress (+2 if decisive). At 4 it is **enacted** |
 | **The opponent's Master Plan** | the Plan's | 2 | remove 2 of their progress |
-| **An opposing operative** (Wetwork) | Force | it always defends itself | 3 damage to it |
+| **An opposing operative** (Wetwork) | Force (PsyList: Will) | it always defends itself | 3 damage to it |
 | **An opposing Facility or Asset** (Sabotage) | Tradecraft | 2 | destroy it |
-| **The opposing Headquarters** (Blackmail) | Will | 3 | steal 1 progress (theirs −1 and yours +1 on a Conspiracy Agenda), or they discard 2 cards |
+| **The opposing Headquarters** (Blackmail) | Will (Illuminati: Tradecraft) | 3 | steal 1 progress (theirs −1 and yours +1 on a Conspiracy Agenda), or they discard 2 cards |
 
 **Scoring an Agenda:**
 - You gain its Dominance (1, 2 or 3) and resolve its "When scored" effect. All progress on it is cleared, it goes to your scored pile, and a new Agenda is revealed.
@@ -79,15 +79,31 @@ Keywords:
 - **Token:** created by effects. It disappears when it leaves play, and each player may control at most 10.
 
 ## The factions
-Each faction has a Headquarters power, a Master Plan and three archetypes:
+Each faction is built like a slice of a pie:
+- a philosophy;
+- two attributes it is good at and one it is bad at;
+- a **Doctrine** printed on its Headquarters, which bends one core rule for that faction only;
+- mechanics no one else has;
+- weaknesses it can't fix.
 
-| Faction | Leaning | Headquarters power | Master Plan | Archetypes |
-|---|---|---|---|---|
-| **PsyList** (the government's psychic program) | Will / Tradecraft | at the start of your turn, look at the top card of the opponent's deck; enemies with Control counters get −1 to all attributes | **Project OVERMIND** (Will) | Clairvoyance; Psychic Assault; **Control counters** (mind-controlled enemies) |
-| **Prendick Holdings** (biotech conglomerate) | Force / Tradecraft | your Mutations cost 1 less | **Project CHIMERA** (Force) | **Mutations** on Specimens; Sleeper Organisms; Corporate Biotech (economy) |
-| **Dawn Star Society** (occult lodge) | Will / Force | the first time you sacrifice each turn, gain 1 Influence | **The Morning Star Descends** (Will) | **Sacrifice**; Demons; Scriptures |
-| **Illuminati** (old money, the deep state) | Tradecraft | gain 1 temporary Influence each turn | **The New World Compact** (Tradecraft) | Finance; Institutions (**Mandate counters**); Contractors |
-| **Children of the High-Ones** (UFO cult) | Will | gain 1 **Revelation** each turn | **The Great Arrival** (Will) | Cultist swarm (tokens); Alien Artifacts; Revelation and Entities |
+| | **PsyList** | **Prendick Holdings** | **Dawn Star Society** | **Illuminati** | **Children of the High-Ones** |
+|---|---|---|---|---|---|
+| Who | the government's psychic program | the biotech conglomerate | the occult lodge | old money and the deep state | the UFO cult |
+| Philosophy | *Knowledge is control.* | *The body is a draft.* | *Every gift has a price.* | *Everything is for sale.* | *The many become one.* |
+| Strong in | Will, Tradecraft | Force, Tradecraft | Will, Force | Tradecraft, Influence | Will, numbers |
+| Weak in | Force, Health | Will | Tradecraft | Will, Bloodshed | Force, individual bodies |
+| Doctrine | **Psychic Assault:** Wetwork uses Will, and a win plants a Control counter | **Harvest:** every enemy eliminated on your turn becomes a Specimen token | **Blood Rite:** once per mission, sacrifice an operative for +3. Every sacrifice gives 1 Influence | **Bribery:** pay 2 Influence for +1, up to 3 times a mission. Blackmail uses Tradecraft and pays 2 Influence | **Congregation:** send up to 5 operatives on a mission. Cultists who die give Revelation |
+| Signature mechanics | Control counters, looking at hand and deck, Responses | Mutations (stacking attachments), regeneration, Specimen tokens | sacrifice, Demons, Scriptures, returning cards from the discard pile | temporary Influence, Mandate counters, disposable Contractors, buying Facilities | Cultist tokens, Revelation, Artifacts, Entities |
+| Plays like | sees your hand, turns your operatives against you, wins the Response war | an army that grows from its kills and heals between turns | feeds its own cheap bodies to the altar for bursts of power | buys missions, Facilities and Agenda progress | floods a mission with bodies, and martyrs fuel the Arrival |
+| Master Plan | Project OVERMIND (Will) | Project CHIMERA (Force) | The Morning Star Descends (Will) | The New World Compact (Tradecraft) | The Great Arrival (Will) |
+
+Matchups follow from this:
+- PsyList's Will Wetwork shreds Prendick's low-Will beasts, but struggles against the Children's high-Will crowd.
+- Prendick's Bloodshed punishes PsyList's fragile Psychics and the Illuminati's Contractors.
+- The Illuminati can outbid anyone, at the cost of the Influence they need to play cards.
+- Dawn Star's sacrifices give it the biggest single swing in a mission, but it can't win a Tradecraft fight.
+
+Conspiracy Agendas each name two attributes (Force/Tradecraft, Tradecraft/Will or Will/Force). A mission uses whichever your team is better at, so every faction fights with its own strengths. Each pair has one Agenda of each size: 2, 3, 3 and 4 progress.
 
 The full card list, with rules text and flavour, is generated into `packages/reference-games/shadow-earth/cards.json` from `tools/shadowearth/cards2.py`. Run `python3 tools/shadowearth/build.py`.
 

@@ -19,7 +19,6 @@ lib.LEVERS = LEVERS
 
 import cards2  # noqa: E402  (registers every card, token and starter deck)
 
-FNO = {'psylist': 1, 'prendick': 2, 'dawnstar': 3, 'illuminati': 4, 'children': 5}
 for i, c in enumerate(CARDS):
     c['num'] = c.get('num') or f'SE2-{i + 1:03d}'
     c.setdefault('rarity', 'C')
@@ -58,7 +57,9 @@ fn('tgtOk', ['$o', '$p'], NOT(OR(lit(False), *TGTDENY)))
 fn('targets', ['$p'], ['concat', ROW, flt(['cards', '$p', 'plan'], eq(g('$it', 'done'), 0)),
     flt(['cards', ['opp', '$p'], 'plan'], AND(eq(g('$it', 'done'), 0), gt(g('$it', 'prog'), 0))),
     flt(['concat', OPS(['opp', '$p']), SITES(['opp', '$p']), GEAR(['opp', '$p'])], C('tgtOk', '$it', '$p')), ['list', ['opp', '$p']]])
-fn('mattrOf', ['$t'], Q(['isPlayer', '$t'], 3, Q(typ('$t', 'operative'), 1, Q(OR(typ('$t', 'facility'), typ('$t', 'asset')), 2, g('$t', 'mattr')))))
+fn('mattrOf', ['$t', '$p', '$team'], Q(['isPlayer', '$t'], Q(is_fac('$p', 'illuminati'), 2, 3), Q(typ('$t', 'operative'), Q(is_fac('$p', 'psylist'), 3, 1),
+    Q(OR(typ('$t', 'facility'), typ('$t', 'asset')), 2,
+      Q(AND(gt(g('$t', 'mattr2'), 0), gt(SUM('$team', C('attr', '$it', g('$t', 'mattr2'))), SUM('$team', C('attr', '$it', g('$t', 'mattr'))))), g('$t', 'mattr2'), g('$t', 'mattr'))))))
 fn('resOf', ['$t'], add(Q(['isPlayer', '$t'], LEVERS['HQ_SEC'], Q(OR(typ('$t', 'facility'), typ('$t', 'asset')), LEVERS['SITE_RES'], g('$t', 'res'))), *RES))
 fn('plan', ['$p'], first(['cards', '$p', 'plan']))
 fn('progOf', ['$a', '$p'], Q(typ('$a', 'plan'), g('$a', 'prog'), Q(eq(seat('$p'), 0), g('$a', 'pr0'), g('$a', 'pr1'))))
@@ -124,7 +125,7 @@ proc('loseProg', ['$a', '$p', '$n'], [IF(isObj('$a'), [
 
 # ---------------------------------------------------------------- missions
 proc('startMission', ['$t', '$team'], [
-    SET('game', 'ma', C('mattrOf', '$t')), SET('game', 'mp', add(seat('$me'), 1)), SET('game', 'am', 0), SET('game', 'dm', 0), SET('game', 'mcan', 0),
+    SET('game', 'ma', C('mattrOf', '$t', '$me', '$team')), SET('game', 'mp', add(seat('$me'), 1)), SET('game', 'am', 0), SET('game', 'dm', 0), SET('game', 'mcan', 0),
     SET('game', 'hqT', Q(isObj('$t'), 0, 1)), IF(isObj('$t'), [SET('$t', 'tgt', 1)]),
     EACH('$team', '$x', [SET('$x', 'atk', 1), IF(ne(g('$x', 'freeJoin'), '$turn'), [SET('$x', 'ex', 1)])]),
     INC('$me', 'missT', 1),
@@ -134,7 +135,7 @@ proc('startMission', ['$t', '$team'], [
 proc('missionEnd', [], [
     EACH(['concat', PERMS(), ROW, ['cards', '*', 'plan']], '$x', [IF(OR(gt(g('$x', 'atk'), 0), gt(g('$x', 'dfn'), 0), gt(g('$x', 'tgt'), 0), ne(g('$x', 'mb'), 0), gt(g('$x', 'z0'), 0)), [
         SET('$x', 'atk', 0), SET('$x', 'dfn', 0), SET('$x', 'tgt', 0), SET('$x', 'mb', 0), SET('$x', 'z0', 0)])]),
-    *[SET('game', k, 0) for k in ['mp', 'ma', 'am', 'dm', 'mcan', 'hqT']]])
+    *[SET('game', k, 0) for k in ['mp', 'ma', 'am', 'dm', 'mcan', 'hqT', 'brb', 'brt']]])
 proc('assignDefense', [], [
     IF(AND(isObj(TGT), typ(TGT, 'operative')), [SET(TGT, 'dfn', 1)]),
     LET('$can', flt(OPS('$opp'), AND(C('canDef', '$it'), NOT(defending('$it'))))),
@@ -152,12 +153,13 @@ proc('bloodshed', [], [IF(AND(gt(cnt(DFN), 0), gt(cnt(ATK), 0)), [
     IF(gt('$dd', 0), [choose(ATK, '$hv2', 'Bloodshed: your side deals damage to which attacker?', 1, 1, who='$opp'), ['damage', '$hv2', '$dd', '$opp']])])])
 proc('reward', ['$t', '$n'], [
     IF(['isPlayer', '$t'], [
+        IF(is_fac('$me', 'illuminati'), [C('gainTmp', '$me', 2)]),
         choose(['concat', Q(C('hasProg', '$opp'), opts('Steal 1 progress'), lit([])), opts('They discard 2 cards')], '$r', 'Blackmail succeeded: choose'),
         IF(eq('$r', 'Steal 1 progress'), [choose(flt(ROW, gt(C('progOf', '$it', '$opp'), 0)), '$sa', 'Steal progress from which Agenda?'),
                                           C('loseProg', '$sa', '$opp', 1), C('addProg', '$sa', '$me', 1)], [C('discardN', '$opp', 2)])],
        [IF(typ('$t', 'agenda'), [C('addProg', '$t', '$me', '$n')]),
         IF(typ('$t', 'plan'), [IF(eq(ctrl('$t'), '$me'), [C('addProg', '$t', '$me', '$n')], [C('loseProg', '$t', ctrl('$t'), 2)])]),
-        IF(typ('$t', 'operative'), [C('hurt', '$t', LEVERS['WETWORK'])]),
+        IF(typ('$t', 'operative'), [IF(is_fac('$me', 'psylist'), [C('putCtl', '$t')]), C('hurt', '$t', LEVERS['WETWORK'])]),
         IF(OR(typ('$t', 'facility'), typ('$t', 'asset')), [emit('sabotaged', card=g('$t', 'card'), p=ctrl('$t')), C('gone', '$t')])])])
 proc('resolveMission', [], [
     LET('$at', add(SUM(ATK, C('val', '$it')), g('game', 'am'))),
@@ -219,7 +221,7 @@ A['mission'] = {'label': 'Launch a mission', 'phases': ['main'],
     'req': [{'if': gt(cnt(flt(OPS('$me'), C('canAtk', '$it'))), 0), 'why': 'No operative can go on a mission'}],
     'targets': [{'as': '$t', 'from': C('targets', '$me'),
                  'prompt': 'Mission target: a Conspiracy Agenda, your Master Plan, their Master Plan, an operative (Wetwork), a Facility or Asset (Sabotage), or their Headquarters (Blackmail)'},
-                {'as': '$team', 'from': flt(OPS('$me'), C('canAtk', '$it')), 'min': 1, 'max': LEVERS['TEAM'], 'prompt': f'Send which operatives? (1 to {LEVERS["TEAM"]})'}],
+                {'as': '$team', 'from': flt(OPS('$me'), C('canAtk', '$it')), 'min': 1, 'max': Q(is_fac('$me', 'children'), LEVERS['TEAM'] + 2, LEVERS['TEAM']), 'prompt': f'Send which operatives? (1 to {LEVERS["TEAM"]}; the Children of the High-Ones up to {LEVERS["TEAM"] + 2})'}],
     'do': [C('startMission', '$t', '$team')]}
 
 # ---------------------------------------------------------------- rules
@@ -227,7 +229,7 @@ AGENDAS = [c['id'] for c in CARDS if c['type'] == 'agenda']
 RULES = {
     'players': {'min': 2, 'max': 2},
     'playerVars': {'dom': 0, 'faction': 0, 'cap': 0, 'inf': 0, 'tmp': 0, 'rev': 0},
-    'gameVars': {'first': 0, 'noMulligan': 0, 'mp': 0, 'ma': 0, 'am': 0, 'dm': 0, 'mcan': 0, 'hqT': 0, 'ocan': 0, 'saved': 0},
+    'gameVars': {'first': 0, 'noMulligan': 0, 'mp': 0, 'ma': 0, 'am': 0, 'dm': 0, 'mcan': 0, 'hqT': 0, 'ocan': 0, 'saved': 0, 'brb': 0, 'brt': 0},
     'objectVars': {'ex': 0, 'dmg': 0, 'atk': 0, 'dfn': 0, 'tgt': 0, 'mb': 0, 'z0': 0, 'cF': 0, 'cT': 0, 'cW': 0, 'newT': 0, 'ctl': 0, 'prog': 0,
                    'pr0': 0, 'pr1': 0, 'done': 0, 'pv': 0, 'nodef': 0, 'nomis': 0, 'ctlT': 0, 'freeJoin': 0, 'swiftT': 0, 'mand': 0, 'exileOnLeave': 0},
     'zones': [
@@ -299,18 +301,18 @@ fn('board', ['$p'], add(
     mul(5, C('progOf', C('plan', '$p'), '$p')),
     SUM(OPS('$p'), add(C('attr', '$it', 1), C('attr', '$it', 2), C('attr', '$it', 3), mx(0, sub(C('hpOf', '$it'), g('$it', 'dmg'))),
                        Q(eq(g('$it', 'ex'), 0), add(1, ['/', mx(C('attr', '$it', 1), mx(C('attr', '$it', 2), C('attr', '$it', 3))), 2]), 0))),
-    mul(2, cnt(SITES('$p'))), cnt(GEAR('$p')), ['/', C('avail', '$p'), 2], ['/', cnt(HAND('$p')), 2], g('$p', 'rev'),
+    mul(3, cnt(SITES('$p'))), cnt(GEAR('$p')), ['/', C('avail', '$p'), 2], ['/', cnt(HAND('$p')), 2], g('$p', 'rev'),
     mul(2, cnt(flt(OPS(['opp', '$p']), eq(g('$it', 'ctl'), 1))))))
 AI = {'eval': sub(C('board', '$me'), C('board', '$opp')), 'samples': 1, 'horizon': 'pass'}
 
 # ---------------------------------------------------------------- manifest
 MANIFEST = {
-    'moduleId': 'shadow-earth', 'displayName': 'Shadow Earth', 'semanticVersion': '2.0.0', 'engineApiRange': '^0.3.1', 'official': True,
+    'moduleId': 'shadow-earth', 'displayName': 'Shadow Earth', 'semanticVersion': '2.1.0', 'engineApiRange': '^0.3.1', 'official': True,
     'requiredCapabilities': ['windows', 'multiDeck', 'sharedDecks', 'gameVars', 'scripts', 'deckRules', 'limits', 'control', 'relationships'],
-    'licensing': 'Original game by @Astral. Shadow Earth 2.0.',
+    'licensing': 'Original game by @Astral. Shadow Earth 2.1.',
     'tagline': 'Five conspiracies. Three Agendas on the table. First to 7 Dominance rewrites history.',
     'theme': {'accent': '#b45309', 'accent2': '#38bdf8', 'glyph': '◉', 'tapVar': 'ex',
-              'hideStats': ['num', 'fno', 'attach', 'bearerKw', 'has_deploy', 'has_onScore', 'has_onEnact', 'mattr', 'need', 'res', 'dom', 'security', 'flavor'],
+              'hideStats': ['num', 'fno', 'attach', 'bearerKw', 'has_deploy', 'has_onScore', 'has_onEnact', 'mattr', 'mattr2', 'need', 'res', 'dom', 'security', 'flavor'],
               'hideVars': ['faction', 'cap', 'ex', 'atk', 'dfn', 'tgt', 'mb', 'z0', 'cF', 'cT', 'cW', 'newT', 'nodef', 'nomis', 'ctlT', 'freeJoin', 'swiftT', 'exileOnLeave',
                            'hqdmg', 'turns', 'missT', 'winT', 'sacT', 'revT', 'acted', 'skipDraw', 'held', 'done', 'pv'],
               'hideKeywords': ['token'],
@@ -342,4 +344,4 @@ dump('cards.json', CARDS)
 dump('decks.json', DECKS)
 dump('ai/ai.json', AI)
 n = sum(1 for c in CARDS if c.get('rarity') != 'T')
-print(f'shadow-earth 2.0: {n} cards ({len(AGENDAS)} Agendas), {len(DECKS)} decks, {len(F)} functions, {len(P)} procedures')
+print(f'shadow-earth 2.1: {n} cards ({len(AGENDAS)} Agendas), {len(DECKS)} decks, {len(F)} functions, {len(P)} procedures')

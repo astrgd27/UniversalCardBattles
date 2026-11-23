@@ -7,8 +7,14 @@ DAMAGED = flt(OPS(), gt(g('$it', 'dmg'), 0))
 MY, THEIRS = myMission(), theirMission()
 
 # ================================================================ Conspiracy Agendas (the shared row)
+ANAME = {'F': 'Force', 'T': 'Tradecraft', 'W': 'Will'}
+PAIR = {'Silence the Witness': 'FT', 'Doctor the Archives': 'TW', 'Seize the Broadcast': 'WF', 'Rig the Election': 'WT', 'Steal the Prototype': 'TF',
+        'Assassinate the Ambassador': 'FW', 'Turn the Senator': 'WF', 'Poison the Reservoir': 'FT', 'Blackout in the Capital': 'TW',
+        'Topple the Regime': 'FT', 'Crash the Markets': 'TW', 'The Vatican Files': 'WF'}
 def agenda(name, attr, need, res, dom_, text, flavor, on_score=None):
-    return _card(name, 'agenda', 'neutral', None, text, flavor, mattr=MA[attr], need=need, res=res, dom=dom_, rarity='A',
+    a, b = PAIR[name]
+    text = f'{ANAME[a]} or {ANAME[b]} (your team\'s better one).' + text[text.index('.') + 1:]
+    return _card(name, 'agenda', 'neutral', None, text, flavor, mattr=MA[a], mattr2=MA[b], need=need, res=res, dom=dom_, rarity='A',
                  **({'onScore': on_score} if on_score else {}))
 agenda('Silence the Witness', 'F', 2, 2, 1, 'Force. 2 progress, worth 1 Dominance. When scored: deal 2 damage to an operative.',
        'She saw the plates on the black sedan. She will not testify.', [pick(OPS(), '$v', 'Silence the Witness: 2 damage to which operative?'), dmg('$v', 2)])
@@ -52,7 +58,7 @@ def counted(p, k): return cnt(kind_ops(p, k))
 # ================================================================ PsyList: the government's psychic program
 PSY = lambda p='$me': kind_ops(p, 'psychic')
 CTL_ENEMY = flt(OPP_OPS, eq(g('$it', 'ctl'), 1))
-hq('PsyList Central Station', 'psylist', 'Security 3. Enemy operatives with Control counters get -1 Force, Tradecraft and Will. At the start of your turn, look at the top card of the opponent\'s deck.',
+hq('PsyList Central Station', 'psylist', 'Security 3. Doctrine (Psychic Assault): your Wetwork missions use Will instead of Force, and when you win one, put a Control counter on the target. Enemy operatives with Control counters get -1 Force, Tradecraft and Will. At the start of your turn, look at the top card of the opponent\'s deck.',
    'A disused weather station in Nevada. The antennas point down.', abilities=[at_start([peek_top()])])
 plan('Project OVERMIND', 'psylist', 'W', 'Master Plan (Will). Enacted: enemy operatives with Control counters can\'t defend, and your Psychics get +1 Will.',
      '"We are not reading their minds, Senator. We are writing them."')
@@ -104,10 +110,14 @@ ATTR.append(bearer_term('Neural Link', 'W', 1))
 operative('Communal Mind', 'psylist', 4, 1, 2, 4, 3, 'Psychic. Other Psychics on its mission get +1 Will.', 'They finish each other\'s sentences. All of them.', kws=('psychic',))
 ATTR.append(Q(AND(A_('W'), has('$o', 'psychic'), participating('$o'), ANY(OPS(ctrl('$o')), AND(isc('$it', 'Communal Mind'), ne('$it', '$o'), participating('$it')))), 1, 0))
 
+operation('Mass Suggestion', 'psylist', 3, 'Put a Control counter on each exhausted enemy operative.', 'The broadcast lasted four seconds. The orders lasted for years.',
+          do=[EACH(flt(OPP_OPS, eq(g('$it', 'ex'), 1)), '$x', [control('$x')])])
+
 # ================================================================ Prendick Holdings: biotech
 SPEC = lambda p='$me': kind_ops(p, 'specimen')
 SCI = lambda p='$me': kind_ops(p, 'scientist')
-hq('Prendick Holdings Tower', 'prendick', 'Security 3. Your Mutations cost 1 less.', 'Forty floors of glass. Nine more underground.')
+hq('Prendick Holdings Tower', 'prendick', 'Security 3. Doctrine (Harvest): whenever an enemy operative is eliminated during your turn, create a 1/1/1 Specimen token. Your Mutations cost 1 less.', 'Forty floors of glass. Nine more underground.')
+RULE_TRIGGERS.append({'on': 'eliminated', 'if': AND(is_fac('$active', 'prendick'), ne('$e.ctrl', '$active')), 'do': [token('Specimen', 1, '$active')]})
 COST.append(Q(AND(has('$c', 'mutation'), own('Prendick Holdings Tower', '$p') if False else ANY(['cards', '$p', 'hq'], isc('$it', 'Prendick Holdings Tower'))), -1, 0))
 plan('Project CHIMERA', 'prendick', 'F', 'Master Plan (Force). Enacted: your Specimens get +1 Force and +2 Health.', 'Patent pending: the next human.')
 ATTR.append(Q(AND(A_('F'), has('$o', 'specimen'), plan_on(ctrl('$o'), 'Project CHIMERA')), 1, 0))
@@ -155,13 +165,23 @@ operation('Quarterly Earnings', 'prendick', 1, 'Draw a card. If you control two 
 facility('The Glass Nursery', 'prendick', 3, 'At the start of your turn, if you control a Scientist, create a 1/1/1 Specimen token.', 'Ward 8. The cribs have restraints.',
          abilities=[at_start([token('Specimen')], gt(cnt(SCI()), 0))])
 
+asset('Regenerative Tissue', 'prendick', 2, 'Mutation. Attach to a Specimen: +1 Health. At the start of your turn, remove all damage from it.', 'Cut it. Burn it. Come back Tuesday.',
+      kws=('mutation',), attach=1, bearerKw='specimen', abilities=[at_start([heal(bearerOf('$self'), 99)])])
+HP.append(gear_n('$o', 'Regenerative Tissue'))
+operation('Feeding Frenzy', 'prendick', 2, 'Ready a Specimen. It gets +2 Force until end of turn.', 'Nobody fed them for three days. That was the experiment.',
+          do=[ready('$t'), until_eot('$t', 'F', 2)], targets=[slot(SPEC(), prompt='Which Specimen?')])
+
 # ================================================================ Dawn Star Society: the occult lodge
 OCC = lambda p='$me': kind_ops(p, 'occultist')
 DEMON = lambda p='$me': kind_ops(p, 'demon')
-SCRIPT = lambda p='$me': flt(GEAR(p), has('$it', 'scripture'))
 SACRIFICABLE = flt(ME_OPS, eq(g('$it', 'ctlT'), 0))
-hq('Dawn Star Grand Lodge', 'dawnstar', 'Security 3. The first time you sacrifice an operative each turn, gain 1 temporary Influence.', 'Founded 1717. Membership: unchanged since 1717.',
-   abilities=[trig('sacrificed', [tmp(1)], eq('$e.p', SELF_P), once_per_turn=True)])
+SCRIPT = lambda p='$me': flt(GEAR(p), has('$it', 'scripture'))
+hq('Dawn Star Grand Lodge', 'dawnstar', 'Security 3. Doctrine (Blood Rite): once per mission, during Responses, sacrifice an operative: your side gets +3 to the mission\'s attribute. Whenever you sacrifice an operative, gain 1 temporary Influence.',
+   'Founded 1717. Membership: unchanged since 1717.',
+   abilities=[trig('sacrificed', [tmp(1)], eq('$e.p', SELF_P))],
+   rabil=[abil('Blood Rite: sacrifice an operative for +3', [SET('game', 'brt', 1), sacrifice('$t'), side_bonus('$me', 3)],
+               req=[(AND(IN_MISSION, eq(g('game', 'brt'), 0)), 'Once per mission, during a mission')],
+               targets=[slot(SACRIFICABLE, prompt='Blood Rite: sacrifice which operative?')], once=False, phases=('respond',))])
 plan('The Morning Star Descends', 'dawnstar', 'W', 'Master Plan (Will). Enacted: create The Morning Star (8/6/8, Health 8), ready.',
      'Lucifer means light-bringer. They intend to be very well lit.', onEnact=[token('The Morning Star')])
 operative('Ambitious Initiate', 'dawnstar', 1, 0, 1, 2, 2, 'Occultist. When sacrificed, draw a card.', 'First degree. Eager to reach the second.', kws=('occultist',))
@@ -177,7 +197,9 @@ asset('The Lesser Bargain', 'dawnstar', 2, 'Pact. Attach to an Occultist: +2 Wil
 ATTR.append(bearer_term('The Lesser Bargain', 'W', 2))
 asset("The Devil's Ledger", 'dawnstar', 4, 'Whenever you sacrifice an operative, gain 1 progress on your Master Plan (once per turn).', 'Every name. Every price. Every due date.',
       rarity='R', abilities=[trig('sacrificed', [plan_prog(1)], eq('$e.p', SELF_P), once_per_turn=True)])
-operative('Lesser Imp', 'dawnstar', 1, 2, 0, 1, 1, 'Demon. When eliminated, deal 1 damage to an enemy operative.', 'Small. Spiteful. Bound by contract.', kws=('demon',))
+operative('Lesser Imp', 'dawnstar', 1, 2, 0, 1, 1, 'Demon. When eliminated or sacrificed, deal 1 damage to an enemy operative.', 'Small. Spiteful. Bound by contract.', kws=('demon',))
+RULE_TRIGGERS.append({'on': 'sacrificed', 'if': eq('$e.card', slug('Lesser Imp')), 'do': [
+    choose(OPS(['opp', '$e.p']), '$v', 'Lesser Imp: 1 damage to which enemy?', 0, 1, who='$e.p'), IF(isObj('$v'), [['damage', '$v', 1, '$e.p']])]})
 RULE_TRIGGERS.append({'on': 'eliminated', 'if': eq('$e.card', slug('Lesser Imp')), 'do': [
     choose(OPS(['opp', '$e.ctrl']), '$v', 'Lesser Imp: 1 damage to which enemy?', 0, 1, who='$e.ctrl'), IF(isObj('$v'), [['damage', '$v', 1, '$e.ctrl']])]})
 operative('Bound Fiend', 'dawnstar', 3, 4, 1, 2, 4, 'Demon. Can\'t defend unless you control a Ritual.', 'It does what it is told. Only that.', kws=('demon',))
@@ -196,7 +218,7 @@ asset('Scripture Fragment: Iron', 'dawnstar', 1, 'Scripture. Your Occultists get
 ATTR.append(team_term('Scripture Fragment: Iron', 'F', 1, has('$o', 'occultist')))
 operative('Archivist of the First Seal', 'dawnstar', 2, 0, 2, 2, 2, 'Occultist. When played, Scry 2; if you control two Scriptures, draw a card.', 'The library has no catalogue. She is the catalogue.',
           kws=('occultist',), deploy=[scry(2), IF(ge(cnt(SCRIPT()), 2), [draw(1)])])
-operative('Senior Adept', 'dawnstar', 3, 1, 2, 4, 3, 'Occultist.', 'Thirty-second degree. Still climbing.', kws=('occultist',))
+operative('Senior Adept', 'dawnstar', 2, 1, 1, 4, 3, 'Occultist.', 'Thirty-second degree. Still climbing.', kws=('occultist',))
 operative('Grand Master of the Lodge', 'dawnstar', 5, 2, 3, 5, 4, 'Unique Occultist. Your other Occultists get +1 Will.', 'He shook hands with four presidents. They all felt it.',
           kws=('occultist', 'unique'), rarity='M')
 ATTR.append(Q(AND(A_('W'), has('$o', 'occultist'), NOT(isc('$o', 'Grand Master of the Lodge')), own('Grand Master of the Lodge', ctrl('$o'))), 1, 0))
@@ -205,10 +227,17 @@ facility('The Seventh Circle', 'dawnstar', 3, 'Ritual. At the start of your turn
 operation('Rite of the Broken Seal', 'dawnstar', 3, 'Gain 1 progress on your Master Plan, plus 1 if you control two or more Scriptures.', 'Seven seals. Six already broken.',
           do=[plan_prog(Q(ge(cnt(SCRIPT()), 2), 2, 1))])
 
+operation('Return of the Faithful', 'dawnstar', 2, 'Return up to two Occultists or Demons that cost 2 or less from your discard pile to your hand.', 'Death is a leave of absence.',
+          do=[choose(flt(GRAVE('$me'), AND(OR(has('$it', 'occultist'), has('$it', 'demon')), le(g('$it', 'cost'), 2))), '$xs', 'Return which (up to two)?', 0, 2),
+              EACH('$xs', '$x', [['move', '$x', 'hand']])])
+
 # ================================================================ Illuminati: old money and the deep state
 CONTR = lambda p='$me': kind_ops(p, 'contractor')
-hq('The Central Committee', 'illuminati', 'Security 3. At the start of your turn, gain 1 temporary Influence.', 'The pyramid on the dollar is a floor plan.',
-   abilities=[at_start([tmp(1)])])
+hq('The Central Committee', 'illuminati', 'Security 3. Doctrine (Bribery): during Responses, pay 2 Influence: your side gets +1 to the mission\'s attribute (up to three times each mission). Your Blackmail missions use Tradecraft, and winning one also gives you 2 temporary Influence. At the start of your turn, gain 1 temporary Influence.',
+   'The pyramid on the dollar is a floor plan.',
+   abilities=[at_start([tmp(1)])],
+   rabil=[abil('Bribery: pay 2 for +1', [INC('game', 'brb', 1), side_bonus('$me', 1)], cost=[C('spend', '$me', 2)],
+               req=[(AND(IN_MISSION, lt(g('game', 'brb'), 3), ge(C('avail', '$me'), 2)), 'During a mission, up to three times, with 2 Influence')], once=False, phases=('respond',))])
 plan('The New World Compact', 'illuminati', 'T', 'Master Plan (Tradecraft). Enacted: at the start of your turn, gain 1 progress on a Conspiracy Agenda.',
      'Signed in Davos. Ratified nowhere. Enforced everywhere.')
 RULE_TRIGGERS.append({'on': 'refresh', 'if': plan_on('$e.p', 'The New World Compact'), 'do': [
@@ -250,11 +279,14 @@ operative('Executive Protection Detail', 'illuminati', 3, 3, 2, 1, 3, 'Contracto
 operative('Municipal Fixer', 'illuminati', 2, 0, 3, 1, 2, '+2 Tradecraft while defending.', 'Zoning, permits, and where the bodies are buried. Literally.')
 ATTR.append(self_term('Municipal Fixer', 'T', 2, defending('$o')))
 
+operation('Hostile Takeover', 'illuminati', 4, 'Take control of an enemy Facility.', 'The board voted unanimously. The board did not know it had been sold.',
+          do=[['control', '$t', '$me']], targets=[slot(SITES('$opp'), prompt='Acquire which Facility?')])
+
 # ================================================================ Children of the High-Ones: the UFO cult
 CULT = lambda p='$me': kind_ops(p, 'cultist')
 ENT = lambda p='$me': kind_ops(p, 'entity')
 REV = g('$me', 'rev')
-hq('The First Contact House', 'children', 'Security 3. At the start of your turn, gain 1 Revelation.', 'A farmhouse in New Mexico. The crop circles started in 1947.',
+hq('The First Contact House', 'children', 'Security 3. Doctrine (Congregation): you may send up to 5 operatives on a mission. Whenever a Cultist you control is eliminated, gain 1 Revelation. At the start of your turn, gain 1 Revelation.', 'A farmhouse in New Mexico. The crop circles started in 1947.',
    abilities=[at_start([rev(1)])])
 plan('The Great Arrival', 'children', 'W', 'Master Plan (Will). Enacted: create the High-One Manifestation (7/4/8, Health 9), ready, and exhaust all enemy operatives.',
      'They are not coming. They are already here. They are waiting to be invited.',
@@ -298,6 +330,11 @@ response('Scream Across Dimensions', 'children', 2, 'Your side gets +1 to the mi
          do=[side_bonus('$me', mn(4, ['/', REV, 2]))], req=[(IN_MISSION, 'Only during a mission')])
 operation('The First Unmaking', 'children', 5, 'Play only if you have 6 or more Revelation. Deal 3 damage to each enemy operative.', 'Unmaking is easier than making. Ask any god.',
           do=[EACH(OPP_OPS, '$x', [dmg('$x', 3)])], req=[(ge(REV, 6), 'Needs 6 Revelation')], rarity='M')
+
+response('Night of the Lights', 'children', 2, 'Your side gets +1 to the mission\'s attribute for each Cultist you control on the mission.', 'Ten thousand people looked up at once.',
+         do=[side_bonus('$me', cnt(flt(MY_SIDE(), has('$it', 'cultist'))))], req=[(IN_MISSION, 'Only during a mission')])
+CULT_IDS = [c['id'] for c in CARDS if 'cultist' in c.get('keywords', [])]
+RULE_TRIGGERS.append({'on': 'eliminated', 'if': AND(is_fac('$e.ctrl', 'children'), inl('$e.card', lit(CULT_IDS))), 'do': [C('gainRev', '$e.ctrl', 1)]})
 
 # ================================================================ Neutral
 operative('Freelance Investigator', 'neutral', 1, 0, 2, 1, 2, 'When its side wins a mission it joined, Scry 1.', 'Ex-cop. Ex-husband. Ex-believer.',
@@ -351,24 +388,24 @@ DECKS['psylist-starter'] = deck('PsyList Central Station', 'Project OVERMIND', [
     (3, 'Remote Viewer'), (2, 'Precog Analyst'), (3, 'Telekinetic Recruit'), (2, 'Pyrokinetic Enforcer'), (1, 'Subject Zero'), (3, 'Compulsion Technician'),
     (2, 'Sleeper Handler'), (2, 'Collective Mind'), (1, 'Communal Mind'), (2, 'Precognitive Flash'), (2, 'Hypnotic Trigger'), (1, 'Poltergeist Burst'), (1, 'Foresight'),
     (2, 'Mind Spike'), (1, 'Reprogram Identity'), (1, 'Sensory Deprivation Tank'), (1, 'The White Noise Suite'), (2, 'Neural Link'),
-    (2, 'Ex-Military Bodyguard'), (2, 'Crisis Negotiator'), (2, 'Body Armor'), (2, 'Ambush')])
+    (2, 'Ex-Military Bodyguard'), (2, 'Crisis Negotiator'), (1, 'Body Armor'), (2, 'Ambush'), (1, 'Mass Suggestion')])
 DECKS['prendick-starter'] = deck('Prendick Holdings Tower', 'Project CHIMERA', [
     (3, 'Security Hound-9'), (3, 'Razorback Hybrid'), (2, 'Alpha Predator'), (1, 'Prototype Behemoth'), (2, 'Mutation Handler'), (3, 'Human-Passing Duplicate'),
     (2, 'Infiltrator Brood'), (1, 'Mimicry Specialist'), (2, 'Clinical Research Liaison'), (2, 'Anatomical Reinforcement'), (2, 'Perfect Skin Graft'),
     (1, 'Hypermetabolic Serum'), (2, 'Adrenal Reservoir'), (2, 'Break Containment'), (1, 'Biomedicine Annex 14'), (1, 'Venture Consortium'),
-    (2, 'Quarterly Earnings'), (2, 'The Glass Nursery'), (2, 'Crisis Negotiator'), (2, 'Inside Tip'), (2, 'Encrypted Radio')])
+    (2, 'Quarterly Earnings'), (2, 'The Glass Nursery'), (2, 'Crisis Negotiator'), (1, 'Inside Tip'), (2, 'Regenerative Tissue'), (1, 'Feeding Frenzy')])
 DECKS['dawnstar-starter'] = deck('Dawn Star Grand Lodge', 'The Morning Star Descends', [
     (3, 'Ambitious Initiate'), (2, 'Written in Blood'), (2, 'Blood Offering'), (2, 'The Lesser Bargain'), (1, "The Devil's Ledger"), (3, 'Lesser Imp'),
     (2, 'Bound Fiend'), (1, 'Furnace of the Pit'), (2, 'Pact Summoner'), (1, 'Circle of Summoning'), (2, 'Scripture Fragment: Ash'), (2, 'Scripture Fragment: Iron'),
     (3, 'Archivist of the First Seal'), (3, 'Senior Adept'), (1, 'Grand Master of the Lodge'), (1, 'The Seventh Circle'), (2, 'Rite of the Broken Seal'),
-    (2, 'Ex-Military Bodyguard'), (2, 'Black-Bag Specialist'), (2, 'Inside Tip'), (1, 'Body Armor')])
+    (2, 'Ex-Military Bodyguard'), (2, 'Return of the Faithful'), (2, 'Inside Tip'), (1, 'Body Armor')])
 DECKS['illuminati-starter'] = deck('The Central Committee', 'The New World Compact', [
     (3, 'Junior Broker'), (2, 'Offshore Holding Company'), (2, 'Cash Transfer'), (2, 'Buy the Story'), (2, 'Lobbying Office'), (2, 'Compromised Minister'),
     (2, 'Special Prosecutor'), (2, 'Emergency Injunction'), (1, 'Public Scandal'), (3, 'Disposable Fixer'), (3, 'Contracted Surveillance'), (2, 'Mercenary Handler'),
     (1, 'Corporate Intervention Force'), (1, 'Deniable Payment'), (2, 'Executive Protection Detail'), (3, 'Municipal Fixer'),
-    (2, 'Crisis Negotiator'), (2, 'Mercenary Sniper'), (2, 'Silenced Sidearm'), (1, 'Ambush')])
+    (2, 'Crisis Negotiator'), (2, 'Mercenary Sniper'), (1, 'Silenced Sidearm'), (1, 'Ambush'), (1, 'Hostile Takeover')])
 DECKS['children-starter'] = deck('The First Contact House', 'The Great Arrival', [
     (3, 'Street Preacher'), (2, 'Community Outreach'), (3, 'Ecstatic Convert'), (2, 'Cell Organizer'), (1, 'The Gathering'),
     (2, 'Recovered Probe'), (2, 'Unidentified Alloy'), (2, 'Neural Disruptor'), (2, 'Contact Engineer'), (1, 'Antigravity Harness'), (2, 'Whispering Devotee'),
     (2, 'Rift Attendant'), (2, 'Manifestation of Hunger'), (1, 'Gateway Custodian'), (2, 'Scream Across Dimensions'), (1, 'The First Unmaking'),
-    (3, 'Ex-Military Bodyguard'), (2, 'Black-Bag Specialist'), (2, 'Silenced Sidearm'), (2, 'Recruitment Circle'), (1, 'Ambush')])
+    (1, 'Ex-Military Bodyguard'), (2, 'Black-Bag Specialist'), (2, 'Silenced Sidearm'), (2, 'Recruitment Circle'), (1, 'Ambush'), (2, 'Night of the Lights')])

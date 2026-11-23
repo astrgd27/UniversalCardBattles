@@ -20,6 +20,8 @@ ROW = ['cards', 'p0', 'agendas']
 PLAN = lambda p='$me': first(['cards', p, 'plan'])
 LOOK = lambda p='$me': ['cards', p, 'look']
 NULL = ['lit', None]
+FNO = {'psylist': 1, 'prendick': 2, 'dawnstar': 3, 'illuminati': 4, 'children': 5}
+def is_fac(p, name): return eq(g(p, 'faction'), FNO[name])
 
 def isc(o, name): return eq(g(o, 'card'), slug(name))
 def live(name, p='$me'): return flt(PERMS(p), isc('$it', name))

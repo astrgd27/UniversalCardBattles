@@ -44,9 +44,9 @@
    "crisis-negotiator",
    "crisis-negotiator",
    "body-armor",
-   "body-armor",
    "ambush",
-   "ambush"
+   "ambush",
+   "mass-suggestion"
   ]
  },
  "prendick-starter": {
@@ -94,9 +94,9 @@
    "crisis-negotiator",
    "crisis-negotiator",
    "inside-tip",
-   "inside-tip",
-   "encrypted-radio",
-   "encrypted-radio"
+   "regenerative-tissue",
+   "regenerative-tissue",
+   "feeding-frenzy"
   ]
  },
  "dawnstar-starter": {
@@ -142,8 +142,8 @@
    "rite-of-the-broken-seal",
    "ex-military-bodyguard",
    "ex-military-bodyguard",
-   "black-bag-specialist",
-   "black-bag-specialist",
+   "return-of-the-faithful",
+   "return-of-the-faithful",
    "inside-tip",
    "inside-tip",
    "body-armor"
@@ -195,8 +195,8 @@
    "mercenary-sniper",
    "mercenary-sniper",
    "silenced-sidearm",
-   "silenced-sidearm",
-   "ambush"
+   "ambush",
+   "hostile-takeover"
   ]
  },
  "children-starter": {
@@ -238,15 +238,15 @@
    "scream-across-dimensions",
    "the-first-unmaking",
    "ex-military-bodyguard",
-   "ex-military-bodyguard",
-   "ex-military-bodyguard",
    "black-bag-specialist",
    "black-bag-specialist",
    "silenced-sidearm",
    "silenced-sidearm",
    "recruitment-circle",
    "recruitment-circle",
-   "ambush"
+   "ambush",
+   "night-of-the-lights",
+   "night-of-the-lights"
   ]
  }
 }
