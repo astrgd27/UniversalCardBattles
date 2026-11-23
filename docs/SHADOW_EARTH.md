@@ -98,3 +98,27 @@ The full card list, with rules text and flavour, is generated into `packages/ref
   - whether to hit their Plan or race your own.
 - Force matters to every faction through Bloodshed. Tradecraft and Will factions need bodyguards or Responses to survive contested missions.
 - Watch: game length (target 16–24 total turns); Agendas scored per game (target 3+, from both players); faction win rates (target 40–60%); and how often a mission is contested.
+
+## Balance results (heuristic AI, 40 games per run)
+| Build | Turns | Agendas scored / game | Plans enacted / game | Loser's Dominance | Faction win rates |
+|---|---|---|---|---|---|
+| Core 1.7 | ~60 | ~1.4 completed | n/a | n/a | 4 in 10 games ended by deck-out |
+| 2.0 first build | 19.3 | 5.4 | 0.05 | 1.9 | Dawn 25%, PsyList 38%, others 62% |
+| 2.0 + Plan 4, catch-up, Resistance = threshold | 17.4 | — | 0.9 | 1.8 | PsyList 12% … Prendick 69% |
+| **2.0 current** | **15.8** | **4.5** | **0.8** | **1.9** | Children 62%, Prendick 56%, Illuminati 50%, PsyList 44%, Dawn Star 38% |
+
+In the current build:
+- every game ends by Dominance;
+- about 62% of missions succeed, whether or not they are defended;
+- there are about 12 eliminations a game.
+
+Tuning history:
+- **Plans:** the threshold went from 5 to 4, and scoring an Agenda adds Plan progress. In the first build Plans were almost never enacted.
+- **Agendas:** Resistance now equals the progress threshold.
+- **PsyList:** the Headquarters gives Controlled enemies −1 to all attributes, and the Remote Viewer, Precog Analyst, Collective Mind and Telekinetic Recruit gained Health.
+- **Catch-up:** a player behind gains +1 temporary Influence, and a player 2 or more behind draws an extra card.
+- **Defence:** defenders no longer exhaust, which reduced blowouts.
+- **Children:** the Cultists gained 1 Health. They were dying to Bloodshed before they could matter.
+- **Prendick:** two Specimens gained Health.
+
+The win rates sit at 16 games a faction, so each carries about ±12 points of noise. Human playtests should confirm them.
