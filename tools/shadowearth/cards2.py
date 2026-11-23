@@ -184,7 +184,7 @@ hq('Dawn Star Grand Lodge', 'dawnstar', 'Security 3. Doctrine (Blood Rite): once
                targets=[slot(SACRIFICABLE, prompt='Blood Rite: sacrifice which operative?')], once=False, phases=('respond',))])
 plan('The Morning Star Descends', 'dawnstar', 'W', 'Master Plan (Will). Enacted: create The Morning Star (8/6/8, Health 8), ready.',
      'Lucifer means light-bringer. They intend to be very well lit.', onEnact=[token('The Morning Star')])
-operative('Ambitious Initiate', 'dawnstar', 1, 0, 1, 2, 2, 'Occultist. When sacrificed, draw a card.', 'First degree. Eager to reach the second.', kws=('occultist',))
+operative('Ambitious Initiate', 'dawnstar', 1, 1, 0, 2, 2, 'Occultist. When sacrificed, draw a card.', 'First degree. Eager to reach the second.', kws=('occultist',))
 RULE_TRIGGERS.append({'on': 'sacrificed', 'if': eq('$e.card', slug('Ambitious Initiate')), 'do': [['draw', '$e.p', 1]]})
 operation('Written in Blood', 'dawnstar', 1, 'As an additional cost, sacrifice an operative. Draw 2 cards.', 'Sign here. And here. And in red, here.',
           do=[sacrifice('$t'), draw(2)], targets=[slot(SACRIFICABLE, prompt='Sacrifice which operative?')])
@@ -202,13 +202,13 @@ RULE_TRIGGERS.append({'on': 'sacrificed', 'if': eq('$e.card', slug('Lesser Imp')
     choose(OPS(['opp', '$e.p']), '$v', 'Lesser Imp: 1 damage to which enemy?', 0, 1, who='$e.p'), IF(isObj('$v'), [['damage', '$v', 1, '$e.p']])]})
 RULE_TRIGGERS.append({'on': 'eliminated', 'if': eq('$e.card', slug('Lesser Imp')), 'do': [
     choose(OPS(['opp', '$e.ctrl']), '$v', 'Lesser Imp: 1 damage to which enemy?', 0, 1, who='$e.ctrl'), IF(isObj('$v'), [['damage', '$v', 1, '$e.ctrl']])]})
-operative('Bound Fiend', 'dawnstar', 3, 4, 1, 2, 4, 'Demon. Can\'t defend unless you control a Ritual.', 'It does what it is told. Only that.', kws=('demon',))
+operative('Bound Fiend', 'dawnstar', 3, 4, 0, 3, 4, 'Demon. Can\'t defend unless you control a Ritual.', 'It does what it is told. Only that.', kws=('demon',))
 NODEF.append(AND(isc('$o', 'Bound Fiend'), NOT(ANY(SITES(ctrl('$o')), has('$it', 'ritual')))))
 operative('Furnace of the Pit', 'dawnstar', 5, 6, 0, 3, 5, 'Demon. In Bloodshed, its side deals damage to every opposing participant.', 'The thermostat reads 666.', kws=('demon',), rarity='R')
 RULE_TRIGGERS.append({'on': 'bloodshed', 'if': ANY(OPS(), AND(isc('$it', 'Furnace of the Pit'), participating('$it'))), 'do': [
     LET('$fp', first(flt(OPS(), AND(isc('$it', 'Furnace of the Pit'), participating('$it'))))),
     EACH(flt(OPS(['opp', ctrl('$fp')]), participating('$it')), '$x', [['damage', '$x', 1, ctrl('$fp')]])]})
-operative('Pact Summoner', 'dawnstar', 2, 0, 1, 3, 2, 'Occultist. Your Demons cost 1 less.', 'Knows all the names. Pronounces them carefully.', kws=('occultist',))
+operative('Pact Summoner', 'dawnstar', 2, 1, 0, 3, 3, 'Occultist. Your Demons cost 1 less.', 'Knows all the names. Pronounces them carefully.', kws=('occultist',))
 COST.append(Q(AND(has('$c', 'demon'), own('Pact Summoner', '$p')), neg(cnt(live('Pact Summoner', '$p'))), 0))
 facility('Circle of Summoning', 'dawnstar', 2, 'Ritual. Demons you play are Swift (they can attack the turn they arrive).', 'Salt, chalk, and a borrowed heartbeat.', kws=('ritual',))
 SWIFT.append(AND(has('$o', 'demon'), ANY(SITES(ctrl('$o')), isc('$it', 'Circle of Summoning'))))
@@ -216,7 +216,7 @@ asset('Scripture Fragment: Ash', 'dawnstar', 1, 'Scripture. Your Occultists get 
 ATTR.append(team_term('Scripture Fragment: Ash', 'W', 1, has('$o', 'occultist')))
 asset('Scripture Fragment: Iron', 'dawnstar', 1, 'Scripture. Your Occultists get +1 Force.', 'Written on the inside of a sword.', kws=('scripture',))
 ATTR.append(team_term('Scripture Fragment: Iron', 'F', 1, has('$o', 'occultist')))
-operative('Archivist of the First Seal', 'dawnstar', 2, 0, 2, 2, 2, 'Occultist. When played, Scry 2; if you control two Scriptures, draw a card.', 'The library has no catalogue. She is the catalogue.',
+operative('Archivist of the First Seal', 'dawnstar', 2, 0, 1, 3, 3, 'Occultist. When played, Scry 2; if you control two Scriptures, draw a card.', 'The library has no catalogue. She is the catalogue.',
           kws=('occultist',), deploy=[scry(2), IF(ge(cnt(SCRIPT()), 2), [draw(1)])])
 operative('Senior Adept', 'dawnstar', 2, 1, 1, 4, 3, 'Occultist.', 'Thirty-second degree. Still climbing.', kws=('occultist',))
 operative('Grand Master of the Lodge', 'dawnstar', 5, 2, 3, 5, 4, 'Unique Occultist. Your other Occultists get +1 Will.', 'He shook hands with four presidents. They all felt it.',
@@ -227,7 +227,7 @@ facility('The Seventh Circle', 'dawnstar', 3, 'Ritual. At the start of your turn
 operation('Rite of the Broken Seal', 'dawnstar', 3, 'Gain 1 progress on your Master Plan, plus 1 if you control two or more Scriptures.', 'Seven seals. Six already broken.',
           do=[plan_prog(Q(ge(cnt(SCRIPT()), 2), 2, 1))])
 
-operation('Return of the Faithful', 'dawnstar', 2, 'Return up to two Occultists or Demons that cost 2 or less from your discard pile to your hand.', 'Death is a leave of absence.',
+operation('Return of the Faithful', 'dawnstar', 1, 'Return up to two Occultists or Demons that cost 2 or less from your discard pile to your hand.', 'Death is a leave of absence.',
           do=[choose(flt(GRAVE('$me'), AND(OR(has('$it', 'occultist'), has('$it', 'demon')), le(g('$it', 'cost'), 2))), '$xs', 'Return which (up to two)?', 0, 2),
               EACH('$xs', '$x', [['move', '$x', 'hand']])])
 

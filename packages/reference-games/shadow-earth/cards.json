@@ -3009,8 +3009,8 @@
   "keywords": [
    "occultist"
   ],
-  "force": 0,
-  "trade": 1,
+  "force": 1,
+  "trade": 0,
   "will": 2,
   "hp": 2,
   "num": "SE2-064",
@@ -3371,8 +3371,8 @@
    "demon"
   ],
   "force": 4,
-  "trade": 1,
-  "will": 2,
+  "trade": 0,
+  "will": 3,
   "hp": 4,
   "num": "SE2-070",
   "rarity": "C"
@@ -3406,10 +3406,10 @@
   "keywords": [
    "occultist"
   ],
-  "force": 0,
-  "trade": 1,
+  "force": 1,
+  "trade": 0,
   "will": 3,
-  "hp": 2,
+  "hp": 3,
   "num": "SE2-072",
   "rarity": "C"
  },
@@ -3471,9 +3471,9 @@
    "occultist"
   ],
   "force": 0,
-  "trade": 2,
-  "will": 2,
-  "hp": 2,
+  "trade": 1,
+  "will": 3,
+  "hp": 3,
   "deploy": [
    [
     "call",
@@ -3706,7 +3706,7 @@
   "faction": "dawnstar",
   "text": "Return up to two Occultists or Demons that cost 2 or less from your discard pile to your hand.",
   "flavor": "Death is a leave of absence.",
-  "cost": 2,
+  "cost": 1,
   "op": [
    {
     "do": [
