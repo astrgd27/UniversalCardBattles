@@ -77,6 +77,7 @@ for name, kw in FX.items():
         if k == 'op' or k == 'resp':  # operations and responses: run only if not cancelled, then go to the discard pile
             for ab in v:
                 ab['label'] = ab.get('label', name)
+                if k == 'op': ab.setdefault('phases', ['development'])
                 ab['do'] = [IF(eq(g('game', 'ocan'), 0), ab['do'])] + [C('opEnd', '$self')]
             c[k] = v
         elif k in ('mop', 'agenda', 'abil', 'rabil'):
@@ -241,8 +242,10 @@ proc('basicReward', [], [
             IF(eq('$r', '1 Dominance'), [dom(1)]), IF(eq('$r', 'Return the Asset'), [bounce('$t')]),
             IF(eq('$r', 'Return the Courier to hand instead'), [bounce(first(flt(ATK, isc('$it', 'Courier with No Name'))))]),
             *[IF(eq('$r', lab), eff) for lab, cond, eff in lib.INFIL_OPTS]]),
-        IF(eq(g('game', 'mk'), 3), [choose(opts('1 Dominance', 'Exhaust it and draw'), '$r', 'Subvert succeeded: choose your reward'),
-            IF(eq('$r', '1 Dominance'), [dom(1)], [exhaust('$t'), draw(1)])])],
+        IF(eq(g('game', 'mk'), 3), [choose(['concat', opts('1 Dominance', 'Exhaust it and draw'), *[Q(cond, opts(lab), lit([])) for lab, cond, eff in lib.SUBV_OPTS]],
+                                           '$r', 'Subvert succeeded: choose your reward'),
+            IF(eq('$r', '1 Dominance'), [dom(1)]), IF(eq('$r', 'Exhaust it and draw'), [exhaust('$t'), draw(1)]),
+            *[IF(eq('$r', lab), eff) for lab, cond, eff in lib.SUBV_OPTS]])],
         [IF(AND(eq(g('game', 'mk'), 2), gt(len(lib.INFIL_OPTS), 0), OR(lit(False), *[cond for lab, cond, eff in lib.INFIL_OPTS])), [
             choose(['concat', opts('1 Dominance'), *[Q(cond, opts(lab), lit([])) for lab, cond, eff in lib.INFIL_OPTS]], '$r', 'Infiltrate succeeded: choose your reward'),
             IF(eq('$r', '1 Dominance'), [dom(1)]), *[IF(eq('$r', lab), eff) for lab, cond, eff in lib.INFIL_OPTS]],
@@ -317,7 +320,7 @@ A['deploy'] = {'label': 'Play', 'phases': ['development'], 'source': inHand(inl(
            IF(AND(typ('$c', 'asset'), isObj('$b')), [['link', '$c', 'bearer', '$b'], emit('attached', a='$c', o='$b', p='$me')]),
            SET('$c', 'newT', '$turn'), C('played', '$c', '$me'),
            IF(eq(g('$c', 'hasDeploy'), 1), [['run', '$c', 'deploy']]), emit('deployed', c='$c', p='$me', card=g('$c', 'card'), type=g('$c', 'type'))]}
-A['op'] = {'label': 'Play', 'phases': ['development'], 'activated': 'op', 'source': inHand(typ('$it', 'operation')),
+A['op'] = {'label': 'Play', 'phases': ['development', 'operations'], 'activated': 'op', 'source': inHand(typ('$it', 'operation')),
     'cost': [C('payFor', '$self')], 'do': [C('opStart', '$self')]}
 A['respond'] = {'label': 'Respond', 'phases': ['respond'], 'activated': 'resp',
     'source': flt(HAND('$me'), AND(typ('$it', 'response'), eq(g('$it', 'ready'), 1), C('canPayR', '$it', '$me'))),
@@ -325,9 +328,9 @@ A['respond'] = {'label': 'Respond', 'phases': ['respond'], 'activated': 'resp',
 A['use'] = {'label': 'Use', 'phases': ['development', 'operations'], 'activated': 'abil',
     'source': ['concat', flt(PERMS('$me'), AND(C('active', '$it'), NOT(AND(typ('$it', 'facility'), ge(g('$it', 'frozenT'), '$turn'))))),
                flt(['cards', '$me', 'agenda'], C('agendaOn', '$it'))],
-    'do': [SET('game', 'ucan', 0), IF(typ('$self', 'facility'), lib.USEHOOK)]}
+    'do': [SET('game', 'ucan', 0), IF(typ('$self', 'facility'), lib.USEHOOK, lib.USEHOOK_ANY)]}
 A['useR'] = {'label': 'Use', 'phases': ['respond'], 'activated': 'rabil', 'source': flt(PERMS('$me'), AND(C('active', '$it'), NOT(AND(typ('$it', 'facility'), ge(g('$it', 'frozenT'), '$turn'))))),
-    'do': [SET('game', 'ucan', 0), IF(typ('$self', 'facility'), lib.USEHOOK)]}
+    'do': [SET('game', 'ucan', 0), IF(typ('$self', 'facility'), lib.USEHOOK, lib.USEHOOK_ANY)]}
 A['equip'] = {'label': 'Attach / transfer (1 Influence)', 'phases': ['development'],
     'source': flt(GEAR('$me'), AND(has('$it', 'loadout'), ge(C('avail', '$me'), 1))),
     'targets': [{'as': '$b', 'prompt': 'Attach to which operative?', 'from': flt(OPS('$me'), AND(ne('$it', bearerOf('$self')), C('bearerOk', '$self', '$it')))}],

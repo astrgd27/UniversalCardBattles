@@ -224,3 +224,20 @@ fx('Shadow Procurement Office', abil=[abil('Play an Asset (cost 2 or less) from 
 fx('The Other Side of the Table', deploy=[loot(1)], rabil=[abil('Pay 2: assign one more defender', [SET('$t', 'dfn', 1), SET('$t', 'ex', 1)], ('respond',),
     cost=[C('spend', '$me', 2)], req=[(AND(THEIRS, lt(cnt(DFN), 2), ge(C('avail', '$me'), 2)), 'Only while defending with fewer than two defenders')],
     targets=[slot(flt(MY_OPS, AND(eq(g('$it', 'ex'), 0), NOT(defending('$it')))), prompt='Which ready operative joins the defense?')])])
+
+# ---------------------------------------------------------------- the trickier Neutral cards
+fx('The Frankfurt Tip Network', abilities=[trig('moved', [tmp(1)], AND(eq('$e.from', 'deck'), eq('$e.to', 'hand'), ne('$e.toPlayer', SELF_P),
+    NOT(inl('$phase', lit(['refresh', 'draw']))), C('active', '$self')), once_per_turn=True)])
+fx('Improvised Scrambler')
+OPSTART.append(IF(AND(IN_MISSION, typ('$c2', 'response'), own('Improvised Scrambler', '$opp'), ANY(OPS('$opp'), participating('$it')), ne(g('$opp', 'scrT'), '$turn')), [
+    SET('$opp', 'scrT', '$turn'), *taxed('$me', 1, 'Let it be cancelled'), IF(ne('$y', 'Pay 1'), [SET('game', 'ocan', 1), emit('cancelled', card=g('$c2', 'card'))])]))
+fx('Portable Null Field')
+USEHOOK_ANY.append(IF(AND(IN_MISSION, own('Portable Null Field', '$opp'), ge(C('avail', '$opp'), 2), ne(g('$opp', 'pnfT'), '$turn')), [
+    choose(opts('Pay 2 to cancel it', 'No'), '$w', 'Portable Null Field: cancel this ability?', who='$opp'),
+    IF(eq('$w', 'Pay 2 to cancel it'), [SET('$opp', 'pnfT', '$turn'), C('spend', '$opp', 2), SET('game', 'ucan', 1), emit('cancelled', card=g('$self', 'card'))])]))
+fx('Rogue Systems Architect', abil=[abil('Ready a Facility (activating it again this turn costs 2 more)', [ready('$t'), SET('$t', 'rsaT', '$turn')], ('development', 'operations'),
+    targets=[slot(flt(facs('$me'), gt(cnt(['def', '$it', 'abil']), 0)), prompt='Ready which Facility?')])])
+USEHOOK.append(IF(eq(g('$self', 'rsaT'), '$turn'), [*taxed('$me', 2, 'Let the activation fizzle'), IF(ne('$y', 'Pay 2'), [SET('game', 'ucan', 1)])]))
+fx('A Favor Called In', op=[{'label': 'A Favor Called In', 'phases': ['operations'], 'do': [
+    choose(flt(OPS('$me'), eq(g('$it', 'ex'), 1)), '$rs', 'Ready up to three operatives', 0, 3), EACH('$rs', '$x', [ready('$x')]), draw(2),
+    SET('$me', 'attMax', mn(3, add(g('$me', 'attMax'), 1)))]}])

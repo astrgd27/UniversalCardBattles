@@ -43,3 +43,11 @@ DECKS['illuminati-starter'] = deck('The Central Committee', 'The Invisible Hand'
     (3, 'Offshore Holding Company'), (2, 'Lobbying Office'), (1, 'Audit Office'), (1, 'Cutout Company'), (1, 'Bilateral Immunity Agreement'),
     (3, 'Cash Transfer'), (1, 'Liquidity Injection'), (2, 'Deniable Payment'), (1, 'Emergency Injunction'),
     (2, 'False-Flag Operation'), (2, 'Public Scandal'), (2, 'Coalition Bargaining')])
+
+DECKS['children-starter'] = deck('The First Contact House', 'Communion of the Faithful', [
+    (3, 'Street Preacher'), (3, 'Ecstatic Convert'), (2, 'Cell Organizer'), (2, 'Contact Engineer'), (3, 'Whispering Devotee'), (2, 'Rift Attendant'),
+    (2, 'Visionary Contactee'), (3, 'Radio Prophet'), (2, 'Manifestation of Hunger'), (2, 'Reverend Silas Hark, Contactee'), (1, 'Gateway Custodian'),
+    (2, 'Recovered Probe'), (2, 'Unidentified Alloy'), (1, 'Antigravity Harness'), (1, 'Pilgrimage Convoy'), (1, 'Stellar Alignment Almanac'),
+    (2, 'Recruitment Circle'), (1, 'Night-Sky Vigil'), (1, 'Nonlocal Transmitter'), (2, 'Thinning Veil'), (1, 'The First Vigil'),
+    (3, 'Community Outreach'), (1, 'Uncertain Tomorrow'), (1, 'Distorted Geometry'), (1, 'Prophecy of Misfortune'),
+    (2, 'The Gathering'), (1, 'Scream Across Dimensions'), (2, 'Rite of the Empty Sky')])

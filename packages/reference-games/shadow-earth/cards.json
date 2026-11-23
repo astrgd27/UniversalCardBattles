@@ -2041,7 +2041,10 @@
       "max": 1
      }
     ],
-    "label": "Reprogram Identity"
+    "label": "Reprogram Identity",
+    "phases": [
+     "development"
+    ]
    }
   ],
   "ready": 1
@@ -2432,7 +2435,10 @@
       "$self"
      ]
     ],
-    "label": "Group Meditation"
+    "label": "Group Meditation",
+    "phases": [
+     "development"
+    ]
    }
   ],
   "ready": 1
@@ -4183,7 +4189,10 @@
       "$self"
      ]
     ],
-    "label": "Random Splice"
+    "label": "Random Splice",
+    "phases": [
+     "development"
+    ]
    }
   ],
   "ready": 1
@@ -4472,7 +4481,10 @@
       "max": 1
      }
     ],
-    "label": "Accelerated Metamorphosis"
+    "label": "Accelerated Metamorphosis",
+    "phases": [
+     "development"
+    ]
    }
   ],
   "ready": 1
@@ -4935,7 +4947,10 @@
       "$self"
      ]
     ],
-    "label": "Quarterly Earnings"
+    "label": "Quarterly Earnings",
+    "phases": [
+     "development"
+    ]
    }
   ],
   "ready": 1
@@ -5327,7 +5342,10 @@
       "max": 1
      }
     ],
-    "label": "Written in Blood"
+    "label": "Written in Blood",
+    "phases": [
+     "development"
+    ]
    }
   ],
   "ready": 1
@@ -5822,7 +5840,10 @@
       "$self"
      ]
     ],
-    "label": "The Price of Dominion"
+    "label": "The Price of Dominion",
+    "phases": [
+     "development"
+    ]
    }
   ],
   "ready": 1
@@ -6068,7 +6089,10 @@
       "$self"
      ]
     ],
-    "label": "Forbidden Translation"
+    "label": "Forbidden Translation",
+    "phases": [
+     "development"
+    ]
    }
   ],
   "ready": 1
@@ -7833,7 +7857,10 @@
       "$self"
      ]
     ],
-    "label": "Infernal Muster"
+    "label": "Infernal Muster",
+    "phases": [
+     "development"
+    ]
    }
   ],
   "ready": 1
@@ -7988,7 +8015,10 @@
       "$self"
      ]
     ],
-    "label": "Cash Transfer"
+    "label": "Cash Transfer",
+    "phases": [
+     "development"
+    ]
    }
   ],
   "ready": 1
@@ -8163,7 +8193,10 @@
       "$self"
      ]
     ],
-    "label": "Liquidity Injection"
+    "label": "Liquidity Injection",
+    "phases": [
+     "development"
+    ]
    }
   ],
   "ready": 1
@@ -9826,7 +9859,10 @@
       "max": 1
      }
     ],
-    "label": "Asset Freeze"
+    "label": "Asset Freeze",
+    "phases": [
+     "development"
+    ]
    }
   ],
   "tFac": 1,
@@ -10111,7 +10147,60 @@
   "keywords": [
    "cultist"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "call",
+      "gainRev",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      3
+     ],
+     [
+      "=",
+      [
+       "get",
+       "$self",
+       "atk"
+      ],
+      1
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "recruitment-circle",
@@ -10123,7 +10212,66 @@
   "text": "Once per turn, pay 1 to create a 0/1/1 Cultist token.",
   "archetype": "Cult Proliferation",
   "cost": 2,
-  "ready": 0
+  "abil": [
+   {
+    "label": "Pay 1: create a 0/1/1 Cultist token",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ucan"
+       ],
+       0
+      ],
+      [
+       [
+        "call",
+        "makeTokens",
+        "$me",
+        "tok-cultist",
+        1,
+        0
+       ]
+      ]
+     ]
+    ],
+    "cost": [
+     [
+      "call",
+      "spend",
+      "$me",
+      1
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       ">=",
+       [
+        "call",
+        "avail",
+        "$me"
+       ],
+       1
+      ],
+      "why": "Needs 1 Influence"
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "ecstatic-convert",
@@ -10142,7 +10290,7 @@
   "keywords": [
    "cultist"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "community-outreach",
@@ -10154,7 +10302,75 @@
   "text": "Create a 0/1/1 Cultist token; if you control three Cultists, Scry 1.",
   "archetype": "Cult Proliferation",
   "cost": 1,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "call",
+        "makeTokens",
+        "$me",
+        "tok-cultist",
+        1,
+        0
+       ],
+       [
+        "if",
+        [
+         ">=",
+         [
+          "count",
+          [
+           "filter",
+           [
+            "cards",
+            "$me",
+            "ops"
+           ],
+           [
+            "has",
+            "$it",
+            "cultist"
+           ]
+          ]
+         ],
+         3
+        ],
+        [
+         [
+          "call",
+          "scry",
+          "$me",
+          1
+         ]
+        ]
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "label": "Community Outreach",
+    "phases": [
+     "development"
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "cell-organizer",
@@ -10173,7 +10389,7 @@
   "keywords": [
    "cultist"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "the-gathering",
@@ -10185,7 +10401,59 @@
   "text": "Will mission: on success gain 1 Dominance plus one additional Dominance if you control five Cultists.",
   "archetype": "Cult Proliferation",
   "cost": 2,
-  "ready": 0
+  "mattr": 3,
+  "mop": [
+   {
+    "label": "The Gathering (Will mission)",
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "list",
+       "$opp"
+      ],
+      "prompt": "Target: the opposing Headquarters",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "do": []
+   }
+  ],
+  "succ": [
+   [
+    "call",
+    "gainDom",
+    "$me",
+    [
+     "?",
+     [
+      ">=",
+      [
+       "count",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "has",
+         "$it",
+         "cultist"
+        ]
+       ]
+      ],
+      5
+     ],
+     2,
+     1
+    ]
+   ]
+  ],
+  "ready": 1,
+  "hasSucc": 1
  },
  {
   "id": "pilgrimage-convoy",
@@ -10200,7 +10468,52 @@
   "keywords": [
    "vehicle"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "call",
+      "makeTokens",
+      "$me",
+      "tok-cultist",
+      [
+       "?",
+       [
+        ">=",
+        [
+         "get",
+         "$me",
+         "rev"
+        ],
+        5
+       ],
+       2,
+       1
+      ],
+      0
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "the-chosen-multitude",
@@ -10212,7 +10525,57 @@
   "text": "The first Cultist you play each turn costs 1 less Influence (minimum 1). At your Refresh, if you control seven or more Cultists, gain 1 Dominance.",
   "archetype": "Cult Proliferation",
   "cost": 6,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "call",
+      "gainDom",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      ">=",
+      [
+       "count",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "has",
+         "$it",
+         "cultist"
+        ]
+       ]
+      ],
+      7
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "recovered-probe",
@@ -10228,7 +10591,61 @@
    "artifact",
    "alien"
   ],
-  "ready": 0
+  "attach": 1,
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "call",
+      "scry",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      2
+     ],
+     [
+      "=",
+      [
+       "get",
+       [
+        "get",
+        "$self",
+        "bearer"
+       ],
+       "atk"
+      ],
+      1
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "contact-engineer",
@@ -10247,7 +10664,7 @@
   "keywords": [
    "cultist"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "unidentified-alloy",
@@ -10263,7 +10680,8 @@
    "artifact",
    "alien"
   ],
-  "ready": 0
+  "attach": 1,
+  "ready": 1
  },
  {
   "id": "antigravity-harness",
@@ -10279,7 +10697,8 @@
    "artifact",
    "alien"
   ],
-  "ready": 0
+  "attach": 1,
+  "ready": 1
  },
  {
   "id": "device-from-the-crash-site",
@@ -10291,7 +10710,91 @@
   "text": "Look at the top four cards of your deck; put one Artifact among them into hand, rest on bottom.",
   "archetype": "Extraterrestrial Technology",
   "cost": 2,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "choose",
+        {
+         "from": [
+          "filter",
+          [
+           "top",
+           "$me",
+           "deck",
+           4
+          ],
+          [
+           "has",
+           "$it",
+           "artifact"
+          ]
+         ],
+         "as": "$v",
+         "prompt": "Device from the Crash Site: take which Artifact?",
+         "min": 0,
+         "max": 1
+        }
+       ],
+       [
+        "if",
+        [
+         "isObj",
+         "$v"
+        ],
+        [
+         [
+          "move",
+          "$v",
+          "hand"
+         ]
+        ]
+       ],
+       [
+        "move",
+        [
+         "top",
+         "$me",
+         "deck",
+         [
+          "?",
+          [
+           "isObj",
+           "$v"
+          ],
+          3,
+          4
+         ]
+        ],
+        "deck"
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "label": "Device from the Crash Site",
+    "phases": [
+     "development"
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "neural-disruptor",
@@ -10307,7 +10810,8 @@
    "artifact",
    "alien"
   ],
-  "ready": 0
+  "attach": 1,
+  "ready": 1
  },
  {
   "id": "nonlocal-transmitter",
@@ -10319,7 +10823,52 @@
   "text": "Once per turn, when you play an Artifact, gain 1 Revelation and 1 temporary Influence.",
   "archetype": "Extraterrestrial Technology",
   "cost": 4,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "played",
+    "do": [
+     [
+      "call",
+      "gainRev",
+      "$me",
+      1
+     ],
+     [
+      "call",
+      "gainTmp",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "has",
+      "$e.c",
+      "artifact"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "recovered-mothercraft-core",
@@ -10335,7 +10884,73 @@
    "artifact",
    "alien"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "draw",
+      "$me",
+      1
+     ],
+     [
+      "call",
+      "gainTmp",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      ">=",
+      [
+       "count",
+       [
+        "distinct",
+        [
+         "map",
+         [
+          "filter",
+          [
+           "cards",
+           "$me",
+           "gear"
+          ],
+          [
+           "has",
+           "$it",
+           "alien"
+          ]
+         ],
+         [
+          "get",
+          "$it",
+          "card"
+         ]
+        ]
+       ]
+      ],
+      2
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "whispering-devotee",
@@ -10354,7 +10969,7 @@
   "keywords": [
    "cultist"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "rift-attendant",
@@ -10373,7 +10988,7 @@
   "keywords": [
    "cultist"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "thinning-veil",
@@ -10385,7 +11000,51 @@
   "text": "Once per turn, after a successful Subvert, gain 1 Revelation.",
   "archetype": "Cosmic Manifestation",
   "cost": 2,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "call",
+      "gainRev",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      3
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "distorted-geometry",
@@ -10397,7 +11056,365 @@
   "text": "Give an Entity +3 Will, or give an enemy team -2 total Tradecraft.",
   "archetype": "Cosmic Manifestation",
   "cost": 2,
-  "ready": 0
+  "resp": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "choose",
+        {
+         "from": [
+          "concat",
+          [
+           "?",
+           [
+            "and",
+            [
+             "and",
+             [
+              ">",
+              [
+               "get",
+               "game",
+               "mp"
+              ],
+              0
+             ],
+             [
+              "=",
+              [
+               "get",
+               "game",
+               "ma"
+              ],
+              3
+             ]
+            ],
+            [
+             "any",
+             [
+              "filter",
+              [
+               "cards",
+               "$me",
+               "ops"
+              ],
+              [
+               "has",
+               "$it",
+               "entity"
+              ]
+             ],
+             [
+              "or",
+              [
+               "=",
+               [
+                "get",
+                "$it",
+                "atk"
+               ],
+               1
+              ],
+              [
+               "=",
+               [
+                "get",
+                "$it",
+                "dfn"
+               ],
+               1
+              ]
+             ]
+            ]
+           ],
+           [
+            "lit",
+            [
+             "An Entity gets +3 Will"
+            ]
+           ],
+           [
+            "lit",
+            []
+           ]
+          ],
+          [
+           "?",
+           [
+            "and",
+            [
+             ">",
+             [
+              "get",
+              "game",
+              "mp"
+             ],
+             0
+            ],
+            [
+             "=",
+             [
+              "get",
+              "game",
+              "ma"
+             ],
+             2
+            ]
+           ],
+           [
+            "lit",
+            [
+             "The enemy team gets -2 Tradecraft"
+            ]
+           ],
+           [
+            "lit",
+            []
+           ]
+          ]
+         ],
+         "as": "$y",
+         "prompt": "Distorted Geometry: choose one",
+         "min": 1,
+         "max": 1
+        }
+       ],
+       [
+        "if",
+        [
+         "=",
+         "$y",
+         "An Entity gets +3 Will"
+        ],
+        [
+         [
+          "choose",
+          {
+           "from": [
+            "filter",
+            [
+             "filter",
+             [
+              "cards",
+              "$me",
+              "ops"
+             ],
+             [
+              "has",
+              "$it",
+              "entity"
+             ]
+            ],
+            [
+             "or",
+             [
+              "=",
+              [
+               "get",
+               "$it",
+               "atk"
+              ],
+              1
+             ],
+             [
+              "=",
+              [
+               "get",
+               "$it",
+               "dfn"
+              ],
+              1
+             ]
+            ]
+           ],
+           "as": "$v",
+           "prompt": "Which Entity?",
+           "min": 1,
+           "max": 1
+          }
+         ],
+         [
+          "inc",
+          "$v",
+          "mb",
+          3
+         ]
+        ]
+       ],
+       [
+        "if",
+        [
+         "=",
+         "$y",
+         "The enemy team gets -2 Tradecraft"
+        ],
+        [
+         [
+          "if",
+          [
+           "and",
+           [
+            ">",
+            [
+             "get",
+             "game",
+             "mp"
+            ],
+            0
+           ],
+           [
+            "=",
+            [
+             "nth",
+             [
+              "players"
+             ],
+             [
+              "-",
+              [
+               "get",
+               "game",
+               "mp"
+              ],
+              1
+             ]
+            ],
+            "$me"
+           ]
+          ],
+          [
+           [
+            "inc",
+            "game",
+            "dm",
+            -2
+           ]
+          ],
+          [
+           [
+            "inc",
+            "game",
+            "am",
+            -2
+           ]
+          ]
+         ]
+        ]
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       "or",
+       [
+        "and",
+        [
+         "and",
+         [
+          ">",
+          [
+           "get",
+           "game",
+           "mp"
+          ],
+          0
+         ],
+         [
+          "=",
+          [
+           "get",
+           "game",
+           "ma"
+          ],
+          3
+         ]
+        ],
+        [
+         "any",
+         [
+          "filter",
+          [
+           "cards",
+           "$me",
+           "ops"
+          ],
+          [
+           "has",
+           "$it",
+           "entity"
+          ]
+         ],
+         [
+          "or",
+          [
+           "=",
+           [
+            "get",
+            "$it",
+            "atk"
+           ],
+           1
+          ],
+          [
+           "=",
+           [
+            "get",
+            "$it",
+            "dfn"
+           ],
+           1
+          ]
+         ]
+        ]
+       ],
+       [
+        "and",
+        [
+         ">",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         0
+        ],
+        [
+         "=",
+         [
+          "get",
+          "game",
+          "ma"
+         ],
+         2
+        ]
+       ]
+      ],
+      "why": "Needs your Entity in a Will mission, or a Tradecraft mission"
+     }
+    ],
+    "label": "Distorted Geometry"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "manifestation-of-hunger",
@@ -10416,7 +11433,153 @@
   "keywords": [
    "entity"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "cleanup",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "?",
+        [
+         ">",
+         [
+          "count",
+          [
+           "filter",
+           [
+            "filter",
+            [
+             "cards",
+             "$me",
+             "ops"
+            ],
+            [
+             "=",
+             [
+              "get",
+              "$it",
+              "ctlT"
+             ],
+             0
+            ]
+           ],
+           [
+            "and",
+            [
+             "has",
+             "$it",
+             "cultist"
+            ],
+            [
+             "!=",
+             "$it",
+             "$self"
+            ]
+           ]
+          ]
+         ],
+         0
+        ],
+        [
+         "lit",
+         [
+          "Sacrifice a Cultist",
+          "Take 2 damage"
+         ]
+        ],
+        [
+         "lit",
+         [
+          "Take 2 damage"
+         ]
+        ]
+       ],
+       "as": "$y",
+       "prompt": "Manifestation of Hunger hungers",
+       "min": 1,
+       "max": 1
+      }
+     ],
+     [
+      "if",
+      [
+       "=",
+       "$y",
+       "Sacrifice a Cultist"
+      ],
+      [
+       [
+        "choose",
+        {
+         "from": [
+          "filter",
+          [
+           "filter",
+           [
+            "cards",
+            "$me",
+            "ops"
+           ],
+           [
+            "=",
+            [
+             "get",
+             "$it",
+             "ctlT"
+            ],
+            0
+           ]
+          ],
+          [
+           "has",
+           "$it",
+           "cultist"
+          ]
+         ],
+         "as": "$v",
+         "prompt": "Sacrifice which Cultist?",
+         "min": 1,
+         "max": 1
+        }
+       ],
+       [
+        "call",
+        "sacrifice",
+        "$v"
+       ]
+      ],
+      [
+       [
+        "call",
+        "hurt",
+        "$self",
+        2
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "scream-across-dimensions",
@@ -10428,7 +11591,125 @@
   "text": "Will mission: on success, ready one Entity and exhaust one enemy operative; gain 1 Dominance.",
   "archetype": "Cosmic Manifestation",
   "cost": 3,
-  "ready": 0
+  "mattr": 3,
+  "mop": [
+   {
+    "label": "Scream Across Dimensions (Will mission)",
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "list",
+       "$opp"
+      ],
+      "prompt": "Target: the opposing Headquarters",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "do": []
+   }
+  ],
+  "succ": [
+   [
+    "choose",
+    {
+     "from": [
+      "filter",
+      [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "ops"
+       ],
+       [
+        "has",
+        "$it",
+        "entity"
+       ]
+      ],
+      [
+       "=",
+       [
+        "get",
+        "$it",
+        "ex"
+       ],
+       1
+      ]
+     ],
+     "as": "$e1",
+     "prompt": "Ready which Entity?",
+     "min": 0,
+     "max": 1
+    }
+   ],
+   [
+    "if",
+    [
+     "isObj",
+     "$e1"
+    ],
+    [
+     [
+      "set",
+      "$e1",
+      "ex",
+      0
+     ]
+    ]
+   ],
+   [
+    "choose",
+    {
+     "from": [
+      "filter",
+      [
+       "cards",
+       "$opp",
+       "ops"
+      ],
+      [
+       "=",
+       [
+        "get",
+        "$it",
+        "ex"
+       ],
+       0
+      ]
+     ],
+     "as": "$v",
+     "prompt": "Exhaust which enemy operative?",
+     "min": 0,
+     "max": 1
+    }
+   ],
+   [
+    "if",
+    [
+     "isObj",
+     "$v"
+    ],
+    [
+     [
+      "set",
+      "$v",
+      "ex",
+      1
+     ]
+    ]
+   ],
+   [
+    "call",
+    "gainDom",
+    "$me",
+    1
+   ]
+  ],
+  "ready": 1,
+  "hasSucc": 1
  },
  {
   "id": "gateway-custodian",
@@ -10447,7 +11728,37 @@
   "keywords": [
    "entity"
   ],
-  "ready": 0
+  "deploy": [
+   [
+    "choose",
+    {
+     "from": [
+      "cards",
+      "$opp",
+      "ops"
+     ],
+     "as": "$xs",
+     "prompt": "Gateway Custodian: exhaust up to two opposing operatives",
+     "min": 0,
+     "max": 2
+    }
+   ],
+   [
+    "each",
+    "$xs",
+    "$x",
+    [
+     [
+      "set",
+      "$x",
+      "ex",
+      1
+     ]
+    ]
+   ]
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "the-first-unmaking",
@@ -10459,7 +11770,109 @@
   "text": "Play only if you have at least seven Revelation. Deal 3 damage to each opposing operative, then gain 1 Dominance for each opposing operative eliminated by this effect (maximum 4).",
   "archetype": "Cosmic Manifestation",
   "cost": 8,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "let",
+        "$n",
+        [
+         "min",
+         4,
+         [
+          "count",
+          [
+           "filter",
+           [
+            "cards",
+            "$opp",
+            "ops"
+           ],
+           [
+            ">=",
+            [
+             "+",
+             [
+              "get",
+              "$it",
+              "dmg"
+             ],
+             3
+            ],
+            [
+             "call",
+             "dur",
+             "$it"
+            ]
+           ]
+          ]
+         ]
+        ]
+       ],
+       [
+        "each",
+        [
+         "cards",
+         "$opp",
+         "ops"
+        ],
+        "$x",
+        [
+         [
+          "call",
+          "hurt",
+          "$x",
+          3
+         ]
+        ]
+       ],
+       [
+        "call",
+        "gainDom",
+        "$me",
+        "$n"
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       ">=",
+       [
+        "get",
+        "$me",
+        "rev"
+       ],
+       7
+      ],
+      "why": "Needs 7 Revelation"
+     }
+    ],
+    "label": "The First Unmaking",
+    "phases": [
+     "development"
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "visionary-contactee",
@@ -10478,7 +11891,37 @@
   "keywords": [
    "cultist"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "call",
+      "peekTop",
+      "$me",
+      "$me"
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "radio-prophet",
@@ -10497,7 +11940,33 @@
   "keywords": [
    "cultist"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "scried",
+    "do": [
+     [
+      "inc",
+      "$self",
+      "cT",
+      1
+     ]
+    ],
+    "if": [
+     "=",
+     "$e.p",
+     [
+      "get",
+      "$self",
+      "controller"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "night-sky-vigil",
@@ -10509,7 +11978,81 @@
   "text": "Once per turn, exhaust a Cultist to Scry 2.",
   "archetype": "Prophetic Cells",
   "cost": 2,
-  "ready": 0
+  "abil": [
+   {
+    "label": "Exhaust a Cultist: Scry 2",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ucan"
+       ],
+       0
+      ],
+      [
+       [
+        "set",
+        "$t",
+        "ex",
+        1
+       ],
+       [
+        "call",
+        "scry",
+        "$me",
+        2
+       ]
+      ]
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "has",
+         "$it",
+         "cultist"
+        ]
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "ex"
+        ],
+        0
+       ]
+      ],
+      "prompt": "Exhaust which Cultist?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "prophecy-of-misfortune",
@@ -10521,7 +12064,75 @@
   "text": "After an opponent declares a mission, name its target; if the mission succeeds, draw two cards, otherwise gain 1 Revelation.",
   "archetype": "Prophetic Cells",
   "cost": 1,
-  "ready": 0
+  "resp": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "set",
+        "$me",
+        "pomT",
+        "$turn"
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       "and",
+       [
+        ">",
+        [
+         "get",
+         "game",
+         "mp"
+        ],
+        0
+       ],
+       [
+        "!=",
+        [
+         "nth",
+         [
+          "players"
+         ],
+         [
+          "-",
+          [
+           "get",
+           "game",
+           "mp"
+          ],
+          1
+         ]
+        ],
+        "$me"
+       ]
+      ],
+      "why": "Only after an opponent declares a mission"
+     }
+    ],
+    "label": "Prophecy of Misfortune"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "uncertain-tomorrow",
@@ -10533,7 +12144,47 @@
   "text": "Scry 4, then draw one card.",
   "archetype": "Prophetic Cells",
   "cost": 2,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "call",
+        "scry",
+        "$me",
+        4
+       ],
+       [
+        "draw",
+        "$me",
+        1
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "label": "Uncertain Tomorrow",
+    "phases": [
+     "development"
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "the-apparition-log",
@@ -10545,7 +12196,132 @@
   "text": "Once per turn, reveal the top card of your deck; if it is an Operation, your next Response costs 1 less.",
   "archetype": "Prophetic Cells",
   "cost": 3,
-  "ready": 0
+  "abil": [
+   {
+    "label": "Reveal your top card (an Operation makes your next Response cost 1 less)",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ucan"
+       ],
+       0
+      ],
+      [
+       [
+        "if",
+        [
+         ">",
+         [
+          "count",
+          [
+           "cards",
+           "$me",
+           "deck"
+          ]
+         ],
+         0
+        ],
+        [
+         [
+          "call",
+          "revealTop",
+          "$me",
+          "$me"
+         ],
+         [
+          "if",
+          [
+           "in",
+           [
+            "get",
+            [
+             "first",
+             [
+              "cards",
+              "$me",
+              "deck"
+             ]
+            ],
+            "type"
+           ],
+           [
+            "lit",
+            [
+             "operation",
+             "response",
+             "mission"
+            ]
+           ]
+          ],
+          [
+           [
+            "set",
+            "$me",
+            "aplog",
+            1
+           ]
+          ]
+         ]
+        ]
+       ]
+      ]
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "abilities": [
+   {
+    "on": "played",
+    "do": [
+     [
+      "set",
+      "$me",
+      "aplog",
+      0
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      [
+       "get",
+       "$e.c",
+       "type"
+      ],
+      "response"
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "foretold-collision",
@@ -10557,7 +12333,141 @@
   "text": "Tradecraft mission. After paying its initiation costs but before defenders are assigned, reveal the top two cards of your deck. You may put one of those cards into your discard pile; if you do, your attacking team gets +3 Tradecraft for this mission. Put any remaining revealed cards back on top of your deck in their original relative order. On success, gain 1 Dominance, plus 1 additional Dominance if you discarded a revealed card with printed cost 3 or more this way.",
   "archetype": "Prophetic Cells",
   "cost": 3,
-  "ready": 0
+  "mattr": 2,
+  "mop": [
+   {
+    "label": "Foretold Collision (Tradecraft mission)",
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "list",
+       "$opp"
+      ],
+      "prompt": "Target: the opposing Headquarters",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "do": []
+   }
+  ],
+  "pre": [
+   [
+    "set",
+    "$me",
+    "fcCost",
+    -1
+   ],
+   [
+    "if",
+    [
+     ">",
+     [
+      "count",
+      [
+       "cards",
+       "$me",
+       "deck"
+      ]
+     ],
+     0
+    ],
+    [
+     [
+      "emit",
+      "revealed",
+      {
+       "cards": [
+        "map",
+        [
+         "top",
+         "$me",
+         "deck",
+         2
+        ],
+        [
+         "get",
+         "$it",
+         "card"
+        ]
+       ],
+       "p": "$me",
+       "owner": "$me"
+      }
+     ],
+     [
+      "choose",
+      {
+       "from": [
+        "top",
+        "$me",
+        "deck",
+        2
+       ],
+       "as": "$v",
+       "prompt": "Foretold Collision: discard one of them for +3 Tradecraft?",
+       "min": 0,
+       "max": 1
+      }
+     ],
+     [
+      "if",
+      [
+       "isObj",
+       "$v"
+      ],
+      [
+       [
+        "set",
+        "$me",
+        "fcCost",
+        [
+         "get",
+         "$v",
+         "cost"
+        ]
+       ],
+       [
+        "move",
+        "$v",
+        "grave"
+       ],
+       [
+        "inc",
+        "game",
+        "am",
+        3
+       ]
+      ]
+     ]
+    ]
+   ]
+  ],
+  "succ": [
+   [
+    "call",
+    "gainDom",
+    "$me",
+    [
+     "?",
+     [
+      ">=",
+      [
+       "get",
+       "$me",
+       "fcCost"
+      ],
+      3
+     ],
+     2,
+     1
+    ]
+   ]
+  ],
+  "ready": 1,
+  "hasSucc": 1,
+  "hasPre": 1
  },
  {
   "id": "the-hundredth-warning",
@@ -10569,7 +12479,126 @@
   "text": "Once per turn, after you scry, reveal the top card of your deck; if its cost is 3 or greater, ready one Cultist and gain 1 temporary Influence.",
   "archetype": "Prophetic Cells",
   "cost": 5,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "scried",
+    "do": [
+     [
+      "if",
+      [
+       ">",
+       [
+        "count",
+        [
+         "cards",
+         "$me",
+         "deck"
+        ]
+       ],
+       0
+      ],
+      [
+       [
+        "call",
+        "revealTop",
+        "$me",
+        "$me"
+       ],
+       [
+        "if",
+        [
+         ">=",
+         [
+          "get",
+          [
+           "first",
+           [
+            "cards",
+            "$me",
+            "deck"
+           ]
+          ],
+          "cost"
+         ],
+         3
+        ],
+        [
+         [
+          "choose",
+          {
+           "from": [
+            "filter",
+            [
+             "filter",
+             [
+              "cards",
+              "$me",
+              "ops"
+             ],
+             [
+              "has",
+              "$it",
+              "cultist"
+             ]
+            ],
+            [
+             "=",
+             [
+              "get",
+              "$it",
+              "ex"
+             ],
+             1
+            ]
+           ],
+           "as": "$v",
+           "prompt": "Ready which Cultist?",
+           "min": 0,
+           "max": 1
+          }
+         ],
+         [
+          "if",
+          [
+           "isObj",
+           "$v"
+          ],
+          [
+           [
+            "set",
+            "$v",
+            "ex",
+            0
+           ]
+          ]
+         ],
+         [
+          "call",
+          "gainTmp",
+          "$me",
+          1
+         ]
+        ]
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "=",
+     "$e.p",
+     [
+      "get",
+      "$self",
+      "controller"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "freelance-investigator",
@@ -11399,7 +13428,88 @@
   "trade": 4,
   "will": 3,
   "dur": 2,
-  "ready": 0
+  "abil": [
+   {
+    "label": "Ready a Facility (activating it again this turn costs 2 more)",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ucan"
+       ],
+       0
+      ],
+      [
+       [
+        "set",
+        "$t",
+        "ex",
+        0
+       ],
+       [
+        "set",
+        "$t",
+        "rsaT",
+        "$turn"
+       ]
+      ]
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "sites"
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "type"
+         ],
+         "facility"
+        ]
+       ],
+       [
+        ">",
+        [
+         "count",
+         [
+          "def",
+          "$it",
+          "abil"
+         ]
+        ],
+        0
+       ]
+      ],
+      "prompt": "Ready which Facility?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "unregistered-surgeon",
@@ -12124,7 +14234,7 @@
   "text": "Once per turn, an enemy Response targeting your operative costs 1 extra Influence.",
   "archetype": "Equipment and Tools",
   "cost": 3,
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "undercover-credentials",
@@ -12495,7 +14605,7 @@
   "text": "Once per turn, pay 2 to cancel an activated ability of an Asset or an operative in a mission.",
   "archetype": "Equipment and Tools",
   "cost": 5,
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "the-black-case",
@@ -13349,7 +15459,10 @@
       "max": 1
      }
     ],
-    "label": "Quiet Extraction"
+    "label": "Quiet Extraction",
+    "phases": [
+     "development"
+    ]
    }
   ],
   "ready": 1
@@ -13399,7 +15512,10 @@
       "$self"
      ]
     ],
-    "label": "Routine Surveillance"
+    "label": "Routine Surveillance",
+    "phases": [
+     "development"
+    ]
    }
   ],
   "ready": 1
@@ -13750,7 +15866,10 @@
       "max": 1
      }
     ],
-    "label": "Covert Transfer"
+    "label": "Covert Transfer",
+    "phases": [
+     "development"
+    ]
    }
   ],
   "ready": 1
@@ -14544,7 +16663,10 @@
       "max": 1
      }
     ],
-    "label": "Extraction Team"
+    "label": "Extraction Team",
+    "phases": [
+     "development"
+    ]
    }
   ],
   "ready": 1
@@ -14823,7 +16945,10 @@
       "$self"
      ]
     ],
-    "label": "The Perfect Cover-Up"
+    "label": "The Perfect Cover-Up",
+    "phases": [
+     "development"
+    ]
    }
   ],
   "ready": 1
@@ -16011,7 +18136,10 @@
       "$self"
      ]
     ],
-    "label": "Backroom Bargain"
+    "label": "Backroom Bargain",
+    "phases": [
+     "development"
+    ]
    }
   ],
   "ready": 1
@@ -16368,7 +18496,65 @@
   "text": "Once per turn when opponent draws outside Refresh, gain 1 temporary Influence.",
   "archetype": "Strategy Engines",
   "cost": 3,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "moved",
+    "do": [
+     [
+      "call",
+      "gainTmp",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.from",
+      "deck"
+     ],
+     [
+      "=",
+      "$e.to",
+      "hand"
+     ],
+     [
+      "!=",
+      "$e.toPlayer",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "not",
+      [
+       "in",
+       "$phase",
+       [
+        "lit",
+        [
+         "refresh",
+         "draw"
+        ]
+       ]
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "risky-funding",
@@ -16415,7 +18601,10 @@
       "$self"
      ]
     ],
-    "label": "Risky Funding"
+    "label": "Risky Funding",
+    "phases": [
+     "development"
+    ]
    }
   ],
   "ready": 1
@@ -16502,7 +18691,10 @@
       "$self"
      ]
     ],
-    "label": "Open Recruitment Drive"
+    "label": "Open Recruitment Drive",
+    "phases": [
+     "development"
+    ]
    }
   ],
   "ready": 1
@@ -16788,7 +18980,10 @@
       "$self"
      ]
     ],
-    "label": "Counter-Cabal Alliance"
+    "label": "Counter-Cabal Alliance",
+    "phases": [
+     "development"
+    ]
    }
   ],
   "ready": 1
@@ -17073,7 +19268,10 @@
       "why": "Needs a Facility on each side"
      }
     ],
-    "label": "Scorched Earth Protocol"
+    "label": "Scorched Earth Protocol",
+    "phases": [
+     "development"
+    ]
    }
   ],
   "tFac": 1,
@@ -17487,7 +19685,98 @@
   "text": "Play only during your Operations phase. Ready up to three operatives and draw two cards. You may initiate one additional mission this turn, for a maximum of three mission attempts total.",
   "archetype": "Strategy Engines",
   "cost": 6,
-  "ready": 0
+  "op": [
+   {
+    "label": "A Favor Called In",
+    "phases": [
+     "operations"
+    ],
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "choose",
+        {
+         "from": [
+          "filter",
+          [
+           "cards",
+           "$me",
+           "ops"
+          ],
+          [
+           "=",
+           [
+            "get",
+            "$it",
+            "ex"
+           ],
+           1
+          ]
+         ],
+         "as": "$rs",
+         "prompt": "Ready up to three operatives",
+         "min": 0,
+         "max": 3
+        }
+       ],
+       [
+        "each",
+        "$rs",
+        "$x",
+        [
+         [
+          "set",
+          "$x",
+          "ex",
+          0
+         ]
+        ]
+       ],
+       [
+        "draw",
+        "$me",
+        2
+       ],
+       [
+        "set",
+        "$me",
+        "attMax",
+        [
+         "min",
+         3,
+         [
+          "+",
+          [
+           "get",
+           "$me",
+           "attMax"
+          ],
+          1
+         ]
+        ]
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "psylist-central-station",
@@ -17719,7 +20008,33 @@
   "archetype": "Headquarters",
   "fno": 5,
   "security": 2,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "revelation",
+    "do": [
+     [
+      "call",
+      "scry",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "=",
+     "$e.p",
+     [
+      "get",
+      "$self",
+      "controller"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "the-listening-world",
@@ -19962,7 +22277,65 @@
   "text": "Tier I. Complete: Control four Cultists and have four Revelation. Immediate: Create two 0/1/1 Cultist tokens. Ongoing: Your first Cultist each turn costs 1 less (minimum 1).",
   "archetype": "Agenda",
   "tier": "I",
-  "ready": 0
+  "agenda": [
+   {
+    "label": "Complete this Agenda",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "req": [
+     {
+      "if": [
+       ">=",
+       [
+        "count",
+        [
+         "filter",
+         [
+          "cards",
+          "$me",
+          "ops"
+         ],
+         [
+          "has",
+          "$it",
+          "cultist"
+         ]
+        ]
+       ],
+       4
+      ],
+      "why": "Control four Cultists"
+     },
+     {
+      "if": [
+       ">=",
+       [
+        "get",
+        "$me",
+        "rev"
+       ],
+       4
+      ],
+      "why": "Have four Revelation"
+     }
+    ],
+    "do": []
+   }
+  ],
+  "imm": [
+   [
+    "call",
+    "makeTokens",
+    "$me",
+    "tok-cultist",
+    2,
+    0
+   ]
+  ],
+  "ready": 1,
+  "hasImm": 1
  },
  {
   "id": "the-crash-site-gospel",
@@ -19974,7 +22347,73 @@
   "text": "Tier II. Complete: Control three Artifacts with different names and have five Revelation. Immediate: Draw three cards. Ongoing: Your Artifacts cost 1 less; whenever you play an Artifact gain 1 temporary Influence and Scry 1.",
   "archetype": "Agenda",
   "tier": "II",
-  "ready": 0
+  "agenda": [
+   {
+    "label": "Complete this Agenda",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "req": [
+     {
+      "if": [
+       ">=",
+       [
+        "count",
+        [
+         "distinct",
+         [
+          "map",
+          [
+           "filter",
+           [
+            "cards",
+            "$me",
+            "gear"
+           ],
+           [
+            "has",
+            "$it",
+            "artifact"
+           ]
+          ],
+          [
+           "get",
+           "$it",
+           "card"
+          ]
+         ]
+        ]
+       ],
+       3
+      ],
+      "why": "Control three Artifacts with different names"
+     },
+     {
+      "if": [
+       ">=",
+       [
+        "get",
+        "$me",
+        "rev"
+       ],
+       5
+      ],
+      "why": "Have five Revelation"
+     }
+    ],
+    "do": []
+   }
+  ],
+  "imm": [
+   [
+    "draw",
+    "$me",
+    3
+   ]
+  ],
+  "ready": 1,
+  "hasImm": 1
  },
  {
   "id": "the-great-arrival",
@@ -19986,7 +22425,94 @@
   "text": "Tier III. Complete: Control three Cultists, have seven Revelation, and succeed at a Will mission with attacking power 9 or greater. Immediate: Create a ready High-One Manifestation token (Force 7, Tradecraft 4, Will 8, durability 9) and exhaust all opposing operatives. Ongoing: At each of your Refreshes, opponent chooses to sacrifice one operative, discard one card, or grant you 1 Dominance. They may instead pay 3 Influence to prevent this choice for that Refresh.",
   "archetype": "Agenda",
   "tier": "III",
-  "ready": 0
+  "agenda": [
+   {
+    "label": "Complete this Agenda",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "req": [
+     {
+      "if": [
+       ">=",
+       [
+        "count",
+        [
+         "filter",
+         [
+          "cards",
+          "$me",
+          "ops"
+         ],
+         [
+          "has",
+          "$it",
+          "cultist"
+         ]
+        ]
+       ],
+       3
+      ],
+      "why": "Control three Cultists"
+     },
+     {
+      "if": [
+       ">=",
+       [
+        "get",
+        "$me",
+        "rev"
+       ],
+       7
+      ],
+      "why": "Have seven Revelation"
+     },
+     {
+      "if": [
+       ">=",
+       [
+        "get",
+        "$me",
+        "willMaxG"
+       ],
+       9
+      ],
+      "why": "Succeed at a Will mission with attacking power 9 or more"
+     }
+    ],
+    "do": []
+   }
+  ],
+  "imm": [
+   [
+    "call",
+    "makeTokens",
+    "$me",
+    "tok-high-one",
+    1,
+    1
+   ],
+   [
+    "each",
+    [
+     "cards",
+     "$opp",
+     "ops"
+    ],
+    "$x",
+    [
+     [
+      "set",
+      "$x",
+      "ex",
+      1
+     ]
+    ]
+   ]
+  ],
+  "ready": 1,
+  "hasImm": 1
  },
  {
   "id": "the-night-abductions",
@@ -19998,7 +22524,140 @@
   "text": "Tier II. Complete: Control three Cultists, two Alien Artifact Assets with different printed names, have gained at least five Revelation during this game, and succeed at Infiltrate. Immediate: Return an opposing Asset of printed cost 3 or less to its owner’s hand and gain 1 Dominance. Ongoing: Once during your turn, after your Infiltrate succeeds, exhaust one opposing operative and gain 1 Revelation.",
   "archetype": "Agenda",
   "tier": "II",
-  "ready": 0
+  "agenda": [
+   {
+    "label": "Complete this Agenda",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "req": [
+     {
+      "if": [
+       ">=",
+       [
+        "count",
+        [
+         "filter",
+         [
+          "cards",
+          "$me",
+          "ops"
+         ],
+         [
+          "has",
+          "$it",
+          "cultist"
+         ]
+        ]
+       ],
+       3
+      ],
+      "why": "Control three Cultists"
+     },
+     {
+      "if": [
+       ">=",
+       [
+        "count",
+        [
+         "distinct",
+         [
+          "map",
+          [
+           "filter",
+           [
+            "cards",
+            "$me",
+            "gear"
+           ],
+           [
+            "has",
+            "$it",
+            "alien"
+           ]
+          ],
+          [
+           "get",
+           "$it",
+           "card"
+          ]
+         ]
+        ]
+       ],
+       2
+      ],
+      "why": "Control two Alien Artifacts with different names"
+     },
+     {
+      "if": [
+       ">=",
+       [
+        "get",
+        "$me",
+        "revG"
+       ],
+       5
+      ],
+      "why": "Have gained five Revelation this game"
+     },
+     {
+      "if": [
+       "=",
+       [
+        "get",
+        "$me",
+        "sucI"
+       ],
+       1
+      ],
+      "why": "Succeed at Infiltrate this turn"
+     }
+    ],
+    "do": []
+   }
+  ],
+  "imm": [
+   [
+    "choose",
+    {
+     "from": [
+      "filter",
+      [
+       "cards",
+       "$opp",
+       "gear"
+      ],
+      [
+       "<=",
+       [
+        "get",
+        "$it",
+        "cost"
+       ],
+       3
+      ]
+     ],
+     "as": "$v",
+     "prompt": "Return which opposing Asset (cost 3 or less)?",
+     "min": 0,
+     "max": 1
+    }
+   ],
+   [
+    "call",
+    "toHand",
+    "$v"
+   ],
+   [
+    "call",
+    "gainDom",
+    "$me",
+    1
+   ]
+  ],
+  "ready": 1,
+  "hasImm": 1
  },
  {
   "id": "dr-livia-saye-containment-ethicist",
@@ -21012,7 +23671,10 @@
       "max": 1
      }
     ],
-    "label": "Field Necropsy Report 11-B"
+    "label": "Field Necropsy Report 11-B",
+    "phases": [
+     "development"
+    ]
    }
   ],
   "ready": 1
@@ -21815,7 +24477,10 @@
       "max": 1
      }
     ],
-    "label": "Initiation at the Black Stair"
+    "label": "Initiation at the Black Stair",
+    "phases": [
+     "development"
+    ]
    }
   ],
   "ready": 1
@@ -22838,7 +25503,46 @@
    "cultist",
    "prophet"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "played",
+    "do": [
+     [
+      "call",
+      "gainRev",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "has",
+      "$e.c",
+      "alien"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "the-listening-dish-at-black-mesa",
@@ -22850,7 +25554,122 @@
   "text": "At your Refresh, look at the top two cards of your deck. You may reveal one Entity or Alien Asset among them and put it into your hand; put the remaining cards on the bottom of your deck in any order. If you do, skip your normal draw this Refresh.",
   "archetype": "Cross-Archetype",
   "cost": 3,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "if",
+      [
+       ">=",
+       [
+        "count",
+        [
+         "cards",
+         "$me",
+         "deck"
+        ]
+       ],
+       1
+      ],
+      [
+       [
+        "choose",
+        {
+         "from": [
+          "filter",
+          [
+           "top",
+           "$me",
+           "deck",
+           2
+          ],
+          [
+           "or",
+           [
+            "has",
+            "$it",
+            "entity"
+           ],
+           [
+            "has",
+            "$it",
+            "alien"
+           ]
+          ]
+         ],
+         "as": "$v",
+         "prompt": "The Listening Dish: take an Entity or Alien Asset (and skip your draw)?",
+         "min": 0,
+         "max": 1
+        }
+       ],
+       [
+        "if",
+        [
+         "isObj",
+         "$v"
+        ],
+        [
+         [
+          "emit",
+          "revealed",
+          {
+           "card": [
+            "get",
+            "$v",
+            "card"
+           ],
+           "p": "$me",
+           "owner": "$me"
+          }
+         ],
+         [
+          "move",
+          "$v",
+          "hand"
+         ],
+         [
+          "set",
+          "$me",
+          "skipDraw",
+          1
+         ],
+         [
+          "move",
+          [
+           "top",
+           "$me",
+           "deck",
+           1
+          ],
+          "deck"
+         ]
+        ]
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "stellar-alignment-almanac",
@@ -22866,7 +25685,123 @@
    "artifact",
    "alien"
   ],
-  "ready": 0
+  "deploy": [
+   [
+    "call",
+    "scry",
+    "$me",
+    3
+   ]
+  ],
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "lit",
+        [
+         "Strike",
+         "Infiltrate",
+         "Subvert"
+        ]
+       ],
+       "as": "$r",
+       "prompt": "Stellar Alignment Almanac: name a basic mission",
+       "min": 1,
+       "max": 1
+      }
+     ],
+     [
+      "set",
+      "$self",
+      "almK",
+      [
+       "?",
+       [
+        "=",
+        "$r",
+        "Strike"
+       ],
+       1,
+       [
+        "?",
+        [
+         "=",
+         "$r",
+         "Infiltrate"
+        ],
+        2,
+        3
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "!=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ]
+   },
+   {
+    "on": "missionDeclared",
+    "do": [
+     [
+      "call",
+      "gainRev",
+      "$me",
+      1
+     ],
+     [
+      "call",
+      "loot",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "!=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.kind",
+      [
+       "get",
+       "$self",
+       "almK"
+      ]
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "the-first-vigil",
@@ -22878,7 +25813,57 @@
   "text": "At Refresh, if you control at least three Cultists, gain 1 Revelation. If you have at least five Revelation, your first Cultist each turn costs 1 less.",
   "archetype": "Cross-Archetype",
   "cost": 1,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "call",
+      "gainRev",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      ">=",
+      [
+       "count",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "has",
+         "$it",
+         "cultist"
+        ]
+       ]
+      ],
+      3
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "non-euclidean-field-camera",
@@ -22894,7 +25879,101 @@
    "loadout",
    "alien"
   ],
-  "ready": 0
+  "attach": 1,
+  "deploy": [
+   [
+    "call",
+    "revealTop",
+    "$me",
+    "$me"
+   ],
+   [
+    "call",
+    "revealTop",
+    "$me",
+    "$opp"
+   ]
+  ],
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "if",
+      [
+       ">",
+       [
+        "count",
+        [
+         "cards",
+         "$me",
+         "deck"
+        ]
+       ],
+       0
+      ],
+      [
+       [
+        "move",
+        [
+         "first",
+         [
+          "cards",
+          "$me",
+          "deck"
+         ]
+        ],
+        "deck"
+       ],
+       [
+        "draw",
+        "$me",
+        1
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "=",
+      "$e.kind",
+      3
+     ],
+     [
+      "=",
+      [
+       "get",
+       [
+        "get",
+        "$self",
+        "bearer"
+       ],
+       "atk"
+      ],
+      1
+     ]
+    ],
+    "optional": true,
+    "text": "Put your top card on the bottom and draw?"
+   }
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "the-man-who-heard-jupiter",
@@ -22915,7 +25994,101 @@
    "cultist",
    "unique"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "revelation",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "filter",
+        [
+         "filter",
+         [
+          "cards",
+          "$me",
+          "ops"
+         ],
+         [
+          "has",
+          "$it",
+          "cultist"
+         ]
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "ex"
+         ],
+         1
+        ]
+       ],
+       "as": "$v",
+       "prompt": "The Man Who Heard Jupiter: ready which Cultist?",
+       "min": 0,
+       "max": 1
+      }
+     ],
+     [
+      "if",
+      [
+       "isObj",
+       "$v"
+      ],
+      [
+       [
+        "set",
+        "$v",
+        "ex",
+        0
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      ">=",
+      [
+       "get",
+       "$me",
+       "revT"
+      ],
+      3
+     ],
+     [
+      "<",
+      [
+       "-",
+       [
+        "get",
+        "$me",
+        "revT"
+       ],
+       "$e.n"
+      ],
+      3
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "rite-of-the-empty-sky",
@@ -22927,7 +26100,205 @@
   "text": "Will mission. When declaring this mission, you may designate one opposing Facility in addition to the opposing Headquarters. On success, gain 2 Revelation (maximum 10). Then choose one: gain 1 Dominance; OR, if you have at least 7 Revelation and designated a Facility that is still a legal target, Disable that Facility until the beginning of its controller's next Refresh. If you choose Disable, gain no Dominance.",
   "archetype": "Cross-Archetype",
   "cost": 3,
-  "ready": 0
+  "mattr": 3,
+  "mop": [
+   {
+    "label": "Rite of the Empty Sky (Will mission)",
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "concat",
+       [
+        "list",
+        "$opp"
+       ],
+       [
+        "filter",
+        [
+         "cards",
+         "$opp",
+         "sites"
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "type"
+         ],
+         "facility"
+        ]
+       ]
+      ],
+      "prompt": "Target: the opposing Headquarters (or designate an opposing Facility too)",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "do": []
+   }
+  ],
+  "succ": [
+   [
+    "call",
+    "gainRev",
+    "$me",
+    2
+   ],
+   [
+    "choose",
+    {
+     "from": [
+      "concat",
+      [
+       "lit",
+       [
+        "1 Dominance"
+       ]
+      ],
+      [
+       "?",
+       [
+        "and",
+        [
+         ">=",
+         [
+          "get",
+          "$me",
+          "rev"
+         ],
+         7
+        ],
+        [
+         "isObj",
+         [
+          "first",
+          [
+           "filter",
+           [
+            "concat",
+            [
+             "concat",
+             [
+              "cards",
+              "*",
+              "ops"
+             ],
+             [
+              "cards",
+              "*",
+              "sites"
+             ],
+             [
+              "cards",
+              "*",
+              "gear"
+             ]
+            ],
+            [
+             "cards",
+             "*",
+             "agenda"
+            ]
+           ],
+           [
+            "=",
+            [
+             "get",
+             "$it",
+             "tgt"
+            ],
+            1
+           ]
+          ]
+         ]
+        ]
+       ],
+       [
+        "lit",
+        [
+         "Disable the designated Facility"
+        ]
+       ],
+       [
+        "lit",
+        []
+       ]
+      ]
+     ],
+     "as": "$r",
+     "prompt": "Rite of the Empty Sky: choose one",
+     "min": 1,
+     "max": 1
+    }
+   ],
+   [
+    "if",
+    [
+     "=",
+     "$r",
+     "1 Dominance"
+    ],
+    [
+     [
+      "call",
+      "gainDom",
+      "$me",
+      1
+     ]
+    ],
+    [
+     [
+      "call",
+      "disable",
+      [
+       "first",
+       [
+        "filter",
+        [
+         "concat",
+         [
+          "concat",
+          [
+           "cards",
+           "*",
+           "ops"
+          ],
+          [
+           "cards",
+           "*",
+           "sites"
+          ],
+          [
+           "cards",
+           "*",
+           "gear"
+          ]
+         ],
+         [
+          "cards",
+          "*",
+          "agenda"
+         ]
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "tgt"
+         ],
+         1
+        ]
+       ]
+      ]
+     ]
+    ]
+   ]
+  ],
+  "ready": 1,
+  "hasSucc": 1
  },
  {
   "id": "the-color-between-stations",
@@ -22939,7 +26310,109 @@
   "text": "When an opponent declares a mission, choose one participating opposing operative. It contributes 0 power to that mission; its controller draws one card.",
   "archetype": "Cross-Archetype",
   "cost": 3,
-  "ready": 0
+  "resp": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "set",
+        "$t",
+        "z0",
+        1
+       ],
+       [
+        "draw",
+        [
+         "get",
+         "$t",
+         "controller"
+        ],
+        1
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "*",
+        "ops"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "atk"
+        ],
+        1
+       ]
+      ],
+      "prompt": "Which attacking operative contributes nothing?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "req": [
+     {
+      "if": [
+       "and",
+       [
+        ">",
+        [
+         "get",
+         "game",
+         "mp"
+        ],
+        0
+       ],
+       [
+        "!=",
+        [
+         "nth",
+         [
+          "players"
+         ],
+         [
+          "-",
+          [
+           "get",
+           "game",
+           "mp"
+          ],
+          1
+         ]
+        ],
+        "$me"
+       ]
+      ],
+      "why": "Only when an opponent declares a mission"
+     }
+    ],
+    "label": "The Color Between Stations"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "tok-cultist",

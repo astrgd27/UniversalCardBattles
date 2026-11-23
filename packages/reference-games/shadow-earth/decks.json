@@ -238,5 +238,65 @@
    "coalition-bargaining",
    "coalition-bargaining"
   ]
+ },
+ "children-starter": {
+  "hq": [
+   "the-first-contact-house"
+  ],
+  "agenda": [
+   "communion-of-the-faithful"
+  ],
+  "deck": [
+   "street-preacher",
+   "street-preacher",
+   "street-preacher",
+   "ecstatic-convert",
+   "ecstatic-convert",
+   "ecstatic-convert",
+   "cell-organizer",
+   "cell-organizer",
+   "contact-engineer",
+   "contact-engineer",
+   "whispering-devotee",
+   "whispering-devotee",
+   "whispering-devotee",
+   "rift-attendant",
+   "rift-attendant",
+   "visionary-contactee",
+   "visionary-contactee",
+   "radio-prophet",
+   "radio-prophet",
+   "radio-prophet",
+   "manifestation-of-hunger",
+   "manifestation-of-hunger",
+   "reverend-silas-hark-contactee",
+   "reverend-silas-hark-contactee",
+   "gateway-custodian",
+   "recovered-probe",
+   "recovered-probe",
+   "unidentified-alloy",
+   "unidentified-alloy",
+   "antigravity-harness",
+   "pilgrimage-convoy",
+   "stellar-alignment-almanac",
+   "recruitment-circle",
+   "recruitment-circle",
+   "night-sky-vigil",
+   "nonlocal-transmitter",
+   "thinning-veil",
+   "thinning-veil",
+   "the-first-vigil",
+   "community-outreach",
+   "community-outreach",
+   "community-outreach",
+   "uncertain-tomorrow",
+   "distorted-geometry",
+   "prophecy-of-misfortune",
+   "the-gathering",
+   "the-gathering",
+   "scream-across-dimensions",
+   "rite-of-the-empty-sky",
+   "rite-of-the-empty-sky"
+  ]
  }
 }
