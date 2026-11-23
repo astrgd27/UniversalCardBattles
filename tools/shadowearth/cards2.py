@@ -17,24 +17,24 @@ agenda('Doctor the Archives', 'T', 2, 2, 1, 'Tradecraft. 2 progress, worth 1 Dom
                                                     IF(isObj('$v'), [['move', '$v', 'grave']]), C('hideHand', '$opp')])
 agenda('Seize the Broadcast', 'W', 2, 2, 1, 'Will. 2 progress, worth 1 Dominance. When scored: Scry 3, then draw a card.',
        'At 9:14 p.m. every television in the hemisphere showed the same symbol.', [scry(3), draw(1)])
-agenda('Rig the Election', 'W', 3, 2, 2, 'Will. 3 progress, worth 2 Dominance. When scored: gain 1 progress on your Master Plan.',
+agenda('Rig the Election', 'W', 3, 3, 2, 'Will. 3 progress, worth 2 Dominance. When scored: gain 1 progress on your Master Plan.',
        'The people chose. They were always going to choose.', [plan_prog(1)])
-agenda('Steal the Prototype', 'T', 3, 2, 2, 'Tradecraft. 3 progress, worth 2 Dominance. When scored: draw 2 cards.',
+agenda('Steal the Prototype', 'T', 3, 3, 2, 'Tradecraft. 3 progress, worth 2 Dominance. When scored: draw 2 cards.',
        'Lockheed reported it as a fire. There was no fire.', [draw(2)])
-agenda('Assassinate the Ambassador', 'F', 3, 2, 2, 'Force. 3 progress, worth 2 Dominance. When scored: eliminate a damaged operative.',
+agenda('Assassinate the Ambassador', 'F', 3, 3, 2, 'Force. 3 progress, worth 2 Dominance. When scored: eliminate a damaged operative.',
        'Officially, a heart attack. Unofficially, a message.', [pick(DAMAGED, '$v', 'Eliminate which damaged operative?', 0, 1), eliminate('$v')])
-agenda('Turn the Senator', 'W', 3, 2, 2, 'Will. 3 progress, worth 2 Dominance. When scored: ready all your operatives.',
+agenda('Turn the Senator', 'W', 3, 3, 2, 'Will. 3 progress, worth 2 Dominance. When scored: ready all your operatives.',
        'Everyone has a price. His was a photograph.', [EACH(ME_OPS, '$x', [ready('$x')])])
-agenda('Poison the Reservoir', 'F', 3, 2, 2, 'Force. 3 progress, worth 2 Dominance. When scored: deal 1 damage to each enemy operative.',
+agenda('Poison the Reservoir', 'F', 3, 3, 2, 'Force. 3 progress, worth 2 Dominance. When scored: deal 1 damage to each enemy operative.',
        'Boil-water notices were issued for six counties. Four were too late.', [EACH(OPP_OPS, '$x', [dmg('$x', 1)])])
-agenda('Blackout in the Capital', 'T', 3, 2, 2, 'Tradecraft. 3 progress, worth 2 Dominance. When scored: exhaust up to two enemy operatives.',
+agenda('Blackout in the Capital', 'T', 3, 3, 2, 'Tradecraft. 3 progress, worth 2 Dominance. When scored: exhaust up to two enemy operatives.',
        'For eleven hours, the most powerful city on Earth went dark. Things were moved.',
        [choose(OPP_OPS, '$xs', 'Exhaust up to two enemy operatives', 0, 2), EACH('$xs', '$x', [exhaust('$x')])])
-agenda('Topple the Regime', 'F', 4, 3, 3, 'Force. 4 progress, worth 3 Dominance. When scored: the opponent discards 2 cards.',
+agenda('Topple the Regime', 'F', 4, 4, 3, 'Force. 4 progress, worth 3 Dominance. When scored: the opponent discards 2 cards.',
        'The colonels were very sure it was their idea.', [C('discardN', '$opp', 2)])
-agenda('Crash the Markets', 'T', 4, 3, 3, 'Tradecraft. 4 progress, worth 3 Dominance. When scored: the opponent loses 2 progress on their Master Plan.',
+agenda('Crash the Markets', 'T', 4, 4, 3, 'Tradecraft. 4 progress, worth 3 Dominance. When scored: the opponent loses 2 progress on their Master Plan.',
        'Somebody always knows on Thursday what everybody learns on Monday.', [C('loseProg', PLAN('$opp'), '$opp', 2)])
-agenda('The Vatican Files', 'W', 4, 3, 3, 'Will. 4 progress, worth 3 Dominance. When scored: draw 3 cards.',
+agenda('The Vatican Files', 'W', 4, 4, 3, 'Will. 4 progress, worth 3 Dominance. When scored: draw 3 cards.',
        'Shelf 1,138 of the Secret Archive is not on any floor plan.', [draw(3)])
 
 # ================================================================ tokens
@@ -52,17 +52,18 @@ def counted(p, k): return cnt(kind_ops(p, k))
 # ================================================================ PsyList: the government's psychic program
 PSY = lambda p='$me': kind_ops(p, 'psychic')
 CTL_ENEMY = flt(OPP_OPS, eq(g('$it', 'ctl'), 1))
-hq('PsyList Central Station', 'psylist', 'Security 3. At the start of your turn, look at the top card of the opponent\'s deck.',
+hq('PsyList Central Station', 'psylist', 'Security 3. Enemy operatives with Control counters get -1 Force, Tradecraft and Will. At the start of your turn, look at the top card of the opponent\'s deck.',
    'A disused weather station in Nevada. The antennas point down.', abilities=[at_start([peek_top()])])
 plan('Project OVERMIND', 'psylist', 'W', 'Master Plan (Will). Enacted: enemy operatives with Control counters can\'t defend, and your Psychics get +1 Will.',
      '"We are not reading their minds, Senator. We are writing them."')
 NODEF.append(AND(eq(g('$o', 'ctl'), 1), plan_on(['opp', ctrl('$o')], 'Project OVERMIND')))
+ATTR.append(Q(AND(eq(g('$o', 'ctl'), 1), ANY(['cards', ['opp', ctrl('$o')], 'hq'], isc('$it', 'PsyList Central Station'))), -1, 0))
 ATTR.append(Q(AND(A_('W'), has('$o', 'psychic'), plan_on(ctrl('$o'), 'Project OVERMIND')), 1, 0))
-operative('Remote Viewer', 'psylist', 1, 0, 2, 2, 2, 'Psychic. When played, look at the top card of the opponent\'s deck. You may put it on the bottom.',
+operative('Remote Viewer', 'psylist', 1, 0, 2, 2, 3, 'Psychic. When played, look at the top card of the opponent\'s deck. You may put it on the bottom.',
           'Coordinates 39°N 77°W. "There is a room under the room."', kws=('psychic',),
           deploy=[peek_top(), IF(gt(cnt(DECK('$opp')), 0), [choose(opts('Leave it', 'Put it on the bottom'), '$y', 'Remote Viewer: their top card'),
                   IF(eq('$y', 'Put it on the bottom'), [['move', first(DECK('$opp')), 'deck']])])])
-operative('Precog Analyst', 'psylist', 2, 0, 3, 2, 2, 'Psychic. Your Responses cost 1 less.', 'She files her reports the day before.', kws=('psychic',))
+operative('Precog Analyst', 'psylist', 2, 0, 3, 2, 3, 'Psychic. Your Responses cost 1 less.', 'She files her reports the day before.', kws=('psychic',))
 COST.append(Q(AND(typ('$c', 'response'), own('Precog Analyst', '$p')), -1, 0))
 response('Precognitive Flash', 'psylist', 1, 'A participating Psychic gets +2 to the mission\'s attribute.', 'He ducked before the shot.',
          do=[mission_bonus('$t', 2)], targets=[slot(flt(PSY(), participating('$it')), prompt='Which Psychic?')], req=[(IN_MISSION, 'Only during a mission')])
@@ -70,7 +71,7 @@ response('Foresight', 'psylist', 1, 'Look at the opponent\'s hand. Your side get
          do=[C('lookHand', '$me', '$opp'), side_bonus('$me', cnt(flt(HAND('$opp'), typ('$it', 'response'))))], req=[(IN_MISSION, 'Only during a mission')])
 facility('Sensory Deprivation Tank', 'psylist', 2, 'Once per turn, exhaust a Psychic: Scry 2, then draw a card.', 'Ninety minutes of nothing. Then everything.',
          abil=[abil('Exhaust a Psychic: Scry 2, draw a card', [exhaust('$t'), scry(2), draw(1)], targets=[slot(flt(PSY(), ready_('$it')), prompt='Which Psychic?')])])
-operative('Telekinetic Recruit', 'psylist', 1, 2, 0, 1, 2, 'Psychic. +1 Force while another Psychic participates in its mission.', 'The spoons were only the beginning.', kws=('psychic',))
+operative('Telekinetic Recruit', 'psylist', 1, 2, 0, 1, 3, 'Psychic. +1 Force while another Psychic participates in its mission.', 'The spoons were only the beginning.', kws=('psychic',))
 ATTR.append(self_term('Telekinetic Recruit', 'F', 1, AND(participating('$o'), ANY(OPS(ctrl('$o')), AND(ne('$it', '$o'), participating('$it'), has('$it', 'psychic'))))))
 operative('Pyrokinetic Enforcer', 'psylist', 3, 3, 0, 2, 3, 'Psychic. In Bloodshed, its side deals 1 extra damage.', 'Spontaneous combustion is never spontaneous.', kws=('psychic',))
 BLOOD.append(('atk', Q(ANY(ATK, isc('$it', 'Pyrokinetic Enforcer')), 1, 0))); BLOOD.append(('def', Q(ANY(DFN, isc('$it', 'Pyrokinetic Enforcer')), 1, 0)))
@@ -82,7 +83,7 @@ response('Poltergeist Burst', 'psylist', 1, 'Your side gets +2 Force. Deal 1 dam
          req=[(IN_MISSION, 'Only during a mission')])
 operation('Mind Spike', 'psylist', 2, 'Deal 2 damage to an operative, or 3 if it has a Control counter.', 'A nosebleed, then silence.',
           do=[dmg('$t', Q(eq(g('$t', 'ctl'), 1), 3, 2))], targets=[slot(OPP_OPS, prompt='Spike which operative?')])
-operative('Compulsion Technician', 'psylist', 2, 0, 2, 3, 2, 'Psychic. When your side wins a Will mission, put a Control counter on an opposing participant or enemy operative.',
+operative('Compulsion Technician', 'psylist', 2, 1, 2, 3, 3, 'Psychic. When your side wins a Will mission, put a Control counter on an opposing participant or enemy operative.',
           '"Repeat after me."', kws=('psychic',),
           abilities=[on_win([pick(flt(OPP_OPS, eq(g('$it', 'ctl'), 0)), '$v', 'Compulsion Technician: Control counter on which enemy?', 0, 1), control('$v')], eq('$e.attr', 3))])
 operative('Sleeper Handler', 'psylist', 3, 1, 3, 3, 3, 'Psychic. Enemy operatives with Control counters can\'t defend against your missions.', '"Wake up, Lieutenant."', kws=('psychic',))
@@ -95,7 +96,7 @@ operation('Reprogram Identity', 'psylist', 3, 'Take control of an enemy operativ
           targets=[slot(CTL_ENEMY, prompt='Take which operative?')])
 facility('The White Noise Suite', 'psylist', 3, 'At the start of your turn, put a Control counter on an enemy operative.', 'Room 11. The static never stops.',
          abilities=[at_start([pick(flt(OPP_OPS, eq(g('$it', 'ctl'), 0)), '$v', 'The White Noise Suite: Control counter on which enemy?', 0, 1), control('$v')])])
-operative('Collective Mind', 'psylist', 2, 1, 1, 2, 2, 'Psychic. +1 Will for each enemy operative with a Control counter.', 'One thought, many mouths.', kws=('psychic',))
+operative('Collective Mind', 'psylist', 2, 1, 1, 2, 3, 'Psychic. +1 Will for each enemy operative with a Control counter.', 'One thought, many mouths.', kws=('psychic',))
 ATTR.append(self_term('Collective Mind', 'W', cnt(flt(OPS(['opp', ctrl('$o')]), eq(g('$it', 'ctl'), 1)))))
 asset('Neural Link', 'psylist', 1, 'Implant. Attach to a Psychic: +1 Will. When its side wins a Will mission, draw a card.', 'The interface was the easy part.',
       attach=1, bearerKw='psychic', abilities=[on_win([draw(1)], AND(eq('$e.attr', 3), participating(bearerOf('$self'))))])
@@ -135,11 +136,11 @@ asset('Hypermetabolic Serum', 'prendick', 2, 'Mutation. Attach to a Specimen: +1
 ATTR.append(bearer_term('Hypermetabolic Serum', 'F', 1))
 asset('Adrenal Reservoir', 'prendick', 2, 'Mutation. Attach to a Specimen: +2 Force while attacking.', 'Fight. Fight. Fight.', kws=('mutation',), attach=1, bearerKw='specimen')
 ATTR.append(bearer_term('Adrenal Reservoir', 'F', 2, attacking('$o')))
-operative('Mutation Handler', 'prendick', 2, 0, 2, 2, 2, 'Scientist. When you attach a Mutation, draw a card.', '"Hold him down. Gently."', kws=('scientist',),
+operative('Mutation Handler', 'prendick', 2, 1, 2, 2, 3, 'Scientist. When you attach a Mutation, draw a card.', '"Hold him down. Gently."', kws=('scientist',),
           abilities=[trig('attached', [draw(1)], AND(eq('$e.p', SELF_P), has('$e.a', 'mutation')))])
-operative('Human-Passing Duplicate', 'prendick', 2, 1, 3, 1, 2, 'Specimen. When its side wins a Tradecraft mission, draw a card.', 'Your neighbor. Probably.', kws=('specimen',),
+operative('Human-Passing Duplicate', 'prendick', 2, 1, 3, 1, 3, 'Specimen. When its side wins a Tradecraft mission, draw a card.', 'Your neighbor. Probably.', kws=('specimen',),
           abilities=[on_win([draw(1)], AND(eq('$e.attr', 2), attacking('$self')))])
-operative('Infiltrator Brood', 'prendick', 3, 1, 3, 1, 2, 'Specimen. When its side wins a mission it joined, create a 1/1/0 Hybrid token.', 'They hatch in air ducts.',
+operative('Infiltrator Brood', 'prendick', 3, 2, 3, 1, 3, 'Specimen. When its side wins a mission it joined, create a 1/1/0 Hybrid token.', 'They hatch in air ducts.',
           kws=('specimen',), abilities=[on_win([token('Hybrid')], attacking('$self'))])
 operative('Mimicry Specialist', 'prendick', 3, 1, 4, 1, 3, 'Specimen. Covert. Can\'t be targeted by Wetwork.', 'Wears your face better than you do.', kws=('specimen', 'covert'))
 TGTDENY.append(isc('$o', 'Mimicry Specialist'))

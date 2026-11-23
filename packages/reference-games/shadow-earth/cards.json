@@ -128,7 +128,7 @@
   "flavor": "The people chose. They were always going to choose.",
   "mattr": 3,
   "need": 3,
-  "res": 2,
+  "res": 3,
   "dom": 2,
   "rarity": "A",
   "onScore": [
@@ -159,7 +159,7 @@
   "flavor": "Lockheed reported it as a fire. There was no fire.",
   "mattr": 2,
   "need": 3,
-  "res": 2,
+  "res": 3,
   "dom": 2,
   "rarity": "A",
   "onScore": [
@@ -181,7 +181,7 @@
   "flavor": "Officially, a heart attack. Unofficially, a message.",
   "mattr": 1,
   "need": 3,
-  "res": 2,
+  "res": 3,
   "dom": 2,
   "rarity": "A",
   "onScore": [
@@ -229,7 +229,7 @@
   "flavor": "Everyone has a price. His was a photograph.",
   "mattr": 3,
   "need": 3,
-  "res": 2,
+  "res": 3,
   "dom": 2,
   "rarity": "A",
   "onScore": [
@@ -263,7 +263,7 @@
   "flavor": "Boil-water notices were issued for six counties. Four were too late.",
   "mattr": 1,
   "need": 3,
-  "res": 2,
+  "res": 3,
   "dom": 2,
   "rarity": "A",
   "onScore": [
@@ -297,7 +297,7 @@
   "flavor": "For eleven hours, the most powerful city on Earth went dark. Things were moved.",
   "mattr": 2,
   "need": 3,
-  "res": 2,
+  "res": 3,
   "dom": 2,
   "rarity": "A",
   "onScore": [
@@ -341,7 +341,7 @@
   "flavor": "The colonels were very sure it was their idea.",
   "mattr": 1,
   "need": 4,
-  "res": 3,
+  "res": 4,
   "dom": 3,
   "rarity": "A",
   "onScore": [
@@ -364,7 +364,7 @@
   "flavor": "Somebody always knows on Thursday what everybody learns on Monday.",
   "mattr": 2,
   "need": 4,
-  "res": 3,
+  "res": 4,
   "dom": 3,
   "rarity": "A",
   "onScore": [
@@ -395,7 +395,7 @@
   "flavor": "Shelf 1,138 of the Secret Archive is not on any floor plan.",
   "mattr": 3,
   "need": 4,
-  "res": 3,
+  "res": 4,
   "dom": 3,
   "rarity": "A",
   "onScore": [
@@ -533,7 +533,7 @@
   "name": "PsyList Central Station",
   "type": "headquarters",
   "faction": "psylist",
-  "text": "Security 3. At the start of your turn, look at the top card of the opponent's deck.",
+  "text": "Security 3. Enemy operatives with Control counters get -1 Force, Tradecraft and Will. At the start of your turn, look at the top card of the opponent's deck.",
   "flavor": "A disused weather station in Nevada. The antennas point down.",
   "rarity": "S",
   "abilities": [
@@ -575,7 +575,7 @@
   "mattr": 3,
   "rarity": "S",
   "num": "SE2-020",
-  "need": 5,
+  "need": 4,
   "res": 2,
   "dom": 3
  },
@@ -593,7 +593,7 @@
   "force": 0,
   "trade": 2,
   "will": 2,
-  "hp": 2,
+  "hp": 3,
   "deploy": [
    [
     "call",
@@ -675,7 +675,7 @@
   "force": 0,
   "trade": 3,
   "will": 2,
-  "hp": 2,
+  "hp": 3,
   "num": "SE2-022",
   "rarity": "C"
  },
@@ -1003,7 +1003,7 @@
   "force": 2,
   "trade": 0,
   "will": 1,
-  "hp": 2,
+  "hp": 3,
   "num": "SE2-026",
   "rarity": "C"
  },
@@ -1367,10 +1367,10 @@
   "keywords": [
    "psychic"
   ],
-  "force": 0,
+  "force": 1,
   "trade": 2,
   "will": 3,
-  "hp": 2,
+  "hp": 3,
   "abilities": [
    {
     "on": "missionResult",
@@ -1725,7 +1725,7 @@
   "force": 1,
   "trade": 1,
   "will": 2,
-  "hp": 2,
+  "hp": 3,
   "num": "SE2-036",
   "rarity": "C"
  },
@@ -1848,7 +1848,7 @@
   "mattr": 1,
   "rarity": "S",
   "num": "SE2-040",
-  "need": 5,
+  "need": 4,
   "res": 2,
   "dom": 3
  },
@@ -2196,10 +2196,10 @@
   "keywords": [
    "scientist"
   ],
-  "force": 0,
+  "force": 1,
   "trade": 2,
   "will": 2,
-  "hp": 2,
+  "hp": 3,
   "abilities": [
    {
     "on": "attached",
@@ -2246,7 +2246,7 @@
   "force": 1,
   "trade": 3,
   "will": 1,
-  "hp": 2,
+  "hp": 3,
   "abilities": [
    {
     "on": "missionResult",
@@ -2307,10 +2307,10 @@
   "keywords": [
    "specimen"
   ],
-  "force": 1,
+  "force": 2,
   "trade": 3,
   "will": 1,
-  "hp": 2,
+  "hp": 3,
   "abilities": [
    {
     "on": "missionResult",
@@ -2657,7 +2657,7 @@
    ]
   ],
   "num": "SE2-060",
-  "need": 5,
+  "need": 4,
   "res": 2,
   "dom": 3,
   "has_onEnact": 1
@@ -3423,7 +3423,7 @@
   "mattr": 2,
   "rarity": "S",
   "num": "SE2-079",
-  "need": 5,
+  "need": 4,
   "res": 2,
   "dom": 3
  },
@@ -4374,7 +4374,7 @@
    ]
   ],
   "num": "SE2-097",
-  "need": 5,
+  "need": 4,
   "res": 2,
   "dom": 3,
   "has_onEnact": 1

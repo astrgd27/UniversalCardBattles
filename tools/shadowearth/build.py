@@ -11,8 +11,8 @@ from lib import *
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.environ.get('SE_OUT') or os.path.join(HERE, '..', '..', 'packages', 'reference-games', 'shadow-earth')
-LEVERS = {'WIN': 7, 'MAX_CAP': 7, 'HAND': 7, 'DECK': 40, 'TEAM': 3, 'DEFENDERS': 3, 'PLAN_NEED': 5, 'PLAN_DOM': 3, 'HQ_SEC': 3,
-          'SITE_RES': 2, 'PLAN_RES': 2, 'WETWORK': 3, 'DECISIVE': 3, 'TOKEN_CAP': 10, 'ROW': 3, 'PLAN_SCORE': 0, 'CATCHUP': 0}
+LEVERS = {'WIN': 7, 'MAX_CAP': 7, 'HAND': 7, 'DECK': 40, 'TEAM': 3, 'DEFENDERS': 3, 'PLAN_NEED': 4, 'PLAN_DOM': 3, 'HQ_SEC': 3,
+          'SITE_RES': 2, 'PLAN_RES': 2, 'WETWORK': 3, 'DECISIVE': 3, 'TOKEN_CAP': 10, 'ROW': 3, 'PLAN_SCORE': 1, 'CATCHUP': 1, 'DEF_EXHAUST': 0, 'CATCHUP_DRAW': 1}
 for k in LEVERS:
     if os.environ.get('SE_' + k) is not None: LEVERS[k] = int(os.environ['SE_' + k])
 lib.LEVERS = LEVERS
@@ -139,9 +139,9 @@ proc('assignDefense', [], [
     IF(AND(isObj(TGT), typ(TGT, 'operative')), [SET(TGT, 'dfn', 1)]),
     LET('$can', flt(OPS('$opp'), AND(C('canDef', '$it'), NOT(defending('$it'))))),
     IF(AND(eq(cnt(ATK), 1), ANY(ATK, C('covert', '$it'))),
-       [choose('$can', '$d1', 'Assign a defender (a Covert attacker allows only one)', 0, 1, who='$opp'), IF(isObj('$d1'), [SET('$d1', 'dfn', 1), SET('$d1', 'ex', Q(has('$d1', 'ambush'), g('$d1', 'ex'), 1))])],
+       [choose('$can', '$d1', 'Assign a defender (a Covert attacker allows only one)', 0, 1, who='$opp'), IF(isObj('$d1'), [SET('$d1', 'dfn', 1), SET('$d1', 'ex', Q(OR(has('$d1', 'ambush'), lit(not LEVERS['DEF_EXHAUST'])), g('$d1', 'ex'), 1))])],
        [choose('$can', '$ds', f'Assign defenders (up to {LEVERS["DEFENDERS"]})', 0, LEVERS['DEFENDERS'], who='$opp'),
-        EACH('$ds', '$d', [SET('$d', 'dfn', 1), SET('$d', 'ex', Q(has('$d', 'ambush'), g('$d', 'ex'), 1))])]),
+        EACH('$ds', '$d', [SET('$d', 'dfn', 1), SET('$d', 'ex', Q(OR(has('$d', 'ambush'), lit(not LEVERS['DEF_EXHAUST'])), g('$d', 'ex'), 1))])]),
     emit('defenders', p='$opp', n=cnt(DFN)), *AFTER_DEFEND])
 proc('preDefend', [], PRE_DEFEND or [])
 proc('bloodshed', [], [IF(AND(gt(cnt(DFN), 0), gt(cnt(ATK), 0)), [
@@ -180,7 +180,7 @@ proc('refresh', [], [
     *([IF(lt(g('$me', 'dom'), g('$opp', 'dom')), [C('gainTmp', '$me', LEVERS['CATCHUP'])])] if LEVERS['CATCHUP'] else []),
     *[SET('$me', k, 0) for k in ['missT', 'winT', 'sacT', 'revT', 'acted', 'skipDraw']],
     emit('refresh', p='$me')])
-proc('drawStep', [], [IF(eq(g('$me', 'skipDraw'), 0), [draw(1)])])
+proc('drawStep', [], [IF(eq(g('$me', 'skipDraw'), 0), [draw(1)]), *([IF(le(add(g('$me', 'dom'), 2), g('$opp', 'dom')), [draw(LEVERS['CATCHUP_DRAW'])])] if LEVERS['CATCHUP_DRAW'] else [])])
 proc('endTurn', [], [emit('endturn', p='$me')])
 proc('cleanup', [], [
     EACH(PERMS(), '$x', [IF(OR(ne(g('$x', 'cF'), 0), ne(g('$x', 'cT'), 0), ne(g('$x', 'cW'), 0), gt(g('$x', 'pv'), 0)), [
