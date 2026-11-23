@@ -65,7 +65,7 @@ plan('Project OVERMIND', 'psylist', 'W', 'Master Plan (Will). Enacted: enemy ope
 NODEF.append(AND(eq(g('$o', 'ctl'), 1), plan_on(['opp', ctrl('$o')], 'Project OVERMIND')))
 ATTR.append(Q(AND(eq(g('$o', 'ctl'), 1), ANY(['cards', ['opp', ctrl('$o')], 'hq'], isc('$it', 'PsyList Central Station'))), -1, 0))
 ATTR.append(Q(AND(A_('W'), has('$o', 'psychic'), plan_on(ctrl('$o'), 'Project OVERMIND')), 1, 0))
-operative('Remote Viewer', 'psylist', 1, 0, 2, 2, 3, 'Psychic. When played, look at the top card of the opponent\'s deck. You may put it on the bottom.',
+operative('Remote Viewer', 'psylist', 1, 0, 2, 2, 2, 'Psychic. When played, look at the top card of the opponent\'s deck. You may put it on the bottom.',
           'Coordinates 39°N 77°W. "There is a room under the room."', kws=('psychic',),
           deploy=[peek_top(), IF(gt(cnt(DECK('$opp')), 0), [choose(opts('Leave it', 'Put it on the bottom'), '$y', 'Remote Viewer: their top card'),
                   IF(eq('$y', 'Put it on the bottom'), [['move', first(DECK('$opp')), 'deck']])])])
@@ -89,7 +89,7 @@ response('Poltergeist Burst', 'psylist', 1, 'Your side gets +2 Force. Deal 1 dam
          req=[(IN_MISSION, 'Only during a mission')])
 operation('Mind Spike', 'psylist', 2, 'Deal 2 damage to an operative, or 3 if it has a Control counter.', 'A nosebleed, then silence.',
           do=[dmg('$t', Q(eq(g('$t', 'ctl'), 1), 3, 2))], targets=[slot(OPP_OPS, prompt='Spike which operative?')])
-operative('Compulsion Technician', 'psylist', 2, 1, 2, 3, 3, 'Psychic. When your side wins a Will mission, put a Control counter on an opposing participant or enemy operative.',
+operative('Compulsion Technician', 'psylist', 2, 1, 2, 3, 2, 'Psychic. When your side wins a Will mission, put a Control counter on an opposing participant or enemy operative.',
           '"Repeat after me."', kws=('psychic',),
           abilities=[on_win([pick(flt(OPP_OPS, eq(g('$it', 'ctl'), 0)), '$v', 'Compulsion Technician: Control counter on which enemy?', 0, 1), control('$v')], eq('$e.attr', 3))])
 operative('Sleeper Handler', 'psylist', 3, 1, 3, 3, 3, 'Psychic. Enemy operatives with Control counters can\'t defend against your missions.', '"Wake up, Lieutenant."', kws=('psychic',))
@@ -176,9 +176,9 @@ OCC = lambda p='$me': kind_ops(p, 'occultist')
 DEMON = lambda p='$me': kind_ops(p, 'demon')
 SACRIFICABLE = flt(ME_OPS, eq(g('$it', 'ctlT'), 0))
 SCRIPT = lambda p='$me': flt(GEAR(p), has('$it', 'scripture'))
-hq('Dawn Star Grand Lodge', 'dawnstar', 'Security 3. Doctrine (Blood Rite): once per mission, during Responses, sacrifice an operative: your side gets +3 to the mission\'s attribute. Whenever you sacrifice an operative, gain 1 temporary Influence.',
+hq('Dawn Star Grand Lodge', 'dawnstar', 'Security 3. Doctrine (Blood Rite): once per mission, during Responses, sacrifice an operative: your side gets +3 to the mission\'s attribute. Whenever you sacrifice an operative, gain 1 temporary Influence; the first time each turn, also gain 1 progress on your Master Plan.',
    'Founded 1717. Membership: unchanged since 1717.',
-   abilities=[trig('sacrificed', [tmp(1)], eq('$e.p', SELF_P))],
+   abilities=[trig('sacrificed', [tmp(1)], eq('$e.p', SELF_P)), trig('sacrificed', [plan_prog(1)], eq('$e.p', SELF_P), once_per_turn=True)],
    rabil=[abil('Blood Rite: sacrifice an operative for +3', [SET('game', 'brt', 1), sacrifice('$t'), side_bonus('$me', 3)],
                req=[(AND(IN_MISSION, eq(g('game', 'brt'), 0)), 'Once per mission, during a mission')],
                targets=[slot(SACRIFICABLE, prompt='Blood Rite: sacrifice which operative?')], once=False, phases=('respond',))])
@@ -195,8 +195,8 @@ asset('The Lesser Bargain', 'dawnstar', 2, 'Pact. Attach to an Occultist: +2 Wil
       abilities=[at_end([choose(Q(ge(C('avail', '$me'), 1), opts('Pay 1', 'Take 1 damage'), opts('Take 1 damage')), '$y', 'The Lesser Bargain comes due'),
                          IF(eq('$y', 'Pay 1'), [C('spend', '$me', 1)], [dmg(bearerOf('$self'), 1)])])])
 ATTR.append(bearer_term('The Lesser Bargain', 'W', 2))
-asset("The Devil's Ledger", 'dawnstar', 4, 'Whenever you sacrifice an operative, gain 1 progress on your Master Plan (once per turn).', 'Every name. Every price. Every due date.',
-      rarity='R', abilities=[trig('sacrificed', [plan_prog(1)], eq('$e.p', SELF_P), once_per_turn=True)])
+asset("The Devil's Ledger", 'dawnstar', 3, 'Whenever you sacrifice an operative, draw a card.', 'Every name. Every price. Every due date.',
+      rarity='R', abilities=[trig('sacrificed', [draw(1)], eq('$e.p', SELF_P))])
 operative('Lesser Imp', 'dawnstar', 1, 2, 0, 1, 1, 'Demon. When eliminated or sacrificed, deal 1 damage to an enemy operative.', 'Small. Spiteful. Bound by contract.', kws=('demon',))
 RULE_TRIGGERS.append({'on': 'sacrificed', 'if': eq('$e.card', slug('Lesser Imp')), 'do': [
     choose(OPS(['opp', '$e.p']), '$v', 'Lesser Imp: 1 damage to which enemy?', 0, 1, who='$e.p'), IF(isObj('$v'), [['damage', '$v', 1, '$e.p']])]})

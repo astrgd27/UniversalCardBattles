@@ -605,7 +605,7 @@
   "force": 0,
   "trade": 2,
   "will": 2,
-  "hp": 3,
+  "hp": 2,
   "deploy": [
    [
     "call",
@@ -1382,7 +1382,7 @@
   "force": 1,
   "trade": 2,
   "will": 3,
-  "hp": 3,
+  "hp": 2,
   "abilities": [
    {
     "on": "missionResult",
@@ -2802,7 +2802,7 @@
   "name": "Dawn Star Grand Lodge",
   "type": "headquarters",
   "faction": "dawnstar",
-  "text": "Security 3. Doctrine (Blood Rite): once per mission, during Responses, sacrifice an operative: your side gets +3 to the mission's attribute. Whenever you sacrifice an operative, gain 1 temporary Influence.",
+  "text": "Security 3. Doctrine (Blood Rite): once per mission, during Responses, sacrifice an operative: your side gets +3 to the mission's attribute. Whenever you sacrifice an operative, gain 1 temporary Influence; the first time each turn, also gain 1 progress on your Master Plan.",
   "flavor": "Founded 1717. Membership: unchanged since 1717.",
   "rarity": "S",
   "abilities": [
@@ -2825,6 +2825,38 @@
       "controller"
      ]
     ]
+   },
+   {
+    "on": "sacrificed",
+    "do": [
+     [
+      "call",
+      "addProg",
+      [
+       "first",
+       [
+        "cards",
+        "$me",
+        "plan"
+       ]
+      ],
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "=",
+     "$e.p",
+     [
+      "get",
+      "$self",
+      "controller"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
    }
   ],
   "rabil": [
@@ -3280,9 +3312,9 @@
   "name": "The Devil's Ledger",
   "type": "asset",
   "faction": "dawnstar",
-  "text": "Whenever you sacrifice an operative, gain 1 progress on your Master Plan (once per turn).",
+  "text": "Whenever you sacrifice an operative, draw a card.",
   "flavor": "Every name. Every price. Every due date.",
-  "cost": 4,
+  "cost": 3,
   "attach": 0,
   "bearerKw": 0,
   "rarity": "R",
@@ -3291,16 +3323,7 @@
     "on": "sacrificed",
     "do": [
      [
-      "call",
-      "addProg",
-      [
-       "first",
-       [
-        "cards",
-        "$me",
-        "plan"
-       ]
-      ],
+      "draw",
       "$me",
       1
      ]
@@ -3313,11 +3336,7 @@
       "$self",
       "controller"
      ]
-    ],
-    "limit": {
-     "per": "turn",
-     "by": "source"
-    }
+    ]
    }
   ],
   "num": "SE2-068"
