@@ -1,104 +1,98 @@
-# Shadow Earth (official module)
+# Shadow Earth 2.0 (official module)
 
-Core Set 1.7: five conspiracies race to **20 Dominance** through covert missions. The source of truth is the user's rulebook (Core 1.7 Comprehensive Prototype Rules) and card database (`tools/shadowearth/cards.csv`, 325 cards, kept verbatim).
+*The world you know is a stage set. Behind it, five conspiracies wage a silent war for the levers of history.*
 
-## Building
-- `python3 tools/shadowearth/build.py` writes `packages/reference-games/shadow-earth/` from the CSV and the effect files.
-  - `SE_<LEVER>=n` overrides a lever. `SE_OUT=<dir>` writes elsewhere.
-  - Levers: `WIN` 20, `MAX_CAP` 8, `HAND` 7, `DECK` 50, `MISSIONS` 2, `MISSION_MAX` 3, `SECURITY` 2, `DOM_CAP` 0, `TOKEN_CAP` 12.
-  - `DOM_CAP` is the rulebook's optional test-only "max 3 Dominance per mission"; 0 means off.
-- **Effect files:** `fx_neutral.py`, `fx_psylist.py`, `fx_prendick.py`, `fx_dawnstar.py`, `fx_illuminati.py`, `fx_children.py`. Starter decks are in `fx_decks.py`.
-- **Card registration:** each card calls `fx(name, ...)` with any of:
-  - `deploy`, `op`, `resp`, `mop` + `succ` (and `pre`), `abil`, `rabil` and `abilities` (triggers);
-  - an Agenda's completion via `agenda([...])`.
-- **Compiled static terms:** attribute, cost, Security, mission cost, durability, "can't defend" and targeting rules are terms (`attr_term`, `cost_term`, …). They compile into single rule functions (`attr`, `cost`, `sec`…), so every number is computed in one place.
-- **Deck legality:** a card is deck-legal only once its text is implemented. All 325 are.
+Version 2.0 is a full redesign of the Core 1.7 prototype (archived in `tools/shadowearth/legacy/`). Core 1.7 ran 325 cards to 20 Dominance with two missions a turn. AI playtests showed three problems:
+- **Length:** games ran about 60 turns, and about 4 in 10 ended with a player unable to draw.
+- **Defence dominated:** 12% of missions succeeded against defenders.
+- **Agendas rarely mattered:** about 1.4 were completed per game.
 
-## Rules as implemented
-- **Turn:**
-  - Refresh: expire temporary Influence, enable your Disabled cards, ready, capacity +1 (max 8), refill, and At Refresh triggers.
-  - Then Draw, Development, Operations, Cleanup (end effects, discard to 7).
-  - The second player gets 1 temporary Influence at its first Refresh. Each player may take one mulligan (shuffle in, draw 5, bottom 1).
-- **Influence:** base capacity and spendable base Influence, plus temporary Influence. Some temporary Influence expires at Cleanup (`tmpc`) and some at your next Refresh (`tmp`). Temporary Influence is spent first.
-- **Missions (a timing window):**
-  1. Choose the mission and target. Basic missions may always target the opposing Headquarters.
-  2. Choose 1–2 ready attackers. They are exhausted.
-  3. Pay the cost: 1 for a basic mission, printed + 1 for a mission Operation, 2 for Investigate and Disrupt.
-  4. The defender assigns 0–2 ready defenders (1 against a lone Covert attacker; Ambush may defend while exhausted).
-  5. Alternating Responses, defender first.
-  6. Compare totals. The attacker must be strictly greater; with no defenders, compare against Security 2.
-  7. Apply the reward, then after-mission triggers.
-  - Two attempts per turn, three at most.
-  - A tie or loss with at least one defender is a successful defense.
-- **Damage:** durability is 2 + printed Force (minimum 2). Damage stays between turns, and an operative is eliminated at its durability. Tokens disappear when they leave play.
-- **Disable:** a Disabled Facility or Project keeps its card but its text is inactive until its controller's next Refresh.
-- **Loadouts:** each bearer has two Loadout slots. Attaching or transferring costs 1 in Development. When the bearer leaves, Loadouts stay in play unattached and other attached Assets are discarded.
-- **Agendas:** completion is a special action when its conditions hold (Immediate once, then Ongoing). Disrupt Breakthrough Suppresses the Ongoing until the end of the attacker's next turn. Historical conditions are tracked as player counters, such as streaks of successful Strikes, Infiltrates and Subverts, Control counters placed, defenses, Disables, sacrifices and Revelation gained.
-- **Hidden information:**
-  - Private looks emit events only the looker can read.
-  - Choices among your own deck's cards use an owner-only "looking" zone.
-  - Effects that let you choose from the opponent's hand reveal it in a public "shown" zone first.
+2.0 rebuilds the game around three ideas:
+1. **Agendas are the battlefield.** Three public Conspiracy Agendas are always on the table, both players race to complete them, and a new one appears as soon as one falls. Each faction also has its own Master Plan, which the opponent can sabotage.
+2. **Every contested mission spills blood.** Defended missions end in **Bloodshed**, so a failed attack costs operatives and a costly defence still shapes the board.
+3. **A short race.** The first to **7 Dominance** wins, which should take about 8–12 turns each.
 
-## Where the digital version interprets the text
-- **Reactive cancels and taxes:** the holder is asked at the moment of the trigger. This covers Counterintelligence Sweep, Foresight Interdiction, Emergency Injunction, An Offer in Writing, Risk Arbitrage, Contingency Plan, A Name Spoken in Two Minds, Operation GLASSHOUSE, Crown & Vale, Audit Office, Geneva Blacklist, Administrative State, Improvised Scrambler and Portable Null Field.
-- **"targets your Facility"** for Operations means Operations that can target Facilities (Asset Freeze, Scorched Earth Protocol). Improvised Scrambler taxes the first enemy Response each turn during a mission that involves your operative.
-- **Scry:** you choose which cards go to the bottom, and the rest stay on top in their order.
-- **The Seventh Circle:** its Ritual/Scripture-only Influence is a discount on those cards this turn.
-- **Neural Disruptor:** exhausts its target when the mission is declared, before defenders are chosen.
-- **The First Unmaking:** scores the operatives its 3 damage will eliminate (before prevention).
-- **Rogue Systems Architect:** readies a Facility. That Facility's next activation this turn costs 2 more.
-- **Card clauses not modelled:**
-  - **Specimen Transport:** "can't be chosen by Responses before defenders" (Responses always come after defenders).
-  - **Psi-Restraint Harness:** the Control-counter clause.
-  - **The Perfect Organism:** "ignores the first opposing Operation".
-- **Tokens:** tokens with an upkeep (Open Recruitment Drive, Global Subcontractors) ask for 1 Influence each at Cleanup, or they are eliminated.
+## Victory
+- You win immediately at **7 Dominance**.
+- A player who must draw from an empty deck loses. With 40-card decks and short games this is rare.
 
-## Balance test runs
-These are AI vs AI games across all 20 faction pairings, using `tools/shadowearth/playtest.ts`. Split the work with `--part=i/n` and combine the parts with `merge_playtest.py`. The levers are listed above.
+## Setup
+- Each player takes a **Headquarters** (with its faction power and Security 3), the faction's **Master Plan** (face up, 0 progress) and a **40-card deck**.
+  - Faction cards must match the Headquarters. Neutral cards are allowed, at most 3 copies of a name, and Unique cards once.
+- Shuffle the shared **Conspiracy deck** (12 Agendas) and reveal 3. This is the **Agenda row**.
+- Draw 5. Each player may mulligan once: shuffle the hand back, draw 5, then put 1 on the bottom.
+- The first player is random. The second player gets 1 extra Influence on their first turn.
 
-**AI fixes found by the runs:**
-- **Scoring moves mid-mission:** the heuristic agent scored a mission before the window had resolved, so it saw the cost but never the reward. It now lets open timing windows play out when it scores a move. This change applies to every module.
-- **Exhausted defenders:** the AI also didn't count that an exhausted attacker can't defend on the opponent's turn. Ready operatives are now worth about half their best attribute.
-- **Effect:** before these fixes, games averaged 60 turns, with 1.9 attack against 2.1 defence and 29% of missions succeeding.
+## Turn
+1. **Refresh.** Ready your cards, raise your Influence capacity by 1 (max 7) and refill it. Then resolve "at the start of your turn" effects.
+2. **Draw** 1 card.
+3. **Main phase.** In any order, play cards (Operatives, Assets, Facilities, Operations), use abilities and launch missions.
+4. **End.** Resolve "at the end of your turn" effects, discard down to 7 and expire temporary Influence.
 
-**Starter decks:**
-- **The problem:** the attacker always picks the attribute where the defender is weakest. Prendick's deck had no operative with 3+ Will, and Children's had little Force or Tradecraft.
-- **The fix:** the starters now include Neutral cover: Crisis Negotiator, Interrogation Officer and Mental Fortitude for Prendick; Ex-Military Bodyguard, Professional Cleaner and Inside Tip for Children.
-- **The result:** Prendick went from 12% to 38–50%.
+**Influence:** capacity starts at 1, so it is 2 on your first turn, and rises to a maximum of 7. Temporary Influence lasts until the end of your turn.
 
-**Pacing (current rules: 20 Dominance, two missions a turn):**
-- With sensible defending, missions succeed about 28% of the time: 46% against an undefended Headquarters, 12% against defenders.
-- Games average about 59 turns (around 30 each), and about 4 in 10 end with a player unable to draw.
+## Operatives
+- Each has **Force / Tradecraft / Will** and **Health**. Damage stays on it, and at its Health it is eliminated.
+- An operative played this turn can defend but **cannot attack** until your next turn, unless a card says it can.
 
-| Option (lever) | Games | End at the Dominance target | Avg turns | Faction win rates |
+## Missions
+1. **Choose a target, then send 1–3 ready operatives.** They are exhausted. Missions are free; your operatives are the limit.
+2. **Defence:** the opponent may assign up to 3 ready operatives, who are exhausted.
+   - A Wetwork target defends itself even when exhausted and doesn't count toward the 3.
+   - A lone attacker with **Covert** allows only one defender.
+3. **Responses:** players alternate, defender first. Each may play a Response card or a Response ability; passing twice in a row ends the step.
+4. **Resolve:** compare totals in the mission's attribute.
+   - The attacker wins on a **strictly higher** total.
+   - An undefended target uses its **Resistance** instead.
+5. **Bloodshed:** if there were defenders, each side deals damage equal to its **highest Force** to one opposing participant of its choice. This happens at the same time, whoever won.
+6. **Reward:** if the attacker won, apply the target's reward. A **decisive** win (by 3 or more) adds 1 progress on Agenda and Master Plan missions.
+
+| Target | Attribute | Resistance if undefended | Reward |
+|---|---|---|---|
+| A **Conspiracy Agenda** in the row | the Agenda's (F, T or W) | the Agenda's | +1 progress for you (+2 if decisive). At its threshold, you **score** it |
+| **Your Master Plan** | the Plan's | 2 | +1 progress (+2 if decisive). At 5 it is **enacted** |
+| **The opponent's Master Plan** | the Plan's | 2 | remove 2 of their progress |
+| **An opposing operative** (Wetwork) | Force | it always defends itself | 3 damage to it |
+| **An opposing Facility or Asset** (Sabotage) | Tradecraft | 2 | destroy it |
+| **The opposing Headquarters** (Blackmail) | Will | 3 | steal 1 progress (theirs −1 and yours +1 on a Conspiracy Agenda), or they discard 2 cards |
+
+**Scoring an Agenda:**
+- You gain its Dominance and resolve its "When scored" effect. All progress on it is cleared, it goes to your scored pile, and a new Agenda is revealed.
+- **Enacting your Master Plan** gives 3 Dominance and its permanent effect. A Master Plan is enacted only once.
+
+## Card types
+- **Operative:** your agents.
+- **Asset:**
+  - Gear and Implants attach to an operative; an operative can hold any number of Assets.
+  - Other Assets sit in play.
+- **Facility:** a place with an ongoing ability. Sabotage can destroy it.
+- **Operation:** a one-shot effect in your main phase.
+- **Response:** played during a mission's Response step.
+
+Keywords:
+- **Covert:** see Missions, step 2.
+- **Ambush:** can defend while exhausted.
+- **Swift:** can attack on the turn it is played.
+- **Unique:** one copy in a deck and one in play.
+- **Token:** created by effects. It disappears when it leaves play, and each player may control at most 10.
+
+## The factions
+Each faction has a Headquarters power, a Master Plan and three archetypes:
+
+| Faction | Leaning | Headquarters power | Master Plan | Archetypes |
 |---|---|---|---|---|
-| Rules as printed | 40 | 60% | 59 | 19–69% |
-| Win at 15 (`WIN=15`) | 40 (seeds 2–3) | ~75% | ~49 | 29–75% |
-| Three missions a turn (`MISSIONS=3`) | 40 | 98% | 39 | 31–69% |
-| Headquarters missions score 2 (`HQ_DOM=2`) | 40 | 100% | 25 | 19–81% |
-| Attacker wins ties (`TIE_WINS=1`) | 20 | 70% | 53 | 12–75% |
+| **PsyList** (the government's psychic program) | Will / Tradecraft | at the start of your turn, look at the top card of the opponent's deck | **Project OVERMIND** (Will) | Clairvoyance; Psychic Assault; **Control counters** (mind-controlled enemies) |
+| **Prendick Holdings** (biotech conglomerate) | Force / Tradecraft | your Mutations cost 1 less | **Project CHIMERA** (Force) | **Mutations** on Specimens; Sleeper Organisms; Corporate Biotech (economy) |
+| **Dawn Star Society** (occult lodge) | Will / Force | the first time you sacrifice each turn, gain 1 Influence | **The Morning Star Descends** (Will) | **Sacrifice**; Demons; Scriptures |
+| **Illuminati** (old money, the deep state) | Tradecraft | gain 1 temporary Influence each turn | **The New World Compact** (Tradecraft) | Finance; Institutions (**Mandate counters**); Contractors |
+| **Children of the High-Ones** (UFO cult) | Will | gain 1 **Revelation** each turn | **The Great Arrival** (Will) | Cultist swarm (tokens); Alien Artifacts; Revelation and Entities |
 
-**Factions:**
-- PsyList is the strongest in every configuration (69–94%), thanks to high Will (12 operatives with 3+), Control counters and "can't defend".
-- The Children are the weakest (19–38%): cultists and their 0/1/1 tokens rarely win missions (about 22% success).
-- Faction-level card tuning should wait for the pacing decision.
+The full card list, with rules text and flavour, is generated into `packages/reference-games/shadow-earth/cards.json` from `tools/shadowearth/cards2.py`. Run `python3 tools/shadowearth/build.py`.
 
-## Starter decks
-`psylist-starter`, `prendick-starter`, `dawnstar-starter`, `illuminati-starter` and `children-starter`. Each has 50 cards, plus its Headquarters and the faction's Tier I Agenda.
-
-## Tests
-- `packages/test-harness/tests/shadow-earth.test.ts` covers:
-  - setup and deck legality;
-  - Strikes against Security 2 (a tie fails);
-  - defenders and successful defense;
-  - Strike damage and elimination;
-  - Responses (defender first);
-  - Agenda completion and Immediate effects;
-  - the 20 Dominance win;
-  - private looks.
-- Shadow Earth is also in the shared integrity suite (replay, save/restore, hidden information, termination) and the goldens.
-- `tools/shadowearth/playtest.ts` plays every faction pairing AI vs AI.
-
-## Not yet
-- Art: the generic art import (`tools/art/import.py shadow-earth <folder>`) works.
-- A campaign or store, tutorials, and balance tuning from playtests.
+## Design notes for testers
+- Missions are free, so the turn is a sequence of decisions:
+  - who to send, at which Agenda, and who to keep home;
+  - whether to defend and accept Bloodshed;
+  - whether to hit their Plan or race your own.
+- Force matters to every faction through Bloodshed. Tradecraft and Will factions need bodyguards or Responses to survive contested missions.
+- Watch: game length (target 16–24 total turns); Agendas scored per game (target 3+, from both players); faction win rates (target 40–60%); and how often a mission is contested.

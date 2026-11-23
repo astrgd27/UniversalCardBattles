@@ -16,10 +16,10 @@ print(f"{g} games | how games end: {how}")
 print('win rate by faction: ' + ', '.join(f"{k} {round(100 * w / n)}% ({w}/{n})" for k, (w, n) in sorted(W.items())))
 print(f"avg turns {tot['turns'] / g:.1f} | missions/game {m / g:.1f} ({round(100 * tot['ok'] / m)}% succeed) | Agendas/game {tot['agendas'] / g:.2f} | loser's Dominance {tot['domLoser'] / g:.1f}")
 print(f"undefended {st.get('undef', 0)} ({pct('undef.ok', 'undef')}), defended {st.get('def', 0)} ({pct('def.ok', 'def')}); avg attack {st.get('atkTotal', 0) / m:.1f} vs defense {st.get('defTotal', 0) / m:.1f}")
-print('by kind: ' + ', '.join(f"{k} {st[f'm.{k}']} ({pct(f'm.{k}.ok', f'm.{k}')})" for k in ['strike', 'infiltrate', 'subvert', 'op', 'investigate', 'disrupt'] if st.get(f'm.{k}')))
-print(f"Dominance from missions {st.get('dom.mission', 0)}, other {st.get('dom.other', 0)} | deck-out wins: " + ', '.join(f"{k[10:]} {v}" for k, v in st.items() if k.startswith('deckoutWin.')))
+print('by kind: ' + ', '.join(f"{k} {st[f'm.{k}']} ({pct(f'm.{k}.ok', f'm.{k}')})" for k in ['agenda', 'plan', 'operative', 'facility', 'asset', 'hq'] if st.get(f'm.{k}')))
+print(f"eliminations/game {st.get('elim', 0) / g:.1f} | Agendas scored/game {tot['agendas'] / g:.2f} | Master Plans enacted/game {sum(v for k, v in st.items() if k.startswith('plan.')) / g:.2f}")
 fs = sorted({k.split('.')[1] for k in st if k.startswith('fm.')})
 for f in fs:
     n = st.get(f'fm.{f}', 0); games_f = W.get(f, [0, 1])[1]
     print(f"  {f}: {n / max(1, games_f):.1f} missions/game, {pct(f'fm.{f}.ok', f'fm.{f}')} succeed, {pct(f'fm.{f}.undef', f'fm.{f}')} undefended, "
-          f"{st.get(f'dep.{f}', 0) / max(1, games_f):.1f} permanents played/game, Agendas {st.get(f'ag.{f}', 0)}")
+          f"{st.get(f'dep.{f}', 0) / max(1, games_f):.1f} played/game, Agendas scored {st.get(f'ag.{f}', 0) / max(1, games_f):.2f}/game, Plans {st.get(f'plan.{f}', 0)}")
