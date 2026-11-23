@@ -263,6 +263,18 @@ A survey of about 30 published TCG rulebooks (`docs/COVERAGE.md`, second table) 
   - Tall popups scroll.
   - Tap/untap uses the CSS `rotate`/`scale` properties with event-log animation. This fixes the card showing untapped while hovered and then snapping to tapped.
 
+## Done: Shadow Earth 2.1 (distinct factions)
+- Each Headquarters has a Doctrine:
+  - PsyList: Will Wetwork that plants Control counters.
+  - Prendick: Harvest (enemy kills become Specimen tokens).
+  - Dawn Star: Blood Rite (sacrifice for +3, and sacrifices advance the Master Plan).
+  - Illuminati: Bribery (2 Influence buys +1), with Tradecraft Blackmail.
+  - Children: Congregation (5-operative missions; dead Cultists give Revelation).
+- Agendas are dual-attribute, and the team's better attribute is used.
+- Six new signature cards, 133 in total.
+- Win rates are 44–62%, and the loser averages about 4.6 of 7 Dominance.
+- `tools/shadowearth/fingerprint.ts` measures each faction's play pattern.
+
 ## Done: Shadow Earth 2.0 (second official module, full redesign)
 - **Why:** Core 1.7 (325 cards, 20 Dominance) ran about 60 turns, 4 in 10 games decked out, only 12% of defended missions succeeded, and about 1.4 Agendas were completed per game. It is archived in `tools/shadowearth/legacy/`.
 - **Rules (`tools/shadowearth/build.py`, levers at the top):**

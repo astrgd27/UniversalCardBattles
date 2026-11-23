@@ -121,9 +121,10 @@ The full card list, with rules text and flavour, is generated into `packages/ref
 | Core 1.7 | ~60 | ~1.4 completed | n/a | n/a | 4 in 10 games ended by deck-out |
 | 2.0 first build | 19.3 | 5.4 | 0.05 | 1.9 | Dawn 25%, PsyList 38%, others 62% |
 | 2.0 + Plan 4, catch-up, Resistance = threshold | 17.4 | — | 0.9 | 1.8 | PsyList 12% … Prendick 69% |
-| **2.0 current** | **15.8** | **4.5** | **0.8** | **1.9** | Children 62%, Prendick 56%, Illuminati 50%, PsyList 44%, Dawn Star 38% |
+| 2.0 shipped | 15.8 | 4.5 | 0.8 | 1.9 | Children 62%, Prendick 56%, Illuminati 50%, PsyList 44%, Dawn Star 38% |
+| **2.1 (Doctrines, dual Agendas), 80 games** | **12.9** | **≈4** | **≈1.1** | **≈4.6** | Prendick 62%, PsyList 50%, Dawn Star 47%, Children 47%, Illuminati 44% |
 
-In the current build:
+In 2.0:
 - every game ends by Dominance;
 - about 62% of missions succeed, whether or not they are defended;
 - there are about 12 eliminations a game.
@@ -138,3 +139,27 @@ Tuning history:
 - **Prendick:** two Specimens gained Health.
 
 The win rates sit at 16 games a faction, so each carries about ±12 points of noise. Human playtests should confirm them.
+
+### 2.1: making the factions distinct
+A faction fingerprint (`tools/shadowearth/fingerprint.ts`) measured how each faction actually played in 2.0. Every faction spent about 70% of its missions on the same Agenda race. The Illuminati, meant to be the Tradecraft faction, ran 42% of their missions on Force, and Dawn Star sacrificed only once a game.
+
+2.1 added the Doctrines, dual-attribute Agendas and one or two signature cards per faction:
+- Mass Suggestion (PsyList).
+- Regenerative Tissue and Feeding Frenzy (Prendick).
+- Return of the Faithful (Dawn Star).
+- Hostile Takeover (Illuminati).
+- Night of the Lights (Children).
+
+Neutral cards that cut across a faction's weakness came out of the starter decks: Encrypted Radio for Prendick, Black-Bag Specialist for Dawn Star, and most of the Ex-Military Bodyguards for the Children.
+
+How each faction played afterwards (share of missions by attribute and signature events per game, 2.1 runs):
+
+| Faction | Force / Tradecraft / Will | Signature per game |
+|---|---|---|
+| PsyList | 23 / 13 / 65% | 8 looks at hand or deck, 2–3 Control counters |
+| Prendick | 45–61 / 28–49 / 6–11% | 3–4 Mutations, 3 harvested Specimens |
+| Dawn Star | 40–45 / 0–4 / 55% | about 4 sacrifices, 3–4 Blood Rites |
+| Illuminati | 31 / 67 / 1–2% | 2–3 Bribes, 8–13 temporary Influence gains |
+| Children | 14–18 / 15–21 / 64–67% | 10 Revelation, 4–5 Cultist tokens |
+
+Games got shorter (about 13 turns in total) and much closer: the loser now averages about 4.6 Dominance of 7, against 1.9 in 2.0.
