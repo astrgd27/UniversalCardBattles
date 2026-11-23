@@ -425,6 +425,362 @@
         "and",
         [
          "=",
+         "$a",
+         3
+        ]
+       ],
+       [
+        "*",
+        [
+         "count",
+         [
+          "filter",
+          [
+           "linked",
+           "$o",
+           "bearer"
+          ],
+          [
+           "=",
+           [
+            "get",
+            "$it",
+            "card"
+           ],
+           "the-lesser-bargain"
+          ]
+         ]
+        ],
+        2
+       ],
+       0
+      ],
+      [
+       "?",
+       [
+        "and",
+        [
+         "=",
+         "$a",
+         3
+        ],
+        [
+         "has",
+         "$o",
+         "occultist"
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$o",
+          "dfn"
+         ],
+         1
+        ],
+        [
+         "and",
+         [
+          ">",
+          [
+           "get",
+           "game",
+           "mp"
+          ],
+          0
+         ],
+         [
+          "=",
+          [
+           "get",
+           "game",
+           "mk"
+          ],
+          3
+         ]
+        ]
+       ],
+       [
+        "count",
+        [
+         "filter",
+         [
+          "concat",
+          [
+           "cards",
+           [
+            "get",
+            "$o",
+            "controller"
+           ],
+           "ops"
+          ],
+          [
+           "cards",
+           [
+            "get",
+            "$o",
+            "controller"
+           ],
+           "sites"
+          ],
+          [
+           "cards",
+           [
+            "get",
+            "$o",
+            "controller"
+           ],
+           "gear"
+          ]
+         ],
+         [
+          "and",
+          [
+           "=",
+           [
+            "get",
+            "$it",
+            "card"
+           ],
+           "scripture-fragment-ash"
+          ],
+          [
+           "call",
+           "active",
+           "$it"
+          ]
+         ]
+        ]
+       ],
+       0
+      ],
+      [
+       "?",
+       [
+        "and",
+        [
+         "=",
+         "$a",
+         1
+        ],
+        [
+         "has",
+         "$o",
+         "occultist"
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$o",
+          "dfn"
+         ],
+         1
+        ],
+        [
+         "and",
+         [
+          ">",
+          [
+           "get",
+           "game",
+           "mp"
+          ],
+          0
+         ],
+         [
+          "=",
+          [
+           "get",
+           "game",
+           "mk"
+          ],
+          1
+         ]
+        ]
+       ],
+       [
+        "count",
+        [
+         "filter",
+         [
+          "concat",
+          [
+           "cards",
+           [
+            "get",
+            "$o",
+            "controller"
+           ],
+           "ops"
+          ],
+          [
+           "cards",
+           [
+            "get",
+            "$o",
+            "controller"
+           ],
+           "sites"
+          ],
+          [
+           "cards",
+           [
+            "get",
+            "$o",
+            "controller"
+           ],
+           "gear"
+          ]
+         ],
+         [
+          "and",
+          [
+           "=",
+           [
+            "get",
+            "$it",
+            "card"
+           ],
+           "scripture-fragment-iron"
+          ],
+          [
+           "call",
+           "active",
+           "$it"
+          ]
+         ]
+        ]
+       ],
+       0
+      ],
+      [
+       "?",
+       [
+        "and",
+        [
+         "=",
+         "$a",
+         1
+        ],
+        [
+         "has",
+         "$o",
+         "demon"
+        ],
+        [
+         "and",
+         [
+          ">",
+          [
+           "get",
+           "game",
+           "mp"
+          ],
+          0
+         ],
+         [
+          "=",
+          [
+           "get",
+           "game",
+           "mk"
+          ],
+          1
+         ]
+        ],
+        [
+         "or",
+         [
+          "=",
+          [
+           "get",
+           "$o",
+           "atk"
+          ],
+          1
+         ],
+         [
+          "=",
+          [
+           "get",
+           "$o",
+           "dfn"
+          ],
+          1
+         ]
+        ],
+        [
+         "any",
+         [
+          "cards",
+          [
+           "get",
+           "$o",
+           "controller"
+          ],
+          "ops"
+         ],
+         [
+          "and",
+          [
+           "or",
+           [
+            "=",
+            [
+             "get",
+             "$it",
+             "atk"
+            ],
+            1
+           ],
+           [
+            "=",
+            [
+             "get",
+             "$it",
+             "dfn"
+            ],
+            1
+           ]
+          ],
+          [
+           ">",
+           [
+            "count",
+            [
+             "filter",
+             [
+              "linked",
+              "$it",
+              "bearer"
+             ],
+             [
+              "=",
+              [
+               "get",
+               "$it",
+               "card"
+              ],
+              "chain-of-command"
+             ]
+            ]
+           ],
+           0
+          ]
+         ]
+        ]
+       ],
+       1,
+       0
+      ],
+      [
+       "?",
+       [
+        "and",
+        [
+         "=",
          [
           "get",
           "$o",
@@ -2438,6 +2794,338 @@
      [
       "?",
       [
+       "and",
+       [
+        "has",
+        "$c",
+        "pact"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$p",
+         "pl_pact"
+        ],
+        0
+       ],
+       [
+        "any",
+        [
+         "concat",
+         [
+          "cards",
+          "$p",
+          "ops"
+         ],
+         [
+          "cards",
+          "$p",
+          "sites"
+         ],
+         [
+          "cards",
+          "$p",
+          "gear"
+         ]
+        ],
+        [
+         "and",
+         [
+          "=",
+          [
+           "get",
+           "$it",
+           "card"
+          ],
+          "contract-notary"
+         ],
+         [
+          "call",
+          "active",
+          "$it"
+         ]
+        ]
+       ]
+      ],
+      -1,
+      0
+     ],
+     [
+      "?",
+      [
+       "and",
+       [
+        "or",
+        [
+         "has",
+         "$c",
+         "ritual"
+        ],
+        [
+         "has",
+         "$c",
+         "scripture"
+        ]
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$p",
+         "r7T"
+        ],
+        "$turn"
+       ]
+      ],
+      [
+       "neg",
+       [
+        "min",
+        [
+         "get",
+         "$p",
+         "r7"
+        ],
+        [
+         "get",
+         "$c",
+         "cost"
+        ]
+       ]
+      ],
+      0
+     ],
+     [
+      "?",
+      [
+       "and",
+       [
+        "has",
+        "$c",
+        "demon"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$c",
+         "type"
+        ],
+        "operative"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$p",
+         "pl_demon"
+        ],
+        0
+       ],
+       [
+        "any",
+        [
+         "concat",
+         [
+          "cards",
+          "$p",
+          "ops"
+         ],
+         [
+          "cards",
+          "$p",
+          "sites"
+         ],
+         [
+          "cards",
+          "$p",
+          "gear"
+         ]
+        ],
+        [
+         "and",
+         [
+          "=",
+          [
+           "get",
+           "$it",
+           "card"
+          ],
+          "pact-summoner"
+         ],
+         [
+          "call",
+          "active",
+          "$it"
+         ]
+        ]
+       ]
+      ],
+      -1,
+      0
+     ],
+     [
+      "?",
+      [
+       "and",
+       [
+        "or",
+        [
+         "has",
+         "$c",
+         "ritual"
+        ],
+        [
+         "has",
+         "$c",
+         "scripture"
+        ]
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$p",
+         "arT"
+        ],
+        "$turn"
+       ]
+      ],
+      -1,
+      0
+     ],
+     [
+      "?",
+      [
+       "and",
+       [
+        "or",
+        [
+         "has",
+         "$c",
+         "scripture"
+        ],
+        [
+         "has",
+         "$c",
+         "pact"
+        ]
+       ],
+       [
+        "=",
+        [
+         "+",
+         [
+          "get",
+          "$p",
+          "pl_scripture"
+         ],
+         [
+          "get",
+          "$p",
+          "pl_pact"
+         ]
+        ],
+        0
+       ],
+       [
+        "call",
+        "agendaDone",
+        "$p",
+        "library-of-the-unspoken"
+       ]
+      ],
+      -1,
+      0
+     ],
+     [
+      "?",
+      [
+       "and",
+       [
+        "=",
+        [
+         "get",
+         "$c",
+         "type"
+        ],
+        "response"
+       ],
+       [
+        ">",
+        [
+         "get",
+         "game",
+         "mp"
+        ],
+        0
+       ],
+       [
+        "and",
+        [
+         ">",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         0
+        ],
+        [
+         "=",
+         [
+          "get",
+          "game",
+          "ma"
+         ],
+         3
+        ]
+       ],
+       [
+        "!=",
+        [
+         "nth",
+         [
+          "players"
+         ],
+         [
+          "-",
+          [
+           "get",
+           "game",
+           "mp"
+          ],
+          1
+         ]
+        ],
+        "$p"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$p",
+         "respM"
+        ],
+        0
+       ],
+       [
+        "call",
+        "agendaDone",
+        [
+         "opp",
+         "$p"
+        ],
+        "infernal-legislature"
+       ]
+      ],
+      1,
+      0
+     ],
+     [
+      "?",
+      [
        "=",
        [
         "get",
@@ -2875,8 +3563,40 @@
      [
       "or",
       [
-       "lit",
-       false
+       "and",
+       [
+        "=",
+        [
+         "get",
+         "$o",
+         "card"
+        ],
+        "bound-fiend"
+       ],
+       [
+        "=",
+        [
+         "count",
+         [
+          "filter",
+          [
+           "cards",
+           [
+            "get",
+            "$o",
+            "controller"
+           ],
+           "sites"
+          ],
+          [
+           "has",
+           "$it",
+           "ritual"
+          ]
+         ]
+        ],
+        0
+       ]
       ]
      ]
     ]
@@ -6221,6 +6941,16 @@
        1
       ],
       [
+       "inc",
+       [
+        "get",
+        "$o",
+        "controller"
+       ],
+       "sacTurn",
+       1
+      ],
+      [
        "call",
        "gone",
        "$o"
@@ -6850,6 +7580,26 @@
        "$p",
        "pl_response",
        1
+      ],
+      [
+       "if",
+       [
+        ">",
+        [
+         "get",
+         "game",
+         "mp"
+        ],
+        0
+       ],
+       [
+        [
+         "inc",
+         "$p",
+         "respM",
+         1
+        ]
+       ]
       ]
      ]
     ],
@@ -7010,44 +7760,41 @@
          "grave"
         ],
         [
-         "if",
-         [
-          ">",
-          [
-           "count",
+         "choose",
+         {
+          "from": [
+           "?",
            [
-            "cards",
-            "$me",
-            "hand"
-           ]
-          ],
-          0
-         ],
-         [
-          [
-           "choose",
-           {
-            "from": [
-             "lit",
+            ">",
+            [
+             "count",
              [
-              "Discard a card",
-              "Let it be cancelled"
+              "cards",
+              "$me",
+              "hand"
              ]
             ],
-            "as": "$z",
-            "prompt": "Counterintelligence Sweep: discard a card or your Operation is cancelled",
-            "min": 1,
-            "max": 1
-           }
-          ]
-         ],
-         [
-          [
-           "let",
-           "$z",
-           "x"
-          ]
-         ]
+            0
+           ],
+           [
+            "lit",
+            [
+             "Discard a card",
+             "Let it be cancelled"
+            ]
+           ],
+           [
+            "lit",
+            [
+             "Let it be cancelled"
+            ]
+           ]
+          ],
+          "as": "$z",
+          "prompt": "Counterintelligence Sweep: discard a card or your Operation is cancelled",
+          "min": 1,
+          "max": 1
+         }
         ],
         [
          "if",
@@ -7164,41 +7911,38 @@
        "$turn"
       ],
       [
-       "if",
-       [
-        ">=",
-        [
-         "call",
-         "avail",
-         "$me"
-        ],
-        2
-       ],
-       [
-        [
-         "choose",
-         {
-          "from": [
-           "lit",
-           [
-            "Pay 2",
-            "Let it be cancelled"
-           ]
+       "choose",
+       {
+        "from": [
+         "?",
+         [
+          ">=",
+          [
+           "call",
+           "avail",
+           "$me"
           ],
-          "as": "$y",
-          "prompt": "Crown & Vale Legal Offices: pay 2 more or your Operation is cancelled",
-          "min": 1,
-          "max": 1
-         }
-        ]
-       ],
-       [
-        [
-         "let",
-         "$y",
-         "x"
-        ]
-       ]
+          2
+         ],
+         [
+          "lit",
+          [
+           "Pay 2",
+           "Let it be cancelled"
+          ]
+         ],
+         [
+          "lit",
+          [
+           "x"
+          ]
+         ]
+        ],
+        "as": "$y",
+        "prompt": "Crown & Vale Legal Offices: pay 2 more or your Operation is cancelled",
+        "min": 1,
+        "max": 1
+       }
       ],
       [
        "if",
@@ -7633,6 +8377,18 @@
      "set",
      "$opp",
      "mDom",
+     0
+    ],
+    [
+     "set",
+     "$me",
+     "respM",
+     0
+    ],
+    [
+     "set",
+     "$opp",
+     "respM",
      0
     ],
     [
@@ -10470,6 +11226,135 @@
      [
       "and",
       [
+       "any",
+       [
+        "concat",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "cards",
+         "$me",
+         "sites"
+        ],
+        [
+         "cards",
+         "$me",
+         "gear"
+        ]
+       ],
+       [
+        "and",
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "card"
+         ],
+         "the-unwritten-gospel"
+        ],
+        [
+         "call",
+         "active",
+         "$it"
+        ]
+       ]
+      ],
+      [
+       "and",
+       [
+        ">",
+        [
+         "get",
+         "game",
+         "mp"
+        ],
+        0
+       ],
+       [
+        "=",
+        [
+         "get",
+         "game",
+         "ma"
+        ],
+        3
+       ]
+      ],
+      [
+       "any",
+       [
+        "filter",
+        [
+         "cards",
+         "*",
+         "ops"
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "atk"
+         ],
+         1
+        ]
+       ],
+       [
+        "has",
+        "$it",
+        "occultist"
+       ]
+      ],
+      [
+       ">=",
+       [
+        "count",
+        [
+         "distinct",
+         [
+          "map",
+          [
+           "filter",
+           [
+            "cards",
+            "$me",
+            "gear"
+           ],
+           [
+            "has",
+            "$it",
+            "scripture"
+           ]
+          ],
+          [
+           "get",
+           "$it",
+           "card"
+          ]
+         ]
+        ]
+       ],
+       3
+      ]
+     ],
+     [
+      [
+       "inc",
+       "game",
+       "am",
+       4
+      ]
+     ]
+    ],
+    [
+     "if",
+     [
+      "and",
+      [
        "=",
        [
         "get",
@@ -11595,6 +12480,12 @@
      "set",
      "$me",
      "bigAssetT",
+     0
+    ],
+    [
+     "set",
+     "$me",
+     "sacTurn",
      0
     ],
     [
@@ -13922,6 +14813,44 @@
        "$e.p"
       ]
      ]
+    ],
+    [
+     "each",
+     [
+      "filter",
+      [
+       "cards",
+       "*",
+       "ops"
+      ],
+      [
+       "=",
+       [
+        "get",
+        "$it",
+        "drawAfter"
+       ],
+       1
+      ]
+     ],
+     "$x",
+     [
+      [
+       "set",
+       "$x",
+       "drawAfter",
+       0
+      ],
+      [
+       "draw",
+       [
+        "get",
+        "$x",
+        "controller"
+       ],
+       1
+      ]
+     ]
     ]
    ]
   },
@@ -13950,42 +14879,39 @@
      "$tk",
      [
       [
-       "if",
-       [
-        ">=",
-        [
-         "call",
-         "avail",
-         "$e.p"
-        ],
-        1
-       ],
-       [
-        [
-         "choose",
-         {
-          "from": [
-           "lit",
-           [
-            "Pay 1 to keep it",
-            "Let it go"
-           ]
+       "choose",
+       {
+        "from": [
+         "?",
+         [
+          ">=",
+          [
+           "call",
+           "avail",
+           "$e.p"
           ],
-          "as": "$u",
-          "prompt": "Keep this token?",
-          "min": 1,
-          "max": 1,
-          "who": "$e.p"
-         }
-        ]
-       ],
-       [
-        [
-         "let",
-         "$u",
-         "Let it go"
-        ]
-       ]
+          1
+         ],
+         [
+          "lit",
+          [
+           "Pay 1 to keep it",
+           "Let it go"
+          ]
+         ],
+         [
+          "lit",
+          [
+           "Let it go"
+          ]
+         ]
+        ],
+        "as": "$u",
+        "prompt": "Keep this token?",
+        "min": 1,
+        "max": 1,
+        "who": "$e.p"
+       }
       ],
       [
        "if",
@@ -14054,6 +14980,416 @@
        1
       ]
      ]
+    ]
+   ]
+  },
+  {
+   "on": "sacrificed",
+   "if": [
+    "=",
+    "$e.card",
+    "ambitious-initiate"
+   ],
+   "do": [
+    [
+     "call",
+     "gainTmp",
+     "$e.p",
+     1
+    ]
+   ]
+  },
+  {
+   "on": "cleanup",
+   "if": [
+    "any",
+    [
+     "cards",
+     "$e.p",
+     "ops"
+    ],
+    [
+     "=",
+     [
+      "get",
+      "$it",
+      "sacCleanup"
+     ],
+     "$turn"
+    ]
+   ],
+   "do": [
+    [
+     "choose",
+     {
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$e.p",
+        "ops"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "sacCleanup"
+        ],
+        "$turn"
+       ]
+      ],
+      "as": "$v",
+      "prompt": "The Price of Dominion: sacrifice one of them",
+      "min": 1,
+      "max": 1,
+      "who": "$e.p"
+     }
+    ],
+    [
+     "call",
+     "sacrifice",
+     "$v"
+    ],
+    [
+     "each",
+     [
+      "filter",
+      [
+       "cards",
+       "$e.p",
+       "ops"
+      ],
+      [
+       "=",
+       [
+        "get",
+        "$it",
+        "sacCleanup"
+       ],
+       "$turn"
+      ]
+     ],
+     "$x",
+     [
+      [
+       "set",
+       "$x",
+       "sacCleanup",
+       0
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "on": "eliminated",
+   "if": [
+    "and",
+    [
+     "=",
+     "$e.card",
+     "lesser-imp"
+    ],
+    [
+     ">",
+     [
+      "get",
+      "game",
+      "mp"
+     ],
+     0
+    ],
+    [
+     "=",
+     [
+      "nth",
+      [
+       "players"
+      ],
+      [
+       "-",
+       [
+        "get",
+        "game",
+        "mp"
+       ],
+       1
+      ]
+     ],
+     "$e.ctrl"
+    ],
+    [
+     "and",
+     [
+      ">",
+      [
+       "get",
+       "game",
+       "mp"
+      ],
+      0
+     ],
+     [
+      "=",
+      [
+       "get",
+       "game",
+       "ma"
+      ],
+      1
+     ]
+    ]
+   ],
+   "do": [
+    [
+     "choose",
+     {
+      "from": [
+       "filter",
+       [
+        "filter",
+        [
+         "cards",
+         "*",
+         "ops"
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "atk"
+         ],
+         1
+        ]
+       ],
+       [
+        "!=",
+        "$it",
+        "$e.o"
+       ]
+      ],
+      "as": "$v",
+      "prompt": "Lesser Imp: which other attacker gets +1 Force?",
+      "min": 0,
+      "max": 1,
+      "who": "$e.ctrl"
+     }
+    ],
+    [
+     "if",
+     [
+      "isObj",
+      "$v"
+     ],
+     [
+      [
+       "inc",
+       "$v",
+       "mb",
+       1
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "on": "cleanup",
+   "do": [
+    [
+     "each",
+     [
+      "filter",
+      [
+       "cards",
+       "$e.p",
+       "ops"
+      ],
+      [
+       "=",
+       [
+        "get",
+        "$it",
+        "musterT"
+       ],
+       "$turn"
+      ]
+     ],
+     "$x",
+     [
+      [
+       "call",
+       "detach",
+       "$x"
+      ],
+      [
+       "move",
+       "$x",
+       "exile"
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "on": "pactPaid",
+   "if": [
+    "and",
+    [
+     "call",
+     "agendaDone",
+     "$e.p",
+     "covenant-of-the-fallen"
+    ],
+    [
+     "<",
+     [
+      "get",
+      "$e.p",
+      "covT"
+     ],
+     2
+    ]
+   ],
+   "do": [
+    [
+     "inc",
+     "$e.p",
+     "covT",
+     1
+    ],
+    [
+     "call",
+     "gainTmp",
+     "$e.p",
+     1
+    ]
+   ]
+  },
+  {
+   "on": "refresh",
+   "do": [
+    [
+     "set",
+     "$e.p",
+     "covT",
+     0
+    ],
+    [
+     "if",
+     [
+      "call",
+      "agendaDone",
+      "$e.p",
+      "the-morning-star-descends"
+     ],
+     [
+      [
+       "set",
+       "$e.p",
+       "attMax",
+       3
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "on": "eliminated",
+   "if": [
+    "and",
+    [
+     ">",
+     "$e.by",
+     0
+    ],
+    [
+     "!=",
+     [
+      "get",
+      [
+       "nth",
+       [
+        "players"
+       ],
+       [
+        "-",
+        "$e.by",
+        1
+       ]
+      ],
+      "seat"
+     ],
+     [
+      "get",
+      "$e.owner",
+      "seat"
+     ]
+    ],
+    [
+     "call",
+     "agendaDone",
+     [
+      "nth",
+      [
+       "players"
+      ],
+      [
+       "-",
+       "$e.by",
+       1
+      ]
+     ],
+     "the-morning-star-descends"
+    ],
+    [
+     "!=",
+     [
+      "get",
+      [
+       "nth",
+       [
+        "players"
+       ],
+       [
+        "-",
+        "$e.by",
+        1
+       ]
+      ],
+      "msT"
+     ],
+     "$turn"
+    ]
+   ],
+   "do": [
+    [
+     "let",
+     "$k",
+     [
+      "nth",
+      [
+       "players"
+      ],
+      [
+       "-",
+       "$e.by",
+       1
+      ]
+     ]
+    ],
+    [
+     "set",
+     "$k",
+     "msT",
+     "$turn"
+    ],
+    [
+     "call",
+     "gainDom",
+     "$k",
+     1
     ]
    ]
   },
@@ -14152,9 +15488,46 @@
   {
    "on": "missionResult",
    "if": [
-    "=",
-    "$e.ok",
-    0
+    "and",
+    [
+     "=",
+     "$e.ok",
+     0
+    ],
+    [
+     "any",
+     [
+      "cards",
+      "$e.p",
+      "hand"
+     ],
+     [
+      "and",
+      [
+       "=",
+       [
+        "get",
+        "$it",
+        "card"
+       ],
+       "contingency-plan"
+      ],
+      [
+       ">=",
+       [
+        "call",
+        "avail",
+        "$e.p"
+       ],
+       [
+        "call",
+        "cost",
+        "$it",
+        "$e.p"
+       ]
+      ]
+     ]
+    ]
    ],
    "do": [
     [
@@ -14170,137 +15543,111 @@
         "hand"
        ],
        [
-        "and",
+        "=",
         [
-         "=",
-         [
-          "get",
-          "$it",
-          "card"
-         ],
-         "contingency-plan"
+         "get",
+         "$it",
+         "card"
         ],
-        [
-         ">=",
-         [
-          "call",
-          "avail",
-          "$e.p"
-         ],
-         [
-          "call",
-          "cost",
-          "$it",
-          "$e.p"
-         ]
-        ]
+        "contingency-plan"
        ]
       ]
      ]
     ],
     [
+     "choose",
+     {
+      "from": [
+       "lit",
+       [
+        "Play Contingency Plan",
+        "No"
+       ]
+      ],
+      "as": "$y",
+      "prompt": "Your mission failed: play Contingency Plan (ready both attackers, draw 1, no more missions this turn)?",
+      "min": 1,
+      "max": 1,
+      "who": "$e.p"
+     }
+    ],
+    [
      "if",
      [
-      "isObj",
-      "$cp"
+      "=",
+      "$y",
+      "Play Contingency Plan"
      ],
      [
       [
-       "choose",
-       {
-        "from": [
-         "lit",
-         [
-          "Play Contingency Plan",
-          "No"
-         ]
-        ],
-        "as": "$y",
-        "prompt": "Your mission failed: play Contingency Plan (ready both attackers, draw 1, no more missions this turn)?",
-        "min": 1,
-        "max": 1,
-        "who": "$e.p"
-       }
+       "call",
+       "spend",
+       "$e.p",
+       [
+        "call",
+        "cost",
+        "$cp",
+        "$e.p"
+       ]
       ],
       [
-       "if",
+       "move",
+       "$cp",
+       "grave"
+      ],
+      [
+       "each",
        [
-        "=",
-        "$y",
-        "Play Contingency Plan"
-       ],
-       [
+        "filter",
         [
-         "call",
-         "spend",
-         "$e.p",
-         [
-          "call",
-          "cost",
-          "$cp",
-          "$e.p"
-         ]
+         "cards",
+         "*",
+         "ops"
         ],
         [
-         "move",
-         "$cp",
-         "grave"
-        ],
-        [
-         "each",
+         "=",
          [
-          "filter",
-          [
-           "cards",
-           "*",
-           "ops"
-          ],
-          [
-           "=",
-           [
-            "get",
-            "$it",
-            "atk"
-           ],
-           1
-          ]
+          "get",
+          "$it",
+          "atk"
          ],
-         "$x",
-         [
-          [
-           "set",
-           "$x",
-           "ex",
-           0
-          ]
-         ]
-        ],
-        [
-         "draw",
-         "$e.p",
          1
-        ],
+        ]
+       ],
+       "$x",
+       [
         [
          "set",
-         "$e.p",
-         "attMax",
+         "$x",
+         "ex",
          0
-        ],
-        [
-         "emit",
-         "played",
-         {
-          "c": "$cp",
-          "p": "$e.p",
-          "card": [
-           "get",
-           "$cp",
-           "card"
-          ],
-          "type": "response"
-         }
         ]
        ]
+      ],
+      [
+       "draw",
+       "$e.p",
+       1
+      ],
+      [
+       "set",
+       "$e.p",
+       "attMax",
+       0
+      ],
+      [
+       "emit",
+       "played",
+       {
+        "c": "$cp",
+        "p": "$e.p",
+        "card": [
+         "get",
+         "$cp",
+         "card"
+        ],
+        "type": "response"
+       }
       ]
      ]
     ]
@@ -14319,45 +15666,42 @@
    ],
    "do": [
     [
-     "if",
-     [
-      ">=",
-      [
-       "count",
+     "choose",
+     {
+      "from": [
+       "?",
        [
-        "cards",
-        "$e.p",
-        "hand"
-       ]
-      ],
-      2
-     ],
-     [
-      [
-       "choose",
-       {
-        "from": [
-         "lit",
+        ">=",
+        [
+         "count",
          [
-          "Discard two cards",
-          "Lose 2 Dominance"
+          "cards",
+          "$e.p",
+          "hand"
          ]
         ],
-        "as": "$y",
-        "prompt": "Risky Funding comes due",
-        "min": 1,
-        "max": 1,
-        "who": "$e.p"
-       }
-      ]
-     ],
-     [
-      [
-       "let",
-       "$y",
-       "Lose 2 Dominance"
-      ]
-     ]
+        2
+       ],
+       [
+        "lit",
+        [
+         "Discard two cards",
+         "Lose 2 Dominance"
+        ]
+       ],
+       [
+        "lit",
+        [
+         "Lose 2 Dominance"
+        ]
+       ]
+      ],
+      "as": "$y",
+      "prompt": "Risky Funding comes due",
+      "min": 1,
+      "max": 1,
+      "who": "$e.p"
+     }
     ],
     [
      "if",

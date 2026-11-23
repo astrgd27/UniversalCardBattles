@@ -5111,7 +5111,7 @@
   "keywords": [
    "occultist"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "written-in-blood",
@@ -5123,7 +5123,74 @@
   "text": "Sacrifice an operative: draw two cards; lose 1 Dominance if you have any.",
   "archetype": "Infernal Pact",
   "cost": 1,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "call",
+        "sacrifice",
+        "$t"
+       ],
+       [
+        "draw",
+        "$me",
+        2
+       ],
+       [
+        "call",
+        "loseDom",
+        "$me",
+        1
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "ops"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "ctlT"
+        ],
+        0
+       ]
+      ],
+      "prompt": "Sacrifice which operative?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "label": "Written in Blood"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "contract-notary",
@@ -5142,7 +5209,7 @@
   "keywords": [
    "occultist"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "the-lesser-bargain",
@@ -5157,7 +5224,103 @@
   "keywords": [
    "pact"
   ],
-  "ready": 0
+  "attach": 1,
+  "bearerKw": "occultist",
+  "abilities": [
+   {
+    "on": "cleanup",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "?",
+        [
+         ">=",
+         [
+          "call",
+          "avail",
+          "$me"
+         ],
+         1
+        ],
+        [
+         "lit",
+         [
+          "Pay 1 Influence",
+          "Take 1 damage"
+         ]
+        ],
+        [
+         "lit",
+         [
+          "Take 1 damage"
+         ]
+        ]
+       ],
+       "as": "$y",
+       "prompt": "The Lesser Bargain: pay the obligation?",
+       "min": 1,
+       "max": 1
+      }
+     ],
+     [
+      "if",
+      [
+       "=",
+       "$y",
+       "Pay 1 Influence"
+      ],
+      [
+       [
+        "call",
+        "spend",
+        "$me",
+        1
+       ],
+       [
+        "emit",
+        "pactPaid",
+        {
+         "p": "$me",
+         "n": 1
+        }
+       ]
+      ],
+      [
+       [
+        "call",
+        "hurt",
+        [
+         "get",
+         "$self",
+         "bearer"
+        ],
+        1
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "unpaid-debt",
@@ -5169,7 +5332,122 @@
   "text": "An opposing operative joining this mission gets -3 Will; after mission, its controller draws a card.",
   "archetype": "Infernal Pact",
   "cost": 2,
-  "ready": 0
+  "resp": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "if",
+        [
+         "and",
+         [
+          ">",
+          [
+           "get",
+           "game",
+           "mp"
+          ],
+          0
+         ],
+         [
+          "=",
+          [
+           "get",
+           "game",
+           "ma"
+          ],
+          3
+         ]
+        ],
+        [
+         [
+          "inc",
+          "$t",
+          "mb",
+          -3
+         ]
+        ]
+       ],
+       [
+        "set",
+        "$t",
+        "drawAfter",
+        1
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$opp",
+        "ops"
+       ],
+       [
+        "or",
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "atk"
+         ],
+         1
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "dfn"
+         ],
+         1
+        ]
+       ]
+      ],
+      "prompt": "Which opposing operative gets -3 Will?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "req": [
+     {
+      "if": [
+       ">",
+       [
+        "get",
+        "game",
+        "mp"
+       ],
+       0
+      ],
+      "why": "Only during a mission"
+     }
+    ],
+    "label": "Unpaid Debt"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "infernal-benefactor",
@@ -5188,7 +5466,129 @@
   "keywords": [
    "demon"
   ],
-  "ready": 0
+  "deploy": [
+   [
+    "draw",
+    "$me",
+    2
+   ],
+   [
+    "choose",
+    {
+     "from": [
+      "?",
+      [
+       ">",
+       [
+        "count",
+        [
+         "filter",
+         [
+          "filter",
+          [
+           "cards",
+           "$me",
+           "ops"
+          ],
+          [
+           "=",
+           [
+            "get",
+            "$it",
+            "ctlT"
+           ],
+           0
+          ]
+         ],
+         [
+          "!=",
+          "$it",
+          "$self"
+         ]
+        ]
+       ],
+       0
+      ],
+      [
+       "lit",
+       [
+        "Discard two cards",
+        "Sacrifice another operative"
+       ]
+      ],
+      [
+       "lit",
+       [
+        "Discard two cards"
+       ]
+      ]
+     ],
+     "as": "$y",
+     "prompt": "Infernal Benefactor: discard two cards, or sacrifice another operative?",
+     "min": 1,
+     "max": 1
+    }
+   ],
+   [
+    "if",
+    [
+     "=",
+     "$y",
+     "Discard two cards"
+    ],
+    [
+     [
+      "call",
+      "discardN",
+      "$me",
+      2
+     ]
+    ],
+    [
+     [
+      "choose",
+      {
+       "from": [
+        "filter",
+        [
+         "filter",
+         [
+          "cards",
+          "$me",
+          "ops"
+         ],
+         [
+          "=",
+          [
+           "get",
+           "$it",
+           "ctlT"
+          ],
+          0
+         ]
+        ],
+        [
+         "!=",
+         "$it",
+         "$self"
+        ]
+       ],
+       "as": "$v",
+       "prompt": "Sacrifice which operative?",
+       "min": 1,
+       "max": 1
+      }
+     ],
+     [
+      "call",
+      "sacrifice",
+      "$v"
+     ]
+    ]
+   ]
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "the-price-of-dominion",
@@ -5200,7 +5600,92 @@
   "text": "Gain 4 temporary Influence and ready two Occultists; sacrifice one of them at Cleanup.",
   "archetype": "Infernal Pact",
   "cost": 4,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "call",
+        "gainTmp",
+        "$me",
+        4
+       ],
+       [
+        "choose",
+        {
+         "from": [
+          "filter",
+          [
+           "filter",
+           [
+            "cards",
+            "$me",
+            "ops"
+           ],
+           [
+            "has",
+            "$it",
+            "occultist"
+           ]
+          ],
+          [
+           "=",
+           [
+            "get",
+            "$it",
+            "ex"
+           ],
+           1
+          ]
+         ],
+         "as": "$rs",
+         "prompt": "Ready up to two Occultists (one is sacrificed at Cleanup)",
+         "min": 0,
+         "max": 2
+        }
+       ],
+       [
+        "each",
+        "$rs",
+        "$x",
+        [
+         [
+          "set",
+          "$x",
+          "ex",
+          0
+         ],
+         [
+          "set",
+          "$x",
+          "sacCleanup",
+          "$turn"
+         ]
+        ]
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "label": "The Price of Dominion"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "the-devil-s-ledger",
@@ -5212,7 +5697,45 @@
   "text": "Your Pact obligations cost 1 less Influence (minimum 1). Once during your turn, when you spend Influence to pay a Pact obligation, gain 1 Dominance.",
   "archetype": "Infernal Pact",
   "cost": 6,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "pactPaid",
+    "do": [
+     [
+      "call",
+      "gainDom",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$active",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "archivist-of-the-first-seal",
@@ -5231,7 +5754,16 @@
   "keywords": [
    "occultist"
   ],
-  "ready": 0
+  "deploy": [
+   [
+    "call",
+    "scry",
+    "$me",
+    2
+   ]
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "scripture-fragment-ash",
@@ -5246,7 +5778,7 @@
   "keywords": [
    "scripture"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "scripture-fragment-iron",
@@ -5261,7 +5793,7 @@
   "keywords": [
    "scripture"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "scripture-fragment-dawn",
@@ -5276,7 +5808,37 @@
   "keywords": [
    "scripture"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "call",
+      "scry",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "forbidden-translation",
@@ -5288,7 +5850,88 @@
   "text": "Search the top five cards of your deck for a Scripture; put it in hand, rest on bottom in any order.",
   "archetype": "Grand Summoning",
   "cost": 2,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "choose",
+        {
+         "from": [
+          "filter",
+          [
+           "top",
+           "$me",
+           "deck",
+           5
+          ],
+          [
+           "has",
+           "$it",
+           "scripture"
+          ]
+         ],
+         "as": "$v",
+         "prompt": "Forbidden Translation: take which Scripture?",
+         "min": 0,
+         "max": 1
+        }
+       ],
+       [
+        "if",
+        [
+         "isObj",
+         "$v"
+        ],
+        [
+         [
+          "move",
+          "$v",
+          "hand"
+         ]
+        ]
+       ],
+       [
+        "move",
+        [
+         "top",
+         "$me",
+         "deck",
+         [
+          "?",
+          [
+           "isObj",
+           "$v"
+          ],
+          4,
+          5
+         ]
+        ],
+        "deck"
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "label": "Forbidden Translation"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "the-seventh-circle",
@@ -5303,7 +5946,150 @@
   "keywords": [
    "ritual"
   ],
-  "ready": 0
+  "abil": [
+   {
+    "label": "Exhaust two Occultists: 2 Influence for Rituals and Scriptures this turn",
+    "phases": [
+     "development"
+    ],
+    "do": [
+     [
+      "each",
+      "$t",
+      "$x",
+      [
+       [
+        "set",
+        "$x",
+        "ex",
+        1
+       ]
+      ]
+     ],
+     [
+      "set",
+      "$me",
+      "r7",
+      2
+     ],
+     [
+      "set",
+      "$me",
+      "r7T",
+      "$turn"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "has",
+         "$it",
+         "occultist"
+        ]
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "ex"
+        ],
+        0
+       ]
+      ],
+      "prompt": "Exhaust two Occultists",
+      "min": 2,
+      "max": 2
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "abilities": [
+   {
+    "on": "played",
+    "do": [
+     [
+      "set",
+      "$me",
+      "r7",
+      [
+       "max",
+       0,
+       [
+        "-",
+        [
+         "get",
+         "$me",
+         "r7"
+        ],
+        [
+         "get",
+         "$e.c",
+         "cost"
+        ]
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "and",
+      [
+       "or",
+       [
+        "has",
+        "$e.c",
+        "ritual"
+       ],
+       [
+        "has",
+        "$e.c",
+        "scripture"
+       ]
+      ],
+      [
+       "=",
+       [
+        "get",
+        "$me",
+        "r7T"
+       ],
+       "$turn"
+      ]
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "rite-of-the-broken-seal",
@@ -5315,7 +6101,71 @@
   "text": "Will mission: on success, ready a Ritual Facility and gain 2 Dominance if you control three different Scriptures.",
   "archetype": "Grand Summoning",
   "cost": 3,
-  "ready": 0
+  "mattr": 3,
+  "mop": [
+   {
+    "label": "Rite of the Broken Seal (Will mission)",
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "list",
+       "$opp"
+      ],
+      "prompt": "Target: the opposing Headquarters",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "do": []
+   }
+  ],
+  "succ": [
+   [
+    "if",
+    [
+     ">=",
+     [
+      "count",
+      [
+       "distinct",
+       [
+        "map",
+        [
+         "filter",
+         [
+          "cards",
+          "$me",
+          "gear"
+         ],
+         [
+          "has",
+          "$it",
+          "scripture"
+         ]
+        ],
+        [
+         "get",
+         "$it",
+         "card"
+        ]
+       ]
+      ]
+     ],
+     3
+    ],
+    [
+     [
+      "call",
+      "gainDom",
+      "$me",
+      2
+     ]
+    ]
+   ]
+  ],
+  "ready": 1,
+  "hasSucc": 1
  },
  {
   "id": "the-unwritten-gospel",
@@ -5330,7 +6180,72 @@
   "keywords": [
    "scripture"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "lit",
+        [
+         "Ash",
+         "Iron",
+         "Dawn"
+        ]
+       ],
+       "as": "$r",
+       "prompt": "The Unwritten Gospel: which Scripture designation this turn?",
+       "min": 1,
+       "max": 1
+      }
+     ],
+     [
+      "set",
+      "$self",
+      "gospel",
+      [
+       "?",
+       [
+        "=",
+        "$r",
+        "Ash"
+       ],
+       1,
+       [
+        "?",
+        [
+         "=",
+         "$r",
+         "Iron"
+        ],
+        2,
+        3
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "lodge-steward",
@@ -5346,7 +6261,66 @@
   "trade": 2,
   "will": 1,
   "dur": 2,
-  "ready": 0
+  "deploy": [
+   [
+    "choose",
+    {
+     "from": [
+      "?",
+      [
+       ">=",
+       [
+        "call",
+        "avail",
+        "$me"
+       ],
+       1
+      ],
+      [
+       "lit",
+       [
+        "Pay 1: draw, then discard",
+        "No"
+       ]
+      ],
+      [
+       "lit",
+       [
+        "No"
+       ]
+      ]
+     ],
+     "as": "$y",
+     "prompt": "Lodge Steward",
+     "min": 1,
+     "max": 1
+    }
+   ],
+   [
+    "if",
+    [
+     "=",
+     "$y",
+     "Pay 1: draw, then discard"
+    ],
+    [
+     [
+      "call",
+      "spend",
+      "$me",
+      1
+     ],
+     [
+      "call",
+      "loot",
+      "$me",
+      1
+     ]
+    ]
+   ]
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "hereditary-patron",
@@ -5362,7 +6336,50 @@
   "trade": 3,
   "will": 2,
   "dur": 2,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "played",
+    "do": [
+     [
+      "call",
+      "gainTmp",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      [
+       "get",
+       "$e.c",
+       "type"
+      ],
+      "facility"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "private-lodge",
@@ -5374,7 +6391,98 @@
   "text": "Once per turn, an Occultist you control gains +1 Tradecraft during a mission.",
   "archetype": "Inner Lodge",
   "cost": 2,
-  "ready": 0
+  "rabil": [
+   {
+    "label": "An Occultist gets +1 Tradecraft in this mission",
+    "phases": [
+     "respond"
+    ],
+    "do": [
+     [
+      "inc",
+      "$t",
+      "mb",
+      1
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       "and",
+       [
+        ">",
+        [
+         "get",
+         "game",
+         "mp"
+        ],
+        0
+       ],
+       [
+        "=",
+        [
+         "get",
+         "game",
+         "ma"
+        ],
+        2
+       ]
+      ],
+      "why": "Only in a Tradecraft mission"
+     }
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "has",
+         "$it",
+         "occultist"
+        ]
+       ],
+       [
+        "or",
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "atk"
+         ],
+         1
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "dfn"
+         ],
+         1
+        ]
+       ]
+      ],
+      "prompt": "Which Occultist?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "masonic-favor",
@@ -5386,7 +6494,229 @@
   "text": "Prevent an opposing card from targeting your Facility this mission unless its controller pays 2.",
   "archetype": "Inner Lodge",
   "cost": 1,
-  "ready": 0
+  "resp": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "choose",
+        {
+         "from": [
+          "?",
+          [
+           ">=",
+           [
+            "call",
+            "avail",
+            [
+             "nth",
+             [
+              "players"
+             ],
+             [
+              "-",
+              [
+               "get",
+               "game",
+               "mp"
+              ],
+              1
+             ]
+            ]
+           ],
+           2
+          ],
+          [
+           "lit",
+           [
+            "Pay 2",
+            "Cancel the mission"
+           ]
+          ],
+          [
+           "lit",
+           [
+            "Cancel the mission"
+           ]
+          ]
+         ],
+         "as": "$y",
+         "prompt": "Masonic Favor: pay 2 or your mission is cancelled",
+         "min": 1,
+         "max": 1,
+         "who": [
+          "nth",
+          [
+           "players"
+          ],
+          [
+           "-",
+           [
+            "get",
+            "game",
+            "mp"
+           ],
+           1
+          ]
+         ]
+        }
+       ],
+       [
+        "if",
+        [
+         "=",
+         "$y",
+         "Pay 2"
+        ],
+        [
+         [
+          "call",
+          "spend",
+          [
+           "nth",
+           [
+            "players"
+           ],
+           [
+            "-",
+            [
+             "get",
+             "game",
+             "mp"
+            ],
+            1
+           ]
+          ],
+          2
+         ]
+        ],
+        [
+         [
+          "set",
+          "game",
+          "mcan",
+          1
+         ],
+         [
+          "emit",
+          "missionCancelled",
+          {
+           "by": "$me"
+          }
+         ]
+        ]
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       "and",
+       [
+        "and",
+        [
+         ">",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         0
+        ],
+        [
+         "!=",
+         [
+          "nth",
+          [
+           "players"
+          ],
+          [
+           "-",
+           [
+            "get",
+            "game",
+            "mp"
+           ],
+           1
+          ]
+         ],
+         "$me"
+        ]
+       ],
+       [
+        "=",
+        [
+         "get",
+         [
+          "first",
+          [
+           "filter",
+           [
+            "concat",
+            [
+             "concat",
+             [
+              "cards",
+              "*",
+              "ops"
+             ],
+             [
+              "cards",
+              "*",
+              "sites"
+             ],
+             [
+              "cards",
+              "*",
+              "gear"
+             ]
+            ],
+            [
+             "cards",
+             "*",
+             "agenda"
+            ]
+           ],
+           [
+            "=",
+            [
+             "get",
+             "$it",
+             "tgt"
+            ],
+            1
+           ]
+          ]
+         ],
+         "type"
+        ],
+        "facility"
+       ]
+      ],
+      "why": "Only against a mission targeting your Facility"
+     }
+    ],
+    "label": "Masonic Favor"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "senior-adept",
@@ -5405,7 +6735,62 @@
   "keywords": [
    "occultist"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "played",
+    "do": [
+     [
+      "call",
+      "scry",
+      "$me",
+      1
+     ],
+     [
+      "if",
+      [
+       "has",
+       "$e.c",
+       "scripture"
+      ],
+      [
+       [
+        "call",
+        "loot",
+        "$me",
+        1
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      [
+       "get",
+       "$e.c",
+       "type"
+      ],
+      "asset"
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "the-patronage-list",
@@ -5417,7 +6802,50 @@
   "text": "Once per turn, when you deploy an operative costing 3 or more, gain 1 temporary Influence.",
   "archetype": "Inner Lodge",
   "cost": 3,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "deployed",
+    "do": [
+     [
+      "call",
+      "gainTmp",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.type",
+      "operative"
+     ],
+     [
+      ">=",
+      [
+       "get",
+       "$e.c",
+       "cost"
+      ],
+      3
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "grand-master-of-the-lodge",
@@ -5438,7 +6866,140 @@
    "occultist",
    "unique"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionDeclared",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "filter",
+        [
+         "filter",
+         [
+          "cards",
+          "*",
+          "ops"
+         ],
+         [
+          "=",
+          [
+           "get",
+           "$it",
+           "atk"
+          ],
+          1
+         ]
+        ],
+        [
+         "!=",
+         "$it",
+         "$self"
+        ]
+       ],
+       "as": "$v",
+       "prompt": "Grand Master: which other operative gets +2 Tradecraft?",
+       "min": 0,
+       "max": 1
+      }
+     ],
+     [
+      "if",
+      [
+       "isObj",
+       "$v"
+      ],
+      [
+       [
+        "inc",
+        "$v",
+        "mb",
+        2
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.kind",
+      2
+     ],
+     [
+      "=",
+      [
+       "get",
+       "$self",
+       "atk"
+      ],
+      1
+     ]
+    ]
+   },
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "call",
+      "gainDom",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      2
+     ],
+     [
+      "=",
+      [
+       "get",
+       "$self",
+       "atk"
+      ],
+      1
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "the-invisible-chapter",
@@ -5450,7 +7011,149 @@
   "text": "Once per turn, after your first successful mission, play a Facility costing 3 or less from hand for 0 Influence.",
   "archetype": "Inner Lodge",
   "cost": 6,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "hand"
+        ],
+        [
+         "and",
+         [
+          "=",
+          [
+           "get",
+           "$it",
+           "type"
+          ],
+          "facility"
+         ],
+         [
+          "<=",
+          [
+           "get",
+           "$it",
+           "cost"
+          ],
+          3
+         ],
+         [
+          "=",
+          [
+           "get",
+           "$it",
+           "ready"
+          ],
+          1
+         ]
+        ]
+       ],
+       "as": "$f",
+       "prompt": "The Invisible Chapter: play a Facility (cost 3 or less) for free?",
+       "min": 0,
+       "max": 1
+      }
+     ],
+     [
+      "if",
+      [
+       "isObj",
+       "$f"
+      ],
+      [
+       [
+        "move",
+        "$f",
+        "sites",
+        {
+         "as": "$c"
+        }
+       ],
+       [
+        "set",
+        "$c",
+        "newT",
+        "$turn"
+       ],
+       [
+        "call",
+        "played",
+        "$c",
+        "$me"
+       ],
+       [
+        "if",
+        [
+         "=",
+         [
+          "get",
+          "$c",
+          "hasDeploy"
+         ],
+         1
+        ],
+        [
+         [
+          "run",
+          "$c",
+          "deploy"
+         ]
+        ]
+       ],
+       [
+        "emit",
+        "deployed",
+        {
+         "c": "$c",
+         "p": "$me",
+         "card": [
+          "get",
+          "$c",
+          "card"
+         ],
+         "type": "facility"
+        }
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "lesser-imp",
@@ -5469,7 +7172,7 @@
   "keywords": [
    "demon"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "pact-summoner",
@@ -5488,7 +7191,7 @@
   "keywords": [
    "occultist"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "circle-of-summoning",
@@ -5503,7 +7206,41 @@
   "keywords": [
    "ritual"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "deployed",
+    "do": [
+     [
+      "inc",
+      "$e.c",
+      "cF",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "has",
+      "$e.c",
+      "demon"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "hellfire-lash",
@@ -5515,7 +7252,164 @@
   "text": "An attacking Demon gets +2 Force; deal 1 damage to one defender.",
   "archetype": "Demonic Legions",
   "cost": 1,
-  "ready": 0
+  "resp": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "inc",
+        "$t",
+        "mb",
+        2
+       ],
+       [
+        "choose",
+        {
+         "from": [
+          "filter",
+          [
+           "cards",
+           "*",
+           "ops"
+          ],
+          [
+           "=",
+           [
+            "get",
+            "$it",
+            "dfn"
+           ],
+           1
+          ]
+         ],
+         "as": "$v",
+         "prompt": "Hellfire Lash: 1 damage to which defender?",
+         "min": 0,
+         "max": 1
+        }
+       ],
+       [
+        "call",
+        "hurt",
+        "$v",
+        1
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "has",
+         "$it",
+         "demon"
+        ]
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "atk"
+        ],
+        1
+       ]
+      ],
+      "prompt": "Which attacking Demon?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "req": [
+     {
+      "if": [
+       "and",
+       [
+        "and",
+        [
+         ">",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         0
+        ],
+        [
+         "=",
+         [
+          "nth",
+          [
+           "players"
+          ],
+          [
+           "-",
+           [
+            "get",
+            "game",
+            "mp"
+           ],
+           1
+          ]
+         ],
+         "$me"
+        ]
+       ],
+       [
+        "and",
+        [
+         ">",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         0
+        ],
+        [
+         "=",
+         [
+          "get",
+          "game",
+          "ma"
+         ],
+         1
+        ]
+       ]
+      ],
+      "why": "Only in your Force mission"
+     }
+    ],
+    "label": "Hellfire Lash"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "bound-fiend",
@@ -5534,7 +7428,7 @@
   "keywords": [
    "demon"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "chain-of-command",
@@ -5549,7 +7443,9 @@
   "keywords": [
    "loadout"
   ],
-  "ready": 0
+  "attach": 1,
+  "bearerKw": "occultist",
+  "ready": 1
  },
  {
   "id": "furnace-of-the-pit",
@@ -5568,7 +7464,91 @@
   "keywords": [
    "demon"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "each",
+      [
+       "filter",
+       [
+        "filter",
+        [
+         "cards",
+         "*",
+         "ops"
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "dfn"
+         ],
+         1
+        ]
+       ],
+       [
+        "!=",
+        [
+         "get",
+         "$it",
+         "controller"
+        ],
+        "$me"
+       ]
+      ],
+      "$x",
+      [
+       [
+        "call",
+        "hurt",
+        "$x",
+        1
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      1
+     ],
+     [
+      "=",
+      [
+       "get",
+       "$self",
+       "atk"
+      ],
+      1
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "infernal-muster",
@@ -5580,7 +7560,115 @@
   "text": "Put up to two Demon operatives of printed cost 3 or less from your discard pile into play exhausted. At your next Cleanup, exile any of those Demons still in play; they do not count as sacrificed. Each Demon that leaves play before then is exiled instead of entering another zone.",
   "archetype": "Demonic Legions",
   "cost": 5,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "choose",
+        {
+         "from": [
+          "filter",
+          [
+           "cards",
+           "$me",
+           "grave"
+          ],
+          [
+           "and",
+           [
+            "has",
+            "$it",
+            "demon"
+           ],
+           [
+            "=",
+            [
+             "get",
+             "$it",
+             "type"
+            ],
+            "operative"
+           ],
+           [
+            "<=",
+            [
+             "get",
+             "$it",
+             "cost"
+            ],
+            3
+           ]
+          ]
+         ],
+         "as": "$ds",
+         "prompt": "Put up to two Demons into play",
+         "min": 0,
+         "max": 2
+        }
+       ],
+       [
+        "each",
+        "$ds",
+        "$x",
+        [
+         [
+          "move",
+          "$x",
+          "ops",
+          {
+           "as": "$n"
+          }
+         ],
+         [
+          "set",
+          "$n",
+          "ex",
+          1
+         ],
+         [
+          "set",
+          "$n",
+          "newT",
+          "$turn"
+         ],
+         [
+          "set",
+          "$n",
+          "exileOnLeave",
+          1
+         ],
+         [
+          "set",
+          "$n",
+          "musterT",
+          "$turn"
+         ]
+        ]
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "label": "Infernal Muster"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "junior-broker",
@@ -9033,70 +11121,67 @@
       ],
       [
        [
-        "if",
-        [
-         ">=",
-         [
-          "call",
-          "avail",
+        "choose",
+        {
+         "from": [
+          "?",
           [
-           "nth",
+           ">=",
            [
-            "players"
-           ],
-           [
-            "-",
+            "call",
+            "avail",
             [
-             "get",
-             "game",
-             "mp"
-            ],
-            1
+             "nth",
+             [
+              "players"
+             ],
+             [
+              "-",
+              [
+               "get",
+               "game",
+               "mp"
+              ],
+              1
+             ]
+            ]
+           ],
+           1
+          ],
+          [
+           "lit",
+           [
+            "Pay 1",
+            "Cancel the mission"
+           ]
+          ],
+          [
+           "lit",
+           [
+            "Cancel the mission"
            ]
           ]
          ],
-         1
-        ],
-        [
-         [
-          "choose",
-          {
-           "from": [
-            "lit",
-            [
-             "Pay 1",
-             "Cancel the mission"
-            ]
+         "as": "$y",
+         "prompt": "False Alarm: pay 1 or cancel your mission?",
+         "min": 1,
+         "max": 1,
+         "who": [
+          "nth",
+          [
+           "players"
+          ],
+          [
+           "-",
+           [
+            "get",
+            "game",
+            "mp"
            ],
-           "as": "$y",
-           "prompt": "False Alarm: pay 1 or cancel your mission?",
-           "min": 1,
-           "max": 1,
-           "who": [
-            "nth",
-            [
-             "players"
-            ],
-            [
-             "-",
-             [
-              "get",
-              "game",
-              "mp"
-             ],
-             1
-            ]
-           ]
-          }
+           1
+          ]
          ]
-        ],
-        [
-         [
-          "let",
-          "$y",
-          "Cancel the mission"
-         ]
-        ]
+        }
        ],
        [
         "if",
@@ -9998,70 +12083,67 @@
       ],
       [
        [
-        "if",
-        [
-         ">=",
-         [
-          "call",
-          "avail",
+        "choose",
+        {
+         "from": [
+          "?",
           [
-           "nth",
+           ">=",
            [
-            "players"
-           ],
-           [
-            "-",
+            "call",
+            "avail",
             [
-             "get",
-             "game",
-             "mp"
-            ],
-            1
+             "nth",
+             [
+              "players"
+             ],
+             [
+              "-",
+              [
+               "get",
+               "game",
+               "mp"
+              ],
+              1
+             ]
+            ]
+           ],
+           2
+          ],
+          [
+           "lit",
+           [
+            "Pay 2",
+            "Cancel the mission"
+           ]
+          ],
+          [
+           "lit",
+           [
+            "Cancel the mission"
            ]
           ]
          ],
-         2
-        ],
-        [
-         [
-          "choose",
-          {
-           "from": [
-            "lit",
-            [
-             "Pay 2",
-             "Cancel the mission"
-            ]
+         "as": "$y",
+         "prompt": "Emergency Lockdown: pay 2 or cancel your mission?",
+         "min": 1,
+         "max": 1,
+         "who": [
+          "nth",
+          [
+           "players"
+          ],
+          [
+           "-",
+           [
+            "get",
+            "game",
+            "mp"
            ],
-           "as": "$y",
-           "prompt": "Emergency Lockdown: pay 2 or cancel your mission?",
-           "min": 1,
-           "max": 1,
-           "who": [
-            "nth",
-            [
-             "players"
-            ],
-            [
-             "-",
-             [
-              "get",
-              "game",
-              "mp"
-             ],
-             1
-            ]
-           ]
-          }
+           1
+          ]
          ]
-        ],
-        [
-         [
-          "let",
-          "$y",
-          "Cancel the mission"
-         ]
-        ]
+        }
        ],
        [
         "if",
@@ -13410,7 +15492,46 @@
   "archetype": "Headquarters",
   "fno": 3,
   "security": 2,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "played",
+    "do": [
+     [
+      "call",
+      "gainTmp",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "has",
+      "$e.c",
+      "scripture"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "the-central-committee",
@@ -14784,7 +16905,79 @@
   "text": "Tier I. Complete: Control two Scriptures with different names and succeed at a Will mission. Immediate: Draw one card and gain 1 temporary Influence. Ongoing: Your first Scripture or Pact each turn costs 1 less (minimum 1).",
   "archetype": "Agenda",
   "tier": "I",
-  "ready": 0
+  "agenda": [
+   {
+    "label": "Complete this Agenda",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "req": [
+     {
+      "if": [
+       ">=",
+       [
+        "count",
+        [
+         "distinct",
+         [
+          "map",
+          [
+           "filter",
+           [
+            "cards",
+            "$me",
+            "gear"
+           ],
+           [
+            "has",
+            "$it",
+            "scripture"
+           ]
+          ],
+          [
+           "get",
+           "$it",
+           "card"
+          ]
+         ]
+        ]
+       ],
+       2
+      ],
+      "why": "Control two Scriptures with different names"
+     },
+     {
+      "if": [
+       "=",
+       [
+        "get",
+        "$me",
+        "sucWill"
+       ],
+       1
+      ],
+      "why": "Succeed at a Will mission this turn"
+     }
+    ],
+    "do": []
+   }
+  ],
+  "imm": [
+   [
+    "draw",
+    "$me",
+    1
+   ],
+   [
+    "call",
+    "gainTmp",
+    "$me",
+    1
+   ]
+  ],
+  "ready": 1,
+  "hasImm": 1
  },
  {
   "id": "covenant-of-the-fallen",
@@ -14796,7 +16989,91 @@
   "text": "Tier II. Complete: Control one Pact, control two Occultists, and have sacrificed two operatives this game. Immediate: Gain 2 Dominance and draw one card. Ongoing: When you pay a Pact obligation, gain 1 temporary Influence (maximum 2 per turn).",
   "archetype": "Agenda",
   "tier": "II",
-  "ready": 0
+  "agenda": [
+   {
+    "label": "Complete this Agenda",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "req": [
+     {
+      "if": [
+       ">",
+       [
+        "count",
+        [
+         "filter",
+         [
+          "cards",
+          "$me",
+          "gear"
+         ],
+         [
+          "has",
+          "$it",
+          "pact"
+         ]
+        ]
+       ],
+       0
+      ],
+      "why": "Control a Pact"
+     },
+     {
+      "if": [
+       ">=",
+       [
+        "count",
+        [
+         "filter",
+         [
+          "cards",
+          "$me",
+          "ops"
+         ],
+         [
+          "has",
+          "$it",
+          "occultist"
+         ]
+        ]
+       ],
+       2
+      ],
+      "why": "Control two Occultists"
+     },
+     {
+      "if": [
+       ">=",
+       [
+        "get",
+        "$me",
+        "sacN"
+       ],
+       2
+      ],
+      "why": "Have sacrificed two operatives this game"
+     }
+    ],
+    "do": []
+   }
+  ],
+  "imm": [
+   [
+    "call",
+    "gainDom",
+    "$me",
+    2
+   ],
+   [
+    "draw",
+    "$me",
+    1
+   ]
+  ],
+  "ready": 1,
+  "hasImm": 1
  },
  {
   "id": "the-morning-star-descends",
@@ -14808,7 +17085,135 @@
   "text": "Tier III. Complete during Operations: Control three Scripture Assets with different printed names, one Ritual Facility, and three Occultists; spend 8 Influence. Immediate: Create a Morning Star Demon token (Force 8, Tradecraft 6, Will 8, durability 8) ready; it may join a mission this turn. Ongoing: You may initiate one additional mission each turn, to a maximum of three total. Once each turn, when your card eliminates an opposing operative, gain 1 Dominance.",
   "archetype": "Agenda",
   "tier": "III",
-  "ready": 0
+  "agenda": [
+   {
+    "label": "Complete this Agenda",
+    "phases": [
+     "operations"
+    ],
+    "req": [
+     {
+      "if": [
+       ">=",
+       [
+        "count",
+        [
+         "distinct",
+         [
+          "map",
+          [
+           "filter",
+           [
+            "cards",
+            "$me",
+            "gear"
+           ],
+           [
+            "has",
+            "$it",
+            "scripture"
+           ]
+          ],
+          [
+           "get",
+           "$it",
+           "card"
+          ]
+         ]
+        ]
+       ],
+       3
+      ],
+      "why": "Control three Scriptures with different names"
+     },
+     {
+      "if": [
+       ">",
+       [
+        "count",
+        [
+         "filter",
+         [
+          "cards",
+          "$me",
+          "sites"
+         ],
+         [
+          "has",
+          "$it",
+          "ritual"
+         ]
+        ]
+       ],
+       0
+      ],
+      "why": "Control a Ritual Facility"
+     },
+     {
+      "if": [
+       ">=",
+       [
+        "count",
+        [
+         "filter",
+         [
+          "cards",
+          "$me",
+          "ops"
+         ],
+         [
+          "has",
+          "$it",
+          "occultist"
+         ]
+        ]
+       ],
+       3
+      ],
+      "why": "Control three Occultists"
+     },
+     {
+      "if": [
+       ">=",
+       [
+        "call",
+        "avail",
+        "$me"
+       ],
+       8
+      ],
+      "why": "Spend 8 Influence"
+     }
+    ],
+    "cost": [
+     [
+      "call",
+      "spend",
+      "$me",
+      8
+     ]
+    ],
+    "do": []
+   }
+  ],
+  "imm": [
+   [
+    "call",
+    "makeTokens",
+    "$me",
+    "tok-morning-star",
+    1,
+    1
+   ],
+   [
+    "set",
+    "$me",
+    "attMax",
+    3
+   ]
+  ],
+  "ready": 1,
+  "hasImm": 1
  },
  {
   "id": "infernal-legislature",
@@ -14820,7 +17225,155 @@
   "text": "Tier II. Complete: Control one Pact, one Ritual Facility, and three Occultists; succeed at Subvert twice across consecutive turns. Immediate: Disable one opposing Facility. Ongoing: The opponent’s first Response to each of your Will missions costs 1 additional Influence.",
   "archetype": "Agenda",
   "tier": "II",
-  "ready": 0
+  "agenda": [
+   {
+    "label": "Complete this Agenda",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "req": [
+     {
+      "if": [
+       ">",
+       [
+        "count",
+        [
+         "filter",
+         [
+          "cards",
+          "$me",
+          "gear"
+         ],
+         [
+          "has",
+          "$it",
+          "pact"
+         ]
+        ]
+       ],
+       0
+      ],
+      "why": "Control a Pact"
+     },
+     {
+      "if": [
+       ">",
+       [
+        "count",
+        [
+         "filter",
+         [
+          "cards",
+          "$me",
+          "sites"
+         ],
+         [
+          "has",
+          "$it",
+          "ritual"
+         ]
+        ]
+       ],
+       0
+      ],
+      "why": "Control a Ritual Facility"
+     },
+     {
+      "if": [
+       ">=",
+       [
+        "count",
+        [
+         "filter",
+         [
+          "cards",
+          "$me",
+          "ops"
+         ],
+         [
+          "has",
+          "$it",
+          "occultist"
+         ]
+        ]
+       ],
+       3
+      ],
+      "why": "Control three Occultists"
+     },
+     {
+      "if": [
+       ">=",
+       [
+        "?",
+        [
+         "=",
+         [
+          "get",
+          "$me",
+          "sucW"
+         ],
+         1
+        ],
+        [
+         "+",
+         [
+          "get",
+          "$me",
+          "stW"
+         ],
+         1
+        ],
+        [
+         "get",
+         "$me",
+         "stW"
+        ]
+       ],
+       2
+      ],
+      "why": "Succeed at Subvert on two consecutive turns"
+     }
+    ],
+    "do": []
+   }
+  ],
+  "imm": [
+   [
+    "choose",
+    {
+     "from": [
+      "filter",
+      [
+       "cards",
+       "$opp",
+       "sites"
+      ],
+      [
+       "=",
+       [
+        "get",
+        "$it",
+        "type"
+       ],
+       "facility"
+      ]
+     ],
+     "as": "$f",
+     "prompt": "Infernal Legislature: Disable which opposing Facility?",
+     "min": 0,
+     "max": 1
+    }
+   ],
+   [
+    "call",
+    "disable",
+    "$f"
+   ]
+  ],
+  "ready": 1,
+  "hasImm": 1
  },
  {
   "id": "the-invisible-hand",
@@ -16222,7 +18775,76 @@
   "keywords": [
    "occultist"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "played",
+    "do": [
+     [
+      "call",
+      "scry",
+      "$me",
+      2
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "or",
+      [
+       "has",
+       "$e.c",
+       "scripture"
+      ],
+      [
+       "has",
+       "$e.c",
+       "pact"
+      ]
+     ]
+    ]
+   },
+   {
+    "on": "sacrificed",
+    "do": [
+     [
+      "call",
+      "loot",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "=",
+     "$e.p",
+     [
+      "get",
+      "$self",
+      "controller"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    },
+    "optional": true,
+    "text": "Draw, then discard?"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "the-ashen-reliquary",
@@ -16237,7 +18859,161 @@
   "keywords": [
    "artifact"
   ],
-  "ready": 0
+  "deploy": [
+   [
+    "choose",
+    {
+     "from": [
+      "filter",
+      [
+       "cards",
+       "$me",
+       "grave"
+      ],
+      [
+       "and",
+       [
+        "or",
+        [
+         "has",
+         "$it",
+         "pact"
+        ],
+        [
+         "has",
+         "$it",
+         "scripture"
+        ]
+       ],
+       [
+        "<=",
+        [
+         "get",
+         "$it",
+         "cost"
+        ],
+        2
+       ]
+      ]
+     ],
+     "as": "$v",
+     "prompt": "Return which Pact or Scripture (cost 2 or less)?",
+     "min": 0,
+     "max": 1
+    }
+   ],
+   [
+    "if",
+    [
+     "isObj",
+     "$v"
+    ],
+    [
+     [
+      "move",
+      "$v",
+      "hand"
+     ]
+    ]
+   ]
+  ],
+  "abil": [
+   {
+    "label": "Exhaust: your next Ritual Facility or Scripture this turn costs 1 less",
+    "phases": [
+     "development"
+    ],
+    "do": [
+     [
+      "set",
+      "$self",
+      "ex",
+      1
+     ],
+     [
+      "set",
+      "$me",
+      "arT",
+      "$turn"
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       "=",
+       [
+        "get",
+        "$self",
+        "ex"
+       ],
+       0
+      ],
+      "why": "Already exhausted"
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "abilities": [
+   {
+    "on": "played",
+    "do": [
+     [
+      "set",
+      "$me",
+      "arT",
+      0
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "and",
+      [
+       "or",
+       [
+        "has",
+        "$e.c",
+        "ritual"
+       ],
+       [
+        "has",
+        "$e.c",
+        "scripture"
+       ]
+      ],
+      [
+       "=",
+       [
+        "get",
+        "$me",
+        "arT"
+       ],
+       "$turn"
+      ]
+     ]
+    ]
+   }
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "the-chapel-beneath-st-bartholomew-s",
@@ -16252,7 +19028,151 @@
   "keywords": [
    "ritual"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionDeclared",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "has",
+         "$it",
+         "token"
+        ]
+       ],
+       "as": "$tk",
+       "prompt": "The Chapel: sacrifice a token to add Will?",
+       "min": 0,
+       "max": 1
+      }
+     ],
+     [
+      "if",
+      [
+       "isObj",
+       "$tk"
+      ],
+      [
+       [
+        "call",
+        "sacrifice",
+        "$tk"
+       ],
+       [
+        "inc",
+        "game",
+        "am",
+        [
+         "?",
+         [
+          ">",
+          [
+           "count",
+           [
+            "filter",
+            [
+             "cards",
+             "$me",
+             "gear"
+            ],
+            [
+             "has",
+             "$it",
+             "scripture"
+            ]
+           ]
+          ],
+          0
+         ],
+         4,
+         3
+        ]
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.attr",
+      3
+     ],
+     [
+      "any",
+      [
+       "filter",
+       [
+        "cards",
+        "*",
+        "ops"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "atk"
+        ],
+        1
+       ]
+      ],
+      [
+       "has",
+       "$it",
+       "occultist"
+      ]
+     ],
+     [
+      ">",
+      [
+       "count",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "has",
+         "$it",
+         "token"
+        ]
+       ]
+      ],
+      0
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "initiation-at-the-black-stair",
@@ -16264,7 +19184,70 @@
   "text": "Choose an operative. It becomes an Occultist in addition to its other traits until it leaves play. If it was already an Occultist, draw then discard one.",
   "archetype": "Cross-Archetype",
   "cost": 1,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "if",
+        [
+         "has",
+         "$t",
+         "occultist"
+        ],
+        [
+         [
+          "call",
+          "loot",
+          "$me",
+          1
+         ]
+        ],
+        [
+         [
+          "set",
+          "$t",
+          "kw:occultist",
+          1
+         ]
+        ]
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "cards",
+       "*",
+       "ops"
+      ],
+      "prompt": "Which operative is initiated?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "label": "Initiation at the Black Stair"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "the-sixth-translation",
@@ -16276,7 +19259,156 @@
   "text": "When you play a Scripture, put one Study counter here (maximum 3). During your Development, once per turn, remove three Study counters: return an Occultist of printed cost 3 or less from your discard pile to play exhausted. Exile that Occultist instead if it would leave play this turn.",
   "archetype": "Cross-Archetype",
   "cost": 3,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "played",
+    "do": [
+     [
+      "set",
+      "$self",
+      "prog",
+      [
+       "min",
+       3,
+       [
+        "+",
+        [
+         "get",
+         "$self",
+         "prog"
+        ],
+        1
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "has",
+      "$e.c",
+      "scripture"
+     ]
+    ]
+   }
+  ],
+  "abil": [
+   {
+    "label": "Remove three Study counters: return an Occultist (cost 3 or less) to play",
+    "phases": [
+     "development"
+    ],
+    "do": [
+     [
+      "inc",
+      "$self",
+      "prog",
+      -3
+     ],
+     [
+      "move",
+      "$t",
+      "ops",
+      {
+       "as": "$n"
+      }
+     ],
+     [
+      "set",
+      "$n",
+      "ex",
+      1
+     ],
+     [
+      "set",
+      "$n",
+      "newT",
+      "$turn"
+     ],
+     [
+      "set",
+      "$n",
+      "exileOnLeave",
+      1
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       ">=",
+       [
+        "get",
+        "$self",
+        "prog"
+       ],
+       3
+      ],
+      "why": "Needs three Study counters"
+     }
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "grave"
+       ],
+       [
+        "and",
+        [
+         "has",
+         "$it",
+         "occultist"
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "type"
+         ],
+         "operative"
+        ],
+        [
+         "<=",
+         [
+          "get",
+          "$it",
+          "cost"
+         ],
+         3
+        ]
+       ]
+      ],
+      "prompt": "Return which Occultist?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "marquis-vale-lodge-benefactor",
@@ -16295,7 +19427,81 @@
   "keywords": [
    "occultist"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "call",
+      "gainTmp",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      ">",
+      [
+       "count",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "sites"
+        ],
+        [
+         "has",
+         "$it",
+         "ritual"
+        ]
+       ]
+      ],
+      0
+     ]
+    ]
+   },
+   {
+    "on": "pactPaid",
+    "do": [
+     [
+      "call",
+      "gainDom",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "=",
+     "$e.p",
+     [
+      "get",
+      "$self",
+      "controller"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "the-door-opens-inward",
@@ -16307,7 +19513,92 @@
   "text": "Will mission: on success, return an Artifact or Scripture from discard to hand and gain 1 Dominance; if you sacrificed an operative this turn, gain 2 instead.",
   "archetype": "Cross-Archetype",
   "cost": 3,
-  "ready": 0
+  "mattr": 3,
+  "mop": [
+   {
+    "label": "The Door Opens Inward (Will mission)",
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "list",
+       "$opp"
+      ],
+      "prompt": "Target: the opposing Headquarters",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "do": []
+   }
+  ],
+  "succ": [
+   [
+    "choose",
+    {
+     "from": [
+      "filter",
+      [
+       "cards",
+       "$me",
+       "grave"
+      ],
+      [
+       "or",
+       [
+        "has",
+        "$it",
+        "artifact"
+       ],
+       [
+        "has",
+        "$it",
+        "scripture"
+       ]
+      ]
+     ],
+     "as": "$v",
+     "prompt": "Return which Artifact or Scripture?",
+     "min": 0,
+     "max": 1
+    }
+   ],
+   [
+    "if",
+    [
+     "isObj",
+     "$v"
+    ],
+    [
+     [
+      "move",
+      "$v",
+      "hand"
+     ]
+    ]
+   ],
+   [
+    "call",
+    "gainDom",
+    "$me",
+    [
+     "?",
+     [
+      ">",
+      [
+       "get",
+       "$me",
+       "sacTurn"
+      ],
+      0
+     ],
+     2,
+     1
+    ]
+   ]
+  ],
+  "ready": 1,
+  "hasSucc": 1
  },
  {
   "id": "censer-of-the-unspoken-name",
@@ -16322,7 +19613,129 @@
   "keywords": [
    "loadout"
   ],
-  "ready": 0
+  "attach": 1,
+  "bearerKw": "occultist",
+  "deploy": [
+   [
+    "inc",
+    [
+     "get",
+     "$self",
+     "bearer"
+    ],
+    "cW",
+    2
+   ]
+  ],
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "has",
+         "$it",
+         "token"
+        ]
+       ],
+       "as": "$tk",
+       "prompt": "Censer: sacrifice a token to draw a card?",
+       "min": 0,
+       "max": 1
+      }
+     ],
+     [
+      "if",
+      [
+       "isObj",
+       "$tk"
+      ],
+      [
+       [
+        "call",
+        "sacrifice",
+        "$tk"
+       ],
+       [
+        "draw",
+        "$me",
+        1
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "=",
+      "$e.attr",
+      3
+     ],
+     [
+      "=",
+      [
+       "get",
+       [
+        "get",
+        "$self",
+        "bearer"
+       ],
+       "atk"
+      ],
+      1
+     ],
+     [
+      ">",
+      [
+       "count",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "has",
+         "$it",
+         "token"
+        ]
+       ]
+      ],
+      0
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "deputy-minister-corinne-voss",

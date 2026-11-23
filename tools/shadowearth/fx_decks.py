@@ -25,3 +25,13 @@ DECKS['prendick-starter'] = deck('Prendick Holdings Headquarters', 'Genome Paten
     (2, 'Prendick Biomedicine Annex 14'), (1, 'The Feeding Pens'), (1, 'Venture Consortium'),
     (2, 'Random Splice'), (2, 'Quarterly Earnings'), (2, 'Break Containment'), (2, 'False Credentials'),
     (2, 'Replacement Protocol'), (1, 'Sabotage')])
+
+DECKS['dawnstar-starter'] = deck('Dawn Star Grand Lodge', 'Library of the Unspoken', [
+    (3, 'Ambitious Initiate'), (2, 'Contract Notary'), (3, 'Archivist of the First Seal'), (3, 'Lodge Steward'), (2, 'Hereditary Patron'),
+    (2, 'Senior Adept'), (3, 'Lesser Imp'), (2, 'Pact Summoner'), (3, 'Bound Fiend'), (1, 'Infernal Benefactor'), (1, 'Furnace of the Pit'),
+    (2, 'Archivist of the Eighth Seal'),
+    (2, 'The Lesser Bargain'), (2, 'Scripture Fragment: Ash'), (2, 'Scripture Fragment: Iron'), (2, 'Scripture Fragment: Dawn'),
+    (1, 'Chain of Command'), (1, 'Censer of the Unspoken Name'),
+    (2, 'Circle of Summoning'), (1, 'Private Lodge'),
+    (2, 'Written in Blood'), (2, 'Forbidden Translation'), (2, 'Hellfire Lash'), (1, 'Unpaid Debt'),
+    (1, 'Rite of the Broken Seal'), (2, 'The Door Opens Inward')])

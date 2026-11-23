@@ -178,7 +178,7 @@ proc('gone', ['$o'], [C('detach', '$o'), IF(has('$o', 'token'), [['move', '$o', 
 proc('lookHand', ['$p', '$q'], [SET('$p', 'sawT', 1), emit('lookedHand', to=['list', '$p'], cards=['map', HAND('$q'), g('$it', 'card')], p='$p')])
 proc('eliminate', ['$o'], [IF(isObj('$o'), [SET('game', 'saved', 0), *lib.SAVE, IF(eq(g('game', 'saved'), 0), [
     emit('eliminated', o='$o', card=g('$o', 'card'), owner=g('$o', 'owner'), ctrl=ctrl('$o'), by=g('$o', 'lastBy')), C('gone', '$o')])])])
-proc('sacrifice', ['$o'], [IF(isObj('$o'), [emit('sacrificed', o='$o', card=g('$o', 'card'), p=ctrl('$o')), INC(ctrl('$o'), 'sacN', 1), C('gone', '$o')])])
+proc('sacrifice', ['$o'], [IF(isObj('$o'), [emit('sacrificed', o='$o', card=g('$o', 'card'), p=ctrl('$o')), INC(ctrl('$o'), 'sacN', 1), INC(ctrl('$o'), 'sacTurn', 1), C('gone', '$o')])])
 proc('toHand', ['$o'], [IF(isObj('$o'), [IF(has('$o', 'token'), [C('gone', '$o')], [C('detach', '$o'), ['move', '$o', 'hand']])])])
 proc('discardN', ['$p', '$n'], [LET('$k', mn('$n', cnt(HAND('$p')))), IF(gt('$k', 0), [
     choose(HAND('$p'), '$ds', 'Discard', '$k', '$k', who='$p'), ['move', '$ds', 'grave'], emit('discarded', p='$p', n='$k')])])
@@ -193,7 +193,7 @@ proc('played', ['$c', '$p'], [INC('$p', 'acted', 1),
     INC('$p', ['+', 'pl_', g('$c', 'type')] if False else 'plAny', 1),
     IF(typ('$c', 'operative'), [INC('$p', 'pl_operative', 1)]), IF(typ('$c', 'facility'), [INC('$p', 'pl_facility', 1)]),
     IF(typ('$c', 'asset'), [INC('$p', 'pl_asset', 1), IF(ge(g('$c', 'cost'), 4), [INC('$p', 'bigAssetT', 1)])]), IF(typ('$c', 'project'), [INC('$p', 'pl_project', 1)]),
-    IF(typ('$c', 'operation'), [INC('$p', 'pl_operation', 1)]), IF(typ('$c', 'response'), [INC('$p', 'pl_response', 1)]),
+    IF(typ('$c', 'operation'), [INC('$p', 'pl_operation', 1)]), IF(typ('$c', 'response'), [INC('$p', 'pl_response', 1), IF(IN_MISSION, [INC('$p', 'respM', 1)])]),
     emit('played', c='$c', p='$p', card=g('$c', 'card'), type=g('$c', 'type'))])
 
 # Operations: an opponent's cancel effects get their chance here (set game.ocan to cancel)
@@ -203,7 +203,7 @@ proc('opStart', ['$c'], [SET('game', 'ocan', 0), C('played', '$c', '$me'), LET('
 PRE_DEFEND, AFTER_DEFEND = lib.PRE_DEFEND, lib.AFTER_DEFEND
 proc('startMission', ['$k', '$a', '$t', '$team'], [
     SET('game', 'mk', '$k'), SET('game', 'ma', '$a'), SET('game', 'mp', add(seat('$me'), 1)), SET('game', 'am', 0), SET('game', 'dm', 0),
-    SET('game', 'mcan', 0), SET('game', 'dwill', 0), SET('game', 'hqT', Q(isObj('$t'), 0, 1)), SET('$me', 'mDom', 0), SET('$opp', 'mDom', 0),
+    SET('game', 'mcan', 0), SET('game', 'dwill', 0), SET('game', 'hqT', Q(isObj('$t'), 0, 1)), SET('$me', 'mDom', 0), SET('$opp', 'mDom', 0), SET('$me', 'respM', 0), SET('$opp', 'respM', 0),
     IF(isObj('$t'), [SET('$t', 'tgt', 1)]),
     EACH('$team', '$x', [SET('$x', 'atk', 1), IF(ne(g('$x', 'freeJoin'), '$turn'), [SET('$x', 'ex', 1)])]),
     INC('$me', 'att', 1), INC('$me', 'missT', 1), IF(le('$k', 3), [INC('$me', 'basicT', 1)]),
@@ -273,7 +273,7 @@ proc('refresh', [], [
     EACH(PERMS('$me'), '$x', [IF(lt(g('$x', 'noready'), '$turn'), [SET('$x', 'ex', 0)])]),
     SET('$me', 'cap', mn(LEVERS['MAX_CAP'], add(g('$me', 'cap'), 1))), SET('$me', 'inf', g('$me', 'cap')),
     IF(AND(eq(g('$me', 'turns'), 1), ne(seat('$me'), g('game', 'first'))), [C('gainTmp', '$me', 1)]),
-    *[SET('$me', k, 0) for k in ['att', 'missT', 'basicT', 'facMis', 'bigAssetT', 'sucS', 'sucI', 'sucW', 'sucWill', 'willBest', 'revealedT', 'sawT', 'domT', 'revT', 'scryT', 'acted',
+    *[SET('$me', k, 0) for k in ['att', 'missT', 'basicT', 'facMis', 'bigAssetT', 'sacTurn', 'sucS', 'sucI', 'sucW', 'sucWill', 'willBest', 'revealedT', 'sawT', 'domT', 'revT', 'scryT', 'acted',
                                  'plAny', 'pl_operative', 'pl_facility', 'pl_asset', 'pl_project', 'pl_operation', 'pl_response', 'skipDraw',
                                  'pl_psychic', 'pl_specimen', 'pl_adaptation', 'pl_scripture', 'pl_pact', 'pl_demon', 'pl_cultist', 'pl_institution',
                                  'pl_artifact', 'pl_contractor', 'pl_entity', 'pl_occultist', 'pl_alien', 'pl_ritual', 'pl_scientist', 'pl_loadout']],
@@ -424,9 +424,10 @@ RULES = {
     'triggers': [
         {'on': 'drawFail', 'do': [['lose', '$e.player']]},
         {'on': 'missionResult', 'do': [EACH(flt(OPS(), eq(g('$it', 'readyAfter'), '$turn')), '$x', [SET('$x', 'ex', 0), SET('$x', 'readyAfter', 0)]),
-            EACH(flt(OPS(), gt(g('$it', 'hurtAfter'), 0)), '$x', [LET('$h', g('$x', 'hurtAfter')), SET('$x', 'hurtAfter', 0), ['damage', '$x', '$h', '$e.p']])]},
+            EACH(flt(OPS(), gt(g('$it', 'hurtAfter'), 0)), '$x', [LET('$h', g('$x', 'hurtAfter')), SET('$x', 'hurtAfter', 0), ['damage', '$x', '$h', '$e.p']]),
+            EACH(flt(OPS(), eq(g('$it', 'drawAfter'), 1)), '$x', [SET('$x', 'drawAfter', 0), ['draw', ctrl('$x'), 1]])]},
         {'on': 'cleanup', 'do': [EACH(flt(OPS('$e.p'), eq(g('$it', 'upkeep'), 1)), '$tk', [
-            IF(ge(C('avail', '$e.p'), 1), [choose(opts('Pay 1 to keep it', 'Let it go'), '$u', 'Keep this token?', who='$e.p')], [LET('$u', 'Let it go')]),
+            choose(Q(ge(C('avail', '$e.p'), 1), opts('Pay 1 to keep it', 'Let it go'), opts('Let it go')), '$u', 'Keep this token?', who='$e.p'),
             IF(eq('$u', 'Pay 1 to keep it'), [C('spend', '$e.p', 1)], [C('eliminate', '$tk')])])]},
         {'on': 'damage', 'if': isObj('$e.target'), 'do': [SET('$e.target', 'lastBy', Q(['isPlayer', '$e.source'], add(seat('$e.source'), 1), add(seat(ctrl('$e.source')), 1)))]},
     ],

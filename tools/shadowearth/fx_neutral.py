@@ -96,11 +96,9 @@ fx('Ambush', resp=op([mission_bonus('$t', 2)], targets=[slot(flt(MY_OPS, defendi
 fx('Forced Entry', resp=op([team_bonus('atk', 2)], req=[(AND(MY, attr_is('F'), typ(TGT, 'facility')), 'Only in your Force mission against a Facility')]))
 fx('Inside Tip', resp=op([team_bonus('atk', 2)], req=[(AND(MY, kind_is('infiltrate')), 'Only in your Infiltrate')]))
 fx('Mental Fortitude', resp=op([team_bonus('def', 2)], req=[(AND(THEIRS, kind_is('subvert')), 'Only while defending a Subvert')]))
-fx('False Alarm', resp=op([IF(ge(C('avail', ATTACKER), 1), [choose(opts('Pay 1', 'Cancel the mission'), '$y', 'False Alarm: pay 1 or cancel your mission?', who=ATTACKER)],
-                                [LET('$y', 'Cancel the mission')]),
+fx('False Alarm', resp=op([choose(Q(ge(C('avail', ATTACKER), 1), opts('Pay 1', 'Cancel the mission'), opts('Cancel the mission')), '$y', 'False Alarm: pay 1 or cancel your mission?', who=ATTACKER),
     IF(eq('$y', 'Pay 1'), [C('spend', ATTACKER, 1)], [SET('game', 'mcan', 1), emit('missionCancelled', by='$me')])], req=[(THEIRS, 'Only against an opposing mission')]))
-fx('Emergency Lockdown', resp=op([IF(ge(C('avail', ATTACKER), 2), [choose(opts('Pay 2', 'Cancel the mission'), '$y', 'Emergency Lockdown: pay 2 or cancel your mission?', who=ATTACKER)],
-                                     [LET('$y', 'Cancel the mission')]),
+fx('Emergency Lockdown', resp=op([choose(Q(ge(C('avail', ATTACKER), 2), opts('Pay 2', 'Cancel the mission'), opts('Cancel the mission')), '$y', 'Emergency Lockdown: pay 2 or cancel your mission?', who=ATTACKER),
     IF(eq('$y', 'Pay 2'), [C('spend', ATTACKER, 2)], [SET('game', 'mcan', 1), emit('missionCancelled', by='$me')])],
     req=[(AND(THEIRS, eq(g('game', 'hqT'), 1)), 'Only against a mission targeting your Headquarters')]))
 fx('Disinformation', resp=op([IF(MY, [team_bonus('def', -2)], [team_bonus('atk', -2)])], req=[(attr_is('T'), 'Only in a Tradecraft mission')]))
@@ -109,17 +107,18 @@ fx('Tactical Withdrawal', resp=op([SET('$t', 'atk', 0), SET('$t', 'dfn', 0), SET
 fx('Deep Cover', resp=op([SET('$t', 'oF', 1), SET('$t', 'oT', 6), loot(1)], targets=[slot(flt(MY_OPS, participating('$it')), prompt='Which operative goes deep?')],
     req=[(IN_MISSION, 'Only after a mission is declared')]))
 # Contingency Plan: after your mission fails, you may play it (4): ready both attackers and draw; no more missions this turn
-RULE_TRIGGERS.append({'on': 'missionResult', 'if': eq('$e.ok', 0), 'do': [LET('$cp', first(flt(HAND('$e.p'), AND(isc('$it', 'Contingency Plan'), ge(C('avail', '$e.p'), C('cost', '$it', '$e.p')))))),
-    IF(isObj('$cp'), [choose(opts('Play Contingency Plan', 'No'), '$y', 'Your mission failed: play Contingency Plan (ready both attackers, draw 1, no more missions this turn)?', who='$e.p'),
-        IF(eq('$y', 'Play Contingency Plan'), [C('spend', '$e.p', C('cost', '$cp', '$e.p')), ['move', '$cp', 'grave'], EACH(ATK, '$x', [ready('$x')]), ['draw', '$e.p', 1],
-                                               SET('$e.p', 'attMax', 0), emit('played', c='$cp', p='$e.p', card=g('$cp', 'card'), type='response')])])]})
+RULE_TRIGGERS.append({'on': 'missionResult', 'if': AND(eq('$e.ok', 0), ANY(HAND('$e.p'), AND(isc('$it', 'Contingency Plan'), ge(C('avail', '$e.p'), C('cost', '$it', '$e.p'))))), 'do': [
+    LET('$cp', first(flt(HAND('$e.p'), isc('$it', 'Contingency Plan')))),
+    choose(opts('Play Contingency Plan', 'No'), '$y', 'Your mission failed: play Contingency Plan (ready both attackers, draw 1, no more missions this turn)?', who='$e.p'),
+    IF(eq('$y', 'Play Contingency Plan'), [C('spend', '$e.p', C('cost', '$cp', '$e.p')), ['move', '$cp', 'grave'], EACH(ATK, '$x', [ready('$x')]), ['draw', '$e.p', 1],
+                                           SET('$e.p', 'attMax', 0), emit('played', c='$cp', p='$e.p', card=g('$cp', 'card'), type='response')])]})
 fx('Contingency Plan')
 # Counterintelligence Sweep: when the opponent plays an Operation during a mission, you may play it (3) to cancel it unless they discard a card
 OPSTART.append(IF(AND(IN_MISSION, ANY(HAND('$opp'), AND(isc('$it', 'Counterintelligence Sweep'), ge(C('avail', '$opp'), C('cost', '$it', '$opp'))))), [
     LET('$cs', first(flt(HAND('$opp'), isc('$it', 'Counterintelligence Sweep')))),
     choose(opts('Play Counterintelligence Sweep', 'No'), '$y', 'The opponent played an Operation: play Counterintelligence Sweep to cancel it unless they discard a card?', who='$opp'),
     IF(eq('$y', 'Play Counterintelligence Sweep'), [C('spend', '$opp', C('cost', '$cs', '$opp')), ['move', '$cs', 'grave'],
-        IF(gt(cnt(HAND('$me')), 0), [choose(opts('Discard a card', 'Let it be cancelled'), '$z', 'Counterintelligence Sweep: discard a card or your Operation is cancelled')], [LET('$z', 'x')]),
+        choose(Q(gt(cnt(HAND('$me')), 0), opts('Discard a card', 'Let it be cancelled'), opts('Let it be cancelled')), '$z', 'Counterintelligence Sweep: discard a card or your Operation is cancelled'),
         IF(eq('$z', 'Discard a card'), [C('discardN', '$me', 1), emit('costDiscard', p='$me')], [SET('game', 'ocan', 1), emit('cancelled', card=g('$c2', 'card'))])])]))
 fx('Counterintelligence Sweep')
 
@@ -137,7 +136,7 @@ fx('Backroom Bargain', op=op([choose(HAND('$me'), '$ds', 'Discard up to two card
     ['move', '$ds', 'grave'], IF(gt('$n', 0), [emit('costDiscard', p='$me')]), tmp(mul(2, '$n'))]))
 fx('Risky Funding', op=op([tmp(4), SET('$me', 'riskyT', '$turn')]))
 RULE_TRIGGERS.append({'on': 'cleanup', 'if': eq(g('$e.p', 'riskyT'), '$turn'), 'do': [
-    IF(ge(cnt(HAND('$e.p')), 2), [choose(opts('Discard two cards', 'Lose 2 Dominance'), '$y', 'Risky Funding comes due', who='$e.p')], [LET('$y', 'Lose 2 Dominance')]),
+    choose(Q(ge(cnt(HAND('$e.p')), 2), opts('Discard two cards', 'Lose 2 Dominance'), opts('Lose 2 Dominance')), '$y', 'Risky Funding comes due', who='$e.p'),
     IF(eq('$y', 'Discard two cards'), [C('discardN', '$e.p', 2)], [C('loseDom', '$e.p', 2)])]})
 fx('Open Recruitment Drive', op=op([token('tok-recruit', 2), EACH(flt(OPS('$me'), AND(isc('$it', 'Recruit'), eq(g('$it', 'newT'), '$turn'))), '$x', [SET('$x', 'upkeep', 1)])]))
 fx('Counter-Cabal Alliance', op=op([choose(opts('Force', 'Tradecraft', 'Will'), '$r', 'Counter-Cabal Alliance: your mission teams get +3 in which attribute this turn?'),
@@ -183,7 +182,7 @@ fx('Offshore Research Platform', abilities=[at_refresh([scry(1)])])
 cost_term(Q(AND(typ('$c', 'asset'), ge(g('$c', 'cost'), 4), eq(g('$p', 'bigAssetT'), 0), own('Offshore Research Platform', '$p')), -1, 0))
 fx('Crown & Vale Legal Offices')
 OPSTART.append(IF(AND(eq(g('$c2', 'tFac'), 1), own('Crown & Vale Legal Offices', '$opp'), ne(g('$opp', 'cvT'), '$turn')), [SET('$opp', 'cvT', '$turn'),
-    IF(ge(C('avail', '$me'), 2), [choose(opts('Pay 2', 'Let it be cancelled'), '$y', 'Crown & Vale Legal Offices: pay 2 more or your Operation is cancelled')], [LET('$y', 'x')]),
+    choose(Q(ge(C('avail', '$me'), 2), opts('Pay 2', 'Let it be cancelled'), opts('x')), '$y', 'Crown & Vale Legal Offices: pay 2 more or your Operation is cancelled'),
     IF(eq('$y', 'Pay 2'), [C('spend', '$me', 2)], [SET('game', 'ocan', 1), emit('cancelled', card=g('$c2', 'card'))])]))
 fx('Private Intelligence Firm', abilities=[on_success('infiltrate', [draw(1)], once_per_turn=True)])
 fx('The Third-Rail Arms Bazaar')

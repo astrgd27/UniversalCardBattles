@@ -118,5 +118,65 @@
    "replacement-protocol",
    "sabotage"
   ]
+ },
+ "dawnstar-starter": {
+  "hq": [
+   "dawn-star-grand-lodge"
+  ],
+  "agenda": [
+   "library-of-the-unspoken"
+  ],
+  "deck": [
+   "ambitious-initiate",
+   "ambitious-initiate",
+   "ambitious-initiate",
+   "contract-notary",
+   "contract-notary",
+   "archivist-of-the-first-seal",
+   "archivist-of-the-first-seal",
+   "archivist-of-the-first-seal",
+   "lodge-steward",
+   "lodge-steward",
+   "lodge-steward",
+   "hereditary-patron",
+   "hereditary-patron",
+   "senior-adept",
+   "senior-adept",
+   "lesser-imp",
+   "lesser-imp",
+   "lesser-imp",
+   "pact-summoner",
+   "pact-summoner",
+   "bound-fiend",
+   "bound-fiend",
+   "bound-fiend",
+   "infernal-benefactor",
+   "furnace-of-the-pit",
+   "archivist-of-the-eighth-seal",
+   "archivist-of-the-eighth-seal",
+   "the-lesser-bargain",
+   "the-lesser-bargain",
+   "scripture-fragment-ash",
+   "scripture-fragment-ash",
+   "scripture-fragment-iron",
+   "scripture-fragment-iron",
+   "scripture-fragment-dawn",
+   "scripture-fragment-dawn",
+   "chain-of-command",
+   "censer-of-the-unspoken-name",
+   "circle-of-summoning",
+   "circle-of-summoning",
+   "private-lodge",
+   "written-in-blood",
+   "written-in-blood",
+   "forbidden-translation",
+   "forbidden-translation",
+   "hellfire-lash",
+   "hellfire-lash",
+   "unpaid-debt",
+   "rite-of-the-broken-seal",
+   "the-door-opens-inward",
+   "the-door-opens-inward"
+  ]
  }
 }
