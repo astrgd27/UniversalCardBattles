@@ -14,7 +14,7 @@ from lib import *
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.environ.get('SE_OUT') or os.path.join(HERE, '..', '..', 'packages', 'reference-games', 'shadow-earth')
-LEVERS = {'WIN': 20, 'MAX_CAP': 8, 'HAND': 7, 'DECK': 50, 'MISSIONS': 2, 'MISSION_MAX': 3, 'SECURITY': 2, 'DOM_CAP': 0, 'TOKEN_CAP': 12}
+LEVERS = {'WIN': 20, 'MAX_CAP': 8, 'HAND': 7, 'DECK': 50, 'MISSIONS': 2, 'MISSION_MAX': 3, 'SECURITY': 2, 'DOM_CAP': 0, 'TOKEN_CAP': 12, 'TIE_WINS': 0, 'HQ_DOM': 1}
 for k in LEVERS:
     if os.environ.get('SE_' + k) is not None: LEVERS[k] = int(os.environ['SE_' + k])
 
@@ -256,11 +256,11 @@ proc('basicReward', [], [
             IF(eq('$r', '1 Dominance'), [dom(1)]), *[IF(eq('$r', lab), eff) for lab, cond, eff in lib.INFIL_OPTS]],
         [IF(ANY(ATK, isc('$it', 'Courier with No Name')), [
             choose(opts('1 Dominance', 'Return the Courier to hand instead'), '$r', 'Mission succeeded: choose your reward'),
-            IF(eq('$r', '1 Dominance'), [dom(1)], [bounce(first(flt(ATK, isc('$it', 'Courier with No Name'))))])], [dom(1)])])])])
+            IF(eq('$r', '1 Dominance'), [dom(LEVERS['HQ_DOM'])], [bounce(first(flt(ATK, isc('$it', 'Courier with No Name'))))])], [dom(LEVERS['HQ_DOM'])])])])])
 proc('resolveMission', [], [
     LET('$at', add(SUM(ATK, C('val', '$it')), g('game', 'am'))),
     LET('$dt', Q(gt(cnt(DFN), 0), add(SUM(DFN, C('val', '$it')), g('game', 'dm')), add(C('sec', '$opp'), g('game', 'dm')))),
-    LET('$ok', AND(eq(g('game', 'mcan'), 0), gt(cnt(ATK), 0), gt('$at', '$dt'))),
+    LET('$ok', AND(eq(g('game', 'mcan'), 0), gt(cnt(ATK), 0), (ge if LEVERS['TIE_WINS'] else gt)('$at', '$dt'))),
     LET('$mc', first(flt(['cards', '*', 'limbo'], eq(g('$it', 'mopc'), 1)))),
     IF('$ok', [
         IF(le(g('game', 'mk'), 3), [C('basicReward')]),

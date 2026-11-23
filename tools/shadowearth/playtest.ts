@@ -28,7 +28,7 @@ for (const a of D) for (const b of D) {
     const r = g.s.result!;
     const w = r.winners[0];
     const doms = g.s.players.map((p: any) => p.vars.dom ?? 0);
-    const end = r.reason === 'turnLimit' ? 'turnLimit' : doms.some((d: number) => d >= 20) ? 'dominance' : 'deck-out';
+    const end = r.reason === 'turnLimit' ? 'turnLimit' : doms.some((d: number) => d >= +(process.env.SE_WIN ?? 20)) ? 'dominance' : 'deck-out';
     how[end] = (how[end] ?? 0) + 1;
     for (const [i, d] of [a, b].entries()) { wins[F(d)] ??= [0, 0]; wins[F(d)][1]++; if (w === `p${i}`) wins[F(d)][0]++; }
     turns += g.s.turn.n; games++;
