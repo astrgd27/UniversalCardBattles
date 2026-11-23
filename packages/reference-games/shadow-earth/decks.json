@@ -178,5 +178,65 @@
    "the-door-opens-inward",
    "the-door-opens-inward"
   ]
+ },
+ "illuminati-starter": {
+  "hq": [
+   "the-central-committee"
+  ],
+  "agenda": [
+   "the-invisible-hand"
+  ],
+  "deck": [
+   "junior-broker",
+   "junior-broker",
+   "junior-broker",
+   "investment-analyst",
+   "investment-analyst",
+   "municipal-fixer",
+   "municipal-fixer",
+   "municipal-fixer",
+   "public-affairs-director",
+   "public-affairs-director",
+   "compromised-minister",
+   "compromised-minister",
+   "contracted-surveillance",
+   "contracted-surveillance",
+   "contracted-surveillance",
+   "disposable-fixer",
+   "disposable-fixer",
+   "disposable-fixer",
+   "mercenary-handler",
+   "mercenary-handler",
+   "compliance-officer",
+   "compliance-officer",
+   "compliance-officer",
+   "special-prosecutor",
+   "special-prosecutor",
+   "deputy-minister-corinne-voss",
+   "deputy-minister-corinne-voss",
+   "executive-protection-detail",
+   "executive-protection-detail",
+   "offshore-holding-company",
+   "offshore-holding-company",
+   "offshore-holding-company",
+   "lobbying-office",
+   "lobbying-office",
+   "audit-office",
+   "cutout-company",
+   "bilateral-immunity-agreement",
+   "cash-transfer",
+   "cash-transfer",
+   "cash-transfer",
+   "liquidity-injection",
+   "deniable-payment",
+   "deniable-payment",
+   "emergency-injunction",
+   "false-flag-operation",
+   "false-flag-operation",
+   "public-scandal",
+   "public-scandal",
+   "coalition-bargaining",
+   "coalition-bargaining"
+  ]
  }
 }

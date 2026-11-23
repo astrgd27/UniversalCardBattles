@@ -35,3 +35,11 @@ DECKS['dawnstar-starter'] = deck('Dawn Star Grand Lodge', 'Library of the Unspok
     (2, 'Circle of Summoning'), (1, 'Private Lodge'),
     (2, 'Written in Blood'), (2, 'Forbidden Translation'), (2, 'Hellfire Lash'), (1, 'Unpaid Debt'),
     (1, 'Rite of the Broken Seal'), (2, 'The Door Opens Inward')])
+
+DECKS['illuminati-starter'] = deck('The Central Committee', 'The Invisible Hand', [
+    (3, 'Junior Broker'), (2, 'Investment Analyst'), (3, 'Municipal Fixer'), (2, 'Public Affairs Director'), (2, 'Compromised Minister'),
+    (3, 'Contracted Surveillance'), (3, 'Disposable Fixer'), (2, 'Mercenary Handler'), (3, 'Compliance Officer'), (2, 'Special Prosecutor'),
+    (2, 'Deputy Minister Corinne Voss'), (2, 'Executive Protection Detail'),
+    (3, 'Offshore Holding Company'), (2, 'Lobbying Office'), (1, 'Audit Office'), (1, 'Cutout Company'), (1, 'Bilateral Immunity Agreement'),
+    (3, 'Cash Transfer'), (1, 'Liquidity Injection'), (2, 'Deniable Payment'), (1, 'Emergency Injunction'),
+    (2, 'False-Flag Operation'), (2, 'Public Scandal'), (2, 'Coalition Bargaining')])

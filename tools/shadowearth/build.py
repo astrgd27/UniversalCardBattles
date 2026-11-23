@@ -80,7 +80,9 @@ for name, kw in FX.items():
                 ab['do'] = [IF(eq(g('game', 'ocan'), 0), ab['do'])] + [C('opEnd', '$self')]
             c[k] = v
         elif k in ('mop', 'agenda', 'abil', 'rabil'):
-            for ab in v: ab.setdefault('do', [])
+            for ab in v:
+                ab.setdefault('do', [])
+                if k in ('abil', 'rabil'): ab['do'] = [IF(eq(g('game', 'ucan'), 0), ab['do'])]
             c[k] = v
         elif k == 'kws': c['keywords'] = c.get('keywords', []) + v
         else: c[k] = v
@@ -207,6 +209,7 @@ proc('startMission', ['$k', '$a', '$t', '$team'], [
     IF(isObj('$t'), [SET('$t', 'tgt', 1)]),
     EACH('$team', '$x', [SET('$x', 'atk', 1), IF(ne(g('$x', 'freeJoin'), '$turn'), [SET('$x', 'ex', 1)])]),
     INC('$me', 'att', 1), INC('$me', 'missT', 1), IF(le('$k', 3), [INC('$me', 'basicT', 1)]),
+    IF(eq('$k', 1), [INC('$me', 'mk1', 1)]), IF(eq('$k', 2), [INC('$me', 'mk2', 1)]), IF(eq('$k', 3), [INC('$me', 'mk3', 1)]),
     IF(AND(isObj('$t'), typ('$t', 'facility')), [INC('$me', 'facMis', 1)]),
     emit('missionDeclared', p='$me', kind='$k', attr='$a', t='$t'),
     ['openWindow', 'mission', {'data': {'p': '$me', 'def': '$opp'}}],
@@ -273,7 +276,7 @@ proc('refresh', [], [
     EACH(PERMS('$me'), '$x', [IF(lt(g('$x', 'noready'), '$turn'), [SET('$x', 'ex', 0)])]),
     SET('$me', 'cap', mn(LEVERS['MAX_CAP'], add(g('$me', 'cap'), 1))), SET('$me', 'inf', g('$me', 'cap')),
     IF(AND(eq(g('$me', 'turns'), 1), ne(seat('$me'), g('game', 'first'))), [C('gainTmp', '$me', 1)]),
-    *[SET('$me', k, 0) for k in ['att', 'missT', 'basicT', 'facMis', 'bigAssetT', 'sacTurn', 'sucS', 'sucI', 'sucW', 'sucWill', 'willBest', 'revealedT', 'sawT', 'domT', 'revT', 'scryT', 'acted',
+    *[SET('$me', k, 0) for k in ['att', 'missT', 'basicT', 'facMis', 'bigAssetT', 'sacTurn', 'mk1', 'mk2', 'mk3', 'sucS', 'sucI', 'sucW', 'sucWill', 'willBest', 'revealedT', 'sawT', 'domT', 'revT', 'scryT', 'acted',
                                  'plAny', 'pl_operative', 'pl_facility', 'pl_asset', 'pl_project', 'pl_operation', 'pl_response', 'skipDraw',
                                  'pl_psychic', 'pl_specimen', 'pl_adaptation', 'pl_scripture', 'pl_pact', 'pl_demon', 'pl_cultist', 'pl_institution',
                                  'pl_artifact', 'pl_contractor', 'pl_entity', 'pl_occultist', 'pl_alien', 'pl_ritual', 'pl_scientist', 'pl_loadout']],
@@ -320,8 +323,11 @@ A['respond'] = {'label': 'Respond', 'phases': ['respond'], 'activated': 'resp',
     'source': flt(HAND('$me'), AND(typ('$it', 'response'), eq(g('$it', 'ready'), 1), C('canPayR', '$it', '$me'))),
     'cost': [C('payResp', '$self')], 'do': [C('opStart', '$self')]}
 A['use'] = {'label': 'Use', 'phases': ['development', 'operations'], 'activated': 'abil',
-    'source': ['concat', flt(PERMS('$me'), C('active', '$it')), flt(['cards', '$me', 'agenda'], C('agendaOn', '$it'))], 'do': []}
-A['useR'] = {'label': 'Use', 'phases': ['respond'], 'activated': 'rabil', 'source': flt(PERMS('$me'), C('active', '$it')), 'do': []}
+    'source': ['concat', flt(PERMS('$me'), AND(C('active', '$it'), NOT(AND(typ('$it', 'facility'), ge(g('$it', 'frozenT'), '$turn'))))),
+               flt(['cards', '$me', 'agenda'], C('agendaOn', '$it'))],
+    'do': [SET('game', 'ucan', 0), IF(typ('$self', 'facility'), lib.USEHOOK)]}
+A['useR'] = {'label': 'Use', 'phases': ['respond'], 'activated': 'rabil', 'source': flt(PERMS('$me'), AND(C('active', '$it'), NOT(AND(typ('$it', 'facility'), ge(g('$it', 'frozenT'), '$turn'))))),
+    'do': [SET('game', 'ucan', 0), IF(typ('$self', 'facility'), lib.USEHOOK)]}
 A['equip'] = {'label': 'Attach / transfer (1 Influence)', 'phases': ['development'],
     'source': flt(GEAR('$me'), AND(has('$it', 'loadout'), ge(C('avail', '$me'), 1))),
     'targets': [{'as': '$b', 'prompt': 'Attach to which operative?', 'from': flt(OPS('$me'), AND(ne('$it', bearerOf('$self')), C('bearerOk', '$self', '$it')))}],
@@ -361,7 +367,7 @@ HQS = [c['id'] for c in CARDS if c['type'] == 'headquarters']
 RULES = {
     'players': {'min': 2, 'max': 2},
     'playerVars': {'dom': 0, 'faction': 0, 'cap': 0, 'inf': 0, 'tmp': 0, 'tmpc': 0, 'rev': 0, 'att': 0, 'attMax': 2, 'domMax': 99},
-    'gameVars': {'first': 0, 'noMulligan': 0, 'mp': 0, 'mk': 0, 'ma': 0, 'am': 0, 'dm': 0, 'mcan': 0, 'hqT': 0, 'ocan': 0, 'dwill': 0},
+    'gameVars': {'ucan': 0, 'saved': 0, 'first': 0, 'noMulligan': 0, 'mp': 0, 'mk': 0, 'ma': 0, 'am': 0, 'dm': 0, 'mcan': 0, 'hqT': 0, 'ocan': 0, 'dwill': 0},
     'objectVars': {'ex': 0, 'dmg': 0, 'atk': 0, 'dfn': 0, 'tgt': 0, 'mb': 0, 'z0': 0, 'oF': 0, 'oT': 0, 'oW': 0, 'cF': 0, 'cT': 0, 'cW': 0,
                    'newT': 0, 'dis': 0, 'ctl': 0, 'prog': 0, 'pv': 0, 'nodef': 0, 'noab': 0, 'nomis': 0, 'noready': 0, 'ctlT': 0, 'freeJoin': 0,
                    'hasteT': 0, 'lastBy': 0, 'done': 0, 'sup': 0, 'mopc': 0},
@@ -423,6 +429,7 @@ RULES = {
     ],
     'triggers': [
         {'on': 'drawFail', 'do': [['lose', '$e.player']]},
+        {'on': 'cleanup', 'do': [EACH(flt(OPS('$e.p'), eq(g('$it', 'sacEnd'), '$turn')), '$x', [C('sacrifice', '$x')])]},
         {'on': 'missionResult', 'do': [EACH(flt(OPS(), eq(g('$it', 'readyAfter'), '$turn')), '$x', [SET('$x', 'ex', 0), SET('$x', 'readyAfter', 0)]),
             EACH(flt(OPS(), gt(g('$it', 'hurtAfter'), 0)), '$x', [LET('$h', g('$x', 'hurtAfter')), SET('$x', 'hurtAfter', 0), ['damage', '$x', '$h', '$e.p']]),
             EACH(flt(OPS(), eq(g('$it', 'drawAfter'), 1)), '$x', [SET('$x', 'drawAfter', 0), ['draw', ctrl('$x'), 1]])]},

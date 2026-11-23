@@ -172,6 +172,11 @@ def self_term(name, attr, n, cond=None):
     c = [isc('$o', name), A_(attr)] + ([cond] if cond is not None else [])
     return Q(AND(*c), n, 0)
 NULL = ['lit', None]
+USEHOOK = []        # effects when a Facility's ability is activated ($self = the Facility, $me = its controller): SET game ucan 1 cancels it
+def taxed(payer, n, label):
+    """payer pays n more or the thing is cancelled ($y = the choice); emits taxPaid when paid."""
+    return [choose(Q(ge(C('avail', payer), n), opts(f'Pay {n}', label), opts(label)), '$y', f'Pay {n} more, or: {label.lower()}?', who=payer),
+            IF(eq('$y', f'Pay {n}'), [C('spend', payer, n), emit('taxPaid', p=payer, n=n)])]
 COVERT = []         # terms (uses $o): true = this attacker has Covert in the current mission
 INFIL_OPTS = []     # extra Infiltrate rewards: (label, condition, effects); $t = the target or null
 STRIKE_EXTRA = []   # terms: extra damage for the Strike '3 damage' reward
