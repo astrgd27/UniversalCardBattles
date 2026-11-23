@@ -6,3 +6,4 @@ packages/test-harness/tests/_pt.ts
 packages/test-harness/tests/_se.ts
 packages/test-harness/tests/_sept.ts
 packages/test-harness/tests/_selog.ts
+packages/test-harness/tests/_sefp.ts
