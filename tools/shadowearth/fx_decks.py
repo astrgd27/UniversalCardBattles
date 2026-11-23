@@ -18,13 +18,13 @@ DECKS['psylist-starter'] = deck('PsyList Central Station', 'The Listening World'
     (2, 'Collective Suggestion'), (2, 'Induced Suggestibility'), (1, 'Inside Tip')])
 
 DECKS['prendick-starter'] = deck('Prendick Holdings Headquarters', 'Genome Patent Monopoly', [
-    (3, 'Security Hound-9'), (3, 'Razorback Hybrid'), (3, 'Human-Passing Duplicate'), (3, 'Lab-Born Vertebrate'), (2, 'Mutation Handler'),
-    (3, 'Clinical Research Liaison'), (2, 'Molecular Patent Examiner'), (2, 'Alpha Predator'), (2, 'Mimicry Specialist'), (1, 'Infiltrator Brood'),
-    (1, 'Recombinant Apex'), (1, 'Veterinary Surgical Team'),
+    (3, 'Security Hound-9'), (3, 'Razorback Hybrid'), (3, 'Human-Passing Duplicate'), (3, 'Crisis Negotiator'), (2, 'Mutation Handler'),
+    (3, 'Clinical Research Liaison'), (2, 'Interrogation Officer'), (2, 'Alpha Predator'), (2, 'Mimicry Specialist'), (1, 'Infiltrator Brood'),
+    (1, 'Recombinant Apex'), (1, 'Mental Fortitude'),
     (2, 'Anatomical Reinforcement'), (3, 'Perfect Skin Graft'), (2, 'Hypermetabolic Serum'), (2, 'Specimen Transport'),
     (2, 'Prendick Biomedicine Annex 14'), (1, 'The Feeding Pens'), (1, 'Venture Consortium'),
     (2, 'Random Splice'), (2, 'Quarterly Earnings'), (2, 'Break Containment'), (2, 'False Credentials'),
-    (2, 'Replacement Protocol'), (1, 'Sabotage')])
+    (2, 'Replacement Protocol'), (1, 'Mental Fortitude')])
 
 DECKS['dawnstar-starter'] = deck('Dawn Star Grand Lodge', 'Library of the Unspoken', [
     (3, 'Ambitious Initiate'), (2, 'Contract Notary'), (3, 'Archivist of the First Seal'), (3, 'Lodge Steward'), (2, 'Hereditary Patron'),
@@ -45,9 +45,9 @@ DECKS['illuminati-starter'] = deck('The Central Committee', 'The Invisible Hand'
     (2, 'False-Flag Operation'), (2, 'Public Scandal'), (2, 'Coalition Bargaining')])
 
 DECKS['children-starter'] = deck('The First Contact House', 'Communion of the Faithful', [
-    (3, 'Street Preacher'), (3, 'Ecstatic Convert'), (2, 'Cell Organizer'), (2, 'Contact Engineer'), (3, 'Whispering Devotee'), (2, 'Rift Attendant'),
-    (2, 'Visionary Contactee'), (3, 'Radio Prophet'), (2, 'Manifestation of Hunger'), (2, 'Reverend Silas Hark, Contactee'), (1, 'Gateway Custodian'),
+    (3, 'Street Preacher'), (3, 'Ecstatic Convert'), (2, 'Cell Organizer'), (2, 'Professional Cleaner'), (3, 'Whispering Devotee'), (2, 'Rift Attendant'),
+    (3, 'Ex-Military Bodyguard'), (3, 'Radio Prophet'), (2, 'Manifestation of Hunger'), (2, 'Reverend Silas Hark, Contactee'), (1, 'Gateway Custodian'),
     (2, 'Recovered Probe'), (2, 'Unidentified Alloy'), (1, 'Antigravity Harness'), (1, 'Pilgrimage Convoy'), (1, 'Stellar Alignment Almanac'),
     (2, 'Recruitment Circle'), (1, 'Night-Sky Vigil'), (1, 'Nonlocal Transmitter'), (2, 'Thinning Veil'), (1, 'The First Vigil'),
-    (3, 'Community Outreach'), (1, 'Uncertain Tomorrow'), (1, 'Distorted Geometry'), (1, 'Prophecy of Misfortune'),
+    (3, 'Community Outreach'), (1, 'Inside Tip'), (1, 'Prophecy of Misfortune'),
     (2, 'The Gathering'), (1, 'Scream Across Dimensions'), (2, 'Rite of the Empty Sky')])

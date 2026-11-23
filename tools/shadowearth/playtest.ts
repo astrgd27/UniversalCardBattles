@@ -9,6 +9,7 @@ const flag = (k: string, d: string) => args.find((a) => a.startsWith(`--${k}=`))
 const N = +flag('games', '1');
 const [PI, PN] = flag('part', '1/1').split('/').map(Number);
 const JSONOUT = flag('json', '');
+const SEED0 = +flag('seed0', '0');
 const kind = flag('agents', 'heuristic') as any;
 const M = process.env.SE_OUT ? compileModule(readModuleDir(process.env.SE_OUT)) : loadRef('shadow-earth');
 const D = Object.keys(M.decks!);
@@ -22,7 +23,7 @@ const lines: string[] = [];
 for (const a of D) for (const b of D) {
   if (a === b) continue;
   if (pairIdx++ % PN !== PI - 1) continue;
-  for (let s = 1; s <= N; s++) {
+  for (let s = SEED0 + 1; s <= SEED0 + N; s++) {
     const g = playMatch(createMatch(M, deckOpts(M, [a, b], s)), [makeAgent(kind, s * 7), makeAgent(kind, s * 7 + 1)]);
     const r = g.s.result!;
     const w = r.winners[0];
@@ -40,9 +41,11 @@ for (const a of D) for (const b of D) {
         inc(`m.${k}`); inc(`m.${k}.ok`, e.ok);
         inc(e.ndef > 0 ? 'def' : 'undef'); inc(e.ndef > 0 ? 'def.ok' : 'undef.ok', e.ok);
         inc('atkTotal', e.at); inc('defTotal', e.dt);
+        const fa = F([a, b][+String(e.p).slice(1)]); inc(`fm.${fa}`); inc(`fm.${fa}.ok`, e.ok); inc(`fm.${fa}.undef`, e.ndef > 0 ? 0 : 1);
       }
       if (e.type === 'dominance') inc(inMission ? 'dom.mission' : 'dom.other', e.n);
-      if (e.type === 'agendaCompleted') agendas++;
+      if (e.type === 'agendaCompleted') { agendas++; inc(`ag.${F([a, b][+String(e.p).slice(1)])}`); }
+      if (e.type === 'deployed') inc(`dep.${F([a, b][+String(e.p).slice(1)])}`);
       if (e.type === 'drawFail') inc('deckout');
     }
     const fd = F(w ? [a, b][+w.slice(1)] : a);

@@ -457,7 +457,9 @@ for r in lib.REPLACEMENTS: RULES['replacements'].append(r)
 DECKS = lib.DECKS
 
 # ---------------------------------------------------------------- AI
-fn('board', ['$p'], add(mul(10, g('$p', 'dom')), SUM(OPS('$p'), add(C('attr', '$it', 1), C('attr', '$it', 2), C('attr', '$it', 3), Q(eq(g('$it', 'ex'), 0), 1, 0))),
+fn('board', ['$p'], add(mul(10, g('$p', 'dom')), SUM(OPS('$p'), add(C('attr', '$it', 1), C('attr', '$it', 2), C('attr', '$it', 3),
+        # a ready operative can defend on the opponent's turn: worth about half its best attribute
+        Q(eq(g('$it', 'ex'), 0), add(1, ['/', mx(C('attr', '$it', 1), mx(C('attr', '$it', 2), C('attr', '$it', 3))), 2]), 0))),
     mul(2, cnt(SITES('$p'))), cnt(GEAR('$p')), ['/', C('avail', '$p'), 2], ['/', cnt(HAND('$p')), 2], mul(6, cnt(flt(['cards', '$p', 'agenda'], eq(g('$it', 'done'), 1)))),
     g('$p', 'rev'), cnt(flt(OPS(['opp', '$p']), eq(g('$it', 'ctl'), 1)))))
 AI = {'eval': sub(C('board', '$me'), C('board', '$opp')), 'samples': 1, 'horizon': 'pass'}
