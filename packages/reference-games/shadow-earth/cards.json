@@ -2804,7 +2804,7 @@
   "keywords": [
    "specimen"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "razorback-hybrid",
@@ -2823,7 +2823,56 @@
   "keywords": [
    "specimen"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "call",
+      "hurt",
+      "$self",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      1
+     ],
+     [
+      "=",
+      [
+       "get",
+       "$self",
+       "atk"
+      ],
+      1
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "specimen-transport",
@@ -2838,7 +2887,22 @@
   "keywords": [
    "loadout"
   ],
-  "ready": 0
+  "attach": 1,
+  "bearerKw": "specimen",
+  "deploy": [
+   [
+    "set",
+    [
+     "get",
+     "$self",
+     "bearer"
+    ],
+    "hasteT",
+    "$turn"
+   ]
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "anatomical-reinforcement",
@@ -2854,7 +2918,73 @@
    "adaptation",
    "loadout"
   ],
-  "ready": 0
+  "attach": 1,
+  "bearerKw": "specimen",
+  "deploy": [
+   [
+    "inc",
+    [
+     "get",
+     "$self",
+     "bearer"
+    ],
+    "cF",
+    2
+   ]
+  ],
+  "abil": [
+   {
+    "label": "Discard Anatomical Reinforcement: prevent the next 3 damage to the attached Specimen",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "do": [
+     [
+      "inc",
+      [
+       "get",
+       "$self",
+       "bearer"
+      ],
+      "pv",
+      3
+     ],
+     [
+      "move",
+      "$self",
+      "grave"
+     ]
+    ]
+   }
+  ],
+  "rabil": [
+   {
+    "label": "Discard Anatomical Reinforcement: prevent the next 3 damage to the attached Specimen",
+    "phases": [
+     "respond"
+    ],
+    "do": [
+     [
+      "inc",
+      [
+       "get",
+       "$self",
+       "bearer"
+      ],
+      "pv",
+      3
+     ],
+     [
+      "move",
+      "$self",
+      "grave"
+     ]
+    ]
+   }
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "alpha-predator",
@@ -2873,7 +3003,7 @@
   "keywords": [
    "specimen"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "break-containment",
@@ -2885,7 +3015,138 @@
   "text": "An attacking Specimen gains +3 Force; deal 2 damage to it after the mission.",
   "archetype": "Chimera Assault",
   "cost": 2,
-  "ready": 0
+  "resp": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "inc",
+        "$t",
+        "mb",
+        3
+       ],
+       [
+        "inc",
+        "$t",
+        "hurtAfter",
+        2
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "has",
+         "$it",
+         "specimen"
+        ]
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "atk"
+        ],
+        1
+       ]
+      ],
+      "prompt": "Which attacking Specimen breaks containment?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "req": [
+     {
+      "if": [
+       "and",
+       [
+        "and",
+        [
+         ">",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         0
+        ],
+        [
+         "=",
+         [
+          "nth",
+          [
+           "players"
+          ],
+          [
+           "-",
+           [
+            "get",
+            "game",
+            "mp"
+           ],
+           1
+          ]
+         ],
+         "$me"
+        ]
+       ],
+       [
+        "and",
+        [
+         ">",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         0
+        ],
+        [
+         "=",
+         [
+          "get",
+          "game",
+          "ma"
+         ],
+         1
+        ]
+       ]
+      ],
+      "why": "Only in your Force mission"
+     }
+    ],
+    "label": "Break Containment"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "the-feeding-pens",
@@ -2897,7 +3158,128 @@
   "text": "After an enemy operative is eliminated in a Strike you initiated, ready one Specimen (once per turn).",
   "archetype": "Chimera Assault",
   "cost": 3,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "eliminated",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "filter",
+        [
+         "filter",
+         [
+          "cards",
+          "$me",
+          "ops"
+         ],
+         [
+          "has",
+          "$it",
+          "specimen"
+         ]
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "ex"
+         ],
+         1
+        ]
+       ],
+       "as": "$v",
+       "prompt": "The Feeding Pens: ready which Specimen?",
+       "min": 0,
+       "max": 1
+      }
+     ],
+     [
+      "if",
+      [
+       "isObj",
+       "$v"
+      ],
+      [
+       [
+        "set",
+        "$v",
+        "ex",
+        0
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "and",
+      [
+       ">",
+       [
+        "get",
+        "game",
+        "mp"
+       ],
+       0
+      ],
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "mk"
+       ],
+       1
+      ]
+     ],
+     [
+      "=",
+      [
+       "nth",
+       [
+        "players"
+       ],
+       [
+        "-",
+        [
+         "get",
+         "game",
+         "mp"
+        ],
+        1
+       ]
+      ],
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "!=",
+      "$e.ctrl",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "prototype-behemoth",
@@ -2918,7 +3300,7 @@
    "specimen",
    "unique"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "human-passing-duplicate",
@@ -2937,7 +3319,59 @@
   "keywords": [
    "specimen"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "draw",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      2
+     ],
+     [
+      "=",
+      [
+       "get",
+       "$self",
+       "atk"
+      ],
+      1
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "perfect-skin-graft",
@@ -2953,7 +3387,22 @@
    "adaptation",
    "loadout"
   ],
-  "ready": 0
+  "attach": 1,
+  "bearerKw": "specimen",
+  "deploy": [
+   [
+    "set",
+    [
+     "get",
+     "$self",
+     "bearer"
+    ],
+    "covT",
+    "$turn"
+   ]
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "mimicry-specialist",
@@ -2972,7 +3421,7 @@
   "keywords": [
    "specimen"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "false-credentials",
@@ -2984,7 +3433,138 @@
   "text": "One attacking Specimen gets +2 Tradecraft; defenders get -1 Tradecraft total.",
   "archetype": "Sleeper Organisms",
   "cost": 1,
-  "ready": 0
+  "resp": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "inc",
+        "$t",
+        "mb",
+        2
+       ],
+       [
+        "inc",
+        "game",
+        "dm",
+        -1
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "has",
+         "$it",
+         "specimen"
+        ]
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "atk"
+        ],
+        1
+       ]
+      ],
+      "prompt": "Which attacking Specimen?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "req": [
+     {
+      "if": [
+       "and",
+       [
+        "and",
+        [
+         ">",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         0
+        ],
+        [
+         "=",
+         [
+          "nth",
+          [
+           "players"
+          ],
+          [
+           "-",
+           [
+            "get",
+            "game",
+            "mp"
+           ],
+           1
+          ]
+         ],
+         "$me"
+        ]
+       ],
+       [
+        "and",
+        [
+         ">",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         0
+        ],
+        [
+         "=",
+         [
+          "get",
+          "game",
+          "ma"
+         ],
+         2
+        ]
+       ]
+      ],
+      "why": "Only in your Tradecraft mission"
+     }
+    ],
+    "label": "False Credentials"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "replacement-protocol",
@@ -2996,7 +3576,78 @@
   "text": "Tradecraft mission: on success, choose an enemy operative; until your next turn it cannot defend and loses its printed abilities. Gain 1 Dominance.",
   "archetype": "Sleeper Organisms",
   "cost": 3,
-  "ready": 0
+  "mattr": 2,
+  "mop": [
+   {
+    "label": "Replacement Protocol (Tradecraft mission)",
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "list",
+       "$opp"
+      ],
+      "prompt": "Target: the opposing Headquarters",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "do": []
+   }
+  ],
+  "succ": [
+   [
+    "choose",
+    {
+     "from": [
+      "cards",
+      "$opp",
+      "ops"
+     ],
+     "as": "$v",
+     "prompt": "Replacement Protocol: which enemy operative is replaced?",
+     "min": 0,
+     "max": 1
+    }
+   ],
+   [
+    "if",
+    [
+     "isObj",
+     "$v"
+    ],
+    [
+     [
+      "set",
+      "$v",
+      "nodef",
+      [
+       "+",
+       "$turn",
+       1
+      ]
+     ],
+     [
+      "set",
+      "$v",
+      "noab",
+      [
+       "+",
+       "$turn",
+       1
+      ]
+     ]
+    ]
+   ],
+   [
+    "call",
+    "gainDom",
+    "$me",
+    1
+   ]
+  ],
+  "ready": 1,
+  "hasSucc": 1
  },
  {
   "id": "the-s-19-lineage-fabrication",
@@ -3008,7 +3659,52 @@
   "text": "After each of your first two successful Infiltrates each turn, Scry 1.",
   "archetype": "Sleeper Organisms",
   "cost": 3,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "call",
+      "scry",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      2
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source",
+     "n": 2
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "infiltrator-brood",
@@ -3027,7 +3723,53 @@
   "keywords": [
    "specimen"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "call",
+      "makeTokens",
+      "$me",
+      "tok-hybrid",
+      1,
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      2
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "the-cabinet-of-doubles",
@@ -3039,7 +3781,92 @@
   "text": "Once per turn when you succeed at Infiltrate, exhaust an enemy operative; your next Infiltrate this turn gains +2 total Tradecraft.",
   "archetype": "Sleeper Organisms",
   "cost": 6,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "filter",
+        [
+         "cards",
+         "$opp",
+         "ops"
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "ex"
+         ],
+         0
+        ]
+       ],
+       "as": "$v",
+       "prompt": "The Cabinet of Doubles: exhaust which enemy?",
+       "min": 0,
+       "max": 1
+      }
+     ],
+     [
+      "if",
+      [
+       "isObj",
+       "$v"
+      ],
+      [
+       [
+        "set",
+        "$v",
+        "ex",
+        1
+       ]
+      ]
+     ],
+     [
+      "set",
+      "$me",
+      "cbT",
+      "$turn"
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      2
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "lab-born-vertebrate",
@@ -3058,7 +3885,37 @@
   "keywords": [
    "specimen"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "attached",
+    "do": [
+     [
+      "call",
+      "loot",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.o",
+      "$self"
+     ],
+     [
+      "has",
+      "$e.a",
+      "adaptation"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "hypermetabolic-serum",
@@ -3073,7 +3930,72 @@
   "keywords": [
    "adaptation"
   ],
-  "ready": 0
+  "attach": 1,
+  "bearerKw": "specimen",
+  "abil": [
+   {
+    "label": "Pay 2: ready the attached Specimen",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "do": [
+     [
+      "set",
+      [
+       "get",
+       "$self",
+       "bearer"
+      ],
+      "ex",
+      0
+     ]
+    ],
+    "cost": [
+     [
+      "call",
+      "spend",
+      "$me",
+      2
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       "and",
+       [
+        ">=",
+        [
+         "call",
+         "avail",
+         "$me"
+        ],
+        2
+       ],
+       [
+        "=",
+        [
+         "get",
+         [
+          "get",
+          "$self",
+          "bearer"
+         ],
+         "ex"
+        ],
+        1
+       ]
+      ],
+      "why": "The Specimen must be exhausted and you need 2 Influence"
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "random-splice",
@@ -3085,7 +4007,88 @@
   "text": "Look at the top three cards of your deck; put an Adaptation among them into hand and the rest on bottom in any order.",
   "archetype": "Rapid Evolution",
   "cost": 2,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "choose",
+        {
+         "from": [
+          "filter",
+          [
+           "top",
+           "$me",
+           "deck",
+           3
+          ],
+          [
+           "has",
+           "$it",
+           "adaptation"
+          ]
+         ],
+         "as": "$v",
+         "prompt": "Random Splice: take which Adaptation?",
+         "min": 0,
+         "max": 1
+        }
+       ],
+       [
+        "if",
+        [
+         "isObj",
+         "$v"
+        ],
+        [
+         [
+          "move",
+          "$v",
+          "hand"
+         ]
+        ]
+       ],
+       [
+        "move",
+        [
+         "top",
+         "$me",
+         "deck",
+         [
+          "?",
+          [
+           "isObj",
+           "$v"
+          ],
+          2,
+          3
+         ]
+        ],
+        "deck"
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "label": "Random Splice"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "mutation-handler",
@@ -3104,7 +4107,7 @@
   "keywords": [
    "scientist"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "unstable-polymorph",
@@ -3119,7 +4122,115 @@
   "keywords": [
    "adaptation"
   ],
-  "ready": 0
+  "attach": 1,
+  "bearerKw": "specimen",
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "lit",
+        [
+         "Force",
+         "Tradecraft",
+         "Will"
+        ]
+       ],
+       "as": "$r",
+       "prompt": "Unstable Polymorph: +2 to which attribute until your next Refresh?",
+       "min": 1,
+       "max": 1
+      }
+     ],
+     [
+      "let",
+      "$na",
+      [
+       "?",
+       [
+        "=",
+        "$r",
+        "Force"
+       ],
+       1,
+       [
+        "?",
+        [
+         "=",
+         "$r",
+         "Tradecraft"
+        ],
+        2,
+        3
+       ]
+      ]
+     ],
+     [
+      "if",
+      [
+       "and",
+       [
+        ">",
+        [
+         "get",
+         "$self",
+         "upA"
+        ],
+        0
+       ],
+       [
+        "!=",
+        [
+         "get",
+         "$self",
+         "upA"
+        ],
+        "$na"
+       ]
+      ],
+      [
+       [
+        "call",
+        "hurt",
+        [
+         "get",
+         "$self",
+         "bearer"
+        ],
+        1
+       ]
+      ]
+     ],
+     [
+      "set",
+      "$self",
+      "upA",
+      "$na"
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "accelerated-metamorphosis",
@@ -3131,7 +4242,142 @@
   "text": "Move up to two Adaptations from one Specimen to another legal Specimen; ready the recipient.",
   "archetype": "Rapid Evolution",
   "cost": 3,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "choose",
+        {
+         "from": [
+          "filter",
+          [
+           "linked",
+           "$s",
+           "bearer"
+          ],
+          [
+           "has",
+           "$it",
+           "adaptation"
+          ]
+         ],
+         "as": "$as",
+         "prompt": "Move up to two Adaptations",
+         "min": 1,
+         "max": 2
+        }
+       ],
+       [
+        "each",
+        "$as",
+        "$x",
+        [
+         [
+          "unlink",
+          "$x",
+          "bearer"
+         ],
+         [
+          "link",
+          "$x",
+          "bearer",
+          "$r"
+         ]
+        ]
+       ],
+       [
+        "set",
+        "$r",
+        "ex",
+        0
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$s",
+      "from": [
+       "filter",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "has",
+         "$it",
+         "specimen"
+        ]
+       ],
+       [
+        ">",
+        [
+         "count",
+         [
+          "filter",
+          [
+           "linked",
+           "$it",
+           "bearer"
+          ],
+          [
+           "has",
+           "$it",
+           "adaptation"
+          ]
+         ]
+        ],
+        0
+       ]
+      ],
+      "prompt": "From which Specimen?",
+      "min": 1,
+      "max": 1
+     },
+     {
+      "as": "$r",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "ops"
+       ],
+       [
+        "has",
+        "$it",
+        "specimen"
+       ]
+      ],
+      "prompt": "To which Specimen?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "label": "Accelerated Metamorphosis"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "recombinant-apex",
@@ -3150,7 +4396,7 @@
   "keywords": [
    "specimen"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "evolutionary-cascade-study",
@@ -3162,7 +4408,190 @@
   "text": "Once during your turn, your first Adaptation costs 1 less (minimum 1). Once during your Development, play one Adaptation from your discard pile for its printed cost plus 1; if that Asset would leave play, exile it instead. You cannot play another Adaptation from a discard pile during that turn.",
   "archetype": "Rapid Evolution",
   "cost": 6,
-  "ready": 0
+  "abil": [
+   {
+    "label": "Play an Adaptation from your discard pile (cost + 1)",
+    "phases": [
+     "development"
+    ],
+    "do": [
+     [
+      "call",
+      "spend",
+      "$me",
+      [
+       "+",
+       [
+        "call",
+        "cost",
+        "$t",
+        "$me"
+       ],
+       1
+      ]
+     ],
+     [
+      "set",
+      "$me",
+      "adGraveT",
+      "$turn"
+     ],
+     [
+      "move",
+      "$t",
+      "gear",
+      {
+       "as": "$c"
+      }
+     ],
+     [
+      "set",
+      "$c",
+      "exileOnLeave",
+      1
+     ],
+     [
+      "choose",
+      {
+       "from": [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "call",
+         "bearerOk",
+         "$c",
+         "$it"
+        ]
+       ],
+       "as": "$b",
+       "prompt": "Attach to which Specimen?",
+       "min": 1,
+       "max": 1
+      }
+     ],
+     [
+      "link",
+      "$c",
+      "bearer",
+      "$b"
+     ],
+     [
+      "emit",
+      "attached",
+      {
+       "a": "$c",
+       "o": "$b",
+       "p": "$me"
+      }
+     ],
+     [
+      "call",
+      "played",
+      "$c",
+      "$me"
+     ],
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "$c",
+        "hasDeploy"
+       ],
+       1
+      ],
+      [
+       [
+        "run",
+        "$c",
+        "deploy"
+       ]
+      ]
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       "!=",
+       [
+        "get",
+        "$me",
+        "adGraveT"
+       ],
+       "$turn"
+      ],
+      "why": "Only one Adaptation from a discard pile each turn"
+     }
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "grave"
+       ],
+       [
+        "and",
+        [
+         "has",
+         "$it",
+         "adaptation"
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "ready"
+         ],
+         1
+        ],
+        [
+         ">=",
+         [
+          "call",
+          "avail",
+          "$me"
+         ],
+         [
+          "+",
+          [
+           "call",
+           "cost",
+           "$it",
+           "$me"
+          ],
+          1
+         ]
+        ],
+        [
+         "call",
+         "canAttachAny",
+         "$it",
+         "$me"
+        ]
+       ]
+      ],
+      "prompt": "Play which Adaptation?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "clinical-research-liaison",
@@ -3181,7 +4610,16 @@
   "keywords": [
    "scientist"
   ],
-  "ready": 0
+  "deploy": [
+   [
+    "call",
+    "gainTmpC",
+    "$me",
+    1
+   ]
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "molecular-patent-examiner",
@@ -3200,7 +4638,55 @@
   "keywords": [
    "scientist"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "played",
+    "do": [
+     [
+      "call",
+      "gainTmp",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      [
+       "get",
+       "$e.c",
+       "type"
+      ],
+      "facility"
+     ],
+     [
+      "=",
+      [
+       "get",
+       "$me",
+       "pl_facility"
+      ],
+      1
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "prendick-biomedicine-annex-14",
@@ -3212,7 +4698,57 @@
   "text": "At Refresh, gain 1 temporary Influence if you control a Scientist.",
   "archetype": "Corporate Biotech",
   "cost": 2,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "call",
+      "gainTmp",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      ">",
+      [
+       "count",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "has",
+         "$it",
+         "scientist"
+        ]
+       ]
+      ],
+      0
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "quarterly-earnings",
@@ -3224,7 +4760,73 @@
   "text": "Draw one card; if you control two Facilities, draw an additional card then discard one.",
   "archetype": "Corporate Biotech",
   "cost": 1,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "draw",
+        "$me",
+        1
+       ],
+       [
+        "if",
+        [
+         ">=",
+         [
+          "count",
+          [
+           "filter",
+           [
+            "cards",
+            "$me",
+            "sites"
+           ],
+           [
+            "=",
+            [
+             "get",
+             "$it",
+             "type"
+            ],
+            "facility"
+           ]
+          ]
+         ],
+         2
+        ],
+        [
+         [
+          "call",
+          "loot",
+          "$me",
+          1
+         ]
+        ]
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "label": "Quarterly Earnings"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "the-night-shift-clinical-trials",
@@ -3236,7 +4838,115 @@
   "text": "During your Development, once per turn, exhaust a Scientist you control to place one Research counter here (maximum 3). During your Development, you may remove three Research counters to draw two cards (once per turn).",
   "archetype": "Corporate Biotech",
   "cost": 3,
-  "ready": 0
+  "abil": [
+   {
+    "label": "Exhaust a Scientist: place a Research counter",
+    "phases": [
+     "development"
+    ],
+    "do": [
+     [
+      "set",
+      "$t",
+      "ex",
+      1
+     ],
+     [
+      "set",
+      "$self",
+      "prog",
+      [
+       "min",
+       3,
+       [
+        "+",
+        [
+         "get",
+         "$self",
+         "prog"
+        ],
+        1
+       ]
+      ]
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "has",
+         "$it",
+         "scientist"
+        ]
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "ex"
+        ],
+        0
+       ]
+      ],
+      "prompt": "Exhaust which Scientist?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   },
+   {
+    "label": "Remove three Research counters: draw two",
+    "phases": [
+     "development"
+    ],
+    "do": [
+     [
+      "inc",
+      "$self",
+      "prog",
+      -3
+     ],
+     [
+      "draw",
+      "$me",
+      2
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       ">=",
+       [
+        "get",
+        "$self",
+        "prog"
+       ],
+       3
+      ],
+      "why": "Needs three Research counters"
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "venture-consortium",
@@ -3248,7 +4958,46 @@
   "text": "Once per turn, after you succeed at a mission, gain 2 temporary Influence that expires at Cleanup.",
   "archetype": "Corporate Biotech",
   "cost": 4,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "call",
+      "gainTmpC",
+      "$me",
+      2
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "chief-development-officer",
@@ -3267,7 +5016,7 @@
   "keywords": [
    "scientist"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "prendick-holdings-asset-acquisition-fund",
@@ -3279,7 +5028,71 @@
   "text": "At Refresh, gain 2 temporary Influence and draw one additional card if you control at least three other Facilities.",
   "archetype": "Corporate Biotech",
   "cost": 6,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "call",
+      "gainTmp",
+      "$me",
+      2
+     ],
+     [
+      "if",
+      [
+       ">=",
+       [
+        "count",
+        [
+         "filter",
+         [
+          "cards",
+          "$me",
+          "sites"
+         ],
+         [
+          "=",
+          [
+           "get",
+           "$it",
+           "type"
+          ],
+          "facility"
+         ]
+        ]
+       ],
+       3
+      ],
+      [
+       [
+        "draw",
+        "$me",
+        1
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "ambitious-initiate",
@@ -11545,7 +13358,46 @@
   "archetype": "Headquarters",
   "fno": 2,
   "security": 2,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "attached",
+    "do": [
+     [
+      "call",
+      "heal",
+      "$e.o",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "has",
+      "$e.a",
+      "adaptation"
+     ],
+     [
+      "!=",
+      "$e.transfer",
+      1
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "dawn-star-grand-lodge",
@@ -12118,7 +13970,100 @@
   "text": "Tier I. Complete: Control two Facilities and two Specimens with Adaptations. Immediate: Draw two cards. Ongoing: Your first Specimen each turn costs 1 less, minimum 1.",
   "archetype": "Agenda",
   "tier": "I",
-  "ready": 0
+  "agenda": [
+   {
+    "label": "Complete this Agenda",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "req": [
+     {
+      "if": [
+       ">=",
+       [
+        "count",
+        [
+         "filter",
+         [
+          "cards",
+          "$me",
+          "sites"
+         ],
+         [
+          "=",
+          [
+           "get",
+           "$it",
+           "type"
+          ],
+          "facility"
+         ]
+        ]
+       ],
+       2
+      ],
+      "why": "Control two Facilities"
+     },
+     {
+      "if": [
+       ">=",
+       [
+        "count",
+        [
+         "filter",
+         [
+          "filter",
+          [
+           "cards",
+           "$me",
+           "ops"
+          ],
+          [
+           "has",
+           "$it",
+           "specimen"
+          ]
+         ],
+         [
+          ">",
+          [
+           "count",
+           [
+            "filter",
+            [
+             "linked",
+             "$it",
+             "bearer"
+            ],
+            [
+             "has",
+             "$it",
+             "adaptation"
+            ]
+           ]
+          ],
+          0
+         ]
+        ]
+       ],
+       2
+      ],
+      "why": "Control two Specimens with Adaptations"
+     }
+    ],
+    "do": []
+   }
+  ],
+  "imm": [
+   [
+    "draw",
+    "$me",
+    2
+   ]
+  ],
+  "ready": 1,
+  "hasImm": 1
  },
  {
   "id": "project-chimera",
@@ -12130,7 +14075,333 @@
   "text": "Tier II. Complete: Control three Adaptations with different printed names and succeed at Strike on each of your two most recent turns. Immediate: Search your deck for a Specimen with printed cost 5 or less and put it into play exhausted, then shuffle. Ongoing: Once during your Development, play one Adaptation from your discard pile for its printed cost. Exile it instead if it would leave play. You cannot play another Adaptation from a discard pile this turn.",
   "archetype": "Agenda",
   "tier": "II",
-  "ready": 0
+  "agenda": [
+   {
+    "label": "Complete this Agenda",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "req": [
+     {
+      "if": [
+       ">=",
+       [
+        "count",
+        [
+         "distinct",
+         [
+          "map",
+          [
+           "filter",
+           [
+            "cards",
+            "$me",
+            "gear"
+           ],
+           [
+            "has",
+            "$it",
+            "adaptation"
+           ]
+          ],
+          [
+           "get",
+           "$it",
+           "card"
+          ]
+         ]
+        ]
+       ],
+       3
+      ],
+      "why": "Control three Adaptations with different names"
+     },
+     {
+      "if": [
+       ">=",
+       [
+        "?",
+        [
+         "=",
+         [
+          "get",
+          "$me",
+          "sucS"
+         ],
+         1
+        ],
+        [
+         "+",
+         [
+          "get",
+          "$me",
+          "stS"
+         ],
+         1
+        ],
+        [
+         "get",
+         "$me",
+         "stS"
+        ]
+       ],
+       2
+      ],
+      "why": "Succeed at Strike on your two most recent turns"
+     }
+    ],
+    "do": []
+   }
+  ],
+  "imm": [
+   [
+    "choose",
+    {
+     "from": [
+      "filter",
+      [
+       "cards",
+       "$me",
+       "deck"
+      ],
+      [
+       "and",
+       [
+        "has",
+        "$it",
+        "specimen"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "type"
+        ],
+        "operative"
+       ],
+       [
+        "<=",
+        [
+         "get",
+         "$it",
+         "cost"
+        ],
+        5
+       ]
+      ]
+     ],
+     "as": "$v",
+     "prompt": "Project CHIMERA: put which Specimen into play?",
+     "min": 0,
+     "max": 1
+    }
+   ],
+   [
+    "if",
+    [
+     "isObj",
+     "$v"
+    ],
+    [
+     [
+      "move",
+      "$v",
+      "ops",
+      {
+       "as": "$n"
+      }
+     ],
+     [
+      "set",
+      "$n",
+      "ex",
+      1
+     ],
+     [
+      "set",
+      "$n",
+      "newT",
+      "$turn"
+     ]
+    ]
+   ],
+   [
+    "shuffle",
+    "$me",
+    "deck"
+   ]
+  ],
+  "abil": [
+   {
+    "label": "Play an Adaptation from your discard pile (Project CHIMERA)",
+    "phases": [
+     "development"
+    ],
+    "do": [
+     [
+      "call",
+      "spend",
+      "$me",
+      [
+       "call",
+       "cost",
+       "$t",
+       "$me"
+      ]
+     ],
+     [
+      "set",
+      "$me",
+      "adGraveT",
+      "$turn"
+     ],
+     [
+      "move",
+      "$t",
+      "gear",
+      {
+       "as": "$c"
+      }
+     ],
+     [
+      "set",
+      "$c",
+      "exileOnLeave",
+      1
+     ],
+     [
+      "choose",
+      {
+       "from": [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "call",
+         "bearerOk",
+         "$c",
+         "$it"
+        ]
+       ],
+       "as": "$b",
+       "prompt": "Attach to which Specimen?",
+       "min": 1,
+       "max": 1
+      }
+     ],
+     [
+      "link",
+      "$c",
+      "bearer",
+      "$b"
+     ],
+     [
+      "emit",
+      "attached",
+      {
+       "a": "$c",
+       "o": "$b",
+       "p": "$me"
+      }
+     ],
+     [
+      "call",
+      "played",
+      "$c",
+      "$me"
+     ],
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "$c",
+        "hasDeploy"
+       ],
+       1
+      ],
+      [
+       [
+        "run",
+        "$c",
+        "deploy"
+       ]
+      ]
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       "!=",
+       [
+        "get",
+        "$me",
+        "adGraveT"
+       ],
+       "$turn"
+      ],
+      "why": "Only one Adaptation from a discard pile each turn"
+     }
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "grave"
+       ],
+       [
+        "and",
+        [
+         "has",
+         "$it",
+         "adaptation"
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "ready"
+         ],
+         1
+        ],
+        [
+         "call",
+         "canPay",
+         "$it",
+         "$me"
+        ],
+        [
+         "call",
+         "canAttachAny",
+         "$it",
+         "$me"
+        ]
+       ]
+      ],
+      "prompt": "Play which Adaptation?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1,
+  "hasImm": 1
  },
  {
   "id": "the-perfect-organism",
@@ -12142,7 +14413,256 @@
   "text": "Tier III. Complete at the start of your turn: Control a Specimen with three differently named Adaptations attached, at least one of them non-Loadout, and total modified Force + Tradecraft + Will of 11 or more. Immediate: Ready that Specimen and heal all its damage. Ongoing: Mark it as the perfected subject. While you control it, it gets +2 to each attribute, ignores the first opposing Operation targeting it each turn, and grants +1 Dominance on its first successful mission each turn. If it leaves play, this Ongoing effect becomes inactive.",
   "archetype": "Agenda",
   "tier": "III",
-  "ready": 0
+  "agenda": [
+   {
+    "label": "Complete this Agenda",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "req": [
+     {
+      "if": [
+       "=",
+       [
+        "get",
+        "$me",
+        "acted"
+       ],
+       0
+      ],
+      "why": "Complete it at the start of your turn (before playing anything)"
+     },
+     {
+      "if": [
+       "any",
+       [
+        "cards",
+        "$me",
+        "ops"
+       ],
+       [
+        "and",
+        [
+         "has",
+         "$it",
+         "specimen"
+        ],
+        [
+         ">=",
+         [
+          "count",
+          [
+           "distinct",
+           [
+            "map",
+            [
+             "filter",
+             [
+              "linked",
+              "$it",
+              "bearer"
+             ],
+             [
+              "has",
+              "$it",
+              "adaptation"
+             ]
+            ],
+            [
+             "get",
+             "$it",
+             "card"
+            ]
+           ]
+          ]
+         ],
+         3
+        ],
+        [
+         "any",
+         [
+          "linked",
+          "$it",
+          "bearer"
+         ],
+         [
+          "and",
+          [
+           "has",
+           "$it",
+           "adaptation"
+          ],
+          [
+           "not",
+           [
+            "has",
+            "$it",
+            "loadout"
+           ]
+          ]
+         ]
+        ],
+        [
+         ">=",
+         [
+          "+",
+          [
+           "call",
+           "attr",
+           "$it",
+           1
+          ],
+          [
+           "call",
+           "attr",
+           "$it",
+           2
+          ],
+          [
+           "call",
+           "attr",
+           "$it",
+           3
+          ]
+         ],
+         11
+        ]
+       ]
+      ],
+      "why": "Control a Specimen with three different Adaptations (one non-Loadout) and total attributes 11+"
+     }
+    ],
+    "do": []
+   }
+  ],
+  "imm": [
+   [
+    "choose",
+    {
+     "from": [
+      "filter",
+      [
+       "cards",
+       "$me",
+       "ops"
+      ],
+      [
+       "and",
+       [
+        "has",
+        "$it",
+        "specimen"
+       ],
+       [
+        ">=",
+        [
+         "count",
+         [
+          "distinct",
+          [
+           "map",
+           [
+            "filter",
+            [
+             "linked",
+             "$it",
+             "bearer"
+            ],
+            [
+             "has",
+             "$it",
+             "adaptation"
+            ]
+           ],
+           [
+            "get",
+            "$it",
+            "card"
+           ]
+          ]
+         ]
+        ],
+        3
+       ],
+       [
+        "any",
+        [
+         "linked",
+         "$it",
+         "bearer"
+        ],
+        [
+         "and",
+         [
+          "has",
+          "$it",
+          "adaptation"
+         ],
+         [
+          "not",
+          [
+           "has",
+           "$it",
+           "loadout"
+          ]
+         ]
+        ]
+       ],
+       [
+        ">=",
+        [
+         "+",
+         [
+          "call",
+          "attr",
+          "$it",
+          1
+         ],
+         [
+          "call",
+          "attr",
+          "$it",
+          2
+         ],
+         [
+          "call",
+          "attr",
+          "$it",
+          3
+         ]
+        ],
+        11
+       ]
+      ]
+     ],
+     "as": "$v",
+     "prompt": "Which Specimen is the perfected subject?",
+     "min": 1,
+     "max": 1
+    }
+   ],
+   [
+    "set",
+    "$v",
+    "perfect",
+    1
+   ],
+   [
+    "set",
+    "$v",
+    "ex",
+    0
+   ],
+   [
+    "set",
+    "$v",
+    "dmg",
+    0
+   ]
+  ],
+  "ready": 1,
+  "hasImm": 1
  },
  {
   "id": "replacement-population",
@@ -12154,7 +14674,105 @@
   "text": "Tier II. Complete: Succeed at Infiltrate on three separate turns and control four Specimens with Tradecraft 3+. Immediate: Exhaust two opposing operatives. Ongoing: Your Specimens gain +2 Tradecraft when attacking; the opponent must pay 1 to assign a defender against them.",
   "archetype": "Agenda",
   "tier": "II",
-  "ready": 0
+  "agenda": [
+   {
+    "label": "Complete this Agenda",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "req": [
+     {
+      "if": [
+       ">=",
+       [
+        "+",
+        [
+         "get",
+         "$me",
+         "infTurns"
+        ],
+        [
+         "get",
+         "$me",
+         "sucI"
+        ]
+       ],
+       3
+      ],
+      "why": "Succeed at Infiltrate on three separate turns"
+     },
+     {
+      "if": [
+       ">=",
+       [
+        "count",
+        [
+         "filter",
+         [
+          "filter",
+          [
+           "cards",
+           "$me",
+           "ops"
+          ],
+          [
+           "has",
+           "$it",
+           "specimen"
+          ]
+         ],
+         [
+          ">=",
+          [
+           "call",
+           "attr",
+           "$it",
+           2
+          ],
+          3
+         ]
+        ]
+       ],
+       4
+      ],
+      "why": "Control four Specimens with Tradecraft 3+"
+     }
+    ],
+    "do": []
+   }
+  ],
+  "imm": [
+   [
+    "choose",
+    {
+     "from": [
+      "cards",
+      "$opp",
+      "ops"
+     ],
+     "as": "$xs",
+     "prompt": "Exhaust two opposing operatives",
+     "min": 0,
+     "max": 2
+    }
+   ],
+   [
+    "each",
+    "$xs",
+    "$x",
+    [
+     [
+      "set",
+      "$x",
+      "ex",
+      1
+     ]
+    ]
+   ]
+  ],
+  "ready": 1,
+  "hasImm": 1
  },
  {
   "id": "library-of-the-unspoken",
@@ -12934,7 +15552,89 @@
   "keywords": [
    "scientist"
   ],
-  "ready": 0
+  "deploy": [
+   [
+    "choose",
+    {
+     "from": [
+      "filter",
+      [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "ops"
+       ],
+       [
+        "has",
+        "$it",
+        "specimen"
+       ]
+      ],
+      [
+       ">",
+       [
+        "get",
+        "$it",
+        "dmg"
+       ],
+       0
+      ]
+     ],
+     "as": "$v",
+     "prompt": "Remove 1 damage from which Specimen?",
+     "min": 0,
+     "max": 1
+    }
+   ],
+   [
+    "call",
+    "heal",
+    "$v",
+    1
+   ]
+  ],
+  "abilities": [
+   {
+    "on": "attached",
+    "do": [
+     [
+      "call",
+      "loot",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "has",
+      "$e.a",
+      "adaptation"
+     ],
+     [
+      "!=",
+      "$e.transfer",
+      1
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "implantable-adrenal-reservoir",
@@ -12950,7 +15650,73 @@
    "adaptation",
    "loadout"
   ],
-  "ready": 0
+  "attach": 1,
+  "bearerKw": "specimen",
+  "deploy": [
+   [
+    "inc",
+    [
+     "get",
+     "$self",
+     "bearer"
+    ],
+    "cF",
+    1
+   ]
+  ],
+  "abil": [
+   {
+    "label": "Discard Implantable Adrenal Reservoir: prevent the next 2 damage to the attached Specimen",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "do": [
+     [
+      "inc",
+      [
+       "get",
+       "$self",
+       "bearer"
+      ],
+      "pv",
+      2
+     ],
+     [
+      "move",
+      "$self",
+      "grave"
+     ]
+    ]
+   }
+  ],
+  "rabil": [
+   {
+    "label": "Discard Implantable Adrenal Reservoir: prevent the next 2 damage to the attached Specimen",
+    "phases": [
+     "respond"
+    ],
+    "do": [
+     [
+      "inc",
+      [
+       "get",
+       "$self",
+       "bearer"
+      ],
+      "pv",
+      2
+     ],
+     [
+      "move",
+      "$self",
+      "grave"
+     ]
+    ]
+   }
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "the-glass-nursery-ward-8",
@@ -12962,7 +15728,83 @@
   "text": "At your Refresh, if you control a Scientist and have fewer than 12 operative tokens, create a 1/1/1 Specimen token. If you control two or more Adaptations, create a 2/1/1 Specimen token instead.",
   "archetype": "Cross-Archetype",
   "cost": 3,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "call",
+      "makeTokens",
+      "$me",
+      [
+       "?",
+       [
+        ">=",
+        [
+         "count",
+         [
+          "filter",
+          [
+           "cards",
+           "$me",
+           "gear"
+          ],
+          [
+           "has",
+           "$it",
+           "adaptation"
+          ]
+         ]
+        ],
+        2
+       ],
+       "tok-specimen-2",
+       "tok-specimen"
+      ],
+      1,
+      0
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      ">",
+      [
+       "count",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "has",
+         "$it",
+         "scientist"
+        ]
+       ]
+      ],
+      0
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "field-necropsy-report-11-b",
@@ -12974,7 +15816,96 @@
   "text": "Choose a Specimen in your discard. Return it to your hand, then discard a card. If you control a Scientist, gain 1 temporary Influence.",
   "archetype": "Cross-Archetype",
   "cost": 1,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "move",
+        "$t",
+        "hand"
+       ],
+       [
+        "call",
+        "discardN",
+        "$me",
+        1
+       ],
+       [
+        "if",
+        [
+         ">",
+         [
+          "count",
+          [
+           "filter",
+           [
+            "cards",
+            "$me",
+            "ops"
+           ],
+           [
+            "has",
+            "$it",
+            "scientist"
+           ]
+          ]
+         ],
+         0
+        ],
+        [
+         [
+          "call",
+          "gainTmp",
+          "$me",
+          1
+         ]
+        ]
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "grave"
+       ],
+       [
+        "has",
+        "$it",
+        "specimen"
+       ]
+      ],
+      "prompt": "Return which Specimen?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "label": "Field Necropsy Report 11-B"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "predictive-gene-sequencing",
@@ -12986,7 +15917,88 @@
   "text": "Once per turn, when you attach an Adaptation, look at the top two cards of your deck; put one into hand and the other on bottom, then discard a card.",
   "archetype": "Cross-Archetype",
   "cost": 2,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "attached",
+    "do": [
+     [
+      "if",
+      [
+       ">",
+       [
+        "count",
+        [
+         "cards",
+         "$me",
+         "deck"
+        ]
+       ],
+       0
+      ],
+      [
+       [
+        "choose",
+        {
+         "from": [
+          "top",
+          "$me",
+          "deck",
+          2
+         ],
+         "as": "$v",
+         "prompt": "Predictive Gene Sequencing: put one into your hand (the other goes to the bottom)",
+         "min": 1,
+         "max": 1
+        }
+       ],
+       [
+        "move",
+        "$v",
+        "hand"
+       ],
+       [
+        "move",
+        [
+         "top",
+         "$me",
+         "deck",
+         1
+        ],
+        "deck"
+       ],
+       [
+        "call",
+        "discardN",
+        "$me",
+        1
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "has",
+      "$e.a",
+      "adaptation"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "specimen-r-41-the-latchkey",
@@ -13007,7 +16019,7 @@
    "specimen",
    "unique"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "contaminated-lab-credentials",
@@ -13022,7 +16034,17 @@
   "keywords": [
    "loadout"
   ],
-  "ready": 0
+  "attach": 1,
+  "deploy": [
+   [
+    "call",
+    "peekTop",
+    "$me",
+    "$opp"
+   ]
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "unscheduled-molting",
@@ -13034,7 +16056,154 @@
   "text": "During a mission involving your Specimen, return one Adaptation attached to it to hand; that Specimen gains +3 in the mission attribute and cannot be damaged by Responses this mission.",
   "archetype": "Cross-Archetype",
   "cost": 3,
-  "ready": 0
+  "resp": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "choose",
+        {
+         "from": [
+          "filter",
+          [
+           "linked",
+           "$t",
+           "bearer"
+          ],
+          [
+           "has",
+           "$it",
+           "adaptation"
+          ]
+         ],
+         "as": "$ad",
+         "prompt": "Return which Adaptation to your hand?",
+         "min": 1,
+         "max": 1
+        }
+       ],
+       [
+        "move",
+        "$ad",
+        "hand"
+       ],
+       [
+        "inc",
+        "$t",
+        "mb",
+        3
+       ],
+       [
+        "set",
+        "$t",
+        "pv",
+        99
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "has",
+         "$it",
+         "specimen"
+        ]
+       ],
+       [
+        "and",
+        [
+         "or",
+         [
+          "=",
+          [
+           "get",
+           "$it",
+           "atk"
+          ],
+          1
+         ],
+         [
+          "=",
+          [
+           "get",
+           "$it",
+           "dfn"
+          ],
+          1
+         ]
+        ],
+        [
+         ">",
+         [
+          "count",
+          [
+           "filter",
+           [
+            "linked",
+            "$it",
+            "bearer"
+           ],
+           [
+            "has",
+            "$it",
+            "adaptation"
+           ]
+          ]
+         ],
+         0
+        ]
+       ]
+      ],
+      "prompt": "Which Specimen molts?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "req": [
+     {
+      "if": [
+       ">",
+       [
+        "get",
+        "game",
+        "mp"
+       ],
+       0
+      ],
+      "why": "Only during a mission"
+     }
+    ],
+    "label": "Unscheduled Molting"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "archivist-of-the-eighth-seal",

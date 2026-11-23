@@ -16,3 +16,12 @@ DECKS['psylist-starter'] = deck('PsyList Central Station', 'The Listening World'
     (2, 'Group Meditation'), (1, 'Reprogram Identity'),
     (2, 'Precognitive Flash'), (2, 'Poltergeist Burst'), (2, 'Hypnotic Trigger'),
     (2, 'Collective Suggestion'), (2, 'Induced Suggestibility'), (1, 'Inside Tip')])
+
+DECKS['prendick-starter'] = deck('Prendick Holdings Headquarters', 'Genome Patent Monopoly', [
+    (3, 'Security Hound-9'), (3, 'Razorback Hybrid'), (3, 'Human-Passing Duplicate'), (3, 'Lab-Born Vertebrate'), (2, 'Mutation Handler'),
+    (3, 'Clinical Research Liaison'), (2, 'Molecular Patent Examiner'), (2, 'Alpha Predator'), (2, 'Mimicry Specialist'), (1, 'Infiltrator Brood'),
+    (1, 'Recombinant Apex'), (1, 'Veterinary Surgical Team'),
+    (2, 'Anatomical Reinforcement'), (3, 'Perfect Skin Graft'), (2, 'Hypermetabolic Serum'), (2, 'Specimen Transport'),
+    (2, 'Prendick Biomedicine Annex 14'), (1, 'The Feeding Pens'), (1, 'Venture Consortium'),
+    (2, 'Random Splice'), (2, 'Quarterly Earnings'), (2, 'Break Containment'), (2, 'False Credentials'),
+    (2, 'Replacement Protocol'), (1, 'Sabotage')])

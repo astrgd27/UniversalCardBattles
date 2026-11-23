@@ -136,6 +136,7 @@ fn('bearerOk', ['$c', '$o'], AND(Q(eq(g('$c', 'bearerKw'), 0), lit(True), has('$
 fn('playOk', ['$c', '$p'], AND(*(lib.PLAYREQ or [lit(True)]),
     OR(NOT(AND(has('$c', 'unique'), typ('$c', 'operative'))), NOT(ANY(OPS('$p'), eq(g('$it', 'card'), g('$c', 'card')))))))
 fn('pick1', ['$l'], first('$l'))
+fn('covertT', ['$o'], OR(lit(False), *lib.COVERT))
 fn('canAttachAny', ['$c', '$p'], ANY(OPS('$p'), C('bearerOk', '$c', '$it')))
 # The Hidden Treasury: temporary Influence can't pay for Responses
 fn('treasury', ['$p'], ANY(PERMS('$p'), AND(isc('$it', 'The Hidden Treasury'), C('active', '$it'))))
@@ -216,7 +217,7 @@ proc('missionEnd', [], [
     EACH(flt(['cards', '*', 'limbo'], eq(g('$it', 'mopc'), 1)), '$m', [['move', '$m', 'grave']]),
     *[SET('game', k, 0) for k in ['mp', 'mk', 'ma', 'am', 'dm', 'mcan', 'hqT', 'dwill']]])
 proc('assignDefense', [], [
-    LET('$cov', AND(eq(cnt(ATK), 1), ANY(ATK, has('$it', 'covert')))),
+    LET('$cov', AND(eq(cnt(ATK), 1), ANY(ATK, OR(has('$it', 'covert'), C('covertT', '$it'))))),
     LET('$can', flt(OPS('$opp'), C('canDef', '$it'))),
     IF('$cov', [choose('$can', '$d1', 'Assign a defender (a Covert attacker allows only one)', 0, 1, who='$opp'), IF(isObj('$d1'), [SET('$d1', 'dfn', 1)])],
         [choose('$can', '$ds', 'Assign defenders (up to 2)', 0, 2, who='$opp'), EACH('$ds', '$d', [SET('$d', 'dfn', 1)])]),
@@ -230,17 +231,21 @@ proc('basicReward', [], [
             choose(Q(typ('$t', 'operative'), opts('1 Dominance', '3 damage'),
                      Q(AND(typ('$t', 'facility'), ANY(ATK, isc('$it', 'Prototype Behemoth'))), opts('1 Dominance', 'Disable', 'Destroy (and 1 Dominance)'), opts('1 Dominance', 'Disable'))),
                    '$r', 'Strike succeeded: choose your reward'),
-            IF(eq('$r', '1 Dominance'), [dom(1)]), IF(eq('$r', '3 damage'), [dmg('$t', 3)]), IF(eq('$r', 'Disable'), [disable('$t')]),
+            IF(eq('$r', '1 Dominance'), [dom(1)]), IF(eq('$r', '3 damage'), [dmg('$t', add(3, *(lib.STRIKE_EXTRA or [0])))]), IF(eq('$r', 'Disable'), [disable('$t')]),
             IF(eq('$r', 'Destroy (and 1 Dominance)'), [C('gone', '$t'), dom(1)])]),
-        IF(eq(g('game', 'mk'), 2), [choose(Q(ANY(ATK, isc('$it', 'Courier with No Name')), opts('1 Dominance', 'Return the Asset', 'Return the Courier to hand instead'),
-                                                opts('1 Dominance', 'Return the Asset')), '$r', 'Infiltrate succeeded: choose your reward'),
+        IF(eq(g('game', 'mk'), 2), [choose(['concat', opts('1 Dominance', 'Return the Asset'), Q(ANY(ATK, isc('$it', 'Courier with No Name')), opts('Return the Courier to hand instead'), lit([])),
+                                                *[Q(cond, opts(lab), lit([])) for lab, cond, eff in lib.INFIL_OPTS]], '$r', 'Infiltrate succeeded: choose your reward'),
             IF(eq('$r', '1 Dominance'), [dom(1)]), IF(eq('$r', 'Return the Asset'), [bounce('$t')]),
-            IF(eq('$r', 'Return the Courier to hand instead'), [bounce(first(flt(ATK, isc('$it', 'Courier with No Name'))))])]),
+            IF(eq('$r', 'Return the Courier to hand instead'), [bounce(first(flt(ATK, isc('$it', 'Courier with No Name'))))]),
+            *[IF(eq('$r', lab), eff) for lab, cond, eff in lib.INFIL_OPTS]]),
         IF(eq(g('game', 'mk'), 3), [choose(opts('1 Dominance', 'Exhaust it and draw'), '$r', 'Subvert succeeded: choose your reward'),
             IF(eq('$r', '1 Dominance'), [dom(1)], [exhaust('$t'), draw(1)])])],
+        [IF(AND(eq(g('game', 'mk'), 2), gt(len(lib.INFIL_OPTS), 0), OR(lit(False), *[cond for lab, cond, eff in lib.INFIL_OPTS])), [
+            choose(['concat', opts('1 Dominance'), *[Q(cond, opts(lab), lit([])) for lab, cond, eff in lib.INFIL_OPTS]], '$r', 'Infiltrate succeeded: choose your reward'),
+            IF(eq('$r', '1 Dominance'), [dom(1)]), *[IF(eq('$r', lab), eff) for lab, cond, eff in lib.INFIL_OPTS]],
         [IF(ANY(ATK, isc('$it', 'Courier with No Name')), [
             choose(opts('1 Dominance', 'Return the Courier to hand instead'), '$r', 'Mission succeeded: choose your reward'),
-            IF(eq('$r', '1 Dominance'), [dom(1)], [bounce(first(flt(ATK, isc('$it', 'Courier with No Name'))))])], [dom(1)])])])
+            IF(eq('$r', '1 Dominance'), [dom(1)], [bounce(first(flt(ATK, isc('$it', 'Courier with No Name'))))])], [dom(1)])])])])
 proc('resolveMission', [], [
     LET('$at', add(SUM(ATK, C('val', '$it')), g('game', 'am'))),
     LET('$dt', Q(gt(cnt(DFN), 0), add(SUM(DFN, C('val', '$it')), g('game', 'dm')), add(C('sec', '$opp'), g('game', 'dm')))),
@@ -418,7 +423,8 @@ RULES = {
     ],
     'triggers': [
         {'on': 'drawFail', 'do': [['lose', '$e.player']]},
-        {'on': 'missionResult', 'do': [EACH(flt(OPS(), eq(g('$it', 'readyAfter'), '$turn')), '$x', [SET('$x', 'ex', 0), SET('$x', 'readyAfter', 0)])]},
+        {'on': 'missionResult', 'do': [EACH(flt(OPS(), eq(g('$it', 'readyAfter'), '$turn')), '$x', [SET('$x', 'ex', 0), SET('$x', 'readyAfter', 0)]),
+            EACH(flt(OPS(), gt(g('$it', 'hurtAfter'), 0)), '$x', [LET('$h', g('$x', 'hurtAfter')), SET('$x', 'hurtAfter', 0), ['damage', '$x', '$h', '$e.p']])]},
         {'on': 'cleanup', 'do': [EACH(flt(OPS('$e.p'), eq(g('$it', 'upkeep'), 1)), '$tk', [
             IF(ge(C('avail', '$e.p'), 1), [choose(opts('Pay 1 to keep it', 'Let it go'), '$u', 'Keep this token?', who='$e.p')], [LET('$u', 'Let it go')]),
             IF(eq('$u', 'Pay 1 to keep it'), [C('spend', '$e.p', 1)], [C('eliminate', '$tk')])])]},

@@ -58,5 +58,65 @@
    "induced-suggestibility",
    "inside-tip"
   ]
+ },
+ "prendick-starter": {
+  "hq": [
+   "prendick-holdings-headquarters"
+  ],
+  "agenda": [
+   "genome-patent-monopoly"
+  ],
+  "deck": [
+   "security-hound-9",
+   "security-hound-9",
+   "security-hound-9",
+   "razorback-hybrid",
+   "razorback-hybrid",
+   "razorback-hybrid",
+   "human-passing-duplicate",
+   "human-passing-duplicate",
+   "human-passing-duplicate",
+   "lab-born-vertebrate",
+   "lab-born-vertebrate",
+   "lab-born-vertebrate",
+   "mutation-handler",
+   "mutation-handler",
+   "clinical-research-liaison",
+   "clinical-research-liaison",
+   "clinical-research-liaison",
+   "molecular-patent-examiner",
+   "molecular-patent-examiner",
+   "alpha-predator",
+   "alpha-predator",
+   "mimicry-specialist",
+   "mimicry-specialist",
+   "infiltrator-brood",
+   "recombinant-apex",
+   "veterinary-surgical-team",
+   "anatomical-reinforcement",
+   "anatomical-reinforcement",
+   "perfect-skin-graft",
+   "perfect-skin-graft",
+   "perfect-skin-graft",
+   "hypermetabolic-serum",
+   "hypermetabolic-serum",
+   "specimen-transport",
+   "specimen-transport",
+   "prendick-biomedicine-annex-14",
+   "prendick-biomedicine-annex-14",
+   "the-feeding-pens",
+   "venture-consortium",
+   "random-splice",
+   "random-splice",
+   "quarterly-earnings",
+   "quarterly-earnings",
+   "break-containment",
+   "break-containment",
+   "false-credentials",
+   "false-credentials",
+   "replacement-protocol",
+   "replacement-protocol",
+   "sabotage"
+  ]
  }
 }

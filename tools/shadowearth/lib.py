@@ -172,6 +172,9 @@ def self_term(name, attr, n, cond=None):
     c = [isc('$o', name), A_(attr)] + ([cond] if cond is not None else [])
     return Q(AND(*c), n, 0)
 NULL = ['lit', None]
+COVERT = []         # terms (uses $o): true = this attacker has Covert in the current mission
+INFIL_OPTS = []     # extra Infiltrate rewards: (label, condition, effects); $t = the target or null
+STRIKE_EXTRA = []   # terms: extra damage for the Strike '3 damage' reward
 MY_SAC = lambda p='$me': flt(OPS(p), eq(g('$it', 'ctlT'), 0))  # operatives p may sacrifice (not borrowed ones)
 def agenda(reqs, imm=None, phases=('development', 'operations'), cost=None):
     """An Agenda's completion: reqs = [(condition, why)], imm = the Immediate effect list."""
