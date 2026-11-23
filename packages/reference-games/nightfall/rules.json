@@ -3847,14 +3847,15 @@
   },
   "victimFor": {
    "params": [
-    "$p"
+    "$p",
+    "$n"
    ],
    "do": [
     [
      "inc",
      "$p",
      "bodycount",
-     1
+     "$n"
     ],
     [
      "call",
@@ -3959,7 +3960,8 @@
       [
        "call",
        "victimFor",
-       "$me"
+       "$me",
+       2
       ]
      ]
     ]
@@ -4592,7 +4594,8 @@
         "get",
         "$k",
         "controller"
-       ]
+       ],
+       2
       ]
      ]
     ]

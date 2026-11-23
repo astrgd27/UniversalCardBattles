@@ -1184,13 +1184,13 @@
       "set",
       "p0",
       "terror",
-      8
+      7
      ],
      [
       "set",
       "p0",
       "bodycount",
-      9
+      7
      ],
      [
       "set",
@@ -1213,7 +1213,7 @@
    ],
    "steps": [
     {
-     "say": "You are playing the Slasher Killers. Your resource is Terror. The Slashers have very few units, but they grow deadlier as the Body Count rises. Every Citizen your Killers take, and every human unit they destroy, adds 1 Victim. At 11 Victims the Final Act begins and your Killers become monsters that are very hard to stop. You have 9 Victims now."
+     "say": "You are playing the Slasher Killers. Your resource is Terror. The Slashers have very few units, but they grow deadlier as the Body Count rises. Every Citizen your Killers take adds 2 to your Body Count, and so does every human unit they destroy (2). At 11 Victims the Final Act begins and your Killers become monsters that are very hard to stop. You have 7 Victims now."
     },
     {
      "say": "The Slashers hide their cards. Once per turn, you may Lurk: put any card from your hand face down in a District for free. Your opponent only sees the card back. It might be a Killer, a Trap, or a bluff (any other card, which is simply discarded if your opponent checks it)."
@@ -1244,7 +1244,7 @@
      }
     },
     {
-     "say": "Now tap The Groundskeeper to Prey. For the Slashers this is called Slay: the Citizen becomes a Victim (+1 Body Count) and you gain 1 Terror.",
+     "say": "Now tap The Groundskeeper to Prey. For the Slashers this is called Slay: the Citizen is taken (+2 Body Count) and you gain 1 Terror.",
      "do": {
       "action": "prey",
       "card": "the-groundskeeper"
@@ -1259,7 +1259,7 @@
      "decide": []
     },
     {
-     "say": "10 Victims. Your Killer is now face up, so your opponent knows where it is. At the end of your turn you may Vanish: pay 1 Terror per revealed Killer to turn it face down again, and it may move to a neighbouring District. This keeps your opponent guessing."
+     "say": "9 Victims. Your Killer is now face up, so your opponent knows where it is. At the end of your turn you may Vanish: pay 1 Terror per revealed Killer to turn it face down again, and it may move to a neighbouring District. This keeps your opponent guessing."
     },
     {
      "say": "Tap End phase to end your turn.",
@@ -1287,7 +1287,7 @@
      }
     },
     {
-     "say": "Tap The Groundskeeper to Prey and Slay Victim number 11.",
+     "say": "Tap The Groundskeeper to Prey and Slay again: that brings the Body Count to 11.",
      "do": {
       "action": "prey",
       "card": "the-groundskeeper"
@@ -1647,7 +1647,7 @@
    "price": 0,
    "stock": 1,
    "group": "starter-promo",
-   "text": "Promo starter (Slasher Killers): bluffing, hidden Lurkers and a race to 0 Victims."
+   "text": "Promo starter (Slasher Killers): bluffing, hidden Lurkers and a race to the Final Act at 11 Victims."
   },
   {
    "id": "promo-barrow-wakes",

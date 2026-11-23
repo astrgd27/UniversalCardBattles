@@ -213,7 +213,7 @@ test('nightfall: Slashers — Lurkers are hidden, Investigate springs a Trap, Un
   g = act(g, 'p0', 'clash', k, { $t: [nb] });
   assert.equal(g.s.priority, 'p1', 'the Cabal may answer any Hunt with a Fast Scheme');
   g = settle(pass(g));
-  assert.equal(vars(g, 'p0').bodycount, 1, 'a Mortal killed by a Killer is a Victim');
+  assert.equal(vars(g, 'p0').bodycount, 2, 'a Mortal killed by a Killer is worth 2 Victims');
   assert.ok(g.s.zones['p0:dark'].length === 0);
   g.s.objects[k].vars.dmg = 9;
   g.s.dirty = true;
@@ -430,8 +430,8 @@ test('nightfall balance: the Final Act (Body Count 11) empowers the Slashers ins
   const x = dx(g, 'docks');
   const k = put(g, 'p0', 'the-groundskeeper', x);
   const hook = put(g, 'p0', 'the-hook-handed-man', dx(g, 'financial'));
-  setVars(g, 'p0', { bodycount: 10 });
-  g = settle(act(g, 'p0', 'prey', k));
+  setVars(g, 'p0', { bodycount: 9 });
+  g = settle(act(g, 'p0', 'prey', k)); // a Slay is worth 2 Victims
   if (g.s.priority === 'p1') g = settle(pass(g));
   assert.equal(vars(g, 'p0').bodycount, 11);
   assert.equal(g.s.result, null, 'no instant win');
@@ -444,5 +444,6 @@ test('nightfall balance: the Final Act (Body Count 11) empowers the Slashers ins
   assert.equal(vars(g, 'p1').essence, before - (menace + 2), 'a Killer Strikes for its full, boosted Menace');
   const bc = vars(g, 'p0').bodycount;
   g = settle(pass(g)); // Toll: each face-up Killer Slays a Citizen in its district
-  assert.equal(vars(g, 'p0').bodycount, bc + 2);
+  assert.equal(vars(g, 'p0').bodycount, bc + 4, 'two face-up Killers, 2 Victims each');
 });
+

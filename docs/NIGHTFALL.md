@@ -106,6 +106,7 @@ Tuned with AI-vs-AI playtests, every faction pairing played from both seats. The
 | Evacuation Order | move 2 Citizens | at least 1 stays behind | Prey + Evacuation claimed a District on turn 1 |
 | Slasher Gather / Draw | 1 / 1 | 3 / 2 | 1.3 cards in hand at the end of the game; Lurking eats a card a turn |
 | Body Count | 13 Victims wins | no instant win: the **Final Act** at 11 Victims (below) | it averaged 5 at the end of the game; a power spike plays better than a counter that ends the game |
+| Victims per kill | 1 per Slay or Mortal unit | 2 | with 1 each, the Final Act fired in 1 game in 80; with 2, in about half the Slasher games |
 | Harvest Gather | 1 | 3 | 6–8 unplayable cards with no Bounty |
 | Awaken | 10 | 6 | the Old One woke in 1 game in 40 |
 | Devil Gather / Draw | 1 / 1 | 2 / 2 | too few cards to find Omens and the Vessel |
@@ -115,7 +116,7 @@ Tuned with AI-vs-AI playtests, every faction pairing played from both seats. The
 **The Final Act (Slashers):**
 - When the Body Count reaches 11, the Final Act begins (a banner announces it). It lasts for the rest of the game. Killers get +2 Menace and +2 Endurance, Strike for their full Menace (other units deal at most 2), and can't be Ended.
 - A destroyed Killer returns at the Slasher's next Rise, and each face-up Killer Slays a Citizen in its District at the Slasher's Toll.
-- Strikes against Old Hollow deal at most 1. The Final Act doesn't win by itself. The text is on Old Hollow's card, and the levers are `FINAL_ACT` and `FA_BUFF`.
+- Strikes against Old Hollow deal at most 1. The Final Act doesn't win by itself. The text is on Old Hollow's card, and the levers are `FINAL_ACT` and `FA_BUFF`. `FA_TERROR` (off) would also start it at that much Terror.
 - `BODYCOUNT_WIN > 0` restores the old instant win.
 
 **AI fix found along the way:**

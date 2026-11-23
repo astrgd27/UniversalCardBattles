@@ -22,7 +22,7 @@ LEVERS = {
     'SACRIFICE_IS_DEATH': 0,
     # Slasher Killers
     # The Final Act: at FINAL_ACT Victims the Killers and Old Hollow are empowered (BODYCOUNT_WIN > 0 restores the old instant win)
-    'BODYCOUNT_WIN': 0, 'FINAL_ACT': 11, 'FA_TERROR': 0, 'FA_BUFF': 2, 'LURKS': 1,
+    'BODYCOUNT_WIN': 0, 'FINAL_ACT': 11, 'FA_TERROR': 0, 'FA_BUFF': 2, 'STALK': 0, 'SLAY_VICTIMS': 2, 'UNIT_VICTIMS': 2, 'LURKS': 1,
     # Harvest Cult
     'AWAKEN': 6,
     # Devil's Own: Gestation starts at GEST_START and gains GESTATION_RISE at each Rise with a Vessel
@@ -31,7 +31,7 @@ LEVERS = {
 for k in LEVERS:
     if os.environ.get('NF_' + k) is not None: LEVERS[k] = int(os.environ['NF_' + k])
 BC, AW, FA = LEVERS['BODYCOUNT_WIN'], LEVERS['AWAKEN'], LEVERS['FINAL_ACT']
-FA_TEXT = (f"The Final Act: when your Body Count reaches {FA}, your Killers get +{LEVERS['FA_BUFF']}/+{LEVERS['FA_BUFF']}, Strike for their full Menace and can't be Ended, "
+FA_TEXT = (f"The Final Act: when your Body Count reaches {FA}" + (f" or you hold {LEVERS['FA_TERROR']} Terror" if LEVERS['FA_TERROR'] else '') + ", your Killers get +{LEVERS['FA_BUFF']}/+{LEVERS['FA_BUFF']}, Strike for their full Menace and can't be Ended, "
            "destroyed Killers return at your next Rise, and at your Toll each revealed Killer Slays a Citizen in its district. Strikes against you deal at most 1.")
 OUT = os.environ.get('NF_OUT') or os.path.join(os.path.dirname(__file__), '..', '..', 'packages', 'reference-games', 'nightfall')
 
@@ -203,7 +203,10 @@ proc('pay', ['$c'], [
     IF(eq(g('$c', 'type'), 'planting'), [['set', '$me', 'plantPlayed', 1]])])
 proc('place', ['$u', '$x', '$p'], [['set', '$u', 'x', '$x'], ['set', '$u', 'y', C('side', '$p')]])
 # A citizen leaves district $x, taken by $p (bookkeeping shared by every way of taking one).
-proc('took', ['$x', '$p'], [['inc', C('dAt', '$x'), 'cit', -1], ['set', C('dAt', '$x'), 'last', C('s1', '$p')], ['inc', '$p', 'trophies', 1], emit('took', player='$p', x='$x')])
+proc('took', ['$x', '$p'], [['inc', C('dAt', '$x'), 'cit', -1], ['set', C('dAt', '$x'), 'last', C('s1', '$p')], ['inc', '$p', 'trophies', 1], emit('took', player='$p', x='$x')] +
+    # Stalking: a Citizen the opponent takes where a Slasher Killer lurks (face up or down) is credited to the Slasher's Body Count
+    ([IF(AND(NOT(isF('$p', 4)), isF(['opp', '$p'], 4), ANY(['cards', ['opp', '$p'], 'units'], AND(eq(g('$it', 'type'), 'killer'), eq(g('$it', 'x'), '$x')))),
+        [C('victimFor', ['opp', '$p'], 1)])] if LEVERS['STALK'] else []))
 proc('infect', ['$x', '$p'], [IF(gt(cit('$x'), 0), [C('took', '$x', '$p'), ['create', 'shambler', '$p', 'units', {'as': '$s'}], C('place', '$s', '$x', '$p'), ['set', '$s', 'fresh', 1]])])
 # Gestation only advances while $p controls a Vessel; at 9 the Child is born.
 proc('gestFor', ['$p', '$n'], [IF(AND(isF('$p', 5), ['isObj', C('vessel', '$p')]), [
@@ -218,11 +221,11 @@ proc('fulfill', ['$o'], [IF(['isObj', '$o'], [LET('$p', g('$o', 'controller')), 
 proc('panic', ['$x', '$n'], [IF(NOT(C('livingIs', '$x', 'maple')), [EACH(['range', '$n'], '$i', [IF(gt(cit('$x'), 0), [
     choose(C('adjD', '$x'), '$to', 'Panic: where does a Citizen flee?'),
     ['inc', C('dAt', '$x'), 'cit', -1], ['inc', '$to', 'cit', 1]])])])])
-proc('victimFor', ['$p'], [['inc', '$p', 'bodycount', 1], C('addRes', '$p', 1)] +
+proc('victimFor', ['$p', '$n'], [['inc', '$p', 'bodycount', '$n'], C('addRes', '$p', 1)] +
     ([IF(ge(g('$p', 'bodycount'), BC), [['win', ['list', '$p']]])] if BC else []) +
     ([IF(ge(g('$p', 'bodycount'), FA), [C('finalActFor', '$p')])] if FA else []))
 proc('finalActFor', ['$p'], [IF(AND(isF('$p', 4), eq(g('$p', 'finalAct'), 0)), [['set', '$p', 'finalAct', 1], emit('finalAct', player='$p')])])
-proc('slay', ['$x'], [IF(gt(cit('$x'), 0), [C('took', '$x', '$me'), C('victimFor', '$me')])])
+proc('slay', ['$x'], [IF(gt(cit('$x'), 0), [C('took', '$x', '$me'), C('victimFor', '$me', LEVERS['SLAY_VICTIMS'])])])
 # Prey: take a Citizen by the hunting unit's faction method.
 proc('take', ['$u', '$x'], [IF(gt(cit('$x'), 0), [
     LET('$p', g('$u', 'controller')),
@@ -248,7 +251,7 @@ proc('clash', ['$a', '$b', '$bi'], [
     emit('clashed', a='$a', b='$b')])
 proc('victim', ['$k', '$v'], [IF(AND(['isObj', '$k'], eq(g('$k', 'type'), 'killer'), has('$v', 'mortal'), ge(g('$v', 'dmg'), C('endur', '$v')),
     NOT(AND(eq(g('$v', 'card'), 'the-final-girl'), eq(g('$v', 'saved'), 0)))), [
-    C('victimFor', g('$k', 'controller'))])])
+    C('victimFor', g('$k', 'controller'), LEVERS['UNIT_VICTIMS'])])])
 proc('spring', ['$t', '$v'], [IF(['isObj', '$t'], [
     LET('$o', g('$t', 'controller')),
     IF(ge(res('$o'), g('$t', 'cost')), [
@@ -1119,12 +1122,12 @@ TUTORIALS = [
      'deck': 'dont-go-in-there', 'opponentDeck': 'nine-moons', 'seed': 15, 'rewards': REWARD,
      'scenario': setpiece(CITY_C, {'p0': ['bear-trap', 'rusted-machete', 'the-party', 'just-the-cat', 'sheriff-dale-burke', 'dont-go-in-there']},
                           lurk=[('p0', 'the-groundskeeper', 0)], put=[('p1', 'hellhound', 2)],
-                          sets=[('p0', 'terror', 8), ('p0', 'bodycount', FA - 2), ('p1', 'sin', 4)]),
+                          sets=[('p0', 'terror', 10 - LEVERS['GATHER_SLASHER']), ('p0', 'bodycount', FA - 2 * LEVERS['SLAY_VICTIMS']), ('p1', 'sin', 4)]),  # 10 Terror after Gather: below the Final Act
      'script': [{'action': 'move', 'card': 'hellhound', 'targets': {'$d': ['old-town']}}],
      'steps': [
         say("You are playing the Slasher Killers. Your resource is Terror. The Slashers have very few units, but they grow deadlier as the Body Count rises. "
-            f"Every Citizen your Killers take, and every human unit they destroy, adds 1 Victim. At {FA} Victims the Final Act begins and your Killers become "
-            f"monsters that are very hard to stop. You have {FA - 2} Victims now."),
+            f"Every Citizen your Killers take adds {LEVERS['SLAY_VICTIMS']} to your Body Count, and so does every human unit they destroy ({LEVERS['UNIT_VICTIMS']}). At {FA} Victims "
+            f"the Final Act begins and your Killers become monsters that are very hard to stop. You have {FA - 2 * LEVERS['SLAY_VICTIMS']} Victims now."),
         say("The Slashers hide their cards. Once per turn, you may Lurk: put any card from your hand face down in a District for free. "
             "Your opponent only sees the card back. It might be a Killer, a Trap, or a bluff (any other card, which is simply discarded if your opponent checks it)."),
         do("Lurk the Bear Trap: tap Bear Trap in your hand, tap Old Town, then Confirm. Their Hellhound is in the Subway, right next to it.",
@@ -1134,12 +1137,12 @@ TUTORIALS = [
         say("Your face-down card at the Docks is a Killer: The Groundskeeper. You pay a Killer's cost only when you reveal it. "
             "A Killer revealed this way also gets Ambush: +2 Menace for its attack that turn."),
         do("Tap the face-down Groundskeeper at the Docks to reveal it. It costs 4 Terror.", 'reveal', 'the-groundskeeper'),
-        do("Now tap The Groundskeeper to Prey. For the Slashers this is called Slay: the Citizen becomes a Victim (+1 Body Count) and you gain 1 Terror.",
+        do(f"Now tap The Groundskeeper to Prey. For the Slashers this is called Slay: the Citizen is taken (+{LEVERS['SLAY_VICTIMS']} Body Count) and you gain 1 Terror.",
            'prey', 'the-groundskeeper'),
         decide("After a Slay comes Panic: another Citizen from that District runs to a neighbouring District that you choose. Use it to move Citizens away from "
                "Districts your opponent is about to claim. The Groundskeeper's ability makes 2 Citizens flee. Choose where the first one goes."),
         decide("Choose where the second Citizen flees."),
-        say(f"{FA - 1} Victims. Your Killer is now face up, so your opponent knows where it is. At the end of your turn you may Vanish: pay 1 Terror per revealed Killer to "
+        say(f"{FA - LEVERS['SLAY_VICTIMS']} Victims. Your Killer is now face up, so your opponent knows where it is. At the end of your turn you may Vanish: pay 1 Terror per revealed Killer to "
             "turn it face down again, and it may move to a neighbouring District. This keeps your opponent guessing."),
         end("Tap End phase to end your turn."),
         decide("The game asks whether to Vanish The Groundskeeper. Choose vanish.", 'vanish'),
@@ -1147,7 +1150,7 @@ TUTORIALS = [
         say("During your opponent's turn their Hellhound moved into Old Town, so your Bear Trap sprang: you paid its cost of 1 Terror, gained 1 Terror back, and the "
             "Hellhound took 3 wounds. With 3 Endurance, it was destroyed.", wait=True),
         do("Your Groundskeeper is face down again. Tap it to reveal it once more (4 Terror).", 'reveal', 'the-groundskeeper'),
-        do(f"Tap The Groundskeeper to Prey and Slay Victim number {FA}.", 'prey', 'the-groundskeeper'),
+        do(f"Tap The Groundskeeper to Prey and Slay again: that brings the Body Count to {FA}.", 'prey', 'the-groundskeeper'),
         say(f"{FA} Victims: the Final Act has begun. For the rest of the game your Killers get +{LEVERS['FA_BUFF']} Menace and +{LEVERS['FA_BUFF']} Endurance and "
             "Strike the enemy Master for their full Menace (other units deal at most 2). At the end of each of your turns, every face-up Killer Slays a Citizen "
             "in its District. Strikes against your own Master deal at most 1 damage."),
@@ -1205,7 +1208,7 @@ CAMPAIGN = {
         {'id': 'promo-marsh-whitcombe', 'name': 'The Marsh-Whitcombe Trust', 'deck': 'the-marsh-whitcombe-trust', 'price': 0, 'stock': 1, 'group': 'starter-promo',
          'text': 'Promo starter (Blood Cabal): buy the City one district at a time.'},
         {'id': 'promo-dont-go-in-there', 'name': "Don't Go in There", 'deck': 'dont-go-in-there', 'price': 0, 'stock': 1, 'group': 'starter-promo',
-         'text': 'Promo starter (Slasher Killers): bluffing, hidden Lurkers and a race to ' + str(BC) + ' Victims.'},
+         'text': 'Promo starter (Slasher Killers): bluffing, hidden Lurkers and a race to the Final Act at ' + str(FA) + ' Victims.'},
         {'id': 'promo-barrow-wakes', 'name': 'The Barrow Wakes', 'deck': 'the-barrow-wakes', 'price': 0, 'stock': 1, 'group': 'starter-promo',
          'text': 'Promo starter (Harvest Cult): plant, harvest, and wake the Old One.'},
         {'id': 'blood-dawn-pack', 'name': 'Blood Dawn booster', 'booster': 'blood-dawn', 'price': 100,

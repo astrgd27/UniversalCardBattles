@@ -64,7 +64,9 @@ def main(src, out):
         ('a 13-step Body Count', f'a {BC or FA}-step Body Count'),
         ('At 13 Victims, you win. Mortal units that Killers kill count as Victims too.',
          f'At {BC} Victims, you win. Mortal units that Killers kill count as Victims too.' if BC else
-         'Mortal units that Killers kill count as Victims too. ' + final_act),
+         f'Mortal units that Killers kill count as {L["UNIT_VICTIMS"]} Victims each. ' + final_act),
+        ('The Citizen goes on your Body Count as a Victim, and you gain 1 Terror.',
+         f'The Citizen goes on your Body Count as {L["SLAY_VICTIMS"]} Victims, and you gain 1 Terror.' if L['SLAY_VICTIMS'] != 1 else None),
         ('race to 13 Victims', f'race to {BC} Victims' if BC else f'race to the Final Act at {FA} Victims'),
         # Turn structure and Strikes
         ('Draw: draw 1 card.', 'Draw: draw 1 card (Slasher Killers and the Devil\'s Own draw 2).' if L['DRAW_SLASHER'] and L['DRAW_DEVIL'] else 'Draw: draw 1 card.'),
@@ -143,8 +145,10 @@ def main(src, out):
         ('Evacuation Order', 'Move 2 Citizens', 'Leaves at least 1 Citizen behind', 'Prey + Evacuation Order claimed the Subway on turn 1.'),
         ('Slasher Gather / Draw', '1 / 1 card', f'{n("GATHER_SLASHER")} / {1 + L["DRAW_SLASHER"]} cards',
          'Slashers ended games with 1.3 cards in hand: Lurking eats a card every turn.'),
-        ('Body Count', '13 Victims wins', str(BC) if BC else f'No instant win: the Final Act at {FA} empowers the Killers and Old Hollow',
+        ('Body Count', '13 Victims wins', str(BC) if BC else f'No instant win: the Final Act at {FA} Victims empowers the Killers and Old Hollow',
          'Average Body Count at game end was 5, so 13 was out of reach. A power spike is more interesting than a counter that ends the game.'),
+        ('Victims per kill', '1 per Slay, 1 per Mortal unit', f'{L["SLAY_VICTIMS"]} per Slay, {L["UNIT_VICTIMS"]} per Mortal unit',
+         'With 1 each, the Final Act fired in 1 game in 80; with 2 each, in about half the Slasher games.'),
         ('Harvest Gather', '1 + Yields', f'{n("GATHER_HARVEST")} + Yields', 'The Cult ended games with 6–8 unplayable cards and no Bounty.'),
         ('Awaken', '10', str(AW), 'Offerings averaged 2–4 at game end; the Old One woke in 1 game in 40.'),
         ('Devil Gather / Draw', '1 / 1 card', f'{n("GATHER_DEVIL")} / {1 + L["DRAW_DEVIL"]} cards', 'The Devil was short of cards to find Omens and its Vessel.'),

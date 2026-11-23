@@ -227,7 +227,7 @@
   "faction": "slasher",
   "num": "NF-050",
   "rarity": "L",
-  "text": "When an enemy unit Strikes you, you may move one of your face-down Lurkers into that unit's district. The Final Act: when your Body Count reaches 11, your Killers get +2/+2, Strike for their full Menace and can't be Ended, destroyed Killers return at your next Rise, and at your Toll each revealed Killer Slays a Citizen in its district. Strikes against you deal at most 1. Dark Gift (exhaust, 2 Terror): place an extra Lurker this turn.)",
+  "text": "When an enemy unit Strikes you, you may move one of your face-down Lurkers into that unit's district. The Final Act: when your Body Count reaches 11, your Killers get +{LEVERS['FA_BUFF']}/+{LEVERS['FA_BUFF']}, Strike for their full Menace and can't be Ended, destroyed Killers return at your next Rise, and at your Toll each revealed Killer Slays a Citizen in its district. Strikes against you deal at most 1. Dark Gift (exhaust, 2 Terror): place an extra Lurker this turn.)",
   "fno": 4,
   "essence": 16,
   "startRes": 2,
