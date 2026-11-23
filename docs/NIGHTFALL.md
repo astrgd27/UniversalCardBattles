@@ -90,9 +90,9 @@ Tuned with AI-vs-AI playtests, every faction pairing played from both seats. The
   - `NF_OUT=<dir>` builds the variant elsewhere, so several can run in parallel.
 - `python3 tools/nightfall/gdd_update.py` rewrites the design document from the current levers. It reads the original `docs/NIGHTFALL_GDD_v0.1.docx` and writes `docs/NIGHTFALL_GDD.docx`.
 
-**Result:** win rate across all pairings went from Zombie 100% / Cabal 88% / Harvest 44% / Slasher 38% / Devil 6% to Zombie 53% / Cabal 63% / Harvest 50% / Slasher 38% / Devil 47% (80 games).
-- Every signature win now happens. In 80 games: 14 Prophecies, 10 Old One awakenings, 32 Dominations, 29 Overruns and 2 Body Count wins.
-- The Slashers are the faction to watch: Body Count averages about 5 of 11.
+**Result:** win rate across all pairings went from Zombie 100% / Cabal 88% / Harvest 44% / Slasher 38% / Devil 6% to Zombie 53% / Cabal 59% / Harvest 38% / Slasher 47% / Devil 53% (80 games).
+- Every signature mechanic now shows up in play. In 80 games: 16 Prophecies, 14 Final Acts (in 32 Slasher games), 10 Old One awakenings, 30 Dominations and 29 Overruns.
+- The Harvest Cult is the faction to watch next.
 - Games end by Dawn about half the time, by the City about a fifth of the time, and otherwise by Ruin or a signature win.
 
 | Change | v0.1 (document) | v1.1 | Evidence |

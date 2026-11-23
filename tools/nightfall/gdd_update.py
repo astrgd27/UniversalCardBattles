@@ -129,7 +129,7 @@ def main(src, out):
     para_before('Revision 1.1: playtest balance', anchor.style.name)
     para_before('The digital version plays every faction pairing with an AI that sees only what a player sees. Version 0.1 '
                 'ended Zombie Horde 100%, Blood Cabal 88%, Harvest Cult 44%, Slasher Killers 38% and Devil\'s Own 6% '
-                '(win rate across all pairings). After these changes, 80 games ended Zombie Horde 53%, Blood Cabal 63%, Harvest Cult 50%, Devil\'s Own 47% and Slasher Killers 38%. Every signature victory now happens in play.', 'Normal')
+                '(win rate across all pairings). After these changes, 80 games ended Blood Cabal 59%, Zombie Horde 53%, Devil\'s Own 53%, Slasher Killers 47% and Harvest Cult 38%, and every faction\'s signature mechanic now shows up in play.', 'Normal')
     rows = [
         ('Change', 'v0.1', 'v1.1', 'Why'),
         ('Strikes', 'Each unit Strikes for its full Menace', f'One Strike per district per turn, at most {n("STRIKE_DAMAGE")} damage',
