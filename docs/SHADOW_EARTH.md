@@ -53,6 +53,36 @@ Core Set 1.7: five conspiracies race to **20 Dominance** through covert missions
   - **The Perfect Organism:** "ignores the first opposing Operation".
 - **Tokens:** tokens with an upkeep (Open Recruitment Drive, Global Subcontractors) ask for 1 Influence each at Cleanup, or they are eliminated.
 
+## Balance test runs
+These are AI vs AI games across all 20 faction pairings, using `tools/shadowearth/playtest.ts`. Split the work with `--part=i/n` and combine the parts with `merge_playtest.py`. The levers are listed above.
+
+**AI fixes found by the runs:**
+- **Scoring moves mid-mission:** the heuristic agent scored a mission before the window had resolved, so it saw the cost but never the reward. It now lets open timing windows play out when it scores a move. This change applies to every module.
+- **Exhausted defenders:** the AI also didn't count that an exhausted attacker can't defend on the opponent's turn. Ready operatives are now worth about half their best attribute.
+- **Effect:** before these fixes, games averaged 60 turns, with 1.9 attack against 2.1 defence and 29% of missions succeeding.
+
+**Starter decks:**
+- **The problem:** the attacker always picks the attribute where the defender is weakest. Prendick's deck had no operative with 3+ Will, and Children's had little Force or Tradecraft.
+- **The fix:** the starters now include Neutral cover: Crisis Negotiator, Interrogation Officer and Mental Fortitude for Prendick; Ex-Military Bodyguard, Professional Cleaner and Inside Tip for Children.
+- **The result:** Prendick went from 12% to 38–50%.
+
+**Pacing (current rules: 20 Dominance, two missions a turn):**
+- With sensible defending, missions succeed about 28% of the time: 46% against an undefended Headquarters, 12% against defenders.
+- Games average about 59 turns (around 30 each), and about 4 in 10 end with a player unable to draw.
+
+| Option (lever) | Games | End at the Dominance target | Avg turns | Faction win rates |
+|---|---|---|---|---|
+| Rules as printed | 40 | 60% | 59 | 19–69% |
+| Win at 15 (`WIN=15`) | 40 (seeds 2–3) | ~75% | ~49 | 29–75% |
+| Three missions a turn (`MISSIONS=3`) | 40 | 98% | 39 | 31–69% |
+| Headquarters missions score 2 (`HQ_DOM=2`) | 40 | 100% | 25 | 19–81% |
+| Attacker wins ties (`TIE_WINS=1`) | 20 | 70% | 53 | 12–75% |
+
+**Factions:**
+- PsyList is the strongest in every configuration (69–94%), thanks to high Will (12 operatives with 3+), Control counters and "can't defend".
+- The Children are the weakest (19–38%): cultists and their 0/1/1 tokens rarely win missions (about 22% success).
+- Faction-level card tuning should wait for the pacing decision.
+
 ## Starter decks
 `psylist-starter`, `prendick-starter`, `dawnstar-starter`, `illuminati-starter` and `children-starter`. Each has 50 cards, plus its Headquarters and the faction's Tier I Agenda.
 

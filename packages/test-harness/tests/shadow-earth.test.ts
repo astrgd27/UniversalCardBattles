@@ -66,10 +66,10 @@ test('shadow-earth: defenders, a tie is a successful defense, and a Strike on an
   g = settle(act(g, 'p0', 'strike', null, { $t: ['p1'], $team: [recruit] }), (pd) => (pd.player === 'p1' && /defenders/.test(pd.prompt) ? [hound] : undefined));
   assert.equal(vars(g, 'p1').defended, 1, 'Force 2 vs a Force 2 defender: the defense holds');
   assert.equal(g.s.objects[hound].vars.ex, 1, 'defenders are exhausted');
-  const lab = put(g, 'p1', 'lab-born-vertebrate');
+  const lab = put(g, 'p1', 'human-passing-duplicate');
   g = settle(act(g, 'p0', 'strike', null, { $t: [lab], $team: [trooper] }), (pd) => (pd.options.includes('3 damage') ? ['3 damage'] : undefined));
   assert.ok(!g.s.objects[lab], 'Force 1 means durability 3: three damage eliminates it');
-  assert.ok(g.s.zones['p1:grave'].some((id) => g.s.objects[id].card === 'lab-born-vertebrate'));
+  assert.ok(g.s.zones['p1:grave'].some((id) => g.s.objects[id].card === 'human-passing-duplicate'));
 });
 
 test('shadow-earth: Responses in the mission window (the defender acts first) change the outcome', () => {
