@@ -2196,7 +2196,7 @@
   "keywords": [
    "scientist"
   ],
-  "force": 1,
+  "force": 0,
   "trade": 2,
   "will": 2,
   "hp": 3,
@@ -2307,7 +2307,7 @@
   "keywords": [
    "specimen"
   ],
-  "force": 2,
+  "force": 1,
   "trade": 3,
   "will": 1,
   "hp": 3,
@@ -4393,7 +4393,7 @@
   "force": 0,
   "trade": 1,
   "will": 2,
-  "hp": 2,
+  "hp": 3,
   "abilities": [
    {
     "on": "missionResult",
@@ -4500,7 +4500,7 @@
   "force": 1,
   "trade": 1,
   "will": 2,
-  "hp": 2,
+  "hp": 3,
   "num": "SE2-100",
   "rarity": "C"
  },
@@ -4783,8 +4783,8 @@
   ],
   "force": 1,
   "trade": 2,
-  "will": 2,
-  "hp": 2,
+  "will": 3,
+  "hp": 3,
   "num": "SE2-107",
   "rarity": "C"
  },
@@ -4818,7 +4818,7 @@
   "force": 0,
   "trade": 1,
   "will": 2,
-  "hp": 1,
+  "hp": 2,
   "num": "SE2-109",
   "rarity": "C"
  },
@@ -4836,7 +4836,7 @@
   "force": 1,
   "trade": 1,
   "will": 3,
-  "hp": 2,
+  "hp": 3,
   "num": "SE2-110",
   "rarity": "C"
  },

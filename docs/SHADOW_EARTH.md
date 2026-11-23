@@ -25,7 +25,8 @@ Version 2.0 is a full redesign of the Core 1.7 prototype (archived in `tools/sha
 
 ## Turn
 1. **Refresh.** Ready your cards, raise your Influence capacity by 1 (max 7) and refill it. Then resolve "at the start of your turn" effects.
-2. **Draw** 1 card.
+   - **Catch-up:** if you are behind on Dominance, gain 1 temporary Influence.
+2. **Draw** 1 card. If you are 2 or more Dominance behind, draw 1 more.
 3. **Main phase.** In any order, play cards (Operatives, Assets, Facilities, Operations), use abilities and launch missions.
 4. **End.** Resolve "at the end of your turn" effects, discard down to 7 and expire temporary Influence.
 
@@ -37,7 +38,7 @@ Version 2.0 is a full redesign of the Core 1.7 prototype (archived in `tools/sha
 
 ## Missions
 1. **Choose a target, then send 1–3 ready operatives.** They are exhausted. Missions are free; your operatives are the limit.
-2. **Defence:** the opponent may assign up to 3 ready operatives, who are exhausted.
+2. **Defence:** the opponent may assign up to 3 ready operatives. Defending does not exhaust them, so a defender can guard against every mission that turn.
    - A Wetwork target defends itself even when exhausted and doesn't count toward the 3.
    - A lone attacker with **Covert** allows only one defender.
 3. **Responses:** players alternate, defender first. Each may play a Response card or a Response ability; passing twice in a row ends the step.
@@ -49,15 +50,16 @@ Version 2.0 is a full redesign of the Core 1.7 prototype (archived in `tools/sha
 
 | Target | Attribute | Resistance if undefended | Reward |
 |---|---|---|---|
-| A **Conspiracy Agenda** in the row | the Agenda's (F, T or W) | the Agenda's | +1 progress for you (+2 if decisive). At its threshold, you **score** it |
-| **Your Master Plan** | the Plan's | 2 | +1 progress (+2 if decisive). At 5 it is **enacted** |
+| A **Conspiracy Agenda** in the row | the Agenda's (F, T or W) | its progress threshold (2, 3 or 4) | +1 progress for you (+2 if decisive). At its threshold, you **score** it |
+| **Your Master Plan** | the Plan's | 2 | +1 progress (+2 if decisive). At 4 it is **enacted** |
 | **The opponent's Master Plan** | the Plan's | 2 | remove 2 of their progress |
 | **An opposing operative** (Wetwork) | Force | it always defends itself | 3 damage to it |
 | **An opposing Facility or Asset** (Sabotage) | Tradecraft | 2 | destroy it |
 | **The opposing Headquarters** (Blackmail) | Will | 3 | steal 1 progress (theirs −1 and yours +1 on a Conspiracy Agenda), or they discard 2 cards |
 
 **Scoring an Agenda:**
-- You gain its Dominance and resolve its "When scored" effect. All progress on it is cleared, it goes to your scored pile, and a new Agenda is revealed.
+- You gain its Dominance (1, 2 or 3) and resolve its "When scored" effect. All progress on it is cleared, it goes to your scored pile, and a new Agenda is revealed.
+- Scoring an Agenda also adds 1 progress to your Master Plan, so the public race feeds your private one.
 - **Enacting your Master Plan** gives 3 Dominance and its permanent effect. A Master Plan is enacted only once.
 
 ## Card types
@@ -81,7 +83,7 @@ Each faction has a Headquarters power, a Master Plan and three archetypes:
 
 | Faction | Leaning | Headquarters power | Master Plan | Archetypes |
 |---|---|---|---|---|
-| **PsyList** (the government's psychic program) | Will / Tradecraft | at the start of your turn, look at the top card of the opponent's deck | **Project OVERMIND** (Will) | Clairvoyance; Psychic Assault; **Control counters** (mind-controlled enemies) |
+| **PsyList** (the government's psychic program) | Will / Tradecraft | at the start of your turn, look at the top card of the opponent's deck; enemies with Control counters get −1 to all attributes | **Project OVERMIND** (Will) | Clairvoyance; Psychic Assault; **Control counters** (mind-controlled enemies) |
 | **Prendick Holdings** (biotech conglomerate) | Force / Tradecraft | your Mutations cost 1 less | **Project CHIMERA** (Force) | **Mutations** on Specimens; Sleeper Organisms; Corporate Biotech (economy) |
 | **Dawn Star Society** (occult lodge) | Will / Force | the first time you sacrifice each turn, gain 1 Influence | **The Morning Star Descends** (Will) | **Sacrifice**; Demons; Scriptures |
 | **Illuminati** (old money, the deep state) | Tradecraft | gain 1 temporary Influence each turn | **The New World Compact** (Tradecraft) | Finance; Institutions (**Mandate counters**); Contractors |

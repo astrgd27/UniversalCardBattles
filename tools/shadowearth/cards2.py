@@ -136,11 +136,11 @@ asset('Hypermetabolic Serum', 'prendick', 2, 'Mutation. Attach to a Specimen: +1
 ATTR.append(bearer_term('Hypermetabolic Serum', 'F', 1))
 asset('Adrenal Reservoir', 'prendick', 2, 'Mutation. Attach to a Specimen: +2 Force while attacking.', 'Fight. Fight. Fight.', kws=('mutation',), attach=1, bearerKw='specimen')
 ATTR.append(bearer_term('Adrenal Reservoir', 'F', 2, attacking('$o')))
-operative('Mutation Handler', 'prendick', 2, 1, 2, 2, 3, 'Scientist. When you attach a Mutation, draw a card.', '"Hold him down. Gently."', kws=('scientist',),
+operative('Mutation Handler', 'prendick', 2, 0, 2, 2, 3, 'Scientist. When you attach a Mutation, draw a card.', '"Hold him down. Gently."', kws=('scientist',),
           abilities=[trig('attached', [draw(1)], AND(eq('$e.p', SELF_P), has('$e.a', 'mutation')))])
 operative('Human-Passing Duplicate', 'prendick', 2, 1, 3, 1, 3, 'Specimen. When its side wins a Tradecraft mission, draw a card.', 'Your neighbor. Probably.', kws=('specimen',),
           abilities=[on_win([draw(1)], AND(eq('$e.attr', 2), attacking('$self')))])
-operative('Infiltrator Brood', 'prendick', 3, 2, 3, 1, 3, 'Specimen. When its side wins a mission it joined, create a 1/1/0 Hybrid token.', 'They hatch in air ducts.',
+operative('Infiltrator Brood', 'prendick', 3, 1, 3, 1, 3, 'Specimen. When its side wins a mission it joined, create a 1/1/0 Hybrid token.', 'They hatch in air ducts.',
           kws=('specimen',), abilities=[on_win([token('Hybrid')], attacking('$self'))])
 operative('Mimicry Specialist', 'prendick', 3, 1, 4, 1, 3, 'Specimen. Covert. Can\'t be targeted by Wetwork.', 'Wears your face better than you do.', kws=('specimen', 'covert'))
 TGTDENY.append(isc('$o', 'Mimicry Specialist'))
@@ -259,10 +259,10 @@ hq('The First Contact House', 'children', 'Security 3. At the start of your turn
 plan('The Great Arrival', 'children', 'W', 'Master Plan (Will). Enacted: create the High-One Manifestation (7/4/8, Health 9), ready, and exhaust all enemy operatives.',
      'They are not coming. They are already here. They are waiting to be invited.',
      onEnact=[token('High-One Manifestation'), EACH(OPP_OPS, '$x', [exhaust('$x')])])
-operative('Street Preacher', 'children', 1, 0, 1, 2, 2, 'Cultist. When its side wins a mission it joined, create a 0/1/1 Cultist token.', '"They told me the date. It is sooner than you think."',
+operative('Street Preacher', 'children', 1, 0, 1, 2, 3, 'Cultist. When its side wins a mission it joined, create a 0/1/1 Cultist token.', '"They told me the date. It is sooner than you think."',
           kws=('cultist',), abilities=[on_win([token('Cultist')], attacking('$self'))])
 operation('Community Outreach', 'children', 1, 'Create two 0/1/1 Cultist tokens.', 'Free soup. Free pamphlets. Free forever.', do=[token('Cultist', 2)])
-operative('Ecstatic Convert', 'children', 1, 1, 1, 2, 2, 'Cultist. +1 Will while another Cultist participates in its mission.', 'She has not slept since the light.', kws=('cultist',))
+operative('Ecstatic Convert', 'children', 1, 1, 1, 2, 3, 'Cultist. +1 Will while another Cultist participates in its mission.', 'She has not slept since the light.', kws=('cultist',))
 ATTR.append(self_term('Ecstatic Convert', 'W', 1, AND(participating('$o'), ANY(OPS(ctrl('$o')), AND(ne('$it', '$o'), participating('$it'), has('$it', 'cultist'))))))
 operative('Cell Organizer', 'children', 3, 1, 2, 3, 3, 'Cultist. Your Cultist tokens get +1 Will and +1 Tradecraft.', 'Each cell knows three names. Each name knows the date.', kws=('cultist',))
 ATTR.append(Q(AND(OR(A_('W'), A_('T')), has('$o', 'cultist'), has('$o', 'token'), own('Cell Organizer', ctrl('$o'))), 1, 0))
@@ -280,13 +280,13 @@ asset('Neural Disruptor', 'children', 3, 'Artifact. Attach to an operative. When
       'It hums in a key that makes you forget your name.', kws=('artifact',), attach=1)
 PRE_DEFEND.append(IF(ANY(ATK, gt(gear_n('$it', 'Neural Disruptor'), 0)), [
     choose(flt(OPS('$opp'), AND(ready_('$it'), le(C('attr', '$it', 3), 2))), '$v', 'Neural Disruptor: exhaust which enemy?', 0, 1), IF(isObj('$v'), [exhaust('$v')])]))
-operative('Contact Engineer', 'children', 2, 1, 2, 2, 2, 'Cultist. Your Artifacts cost 1 less.', 'Reverse engineering. Mostly reverse.', kws=('cultist',))
+operative('Contact Engineer', 'children', 2, 1, 2, 3, 3, 'Cultist. Your Artifacts cost 1 less.', 'Reverse engineering. Mostly reverse.', kws=('cultist',))
 COST.append(Q(AND(has('$c', 'artifact'), own('Contact Engineer', '$p')), -1, 0))
 asset('Antigravity Harness', 'children', 2, 'Artifact. Attach to an operative: +1 Tradecraft; it is Swift.', 'Do not wear it indoors.', kws=('artifact',), attach=1)
 ATTR.append(bearer_term('Antigravity Harness', 'T', 1)); SWIFT.append(gt(gear_n('$o', 'Antigravity Harness'), 0))
-operative('Whispering Devotee', 'children', 1, 0, 1, 2, 1, 'Cultist. When eliminated, gain 1 Revelation.', 'She whispers the coordinates. Over and over.', kws=('cultist',))
+operative('Whispering Devotee', 'children', 1, 0, 1, 2, 2, 'Cultist. When eliminated, gain 1 Revelation.', 'She whispers the coordinates. Over and over.', kws=('cultist',))
 RULE_TRIGGERS.append({'on': 'eliminated', 'if': eq('$e.card', slug('Whispering Devotee')), 'do': [C('gainRev', '$e.ctrl', 1)]})
-operative('Rift Attendant', 'children', 2, 1, 1, 3, 2, 'Cultist. Your Entities cost 2 less while you have 4 or more Revelation.', 'She keeps the door. She does not decide who comes through.', kws=('cultist',))
+operative('Rift Attendant', 'children', 2, 1, 1, 3, 3, 'Cultist. Your Entities cost 2 less while you have 4 or more Revelation.', 'She keeps the door. She does not decide who comes through.', kws=('cultist',))
 COST.append(Q(AND(has('$c', 'entity'), ge(g('$p', 'rev'), 4), own('Rift Attendant', '$p')), -2, 0))
 operative('Manifestation of Hunger', 'children', 4, 5, 1, 4, 5, 'Entity. At the end of your turn, sacrifice a Cultist or deal 2 damage to it.', 'It ate the farmhouse dog first. Then the farmhouse.',
           kws=('entity',), abilities=[at_end([choose(Q(gt(cnt(flt(CULT(), ne('$it', '$self'))), 0), opts('Sacrifice a Cultist', 'Take 2 damage'), opts('Take 2 damage')), '$y', 'Manifestation of Hunger hungers'),
