@@ -327,7 +327,9 @@ export function apply(m: Mod, s: State, eff: Effect, f: Frame) {
     case 'emit': {
       const data: Record<string, any> = {};
       for (const [k, v] of Object.entries((eff[2] ?? {}) as object)) data[k] = ev(m, s, v, ctx);
-      emit(m, s, { ...data, type: String(eff[1]) });
+      // optional {to: players}: only those players see the data fields (a private look)
+      const to = eff[3] && typeof eff[3] === 'object' && 'to' in (eff[3] as object) ? list(ev(m, s, (eff[3] as any).to, ctx)).map(String) : null;
+      emit(m, s, { ...data, type: String(eff[1]), ...(to ? masks([to, Object.keys(data)]) : {}) });
       return;
     }
     case 'log': emit(m, s, { type: 'log', msg: A(1) }); return;

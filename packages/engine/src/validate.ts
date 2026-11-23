@@ -239,6 +239,7 @@ export function validateIssues(def: ModuleDef): Issue[] {
         case 'emit':
           if (typeof eff[1] !== 'string') err(`${p}/1`, 'emit needs an event type');
           if (isRec(eff[2])) for (const [k, v] of Object.entries(eff[2])) expr(v, `${p}/2/${esc(k)}`, err);
+          if (eff[3] !== undefined) { if (isRec(eff[3]) && 'to' in eff[3]) expr(eff[3].to, `${p}/3/to`, err); else err(`${p}/3`, 'emit options must be {to: players}'); }
           return;
         case 'modify': {
           X(1);

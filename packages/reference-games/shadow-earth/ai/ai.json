@@ -1,0 +1,17 @@
+{
+ "eval": [
+  "-",
+  [
+   "call",
+   "board",
+   "$me"
+  ],
+  [
+   "call",
+   "board",
+   "$opp"
+  ]
+ ],
+ "samples": 1,
+ "horizon": "pass"
+}

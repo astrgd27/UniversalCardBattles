@@ -67,7 +67,7 @@ Effects run in effect lists `[[op...], [op...]]`.
 | `if cond then else?`, `each list $v body`, `let $v expr` | control. Branch and loop bodies get a **copy** of ctx (block scope) |
 | `choose {who?, from, min?, max?, as, prompt?}` | pauses for a player decision. It auto-resolves when there is no real choice. `max` 1 binds a single id, otherwise a list |
 | `run obj field` | runs the card definition's effect list `field` with `$self` = obj and `$me` = its controller |
-| `emit type {k: expr}`, `log msg`, `endPhase` | custom events, a log line, and ending the current phase |
+| `emit type {k: expr} {to?: players}`, `log msg`, `endPhase` | custom events (with `to`, only those players see the fields: a private look), a log line, and ending the current phase |
 | `counter items` | removes stack items and runs their action's `countered` effects |
 | `modify objs {layer, mods, until?: "turn"}` | a temporary continuous effect. Values are fixed when it's created, and it applies only to those object ids |
 | `link objs rel target`, `unlink objs rel` | relationships (attachments and so on). A zone change clears them |

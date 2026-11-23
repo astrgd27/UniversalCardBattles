@@ -1,0 +1,164 @@
+{
+ "moduleId": "shadow-earth",
+ "displayName": "Shadow Earth",
+ "semanticVersion": "0.1.0",
+ "engineApiRange": "^0.3.1",
+ "official": true,
+ "requiredCapabilities": [
+  "windows",
+  "multiDeck",
+  "gameVars",
+  "scripts",
+  "deckRules",
+  "limits",
+  "control",
+  "relationships"
+ ],
+ "licensing": "Original game by @Astral (Core Set 1.7 prototype).",
+ "tagline": "Covert missions, secret agendas and five conspiracies racing to 20 Dominance.",
+ "theme": {
+  "accent": "#b45309",
+  "accent2": "#38bdf8",
+  "glyph": "◉",
+  "tapVar": "ex",
+  "hideStats": [
+   "num",
+   "fno",
+   "archetype",
+   "ready",
+   "hasDeploy",
+   "hasSucc",
+   "hasPre",
+   "hasImm",
+   "attach",
+   "bearerKw",
+   "mattr",
+   "tier",
+   "security",
+   "entersReady"
+  ],
+  "hideVars": [
+   "faction",
+   "att",
+   "attMax",
+   "domMax",
+   "cap",
+   "tmpc",
+   "ex",
+   "atk",
+   "dfn",
+   "tgt",
+   "mb",
+   "z0",
+   "oF",
+   "oT",
+   "oW",
+   "cF",
+   "cT",
+   "cW",
+   "newT",
+   "nodef",
+   "noab",
+   "nomis",
+   "noready",
+   "ctlT",
+   "freeJoin",
+   "hasteT",
+   "lastBy",
+   "mopc",
+   "sup",
+   "done",
+   "hqdmg"
+  ],
+  "hideKeywords": [
+   "token"
+  ],
+  "labels": {
+   "dom": "Dominance",
+   "inf": "Influence",
+   "tmp": "temporary",
+   "rev": "Revelation",
+   "ops": "Operatives",
+   "sites": "Facilities & Projects",
+   "gear": "Assets",
+   "hq": "Headquarters",
+   "agenda": "Agenda",
+   "limbo": "Resolving",
+   "grave": "Discard",
+   "exile": "Exile",
+   "dmg": "damage",
+   "ctl": "Control",
+   "prog": "progress",
+   "dis": "Disabled",
+   "response": "Operation — Response",
+   "mission": "Operation — Mission",
+   "force": "Force",
+   "trade": "Tradecraft",
+   "will": "Will",
+   "dur": "Durability"
+  },
+  "announce": {
+   "agendaCompleted": "Agenda: {card}",
+   "missionDeclared": "Mission!"
+  }
+ },
+ "presentation": {
+  "templates": {
+   "operative": {
+    "base": "skirmisher",
+    "art": 52,
+    "stats": [
+     {
+      "field": "force",
+      "pos": "line",
+      "label": "F"
+     },
+     {
+      "field": "trade",
+      "pos": "line",
+      "label": "T"
+     },
+     {
+      "field": "will",
+      "pos": "line",
+      "label": "W"
+     },
+     {
+      "field": "dur",
+      "pos": "br",
+      "icon": "♥"
+     }
+    ],
+    "label": "Operative — Force / Tradecraft / Will"
+   },
+   "card": {
+    "base": "spell",
+    "art": 52,
+    "label": "Card"
+   },
+   "hq": {
+    "base": "leader",
+    "art": 52,
+    "stats": [
+     {
+      "field": "security",
+      "pos": "tr",
+      "icon": "⛨"
+     }
+    ],
+    "label": "Headquarters — Security"
+   }
+  },
+  "byType": {
+   "operative": "operative",
+   "headquarters": "hq",
+   "agenda": "card",
+   "facility": "card",
+   "project": "card",
+   "asset": "card",
+   "operation": "card",
+   "response": "card",
+   "mission": "card"
+  }
+ }
+}
