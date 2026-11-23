@@ -16,7 +16,71 @@
   "keywords": [
    "psychic"
   ],
-  "ready": 0
+  "deploy": [
+   [
+    "call",
+    "peekTop",
+    "$me",
+    "$opp"
+   ],
+   [
+    "if",
+    [
+     ">",
+     [
+      "count",
+      [
+       "cards",
+       "$opp",
+       "deck"
+      ]
+     ],
+     0
+    ],
+    [
+     [
+      "choose",
+      {
+       "from": [
+        "lit",
+        [
+         "Leave it",
+         "Put it on the bottom"
+        ]
+       ],
+       "as": "$y",
+       "prompt": "Remote Viewer: their top card",
+       "min": 1,
+       "max": 1
+      }
+     ],
+     [
+      "if",
+      [
+       "=",
+       "$y",
+       "Put it on the bottom"
+      ],
+      [
+       [
+        "move",
+        [
+         "first",
+         [
+          "cards",
+          "$opp",
+          "deck"
+         ]
+        ],
+        "deck"
+       ]
+      ]
+     ]
+    ]
+   ]
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "probability-analyst",
@@ -35,7 +99,51 @@
   "keywords": [
    "psychic"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "call",
+      "peekHand",
+      "$me",
+      "$opp"
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      2
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "sensory-deprivation-tank",
@@ -47,7 +155,67 @@
   "text": "Once per turn, exhaust a Psychic: Scry 2 (look at the top two cards of your deck and return them in any order).",
   "archetype": "Clairvoyance",
   "cost": 2,
-  "ready": 0
+  "abil": [
+   {
+    "label": "Exhaust a Psychic: Scry 2",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "do": [
+     [
+      "set",
+      "$t",
+      "ex",
+      1
+     ],
+     [
+      "call",
+      "scry",
+      "$me",
+      2
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "has",
+         "$it",
+         "psychic"
+        ]
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "ex"
+        ],
+        0
+       ]
+      ],
+      "prompt": "Exhaust which Psychic?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "precognitive-flash",
@@ -59,7 +227,98 @@
   "text": "After defenders are declared, one Psychic gets +2 to the mission attribute.",
   "archetype": "Clairvoyance",
   "cost": 1,
-  "ready": 0
+  "resp": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "inc",
+        "$t",
+        "mb",
+        2
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "has",
+         "$it",
+         "psychic"
+        ]
+       ],
+       [
+        "or",
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "atk"
+         ],
+         1
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "dfn"
+         ],
+         1
+        ]
+       ]
+      ],
+      "prompt": "Which Psychic gets +2?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "req": [
+     {
+      "if": [
+       ">",
+       [
+        "get",
+        "game",
+        "mp"
+       ],
+       0
+      ],
+      "why": "Only during a mission"
+     }
+    ],
+    "label": "Precognitive Flash"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "chronicle-of-possible-deaths",
@@ -74,7 +333,106 @@
   "keywords": [
    "loadout"
   ],
-  "ready": 0
+  "attach": 1,
+  "bearerKw": "psychic",
+  "abilities": [
+   {
+    "on": "missionDeclared",
+    "do": [
+     [
+      "call",
+      "peekTop",
+      "$me",
+      "$opp"
+     ],
+     [
+      "if",
+      [
+       ">",
+       [
+        "count",
+        [
+         "cards",
+         "$opp",
+         "deck"
+        ]
+       ],
+       0
+      ],
+      [
+       [
+        "choose",
+        {
+         "from": [
+          "lit",
+          [
+           "Reveal it (+1 to the team)",
+           "No"
+          ]
+         ],
+         "as": "$y",
+         "prompt": "Chronicle of Possible Deaths: reveal their top card?",
+         "min": 1,
+         "max": 1
+        }
+       ],
+       [
+        "if",
+        [
+         "=",
+         "$y",
+         "Reveal it (+1 to the team)"
+        ],
+        [
+         [
+          "call",
+          "revealTop",
+          "$me",
+          "$opp"
+         ],
+         [
+          "inc",
+          "game",
+          "am",
+          1
+         ]
+        ]
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      [
+       "get",
+       [
+        "get",
+        "$self",
+        "bearer"
+       ],
+       "atk"
+      ],
+      1
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "foresight-interdiction",
@@ -86,7 +444,7 @@
   "text": "Cancel an opposing Response during the current mission if you revealed a card from the opponent's hand or deck this turn.",
   "archetype": "Clairvoyance",
   "cost": 2,
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "statistical-aberration",
@@ -105,7 +463,193 @@
   "keywords": [
    "psychic"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionDeclared",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "lit",
+        [
+         "Operative",
+         "Facility",
+         "Asset",
+         "Project",
+         "Operation"
+        ]
+       ],
+       "as": "$nm",
+       "prompt": "Statistical Aberration: name a card type",
+       "min": 1,
+       "max": 1
+      }
+     ],
+     [
+      "if",
+      [
+       ">",
+       [
+        "count",
+        [
+         "cards",
+         "$opp",
+         "deck"
+        ]
+       ],
+       0
+      ],
+      [
+       [
+        "let",
+        "$top",
+        [
+         "first",
+         [
+          "cards",
+          "$opp",
+          "deck"
+         ]
+        ]
+       ],
+       [
+        "call",
+        "revealTop",
+        "$me",
+        "$opp"
+       ],
+       [
+        "let",
+        "$ty",
+        [
+         "get",
+         "$top",
+         "type"
+        ]
+       ],
+       [
+        "if",
+        [
+         "or",
+         [
+          "and",
+          [
+           "=",
+           "$nm",
+           "Operative"
+          ],
+          [
+           "=",
+           "$ty",
+           "operative"
+          ]
+         ],
+         [
+          "and",
+          [
+           "=",
+           "$nm",
+           "Facility"
+          ],
+          [
+           "=",
+           "$ty",
+           "facility"
+          ]
+         ],
+         [
+          "and",
+          [
+           "=",
+           "$nm",
+           "Asset"
+          ],
+          [
+           "=",
+           "$ty",
+           "asset"
+          ]
+         ],
+         [
+          "and",
+          [
+           "=",
+           "$nm",
+           "Project"
+          ],
+          [
+           "=",
+           "$ty",
+           "project"
+          ]
+         ],
+         [
+          "and",
+          [
+           "=",
+           "$nm",
+           "Operation"
+          ],
+          [
+           "in",
+           "$ty",
+           [
+            "lit",
+            [
+             "operation",
+             "response",
+             "mission"
+            ]
+           ]
+          ]
+         ]
+        ],
+        [
+         [
+          "draw",
+          "$me",
+          1
+         ],
+         [
+          "set",
+          "$self",
+          "readyAfter",
+          "$turn"
+         ]
+        ]
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      [
+       "get",
+       "$self",
+       "atk"
+      ],
+      1
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "operation-glasshouse",
@@ -117,7 +661,37 @@
   "text": "During each opponent turn, once, after they play an Operation, you may pay 2 Influence to cancel it. You cannot cancel an Operation played during a mission unless this Project is ready and you pay an additional 1 Influence. At the start of each opponent turn, look at one random card in their hand.",
   "archetype": "Clairvoyance",
   "cost": 5,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "call",
+      "peekHand",
+      "$me",
+      "$e.p"
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "!=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "telekinetic-recruit",
@@ -136,7 +710,7 @@
   "keywords": [
    "psychic"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "pyrokinetic-enforcer",
@@ -155,7 +729,125 @@
   "keywords": [
    "psychic"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "filter",
+        [
+         "cards",
+         [
+          "opp",
+          [
+           "get",
+           "$self",
+           "controller"
+          ]
+         ],
+         "ops"
+        ],
+        [
+         "!=",
+         "$it",
+         [
+          "first",
+          [
+           "filter",
+           [
+            "concat",
+            [
+             "concat",
+             [
+              "cards",
+              "*",
+              "ops"
+             ],
+             [
+              "cards",
+              "*",
+              "sites"
+             ],
+             [
+              "cards",
+              "*",
+              "gear"
+             ]
+            ],
+            [
+             "cards",
+             "*",
+             "agenda"
+            ]
+           ],
+           [
+            "=",
+            [
+             "get",
+             "$it",
+             "tgt"
+            ],
+            1
+           ]
+          ]
+         ]
+        ]
+       ],
+       "as": "$v",
+       "prompt": "Pyrokinetic Enforcer: 1 damage to a second enemy operative",
+       "min": 0,
+       "max": 1
+      }
+     ],
+     [
+      "call",
+      "hurt",
+      "$v",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      1
+     ],
+     [
+      "=",
+      [
+       "get",
+       "$self",
+       "atk"
+      ],
+      1
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "poltergeist-burst",
@@ -167,7 +859,99 @@
   "text": "Your attacking team gets +2 Force in this mission.",
   "archetype": "Psychic Assault",
   "cost": 1,
-  "ready": 0
+  "resp": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "inc",
+        "game",
+        "am",
+        2
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       "and",
+       [
+        "and",
+        [
+         ">",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         0
+        ],
+        [
+         "=",
+         [
+          "nth",
+          [
+           "players"
+          ],
+          [
+           "-",
+           [
+            "get",
+            "game",
+            "mp"
+           ],
+           1
+          ]
+         ],
+         "$me"
+        ]
+       ],
+       [
+        "and",
+        [
+         ">",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         0
+        ],
+        [
+         "=",
+         [
+          "get",
+          "game",
+          "ma"
+         ],
+         1
+        ]
+       ]
+      ],
+      "why": "Only in your Force mission"
+     }
+    ],
+    "label": "Poltergeist Burst"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "psychic-shock-trooper",
@@ -186,7 +970,118 @@
   "keywords": [
    "psychic"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "if",
+      [
+       ">=",
+       [
+        "call",
+        "avail",
+        "$me"
+       ],
+       1
+      ],
+      [
+       [
+        "choose",
+        {
+         "from": [
+          "filter",
+          [
+           "filter",
+           [
+            "cards",
+            "$me",
+            "ops"
+           ],
+           [
+            "has",
+            "$it",
+            "psychic"
+           ]
+          ],
+          [
+           "and",
+           [
+            "!=",
+            "$it",
+            "$self"
+           ],
+           [
+            "=",
+            [
+             "get",
+             "$it",
+             "ex"
+            ],
+            1
+           ]
+          ]
+         ],
+         "as": "$v",
+         "prompt": "Psychic Shock Trooper: pay 1 to ready another Psychic?",
+         "min": 0,
+         "max": 1
+        }
+       ],
+       [
+        "if",
+        [
+         "isObj",
+         "$v"
+        ],
+        [
+         [
+          "call",
+          "spend",
+          "$me",
+          1
+         ],
+         [
+          "set",
+          "$v",
+          "ex",
+          0
+         ]
+        ]
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      1
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "violent-telekinesis",
@@ -198,7 +1093,136 @@
   "text": "Force mission: on success, eliminate a ready opposing operative; this mission gives no Dominance.",
   "archetype": "Psychic Assault",
   "cost": 3,
-  "ready": 0
+  "mattr": 1,
+  "mop": [
+   {
+    "label": "Violent Telekinesis (Force mission)",
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$opp",
+        "ops"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "ex"
+        ],
+        0
+       ]
+      ],
+      "prompt": "Target: a ready opposing operative",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "do": []
+   }
+  ],
+  "succ": [
+   [
+    "if",
+    [
+     "isObj",
+     [
+      "first",
+      [
+       "filter",
+       [
+        "concat",
+        [
+         "concat",
+         [
+          "cards",
+          "*",
+          "ops"
+         ],
+         [
+          "cards",
+          "*",
+          "sites"
+         ],
+         [
+          "cards",
+          "*",
+          "gear"
+         ]
+        ],
+        [
+         "cards",
+         "*",
+         "agenda"
+        ]
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "tgt"
+        ],
+        1
+       ]
+      ]
+     ]
+    ],
+    [
+     [
+      "call",
+      "eliminate",
+      [
+       "first",
+       [
+        "filter",
+        [
+         "concat",
+         [
+          "concat",
+          [
+           "cards",
+           "*",
+           "ops"
+          ],
+          [
+           "cards",
+           "*",
+           "sites"
+          ],
+          [
+           "cards",
+           "*",
+           "gear"
+          ]
+         ],
+         [
+          "cards",
+          "*",
+          "agenda"
+         ]
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "tgt"
+         ],
+         1
+        ]
+       ]
+      ]
+     ]
+    ]
+   ]
+  ],
+  "ready": 1,
+  "hasSucc": 1
  },
  {
   "id": "pyrokinetic-test-chamber-six",
@@ -210,7 +1234,97 @@
   "text": "Once per turn, when a Psychic you control wins a Strike, deal 1 damage to any enemy operative.",
   "archetype": "Psychic Assault",
   "cost": 3,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "cards",
+        [
+         "opp",
+         [
+          "get",
+          "$self",
+          "controller"
+         ]
+        ],
+        "ops"
+       ],
+       "as": "$v",
+       "prompt": "Test Chamber Six: 1 damage to an enemy operative",
+       "min": 0,
+       "max": 1
+      }
+     ],
+     [
+      "call",
+      "hurt",
+      "$v",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      1
+     ],
+     [
+      "any",
+      [
+       "filter",
+       [
+        "cards",
+        "*",
+        "ops"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "atk"
+        ],
+        1
+       ]
+      ],
+      [
+       "has",
+       "$it",
+       "psychic"
+      ]
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "kinetic-shielding",
@@ -225,7 +1339,22 @@
   "keywords": [
    "loadout"
   ],
-  "ready": 0
+  "attach": 1,
+  "bearerKw": "psychic",
+  "deploy": [
+   [
+    "inc",
+    [
+     "get",
+     "$self",
+     "bearer"
+    ],
+    "pv",
+    2
+   ]
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "subject-zero",
@@ -246,7 +1375,87 @@
    "psychic",
    "unique"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionDeclared",
+    "do": [
+     [
+      "set",
+      "$self",
+      "ex",
+      0
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.kind",
+      1
+     ],
+     [
+      "=",
+      [
+       "get",
+       "$self",
+       "atk"
+      ],
+      1
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   },
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "call",
+      "hurt",
+      "$self",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.kind",
+      1
+     ],
+     [
+      "=",
+      [
+       "get",
+       "$self",
+       "atk"
+      ],
+      1
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "compulsion-technician",
@@ -265,7 +1474,94 @@
   "keywords": [
    "psychic"
   ],
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "filter",
+        [
+         "filter",
+         [
+          "cards",
+          "*",
+          "ops"
+         ],
+         [
+          "=",
+          [
+           "get",
+           "$it",
+           "dfn"
+          ],
+          1
+         ]
+        ],
+        [
+         "!=",
+         [
+          "get",
+          "$it",
+          "controller"
+         ],
+         "$me"
+        ]
+       ],
+       "as": "$v",
+       "prompt": "Compulsion Technician: exhaust a defending operative",
+       "min": 0,
+       "max": 1
+      }
+     ],
+     [
+      "if",
+      [
+       "isObj",
+       "$v"
+      ],
+      [
+       [
+        "set",
+        "$v",
+        "ex",
+        1
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      3
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "hypnotic-trigger",
@@ -277,7 +1573,136 @@
   "text": "An opposing defending operative gets -2 Will for this mission.",
   "archetype": "Mental Conditioning",
   "cost": 1,
-  "ready": 0
+  "resp": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "inc",
+        "$t",
+        "mb",
+        -2
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "filter",
+        [
+         "cards",
+         "*",
+         "ops"
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "dfn"
+         ],
+         1
+        ]
+       ],
+       [
+        "!=",
+        [
+         "get",
+         "$it",
+         "controller"
+        ],
+        "$me"
+       ]
+      ],
+      "prompt": "Which opposing defender gets -2 Will?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "req": [
+     {
+      "if": [
+       "and",
+       [
+        "and",
+        [
+         ">",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         0
+        ],
+        [
+         "=",
+         [
+          "nth",
+          [
+           "players"
+          ],
+          [
+           "-",
+           [
+            "get",
+            "game",
+            "mp"
+           ],
+           1
+          ]
+         ],
+         "$me"
+        ]
+       ],
+       [
+        "and",
+        [
+         ">",
+         [
+          "get",
+          "game",
+          "mp"
+         ],
+         0
+        ],
+        [
+         "=",
+         [
+          "get",
+          "game",
+          "ma"
+         ],
+         3
+        ]
+       ]
+      ],
+      "why": "Only in your Will mission"
+     }
+    ],
+    "label": "Hypnotic Trigger"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "the-white-noise-suite",
@@ -289,7 +1714,76 @@
   "text": "Once per turn, after Subvert succeeds, put a Control counter on an opposing operative (maximum one per operative).",
   "archetype": "Mental Conditioning",
   "cost": 3,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "filter",
+        [
+         "cards",
+         "$opp",
+         "ops"
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "ctl"
+         ],
+         0
+        ]
+       ],
+       "as": "$v",
+       "prompt": "The White Noise Suite: Control counter on which operative?",
+       "min": 0,
+       "max": 1
+      }
+     ],
+     [
+      "call",
+      "putCtl",
+      "$v"
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      3
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "sleeper-handler",
@@ -308,7 +1802,70 @@
   "keywords": [
    "psychic"
   ],
-  "ready": 0
+  "abil": [
+   {
+    "label": "Pay 2: an enemy with Control cannot defend this turn",
+    "phases": [
+     "operations"
+    ],
+    "do": [
+     [
+      "set",
+      "$t",
+      "nodef",
+      "$turn"
+     ]
+    ],
+    "cost": [
+     [
+      "call",
+      "spend",
+      "$me",
+      2
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       ">=",
+       [
+        "call",
+        "avail",
+        "$me"
+       ],
+       2
+      ],
+      "why": "Needs 2 Influence"
+     }
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$opp",
+        "ops"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "ctl"
+        ],
+        1
+       ]
+      ],
+      "prompt": "Which controlled enemy?",
+      "min": 1,
+      "max": 1
+     }
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "compromised-witness",
@@ -327,7 +1884,45 @@
   "keywords": [
    "psychic"
   ],
-  "ready": 0
+  "deploy": [
+   [
+    "if",
+    [
+     ">",
+     [
+      "count",
+      [
+       "filter",
+       [
+        "cards",
+        "$opp",
+        "ops"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "ctl"
+        ],
+        1
+       ]
+      ]
+     ],
+     0
+    ],
+    [
+     [
+      "call",
+      "loot",
+      "$me",
+      1
+     ]
+    ]
+   ]
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "reprogram-identity",
@@ -339,7 +1934,89 @@
   "text": "Take control of an opposing operative with a Control counter until end of turn. Ready it; it cannot perform missions for Dominance this turn.",
   "archetype": "Mental Conditioning",
   "cost": 3,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "control",
+        "$t",
+        "$me"
+       ],
+       [
+        "set",
+        "$t",
+        "ctlT",
+        "$turn"
+       ],
+       [
+        "set",
+        "$t",
+        "ex",
+        0
+       ],
+       [
+        "set",
+        "$t",
+        "nodomT",
+        "$turn"
+       ],
+       [
+        "emit",
+        "controlled",
+        {
+         "o": "$t",
+         "p": "$me"
+        }
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$opp",
+        "ops"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "ctl"
+        ],
+        1
+       ]
+      ],
+      "prompt": "Take control of which operative?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "label": "Reprogram Identity"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "collective-suggestion",
@@ -351,7 +2028,73 @@
   "text": "Will mission: on success, put Control counters on up to two opposing operatives; gain 1 Dominance.",
   "archetype": "Mental Conditioning",
   "cost": 2,
-  "ready": 0
+  "mattr": 3,
+  "mop": [
+   {
+    "label": "Collective Suggestion (Will mission)",
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "list",
+       "$opp"
+      ],
+      "prompt": "Target: the opposing Headquarters",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "do": []
+   }
+  ],
+  "succ": [
+   [
+    "choose",
+    {
+     "from": [
+      "filter",
+      [
+       "cards",
+       "$opp",
+       "ops"
+      ],
+      [
+       "=",
+       [
+        "get",
+        "$it",
+        "ctl"
+       ],
+       0
+      ]
+     ],
+     "as": "$cs",
+     "prompt": "Collective Suggestion: Control counters on up to two operatives",
+     "min": 0,
+     "max": 2
+    }
+   ],
+   [
+    "each",
+    "$cs",
+    "$x",
+    [
+     [
+      "call",
+      "putCtl",
+      "$x"
+     ]
+    ]
+   ],
+   [
+    "call",
+    "gainDom",
+    "$me",
+    1
+   ]
+  ],
+  "ready": 1,
+  "hasSucc": 1
  },
  {
   "id": "protocol-vesper-obedience-conditioning",
@@ -363,7 +2106,76 @@
   "text": "Once per turn, remove Control from an enemy operative to take control of it until your next Refresh. It cannot be sacrificed.",
   "archetype": "Mental Conditioning",
   "cost": 5,
-  "ready": 0
+  "abil": [
+   {
+    "label": "Remove Control: take control of that operative until your next Refresh",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "do": [
+     [
+      "set",
+      "$t",
+      "ctl",
+      0
+     ],
+     [
+      "control",
+      "$t",
+      "$me"
+     ],
+     [
+      "set",
+      "$t",
+      "ctlT",
+      [
+       "+",
+       "$turn",
+       1
+      ]
+     ],
+     [
+      "emit",
+      "controlled",
+      {
+       "o": "$t",
+       "p": "$me"
+      }
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$opp",
+        "ops"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "ctl"
+        ],
+        1
+       ]
+      ],
+      "prompt": "Take which operative?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "untrained-sensitive",
@@ -382,7 +2194,7 @@
   "keywords": [
    "psychic"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "circle-coordinator",
@@ -401,7 +2213,7 @@
   "keywords": [
    "psychic"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "neural-link",
@@ -416,7 +2228,75 @@
   "keywords": [
    "loadout"
   ],
-  "ready": 0
+  "attach": 1,
+  "bearerKw": "psychic",
+  "deploy": [
+   [
+    "call",
+    "scry",
+    "$me",
+    2
+   ]
+  ],
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "call",
+      "loot",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      3
+     ],
+     [
+      "=",
+      [
+       "get",
+       [
+        "get",
+        "$self",
+        "bearer"
+       ],
+       "atk"
+      ],
+      1
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "group-meditation",
@@ -428,7 +2308,92 @@
   "text": "Ready up to two Psychics with printed Will 2 or less.",
   "archetype": "Psionic Collective",
   "cost": 2,
-  "ready": 0
+  "op": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "choose",
+        {
+         "from": [
+          "filter",
+          [
+           "filter",
+           [
+            "cards",
+            "$me",
+            "ops"
+           ],
+           [
+            "has",
+            "$it",
+            "psychic"
+           ]
+          ],
+          [
+           "and",
+           [
+            "=",
+            [
+             "get",
+             "$it",
+             "ex"
+            ],
+            1
+           ],
+           [
+            "<=",
+            [
+             "get",
+             "$it",
+             "will"
+            ],
+            2
+           ]
+          ]
+         ],
+         "as": "$rs",
+         "prompt": "Ready up to two Psychics (printed Will 2 or less)",
+         "min": 0,
+         "max": 2
+        }
+       ],
+       [
+        "each",
+        "$rs",
+        "$x",
+        [
+         [
+          "set",
+          "$x",
+          "ex",
+          0
+         ]
+        ]
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "label": "Group Meditation"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "psi-amplifier",
@@ -440,7 +2405,7 @@
   "text": "When exactly two Psychics join one mission, they gain +2 total Will.",
   "archetype": "Psionic Collective",
   "cost": 3,
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "overload-of-empathy",
@@ -452,7 +2417,227 @@
   "text": "Give your team +1 for each Psychic you control, maximum +5; deal 1 damage to one participating Psychic.",
   "archetype": "Psionic Collective",
   "cost": 2,
-  "ready": 0
+  "resp": [
+   {
+    "do": [
+     [
+      "if",
+      [
+       "=",
+       [
+        "get",
+        "game",
+        "ocan"
+       ],
+       0
+      ],
+      [
+       [
+        "if",
+        [
+         "and",
+         [
+          ">",
+          [
+           "get",
+           "game",
+           "mp"
+          ],
+          0
+         ],
+         [
+          "=",
+          [
+           "nth",
+           [
+            "players"
+           ],
+           [
+            "-",
+            [
+             "get",
+             "game",
+             "mp"
+            ],
+            1
+           ]
+          ],
+          "$me"
+         ]
+        ],
+        [
+         [
+          "inc",
+          "game",
+          "am",
+          [
+           "min",
+           5,
+           [
+            "count",
+            [
+             "filter",
+             [
+              "cards",
+              "$me",
+              "ops"
+             ],
+             [
+              "has",
+              "$it",
+              "psychic"
+             ]
+            ]
+           ]
+          ]
+         ]
+        ],
+        [
+         [
+          "inc",
+          "game",
+          "dm",
+          [
+           "min",
+           5,
+           [
+            "count",
+            [
+             "filter",
+             [
+              "cards",
+              "$me",
+              "ops"
+             ],
+             [
+              "has",
+              "$it",
+              "psychic"
+             ]
+            ]
+           ]
+          ]
+         ]
+        ]
+       ],
+       [
+        "choose",
+        {
+         "from": [
+          "filter",
+          [
+           "filter",
+           [
+            "cards",
+            "$me",
+            "ops"
+           ],
+           [
+            "has",
+            "$it",
+            "psychic"
+           ]
+          ],
+          [
+           "or",
+           [
+            "=",
+            [
+             "get",
+             "$it",
+             "atk"
+            ],
+            1
+           ],
+           [
+            "=",
+            [
+             "get",
+             "$it",
+             "dfn"
+            ],
+            1
+           ]
+          ]
+         ],
+         "as": "$v",
+         "prompt": "Overload of Empathy: 1 damage to a participating Psychic",
+         "min": 1,
+         "max": 1
+        }
+       ],
+       [
+        "call",
+        "hurt",
+        "$v",
+        1
+       ]
+      ]
+     ],
+     [
+      "call",
+      "opEnd",
+      "$self"
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       "and",
+       [
+        ">",
+        [
+         "get",
+         "game",
+         "mp"
+        ],
+        0
+       ],
+       [
+        "any",
+        [
+         "filter",
+         [
+          "cards",
+          "$me",
+          "ops"
+         ],
+         [
+          "has",
+          "$it",
+          "psychic"
+         ]
+        ],
+        [
+         "or",
+         [
+          "=",
+          [
+           "get",
+           "$it",
+           "atk"
+          ],
+          1
+         ],
+         [
+          "=",
+          [
+           "get",
+           "$it",
+           "dfn"
+          ],
+          1
+         ]
+        ]
+       ]
+      ],
+      "why": "Only in a mission with your Psychic"
+     }
+    ],
+    "label": "Overload of Empathy"
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "communal-mind",
@@ -471,7 +2656,124 @@
   "keywords": [
    "psychic"
   ],
-  "ready": 0
+  "rabil": [
+   {
+    "label": "A Psychic uses this operative's Will",
+    "phases": [
+     "respond"
+    ],
+    "do": [
+     [
+      "inc",
+      "$t",
+      "mb",
+      [
+       "max",
+       0,
+       [
+        "-",
+        [
+         "call",
+         "attr",
+         "$self",
+         3
+        ],
+        [
+         "call",
+         "attr",
+         "$t",
+         3
+        ]
+       ]
+      ]
+     ]
+    ],
+    "req": [
+     {
+      "if": [
+       "and",
+       [
+        ">",
+        [
+         "get",
+         "game",
+         "mp"
+        ],
+        0
+       ],
+       [
+        "=",
+        [
+         "get",
+         "game",
+         "ma"
+        ],
+        3
+       ]
+      ],
+      "why": "Only in a Will mission"
+     }
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "has",
+         "$it",
+         "psychic"
+        ]
+       ],
+       [
+        "and",
+        [
+         "or",
+         [
+          "=",
+          [
+           "get",
+           "$it",
+           "atk"
+          ],
+          1
+         ],
+         [
+          "=",
+          [
+           "get",
+           "$it",
+           "dfn"
+          ],
+          1
+         ]
+        ],
+        [
+         "!=",
+         "$it",
+         "$self"
+        ]
+       ]
+      ],
+      "prompt": "Which Psychic?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "human-antenna-array",
@@ -483,7 +2785,7 @@
   "text": "Your first two-Psychic mission each turn needs no Influence to initiate and, if successful, gains +1 Dominance.",
   "archetype": "Psionic Collective",
   "cost": 6,
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "security-hound-9",
@@ -9180,7 +11482,57 @@
   "archetype": "Headquarters",
   "fno": 1,
   "security": 2,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "call",
+      "scry",
+      "$me",
+      1
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      ">",
+      [
+       "count",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "has",
+         "$it",
+         "psychic"
+        ]
+       ]
+      ],
+      0
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "prendick-holdings-headquarters",
@@ -9244,7 +11596,83 @@
   "text": "Tier I. Complete: Control three Psychic operatives and succeed at Infiltrate during each of two consecutive turns. Immediate: Draw two cards. Ongoing: Your first mission each turn involving a Psychic gets +2 total Tradecraft if it uses Tradecraft.",
   "archetype": "Agenda",
   "tier": "I",
-  "ready": 0
+  "agenda": [
+   {
+    "label": "Complete this Agenda",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "req": [
+     {
+      "if": [
+       ">=",
+       [
+        "count",
+        [
+         "filter",
+         [
+          "cards",
+          "$me",
+          "ops"
+         ],
+         [
+          "has",
+          "$it",
+          "psychic"
+         ]
+        ]
+       ],
+       3
+      ],
+      "why": "Control three Psychics"
+     },
+     {
+      "if": [
+       ">=",
+       [
+        "?",
+        [
+         "=",
+         [
+          "get",
+          "$me",
+          "sucI"
+         ],
+         1
+        ],
+        [
+         "+",
+         [
+          "get",
+          "$me",
+          "stI"
+         ],
+         1
+        ],
+        [
+         "get",
+         "$me",
+         "stI"
+        ]
+       ],
+       2
+      ],
+      "why": "Succeed at Infiltrate on two consecutive turns"
+     }
+    ],
+    "do": []
+   }
+  ],
+  "imm": [
+   [
+    "draw",
+    "$me",
+    2
+   ]
+  ],
+  "ready": 1,
+  "hasImm": 1
  },
  {
   "id": "the-obedient-nation",
@@ -9256,7 +11684,94 @@
   "text": "Tier II. Complete: Have placed at least two Control counters on opposing operatives this game and succeeded at Subvert on each of your two most recent turns. Immediate: Exhaust up to two opposing operatives. Ongoing: Once during your turn, after you succeed at Subvert, place one Control counter on an opposing operative (maximum one per operative).",
   "archetype": "Agenda",
   "tier": "II",
-  "ready": 0
+  "agenda": [
+   {
+    "label": "Complete this Agenda",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "req": [
+     {
+      "if": [
+       ">=",
+       [
+        "get",
+        "$me",
+        "ctlPlaced"
+       ],
+       2
+      ],
+      "why": "Have placed two Control counters this game"
+     },
+     {
+      "if": [
+       ">=",
+       [
+        "?",
+        [
+         "=",
+         [
+          "get",
+          "$me",
+          "sucW"
+         ],
+         1
+        ],
+        [
+         "+",
+         [
+          "get",
+          "$me",
+          "stW"
+         ],
+         1
+        ],
+        [
+         "get",
+         "$me",
+         "stW"
+        ]
+       ],
+       2
+      ],
+      "why": "Succeed at Subvert on your two most recent turns"
+     }
+    ],
+    "do": []
+   }
+  ],
+  "imm": [
+   [
+    "choose",
+    {
+     "from": [
+      "cards",
+      "$opp",
+      "ops"
+     ],
+     "as": "$xs",
+     "prompt": "Exhaust up to two opposing operatives",
+     "min": 0,
+     "max": 2
+    }
+   ],
+   [
+    "each",
+    "$xs",
+    "$x",
+    [
+     [
+      "set",
+      "$x",
+      "ex",
+      1
+     ]
+    ]
+   ]
+  ],
+  "ready": 1,
+  "hasImm": 1
  },
  {
   "id": "project-overmind",
@@ -9268,7 +11783,204 @@
   "text": "Tier III. Complete: Control five Psychic operatives, have placed at least three Control counters on opposing operatives during this game, and succeed at a Will mission with attacking total 12 or more. Immediate: Ready up to three Psychics. If the opponent controls an operative, gain control of one of them until Cleanup and then return it exhausted to its previous controller. Ongoing: Your Psychic operatives may use Will instead of the printed mission attribute. Once during your turn, exhaust one opposing operative.",
   "archetype": "Agenda",
   "tier": "III",
-  "ready": 0
+  "agenda": [
+   {
+    "label": "Complete this Agenda",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "req": [
+     {
+      "if": [
+       ">=",
+       [
+        "count",
+        [
+         "filter",
+         [
+          "cards",
+          "$me",
+          "ops"
+         ],
+         [
+          "has",
+          "$it",
+          "psychic"
+         ]
+        ]
+       ],
+       5
+      ],
+      "why": "Control five Psychics"
+     },
+     {
+      "if": [
+       ">=",
+       [
+        "get",
+        "$me",
+        "ctlPlaced"
+       ],
+       3
+      ],
+      "why": "Have placed three Control counters this game"
+     },
+     {
+      "if": [
+       ">=",
+       [
+        "get",
+        "$me",
+        "willMaxG"
+       ],
+       12
+      ],
+      "why": "Succeed at a Will mission with an attacking total of 12 or more"
+     }
+    ],
+    "do": []
+   }
+  ],
+  "imm": [
+   [
+    "choose",
+    {
+     "from": [
+      "filter",
+      [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "ops"
+       ],
+       [
+        "has",
+        "$it",
+        "psychic"
+       ]
+      ],
+      [
+       "=",
+       [
+        "get",
+        "$it",
+        "ex"
+       ],
+       1
+      ]
+     ],
+     "as": "$rs",
+     "prompt": "Ready up to three Psychics",
+     "min": 0,
+     "max": 3
+    }
+   ],
+   [
+    "each",
+    "$rs",
+    "$x",
+    [
+     [
+      "set",
+      "$x",
+      "ex",
+      0
+     ]
+    ]
+   ],
+   [
+    "choose",
+    {
+     "from": [
+      "cards",
+      "$opp",
+      "ops"
+     ],
+     "as": "$v",
+     "prompt": "Gain control of which operative until Cleanup?",
+     "min": 0,
+     "max": 1
+    }
+   ],
+   [
+    "if",
+    [
+     "isObj",
+     "$v"
+    ],
+    [
+     [
+      "control",
+      "$v",
+      "$me"
+     ],
+     [
+      "set",
+      "$v",
+      "ctlT",
+      "$turn"
+     ],
+     [
+      "emit",
+      "controlled",
+      {
+       "o": "$v",
+       "p": "$me"
+      }
+     ]
+    ]
+   ]
+  ],
+  "abil": [
+   {
+    "label": "Exhaust one opposing operative (Project OVERMIND)",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "do": [
+     [
+      "set",
+      "$t",
+      "ex",
+      1
+     ]
+    ],
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "filter",
+       [
+        "cards",
+        "$opp",
+        "ops"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "ex"
+        ],
+        0
+       ]
+      ],
+      "prompt": "Exhaust which operative?",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1,
+  "hasImm": 1
  },
  {
   "id": "the-open-circuit",
@@ -9280,7 +11992,121 @@
   "text": "Tier II. Complete: Control three Psychics, publicly reveal at least one card from the opponent’s hand or deck during your turn, and succeed at Subvert that turn. Immediate: Ready two Psychics and draw two cards. Ongoing: Once during your turn, your first Will mission may use Tradecraft for one attacker; when that mission succeeds, place a Control counter on one opposing operative (maximum one per operative).",
   "archetype": "Agenda",
   "tier": "II",
-  "ready": 0
+  "agenda": [
+   {
+    "label": "Complete this Agenda",
+    "phases": [
+     "development",
+     "operations"
+    ],
+    "req": [
+     {
+      "if": [
+       ">=",
+       [
+        "count",
+        [
+         "filter",
+         [
+          "cards",
+          "$me",
+          "ops"
+         ],
+         [
+          "has",
+          "$it",
+          "psychic"
+         ]
+        ]
+       ],
+       3
+      ],
+      "why": "Control three Psychics"
+     },
+     {
+      "if": [
+       "=",
+       [
+        "get",
+        "$me",
+        "revealedT"
+       ],
+       1
+      ],
+      "why": "Reveal a card from the opponent's hand or deck this turn"
+     },
+     {
+      "if": [
+       "=",
+       [
+        "get",
+        "$me",
+        "sucW"
+       ],
+       1
+      ],
+      "why": "Succeed at Subvert this turn"
+     }
+    ],
+    "do": []
+   }
+  ],
+  "imm": [
+   [
+    "choose",
+    {
+     "from": [
+      "filter",
+      [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "ops"
+       ],
+       [
+        "has",
+        "$it",
+        "psychic"
+       ]
+      ],
+      [
+       "=",
+       [
+        "get",
+        "$it",
+        "ex"
+       ],
+       1
+      ]
+     ],
+     "as": "$rs",
+     "prompt": "Ready two Psychics",
+     "min": 0,
+     "max": 2
+    }
+   ],
+   [
+    "each",
+    "$rs",
+    "$x",
+    [
+     [
+      "set",
+      "$x",
+      "ex",
+      0
+     ]
+    ]
+   ],
+   [
+    "draw",
+    "$me",
+    2
+   ]
+  ],
+  "ready": 1,
+  "hasImm": 1
  },
  {
   "id": "genome-patent-monopoly",
@@ -9491,7 +12317,93 @@
   "keywords": [
    "psychic"
   ],
-  "ready": 0
+  "deploy": [
+   [
+    "choose",
+    {
+     "from": [
+      "filter",
+      [
+       "filter",
+       [
+        "cards",
+        "$me",
+        "ops"
+       ],
+       [
+        "has",
+        "$it",
+        "psychic"
+       ]
+      ],
+      [
+       "and",
+       [
+        "!=",
+        "$it",
+        "$self"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "ex"
+        ],
+        1
+       ]
+      ]
+     ],
+     "as": "$v",
+     "prompt": "Ready which Psychic? (it cannot start a mission this turn)",
+     "min": 0,
+     "max": 1
+    }
+   ],
+   [
+    "if",
+    [
+     "isObj",
+     "$v"
+    ],
+    [
+     [
+      "set",
+      "$v",
+      "ex",
+      0
+     ],
+     [
+      "set",
+      "$v",
+      "nomis",
+      "$turn"
+     ]
+    ]
+   ],
+   [
+    "if",
+    [
+     "=",
+     [
+      "get",
+      "$me",
+      "revealedT"
+     ],
+     1
+    ],
+    [
+     [
+      "call",
+      "loot",
+      "$me",
+      1
+     ]
+    ]
+   ]
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "psi-restraint-harness",
@@ -9506,7 +12418,32 @@
   "keywords": [
    "loadout"
   ],
-  "ready": 0
+  "attach": 1,
+  "bearerKw": "psychic",
+  "deploy": [
+   [
+    "set",
+    [
+     "get",
+     "$self",
+     "bearer"
+    ],
+    "ex",
+    0
+   ],
+   [
+    "set",
+    [
+     "get",
+     "$self",
+     "bearer"
+    ],
+    "nomis",
+    "$turn"
+   ]
+  ],
+  "ready": 1,
+  "hasDeploy": 1
  },
  {
   "id": "the-listening-annex-room-4",
@@ -9518,7 +12455,95 @@
   "text": "Once per turn, after you reveal an opposing hand card, you may pay 1 to place one Control counter on an opposing operative (maximum one per operative).",
   "archetype": "Cross-Archetype",
   "cost": 3,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "peeked",
+    "do": [
+     [
+      "if",
+      [
+       ">=",
+       [
+        "call",
+        "avail",
+        "$me"
+       ],
+       1
+      ],
+      [
+       [
+        "choose",
+        {
+         "from": [
+          "filter",
+          [
+           "cards",
+           "$opp",
+           "ops"
+          ],
+          [
+           "=",
+           [
+            "get",
+            "$it",
+            "ctl"
+           ],
+           0
+          ]
+         ],
+         "as": "$v",
+         "prompt": "The Listening Annex: pay 1 for a Control counter?",
+         "min": 0,
+         "max": 1
+        }
+       ],
+       [
+        "if",
+        [
+         "isObj",
+         "$v"
+        ],
+        [
+         [
+          "call",
+          "spend",
+          "$me",
+          1
+         ],
+         [
+          "call",
+          "putCtl",
+          "$v"
+         ]
+        ]
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.from",
+      "hand"
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "a-name-spoken-in-two-minds",
@@ -9530,7 +12555,7 @@
   "text": "When a Psychic you control would be eliminated during a mission, return it to your hand instead; then exhaust a different friendly Psychic.",
   "archetype": "Cross-Archetype",
   "cost": 2,
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "voluntary-subject-registry",
@@ -9542,7 +12567,88 @@
   "text": "At Refresh, if you control two or more Psychics, look at the top two cards of your deck; put one on top and one on bottom.",
   "archetype": "Cross-Archetype",
   "cost": 2,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "refresh",
+    "do": [
+     [
+      "if",
+      [
+       ">=",
+       [
+        "count",
+        [
+         "cards",
+         "$me",
+         "deck"
+        ]
+       ],
+       2
+      ],
+      [
+       [
+        "choose",
+        {
+         "from": [
+          "top",
+          "$me",
+          "deck",
+          2
+         ],
+         "as": "$b",
+         "prompt": "Voluntary Subject Registry: which of the top two goes to the bottom?",
+         "min": 1,
+         "max": 1
+        }
+       ],
+       [
+        "move",
+        "$b",
+        "deck"
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      ">=",
+      [
+       "count",
+       [
+        "filter",
+        [
+         "cards",
+         "$me",
+         "ops"
+        ],
+        [
+         "has",
+         "$it",
+         "psychic"
+        ]
+       ]
+      ],
+      2
+     ]
+    ]
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "dr-asha-bell-group-conductor",
@@ -9561,7 +12667,7 @@
   "keywords": [
    "psychic"
   ],
-  "ready": 0
+  "ready": 1
  },
  {
   "id": "induced-suggestibility",
@@ -9573,7 +12679,97 @@
   "text": "Will mission: on success, place a Control counter on one defender and gain 1 Dominance; if you saw an opposing hand card this turn, draw one.",
   "archetype": "Cross-Archetype",
   "cost": 3,
-  "ready": 0
+  "mattr": 3,
+  "mop": [
+   {
+    "label": "Induced Suggestibility (Will mission)",
+    "targets": [
+     {
+      "as": "$t",
+      "from": [
+       "list",
+       "$opp"
+      ],
+      "prompt": "Target: the opposing Headquarters",
+      "min": 1,
+      "max": 1
+     }
+    ],
+    "do": []
+   }
+  ],
+  "succ": [
+   [
+    "choose",
+    {
+     "from": [
+      "filter",
+      [
+       "filter",
+       [
+        "cards",
+        "*",
+        "ops"
+       ],
+       [
+        "=",
+        [
+         "get",
+         "$it",
+         "dfn"
+        ],
+        1
+       ]
+      ],
+      [
+       "=",
+       [
+        "get",
+        "$it",
+        "ctl"
+       ],
+       0
+      ]
+     ],
+     "as": "$v",
+     "prompt": "Induced Suggestibility: Control counter on which defender?",
+     "min": 0,
+     "max": 1
+    }
+   ],
+   [
+    "call",
+    "putCtl",
+    "$v"
+   ],
+   [
+    "call",
+    "gainDom",
+    "$me",
+    1
+   ],
+   [
+    "if",
+    [
+     "=",
+     [
+      "get",
+      "$me",
+      "sawT"
+     ],
+     1
+    ],
+    [
+     [
+      "draw",
+      "$me",
+      1
+     ]
+    ]
+   ]
+  ],
+  "ready": 1,
+  "hasSucc": 1
  },
  {
   "id": "operation-mirror-heart",
@@ -9585,7 +12781,141 @@
   "text": "Once per turn after a Subvert succeeds, you may remove a Control counter from an enemy to ready one friendly Psychic; your next Strike this turn costs 1 less to initiate.",
   "archetype": "Cross-Archetype",
   "cost": 5,
-  "ready": 0
+  "abilities": [
+   {
+    "on": "missionResult",
+    "do": [
+     [
+      "choose",
+      {
+       "from": [
+        "filter",
+        [
+         "cards",
+         "$opp",
+         "ops"
+        ],
+        [
+         "=",
+         [
+          "get",
+          "$it",
+          "ctl"
+         ],
+         1
+        ]
+       ],
+       "as": "$v",
+       "prompt": "Operation MIRROR-HEART: remove a Control counter to ready a Psychic?",
+       "min": 0,
+       "max": 1
+      }
+     ],
+     [
+      "if",
+      [
+       "isObj",
+       "$v"
+      ],
+      [
+       [
+        "set",
+        "$v",
+        "ctl",
+        0
+       ],
+       [
+        "choose",
+        {
+         "from": [
+          "filter",
+          [
+           "filter",
+           [
+            "cards",
+            "$me",
+            "ops"
+           ],
+           [
+            "has",
+            "$it",
+            "psychic"
+           ]
+          ],
+          [
+           "=",
+           [
+            "get",
+            "$it",
+            "ex"
+           ],
+           1
+          ]
+         ],
+         "as": "$r",
+         "prompt": "Ready which Psychic?",
+         "min": 0,
+         "max": 1
+        }
+       ],
+       [
+        "if",
+        [
+         "isObj",
+         "$r"
+        ],
+        [
+         [
+          "set",
+          "$r",
+          "ex",
+          0
+         ]
+        ]
+       ],
+       [
+        "set",
+        "$me",
+        "mhT",
+        "$turn"
+       ]
+      ]
+     ]
+    ],
+    "if": [
+     "and",
+     [
+      "=",
+      "$e.p",
+      [
+       "get",
+       "$self",
+       "controller"
+      ]
+     ],
+     [
+      "=",
+      "$e.ok",
+      1
+     ],
+     [
+      "call",
+      "active",
+      "$self"
+     ],
+     [
+      "=",
+      "$e.kind",
+      3
+     ]
+    ],
+    "limit": {
+     "per": "turn",
+     "by": "source"
+    }
+   }
+  ],
+  "ready": 1
  },
  {
   "id": "veterinary-surgical-team",

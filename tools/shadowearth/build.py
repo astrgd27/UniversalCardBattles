@@ -125,7 +125,7 @@ fn('targets', ['$p', '$k'], ['concat', ['list', ['opp', '$p']],
     Q(eq('$k', 1), flt(['concat', OPS(['opp', '$p']), facs(['opp', '$p'])], C('tgtOk', '$it', '$k')),
     Q(eq('$k', 2), flt(GEAR(['opp', '$p']), AND(typ('$it', 'asset'), le(g('$it', 'cost'), 3), C('tgtOk', '$it', '$k'))),
     Q(eq('$k', 3), flt(OPS(['opp', '$p']), C('tgtOk', '$it', '$k')), lit([]))))])
-fn('missionCost', ['$p', '$k', '$t'], mx(0, add(1, *(lib.MCOST or [0]))))
+fn('missionCost', ['$p', '$k', '$t', '$team'], mx(0, add(1, *(lib.MCOST or [0]))))
 fn('shield', ['$o'], add(0, *(lib.SHIELD or [0])))
 fn('missionsLeft', ['$p'], lt(g('$p', 'att'), mn(LEVERS['MISSION_MAX'], g('$p', 'attMax'))))
 fn('agendaOn', ['$a'], AND(eq(g('$a', 'done'), 1), lt(g('$a', 'sup'), '$turn')))
@@ -152,7 +152,7 @@ proc('payFor', ['$c'], [C('spend', '$me', C('cost', '$c', '$me'))])
 proc('payResp', ['$c'], [IF(C('treasury', '$me'), [INC('$me', 'inf', neg(C('cost', '$c', '$me'))), emit('spent', p='$me', n=C('cost', '$c', '$me'))], [C('payFor', '$c')])])
 proc('gainDom', ['$p', '$n'], [
     LET('$k', mn('$n', sub(g('$p', 'domMax'), g('$p', 'domT')))),
-    LET('$k2', Q(AND(gt(LEVERS['DOM_CAP'], 0), IN_MISSION), mn('$k', sub(LEVERS['DOM_CAP'], g('$p', 'mDom'))), '$k')),
+    LET('$k2', Q(AND(IN_MISSION, ANY(ATK, eq(g('$it', 'nodomT'), '$turn'))), 0, Q(AND(gt(LEVERS['DOM_CAP'], 0), IN_MISSION), mn('$k', sub(LEVERS['DOM_CAP'], g('$p', 'mDom'))), '$k'))),
     IF(gt('$k2', 0), [INC('$p', 'dom', '$k2'), INC('$p', 'domT', '$k2'), INC('$p', 'mDom', '$k2'), emit('dominance', p='$p', n='$k2'),
         IF(ge(g('$p', 'dom'), LEVERS['WIN']), [['win', ['list', '$p']]])])])
 proc('loseDom', ['$p', '$n'], [SET('$p', 'dom', mx(0, sub(g('$p', 'dom'), '$n')))])
@@ -254,7 +254,7 @@ proc('resolveMission', [], [
         IF(eq(g('game', 'mk'), 6), [SET(TGT, 'sup', add('$turn', 2)), emit('suppressed', o=TGT), dom(1)]),
         IF(eq(g('game', 'mk'), 1), [SET('$me', 'sucS', 1)]), IF(eq(g('game', 'mk'), 2), [SET('$me', 'sucI', 1)]),
         IF(eq(g('game', 'mk'), 3), [SET('$me', 'sucW', 1)]),
-        IF(eq(g('game', 'ma'), 3), [SET('$me', 'willBest', mx(g('$me', 'willBest'), '$at')), SET('$me', 'sucWill', 1)])],
+        IF(eq(g('game', 'ma'), 3), [SET('$me', 'willBest', mx(g('$me', 'willBest'), '$at')), SET('$me', 'willMaxG', mx(g('$me', 'willMaxG'), '$at')), SET('$me', 'sucWill', 1)])],
         [IF(AND(gt(cnt(DFN), 0), eq(g('game', 'mcan'), 0)), [INC('$opp', 'defended', 1), emit('defended', p='$opp')])]),
     emit('missionResult', p='$me', kind=g('game', 'mk'), attr=g('game', 'ma'), ok=Q('$ok', 1, 0), at='$at', dt='$dt',
          ndef=cnt(DFN), tgt=Q(isObj(TGT), TGT, '$opp'))])
@@ -304,9 +304,9 @@ A['deploy'] = {'label': 'Play', 'phases': ['development'], 'source': inHand(inl(
     'targets': [{'as': '$b', 'prompt': 'Attach to which operative?', 'from': flt(OPS('$me'), C('bearerOk', '$self', '$it')),
                  'min': Q(eq(g('$self', 'attach'), 1), 1, 0), 'max': Q(eq(g('$self', 'attach'), 1), 1, 0)}],
     'cost': [C('payFor', '$self')],
-    'do': [IF(typ('$self', 'operative'), [['move', '$self', 'ops', {'as': '$c'}], SET('$c', 'ex', Q(eq(g('$c', 'entersReady'), 1), 0, 1))]),
-           IF(OR(typ('$self', 'facility'), typ('$self', 'project')), [['move', '$self', 'sites', {'as': '$c'}]]),
-           IF(typ('$self', 'asset'), [['move', '$self', 'gear', {'as': '$c'}], IF(isObj('$b'), [['link', '$c', 'bearer', '$b'], emit('attached', a='$c', o='$b', p='$me')])]),
+    'do': [['move', '$self', Q(typ('$self', 'operative'), 'ops', Q(typ('$self', 'asset'), 'gear', 'sites')), {'as': '$c'}],
+           IF(typ('$c', 'operative'), [SET('$c', 'ex', Q(eq(g('$c', 'entersReady'), 1), 0, 1))]),
+           IF(AND(typ('$c', 'asset'), isObj('$b')), [['link', '$c', 'bearer', '$b'], emit('attached', a='$c', o='$b', p='$me')]),
            SET('$c', 'newT', '$turn'), C('played', '$c', '$me'),
            IF(eq(g('$c', 'hasDeploy'), 1), [['run', '$c', 'deploy']]), emit('deployed', c='$c', p='$me', card=g('$c', 'card'), type=g('$c', 'type'))]}
 A['op'] = {'label': 'Play', 'phases': ['development'], 'activated': 'op', 'source': inHand(typ('$it', 'operation')),
@@ -314,7 +314,8 @@ A['op'] = {'label': 'Play', 'phases': ['development'], 'activated': 'op', 'sourc
 A['respond'] = {'label': 'Respond', 'phases': ['respond'], 'activated': 'resp',
     'source': flt(HAND('$me'), AND(typ('$it', 'response'), eq(g('$it', 'ready'), 1), C('canPayR', '$it', '$me'))),
     'cost': [C('payResp', '$self')], 'do': [C('opStart', '$self')]}
-A['use'] = {'label': 'Use', 'phases': ['development', 'operations'], 'activated': 'abil', 'source': flt(PERMS('$me'), C('active', '$it')), 'do': []}
+A['use'] = {'label': 'Use', 'phases': ['development', 'operations'], 'activated': 'abil',
+    'source': ['concat', flt(PERMS('$me'), C('active', '$it')), flt(['cards', '$me', 'agenda'], C('agendaOn', '$it'))], 'do': []}
 A['useR'] = {'label': 'Use', 'phases': ['respond'], 'activated': 'rabil', 'source': flt(PERMS('$me'), C('active', '$it')), 'do': []}
 A['equip'] = {'label': 'Attach / transfer (1 Influence)', 'phases': ['development'],
     'source': flt(GEAR('$me'), AND(has('$it', 'loadout'), ge(C('avail', '$me'), 1))),
@@ -323,10 +324,10 @@ A['equip'] = {'label': 'Attach / transfer (1 Influence)', 'phases': ['developmen
 MISSION_REQ = [{'if': C('missionsLeft', '$me'), 'why': 'No mission attempts left this turn'}]
 def basic(kind, attr, label):
     k = MK[kind]
-    return {'label': label, 'phases': ['operations'], 'req': MISSION_REQ + [{'if': ge(C('avail', '$me'), C('missionCost', '$me', k, NULL)), 'why': 'Not enough Influence'}],
+    return {'label': label, 'phases': ['operations'], 'req': MISSION_REQ + [{'if': ge(C('avail', '$me'), C('missionCost', '$me', k, NULL, lit([]))), 'why': 'Not enough Influence'}],
             'targets': [{'as': '$t', 'from': C('targets', '$me', k), 'prompt': f'{label}: choose the target (the opposing Headquarters or a permanent)'},
                         {'as': '$team', 'from': C('attackers', '$me', k), 'min': 1, 'max': 2, 'prompt': f'{label}: the attacking team (1 or 2 ready operatives)'}],
-            'cost': [C('spend', '$me', C('missionCost', '$me', k, '$t'))], 'do': [C('startMission', k, MA[attr], '$t', '$team')]}
+            'cost': [C('spend', '$me', C('missionCost', '$me', k, '$t', '$team'))], 'do': [C('startMission', k, MA[attr], '$t', '$team')]}
 A['strike'] = basic('strike', 'F', 'Strike (Force)')
 A['infiltrate'] = basic('infiltrate', 'T', 'Infiltrate (Tradecraft)')
 A['subvert'] = basic('subvert', 'W', 'Subvert (Will)')
@@ -343,7 +344,7 @@ A['mop'] = {'label': 'Mission', 'phases': ['operations'], 'activated': 'mop',
     'source': flt(HAND('$me'), AND(typ('$it', 'mission'), eq(g('$it', 'ready'), 1), ge(C('avail', '$me'), add(C('cost', '$it', '$me'), 1)))),
     'req': MISSION_REQ,
     'targets': [{'as': '$team', 'from': C('attackers', '$me', 4), 'min': 1, 'max': 2, 'prompt': 'The attacking team (1 or 2 ready operatives)'}],
-    'cost': [C('spend', '$me', add(C('cost', '$self', '$me'), C('missionCost', '$me', 4, '$t')))],
+    'cost': [C('spend', '$me', add(C('cost', '$self', '$me'), C('missionCost', '$me', 4, '$t', '$team')))],
     'do': [['move', '$self', 'limbo', {'as': '$mc'}], SET('$mc', 'mopc', 1), C('played', '$mc', '$me'), SET('$me', 'sucOp', 0),
            C('startMission', 4, g('$mc', 'mattr'), '$t', '$team')]}
 A['complete'] = {'label': 'Complete Agenda', 'phases': ['development', 'operations'], 'activated': 'agenda',
@@ -417,6 +418,7 @@ RULES = {
     ],
     'triggers': [
         {'on': 'drawFail', 'do': [['lose', '$e.player']]},
+        {'on': 'missionResult', 'do': [EACH(flt(OPS(), eq(g('$it', 'readyAfter'), '$turn')), '$x', [SET('$x', 'ex', 0), SET('$x', 'readyAfter', 0)])]},
         {'on': 'cleanup', 'do': [EACH(flt(OPS('$e.p'), eq(g('$it', 'upkeep'), 1)), '$tk', [
             IF(ge(C('avail', '$e.p'), 1), [choose(opts('Pay 1 to keep it', 'Let it go'), '$u', 'Keep this token?', who='$e.p')], [LET('$u', 'Let it go')]),
             IF(eq('$u', 'Pay 1 to keep it'), [C('spend', '$e.p', 1)], [C('eliminate', '$tk')])])]},

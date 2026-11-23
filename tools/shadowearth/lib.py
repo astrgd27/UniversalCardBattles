@@ -172,3 +172,15 @@ def self_term(name, attr, n, cond=None):
     c = [isc('$o', name), A_(attr)] + ([cond] if cond is not None else [])
     return Q(AND(*c), n, 0)
 NULL = ['lit', None]
+MY_SAC = lambda p='$me': flt(OPS(p), eq(g('$it', 'ctlT'), 0))  # operatives p may sacrifice (not borrowed ones)
+def agenda(reqs, imm=None, phases=('development', 'operations'), cost=None):
+    """An Agenda's completion: reqs = [(condition, why)], imm = the Immediate effect list."""
+    ab = {'label': 'Complete this Agenda', 'phases': list(phases), 'req': [{'if': r, 'why': w} for r, w in reqs]}
+    if cost: ab['cost'] = cost
+    out = {'agenda': [ab]}
+    if imm: out['imm'] = imm
+    return out
+def recent(p, k):
+    """Successes of a basic kind ('S', 'I', 'W') on your most recent turns, counting this one if it already succeeded."""
+    return Q(eq(g(p, 'suc' + k), 1), add(g(p, 'st' + k), 1), g(p, 'st' + k))
+def agenda_on(name, p='$me'): return C('agendaDone', p, slug(name))

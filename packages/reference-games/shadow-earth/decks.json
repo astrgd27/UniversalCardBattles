@@ -1,1 +1,62 @@
-{}
+{
+ "psylist-starter": {
+  "hq": [
+   "psylist-central-station"
+  ],
+  "agenda": [
+   "the-listening-world"
+  ],
+  "deck": [
+   "remote-viewer",
+   "remote-viewer",
+   "remote-viewer",
+   "probability-analyst",
+   "probability-analyst",
+   "probability-analyst",
+   "telekinetic-recruit",
+   "telekinetic-recruit",
+   "telekinetic-recruit",
+   "psychic-shock-trooper",
+   "psychic-shock-trooper",
+   "psychic-shock-trooper",
+   "untrained-sensitive",
+   "untrained-sensitive",
+   "untrained-sensitive",
+   "circle-coordinator",
+   "circle-coordinator",
+   "compulsion-technician",
+   "compulsion-technician",
+   "compulsion-technician",
+   "pyrokinetic-enforcer",
+   "pyrokinetic-enforcer",
+   "sleeper-handler",
+   "sleeper-handler",
+   "statistical-aberration",
+   "communal-mind",
+   "dr-livia-saye-containment-ethicist",
+   "dr-livia-saye-containment-ethicist",
+   "neural-link",
+   "neural-link",
+   "kinetic-shielding",
+   "sensory-deprivation-tank",
+   "the-white-noise-suite",
+   "the-white-noise-suite",
+   "psi-amplifier",
+   "voluntary-subject-registry",
+   "group-meditation",
+   "group-meditation",
+   "reprogram-identity",
+   "precognitive-flash",
+   "precognitive-flash",
+   "poltergeist-burst",
+   "poltergeist-burst",
+   "hypnotic-trigger",
+   "hypnotic-trigger",
+   "collective-suggestion",
+   "collective-suggestion",
+   "induced-suggestibility",
+   "induced-suggestibility",
+   "inside-tip"
+  ]
+ }
+}
