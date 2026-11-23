@@ -79,7 +79,7 @@ export function heuristicAgent(seed: number, opts: HeuristicOpts = {}): Agent {
     return [...keep, ...sample(st, out.filter((c) => c.action !== 'pass'), cap - keep.length)];
   };
 
-  /** Let pending decisions and stack/chain items resolve: everyone passes, pending choices are guessed at random. */
+  /** Let pending decisions, stack/chain items and open timing windows resolve: everyone passes, pending choices are guessed at random. */
   const settleOut = (g: Match, p: string): Match => {
     for (let i = 0; i < 40 && !g.s.result; i++) {
       const pd = g.s.pending;
@@ -88,7 +88,7 @@ export function heuristicAgent(seed: number, opts: HeuristicOpts = {}): Agent {
         g = submitDecision(g, pd.player, pd.id, fallback.decide({ pending: pd } as unknown as View));
         continue;
       }
-      if (!g.s.stack.length || !g.s.priority) break;
+      if ((!g.s.stack.length && !g.s.windows.length) || !g.s.priority) break; // let open timing windows (combat, missions) play out too
       g = commitAction(g, g.s.priority, { action: 'pass' });
     }
     return g;
