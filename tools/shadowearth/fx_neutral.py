@@ -30,9 +30,10 @@ fx('Field Archaeologist', abilities=[on_played(OR(has('$e.c', 'artifact'), has('
 fx('Crisis Negotiator', abilities=[trig('missionResult', [draw(1)], AND(ne('$e.p', SELF_P), eq('$e.ok', 0), eq('$e.kind', 3), defending('$self')))])
 fx('Professional Cleaner', deploy=[pick(flt(ANYOP, AND(ne('$it', '$self'), gt(g('$it', 'dmg'), 0))), '$v', 'Remove all damage from which operative?', 0, 1),
     IF(isObj('$v'), [SET('$v', 'dmg', 0), SET('$v', 'nomis', '$turn')])])
-cost_term(Q(eq(g('$c', 'taxT'), '$turn'), 1, 0))
-fx('Intelligence Defector', deploy=[look_hand(), pick(flt(HAND('$opp'), inl(g('$it', 'type'), lit(['operation', 'response', 'mission']))), '$v',
-    'Intelligence Defector: which Operation costs 1 more on their next turn?', 0, 1), IF(isObj('$v'), [SET('$v', 'taxT', add('$turn', 1))])])
+cost_term(Q(AND(eq(g('$p', 'taxT'), '$turn'), eq(g('$c', 'cno'), g('$p', 'taxCno'))), 1, 0))
+fx('Intelligence Defector', deploy=[C('showHand', '$opp'), pick(flt(['cards', '$opp', 'shown'], inl(g('$it', 'type'), lit(['operation', 'response', 'mission']))), '$v',
+    'Intelligence Defector: which Operation costs 1 more on their next turn?', 0, 1),
+    IF(isObj('$v'), [SET('$opp', 'taxCno', g('$v', 'cno')), SET('$opp', 'taxT', add('$turn', 1))]), C('hideHand', '$opp')])
 SAVE.append(IF(AND(eq(g('game', 'saved'), 0), own('Unregistered Surgeon', ctrl('$o')), ge(C('avail', ctrl('$o')), 2), ne(g(ctrl('$o'), 'surgT'), '$turn')), [
     choose(opts('Save it (pay 2)', 'No'), '$sv', 'Unregistered Surgeon: prevent this elimination?', who=ctrl('$o')),
     IF(eq('$sv', 'Save it (pay 2)'), [C('spend', ctrl('$o'), 2), SET(ctrl('$o'), 'surgT', '$turn'), SET('$o', 'ex', 1),
@@ -149,7 +150,8 @@ fx('Scorched Earth Protocol', op=op([choose(facs('$me'), '$a', 'Destroy which of
 # ---------------------------------------------------------------- Mission Operations ($t = the declared target; succ runs on success)
 HQ_ONLY = [slot(['list', '$opp'], prompt='Target: the opposing Headquarters')]
 fx('Interrogation', mattr=3, mop=[{'label': 'Interrogation (Will mission)', 'targets': HQ_ONLY}],
-   succ=[look_hand(), pick(HAND('$opp'), '$v', 'Interrogation: which card do they discard?', 0, 1), IF(isObj('$v'), [['move', '$v', 'grave']])])
+   succ=[C('showHand', '$opp'), pick(['cards', '$opp', 'shown'], '$v', 'Interrogation: which card do they discard?', 0, 1), IF(isObj('$v'), [['move', '$v', 'grave']]),
+         C('hideHand', '$opp')])
 fx('Smash and Grab', mattr=1, mop=[{'label': 'Smash and Grab (Force mission)', 'targets': [slot(['concat', ['list', '$opp'], assets('$opp')], prompt='Target: an opposing Asset or the Headquarters')]}],
    succ=[LET('$t', TGT), IF(isObj('$t'), [choose(opts('Return the Asset', '1 Dominance'), '$r', 'Smash and Grab: choose one'),
                                           IF(eq('$r', '1 Dominance'), [dom(1)], [bounce('$t')])], [dom(1)])])

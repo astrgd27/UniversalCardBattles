@@ -121,7 +121,7 @@ SAVE.append(IF(AND(eq(g('game', 'saved'), 0), IN_MISSION, has('$o', 'psychic'),
         C('toHand', '$o')])]))
 fx('A Name Spoken in Two Minds')
 fx('Voluntary Subject Registry', abilities=[at_refresh([IF(ge(cnt(DECK('$me')), 2), [
-    choose(['top', '$me', 'deck', 2], '$b', 'Voluntary Subject Registry: which of the top two goes to the bottom?'), ['move', '$b', 'deck']])], ge(cnt(PSY()), 2))])
+    C('lookTop', '$me', 2), choose(['cards', '$me', 'look'], '$b', 'Voluntary Subject Registry: which of the top two goes to the bottom?'), ['move', '$b', 'deck'], C('topBack', '$me')])], ge(cnt(PSY()), 2))])
 fx('Dr. Asha Bell, Group Conductor')
 PRE_DEFEND.append(IF(AND(own('Dr. Asha Bell, Group Conductor', '$me'), ne(g('$me', 'abT'), '$turn'), eq(cnt(ATK), 2), ALL(ATK, has('$it', 'psychic')),
                          OR(attr_is('F'), attr_is('T')), gt(SUM(ATK, C('attr', '$it', 3)), SUM(ATK, C('attr', '$it', g('game', 'ma'))))), [

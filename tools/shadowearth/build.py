@@ -34,7 +34,7 @@ def parse_type(t):
 CARDS, BYNAME = [], {}
 for i, r in enumerate(ROWS):
     t, subs = parse_type(r['Type'])
-    c = {'id': slug(r['Name']), 'name': r['Name'], 'type': t, 'faction': FKEY[r['Faction']], 'num': f'SE-{i + 1:03d}',
+    c = {'id': slug(r['Name']), 'name': r['Name'], 'type': t, 'faction': FKEY[r['Faction']], 'num': f'SE-{i + 1:03d}', 'cno': i + 1,
          'rarity': r['Rarity'], 'text': r['Text'].strip(), 'archetype': r['Archetype']}
     if r['Cost'] != '': c['cost'] = int(r['Cost'])
     if r['Force'] != '':
@@ -78,7 +78,7 @@ for name, kw in FX.items():
             for ab in v:
                 ab['label'] = ab.get('label', name)
                 if k == 'op': ab.setdefault('phases', ['development'])
-                ab['do'] = [IF(eq(g('game', 'ocan'), 0), ab['do'])] + [C('opEnd', '$self')]
+                ab['do'] = [IF(eq(g('game', 'ocan'), 0), ab['do'])] + [C('opEnd', '$cx')]
             c[k] = v
         elif k in ('mop', 'agenda', 'abil', 'rabil'):
             for ab in v:
@@ -186,9 +186,14 @@ proc('toHand', ['$o'], [IF(isObj('$o'), [IF(has('$o', 'token'), [C('gone', '$o')
 proc('discardN', ['$p', '$n'], [LET('$k', mn('$n', cnt(HAND('$p')))), IF(gt('$k', 0), [
     choose(HAND('$p'), '$ds', 'Discard', '$k', '$k', who='$p'), ['move', '$ds', 'grave'], emit('discarded', p='$p', n='$k')])])
 proc('loot', ['$p', '$n'], [['draw', '$p', '$n'], C('discardN', '$p', '$n')])
-proc('scry', ['$p', '$n'], [IF(gt(cnt(DECK('$p')), 0), [
-    choose(['top', '$p', 'deck', '$n'], '$bs', 'Scry: choose cards to put on the bottom (the rest stay on top)', 0, '$n', who='$p'),
-    ['move', '$bs', 'deck'], INC('$p', 'scryT', 1), emit('scried', p='$p')])])
+proc('lookTop', ['$p', '$n'], [['move', ['top', '$p', 'deck', '$n'], 'look']])
+proc('topBack', ['$p'], [['move', ['reverse', ['cards', '$p', 'look']], 'deck', {'pos': 'top'}]])
+proc('lookBottom', ['$p'], [['move', ['cards', '$p', 'look'], 'deck']])
+proc('showHand', ['$p'], [['move', HAND('$p'), 'shown'], SET('$me', 'sawT', 1)])
+proc('hideHand', ['$p'], [['move', ['cards', '$p', 'shown'], 'hand']])
+proc('scry', ['$p', '$n'], [IF(gt(cnt(DECK('$p')), 0), [C('lookTop', '$p', '$n'),
+    choose(['cards', '$p', 'look'], '$bs', 'Scry: choose cards to put on the bottom (the rest stay on top)', 0, '$n', who='$p'),
+    ['move', '$bs', 'deck'], C('topBack', '$p'), INC('$p', 'scryT', 1), emit('scried', p='$p')])])
 proc('opEnd', ['$c'], [IF(isObj('$c'), [['move', '$c', 'grave']]), SET('game', 'ocan', 0)])
 proc('played', ['$c', '$p'], [INC('$p', 'acted', 1),
     *[IF(has('$c', k), [INC('$p', 'pl_' + k, 1)]) for k in ['psychic', 'specimen', 'adaptation', 'scripture', 'pact', 'demon', 'cultist', 'institution',
@@ -321,10 +326,10 @@ A['deploy'] = {'label': 'Play', 'phases': ['development'], 'source': inHand(inl(
            SET('$c', 'newT', '$turn'), C('played', '$c', '$me'),
            IF(eq(g('$c', 'hasDeploy'), 1), [['run', '$c', 'deploy']]), emit('deployed', c='$c', p='$me', card=g('$c', 'card'), type=g('$c', 'type'))]}
 A['op'] = {'label': 'Play', 'phases': ['development', 'operations'], 'activated': 'op', 'source': inHand(typ('$it', 'operation')),
-    'cost': [C('payFor', '$self')], 'do': [C('opStart', '$self')]}
+    'cost': [C('payFor', '$self')], 'do': [['move', '$self', 'limbo', {'as': '$cx'}], C('opStart', '$cx')]}
 A['respond'] = {'label': 'Respond', 'phases': ['respond'], 'activated': 'resp',
     'source': flt(HAND('$me'), AND(typ('$it', 'response'), eq(g('$it', 'ready'), 1), C('canPayR', '$it', '$me'))),
-    'cost': [C('payResp', '$self')], 'do': [C('opStart', '$self')]}
+    'cost': [C('payResp', '$self')], 'do': [['move', '$self', 'limbo', {'as': '$cx'}], C('opStart', '$cx')]}
 A['use'] = {'label': 'Use', 'phases': ['development', 'operations'], 'activated': 'abil',
     'source': ['concat', flt(PERMS('$me'), AND(C('active', '$it'), NOT(AND(typ('$it', 'facility'), ge(g('$it', 'frozenT'), '$turn'))))),
                flt(['cards', '$me', 'agenda'], C('agendaOn', '$it'))],
@@ -383,6 +388,8 @@ RULES = {
         {'id': 'gear', 'vis': 'public', 'abilities': True},
         {'id': 'ops', 'vis': 'public', 'abilities': True},
         {'id': 'limbo', 'vis': 'public', 'hideEmpty': True},
+        {'id': 'look', 'vis': 'owner', 'ordered': True, 'hideEmpty': True},
+        {'id': 'shown', 'vis': 'public', 'hideEmpty': True},
         {'id': 'grave', 'vis': 'public', 'ordered': True},
         {'id': 'exile', 'vis': 'public', 'hideEmpty': True},
         {'id': 'void', 'vis': 'public', 'offTable': True},
@@ -462,7 +469,7 @@ MANIFEST = {
     'licensing': 'Original game by @Astral (Core Set 1.7 prototype).',
     'tagline': 'Covert missions, secret agendas and five conspiracies racing to 20 Dominance.',
     'theme': {'accent': '#b45309', 'accent2': '#38bdf8', 'glyph': '◉', 'tapVar': 'ex',
-              'hideStats': ['tFac', 'num', 'fno', 'archetype', 'ready', 'hasDeploy', 'hasSucc', 'hasPre', 'hasImm', 'attach', 'bearerKw', 'mattr', 'tier', 'security', 'entersReady'],
+              'hideStats': ['cno', 'tFac', 'num', 'fno', 'archetype', 'ready', 'hasDeploy', 'hasSucc', 'hasPre', 'hasImm', 'attach', 'bearerKw', 'mattr', 'tier', 'security', 'entersReady'],
               'hideVars': ['faction', 'att', 'attMax', 'domMax', 'cap', 'tmpc', 'ex', 'atk', 'dfn', 'tgt', 'mb', 'z0', 'oF', 'oT', 'oW', 'cF', 'cT', 'cW', 'newT', 'nodef',
                            'noab', 'nomis', 'noready', 'ctlT', 'freeJoin', 'hasteT', 'lastBy', 'mopc', 'sup', 'done', 'hqdmg'],
               'hideKeywords': ['token'],

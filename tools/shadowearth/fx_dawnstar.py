@@ -40,8 +40,8 @@ fx('Archivist of the First Seal', deploy=[scry(2)])
 fx('Scripture Fragment: Ash'); attr_term(Q(AND(A_('W'), has('$o', 'occultist'), defending('$o'), kind_is('subvert')), src_count('Scripture Fragment: Ash', ctrl('$o')), 0))
 fx('Scripture Fragment: Iron'); attr_term(Q(AND(A_('F'), has('$o', 'occultist'), defending('$o'), kind_is('strike')), src_count('Scripture Fragment: Iron', ctrl('$o')), 0))
 fx('Scripture Fragment: Dawn', abilities=[at_refresh([scry(1)])])
-fx('Forbidden Translation', op=op([choose(flt(['top', '$me', 'deck', 5], has('$it', 'scripture')), '$v', 'Forbidden Translation: take which Scripture?', 0, 1),
-    IF(isObj('$v'), [['move', '$v', 'hand']]), ['move', ['top', '$me', 'deck', Q(isObj('$v'), 4, 5)], 'deck']]))
+fx('Forbidden Translation', op=op([C('lookTop', '$me', 5), choose(flt(['cards', '$me', 'look'], has('$it', 'scripture')), '$v', 'Forbidden Translation: take which Scripture?', 0, 1),
+    IF(isObj('$v'), [['move', '$v', 'hand']]), C('lookBottom', '$me')]))
 fx('The Seventh Circle', abil=[abil('Exhaust two Occultists: 2 Influence for Rituals and Scriptures this turn',
     [EACH('$t', '$x', [exhaust('$x')]), SET('$me', 'r7', 2), SET('$me', 'r7T', '$turn')], ('development',),
     targets=[slot(flt(OCC(), eq(g('$it', 'ex'), 0)), prompt='Exhaust two Occultists', mn_=2, mx_=2)])],

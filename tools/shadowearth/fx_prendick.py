@@ -53,8 +53,8 @@ fx('Lab-Born Vertebrate', abilities=[trig('attached', [loot(1)], AND(eq('$e.o', 
 fx('Hypermetabolic Serum', attach=1, bearerKw='specimen', abil=[abil('Pay 2: ready the attached Specimen', [ready(bearerOf('$self'))], ('development', 'operations'),
     cost=[C('spend', '$me', 2)], req=[(AND(ge(C('avail', '$me'), 2), eq(g(bearerOf('$self'), 'ex'), 1)), 'The Specimen must be exhausted and you need 2 Influence')])])
 attr_term(bearer_term('Hypermetabolic Serum', 'F', 1))
-fx('Random Splice', op=op([choose(flt(['top', '$me', 'deck', 3], has('$it', 'adaptation')), '$v', 'Random Splice: take which Adaptation?', 0, 1),
-    IF(isObj('$v'), [['move', '$v', 'hand']]), ['move', ['top', '$me', 'deck', Q(isObj('$v'), 2, 3)], 'deck']]))
+fx('Random Splice', op=op([C('lookTop', '$me', 3), choose(flt(['cards', '$me', 'look'], has('$it', 'adaptation')), '$v', 'Random Splice: take which Adaptation?', 0, 1),
+    IF(isObj('$v'), [['move', '$v', 'hand']]), C('lookBottom', '$me')]))
 
 # ---------------------------------------------------------------- Rapid Evolution
 fx('Mutation Handler')
@@ -104,8 +104,8 @@ fx('The Glass Nursery, Ward 8', abilities=[at_refresh([token(Q(ge(cnt(ADAPTS()),
 fx('Field Necropsy Report 11-B', op=op([['move', '$t', 'hand'], C('discardN', '$me', 1), IF(gt(cnt(SCI()), 0), [tmp(1)])],
     targets=[slot(flt(GRAVE('$me'), has('$it', 'specimen')), prompt='Return which Specimen?')]))
 fx('Predictive Gene Sequencing', abilities=[trig('attached', [IF(gt(cnt(DECK('$me')), 0), [
-    choose(['top', '$me', 'deck', 2], '$v', 'Predictive Gene Sequencing: put one into your hand (the other goes to the bottom)'), ['move', '$v', 'hand'],
-    ['move', ['top', '$me', 'deck', 1], 'deck'], C('discardN', '$me', 1)])], AND(eq('$e.p', SELF_P), has('$e.a', 'adaptation')), once_per_turn=True)])
+    C('lookTop', '$me', 2), choose(['cards', '$me', 'look'], '$v', 'Predictive Gene Sequencing: put one into your hand (the other goes to the bottom)'), ['move', '$v', 'hand'],
+    C('lookBottom', '$me'), C('discardN', '$me', 1)])], AND(eq('$e.p', SELF_P), has('$e.a', 'adaptation')), once_per_turn=True)])
 fx('Specimen R-41, The Latchkey')
 INFIL_OPTS.append(('Pay 1: Disable a Facility instead (R-41)', AND(ANY(ATK, isc('$it', 'Specimen R-41, The Latchkey')), ge(C('avail', '$me'), 1), gt(cnt(facs('$opp')), 0)),
     [C('spend', '$me', 1), choose(facs('$opp'), '$f', 'Disable which Facility?'), disable('$f'),
@@ -123,8 +123,8 @@ fx('Genome Patent Monopoly', **agenda([(ge(cnt(facs('$me')), 2), 'Control two Fa
 cost_term(Q(AND(has('$c', 'specimen'), typ('$c', 'operative'), eq(g('$p', 'pl_specimen'), 0), agenda_on('Genome Patent Monopoly', '$p')), -1, 0))
 fx('Project CHIMERA', **agenda([(ge(cnt(['distinct', ['map', ADAPTS(), g('$it', 'card')]]), 3), 'Control three Adaptations with different names'),
                                  (ge(recent('$me', 'S'), 2), 'Succeed at Strike on your two most recent turns')],
-    imm=[choose(flt(DECK('$me'), AND(has('$it', 'specimen'), typ('$it', 'operative'), le(g('$it', 'cost'), 5))), '$v', 'Project CHIMERA: put which Specimen into play?', 0, 1),
-         IF(isObj('$v'), [['move', '$v', 'ops', {'as': '$n'}], SET('$n', 'ex', 1), SET('$n', 'newT', '$turn')]), ['shuffle', '$me', 'deck']]),
+    imm=[C('lookTop', '$me', 99), choose(flt(['cards', '$me', 'look'], AND(has('$it', 'specimen'), typ('$it', 'operative'), le(g('$it', 'cost'), 5))), '$v', 'Project CHIMERA: put which Specimen into play?', 0, 1),
+         IF(isObj('$v'), [['move', '$v', 'ops', {'as': '$n'}], SET('$n', 'ex', 1), SET('$n', 'newT', '$turn')]), C('lookBottom', '$me'), ['shuffle', '$me', 'deck']]),
    abil=[abil('Play an Adaptation from your discard pile (Project CHIMERA)',
     [C('spend', '$me', C('cost', '$t', '$me')), SET('$me', 'adGraveT', '$turn'), ['move', '$t', 'gear', {'as': '$c'}], SET('$c', 'exileOnLeave', 1),
      choose(flt(OPS('$me'), C('bearerOk', '$c', '$it')), '$b', 'Attach to which Specimen?'), ['link', '$c', 'bearer', '$b'], emit('attached', a='$c', o='$b', p='$me'),

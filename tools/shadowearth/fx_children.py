@@ -35,8 +35,8 @@ fx('Contact Engineer')
 cost_term(Q(AND(has('$c', 'artifact'), eq(g('$p', 'pl_artifact'), 0), own('Contact Engineer', '$p')), -1, 0))
 fx('Unidentified Alloy', attach=1); SHIELD.append(gear_n('$o', 'Unidentified Alloy')); attr_term(bearer_term('Unidentified Alloy', 'F', 1))
 fx('Antigravity Harness', attach=1); HASTE.append(gt(gear_n('$o', 'Antigravity Harness'), 0)); attr_term(bearer_term('Antigravity Harness', 'T', 1))
-fx('Device from the Crash Site', op=op([choose(flt(['top', '$me', 'deck', 4], has('$it', 'artifact')), '$v', 'Device from the Crash Site: take which Artifact?', 0, 1),
-    IF(isObj('$v'), [['move', '$v', 'hand']]), ['move', ['top', '$me', 'deck', Q(isObj('$v'), 3, 4)], 'deck']]))
+fx('Device from the Crash Site', op=op([C('lookTop', '$me', 4), choose(flt(['cards', '$me', 'look'], has('$it', 'artifact')), '$v', 'Device from the Crash Site: take which Artifact?', 0, 1),
+    IF(isObj('$v'), [['move', '$v', 'hand']]), C('lookBottom', '$me')]))
 fx('Neural Disruptor', attach=1)
 PRE_DEFEND.append(IF(AND(kind_is('subvert'), ANY(ATK, gt(gear_n('$it', 'Neural Disruptor'), 0)), ne(g('$me', 'ndT'), '$turn')), [SET('$me', 'ndT', '$turn'),
     choose(flt(OPS('$opp'), AND(eq(g('$it', 'ex'), 0), le(g('$it', 'will'), 2))), '$v', 'Neural Disruptor: exhaust which opposing operative (printed Will 2 or less)?', 0, 1),
@@ -84,9 +84,9 @@ fx('The Apparition Log', abil=[abil('Reveal your top card (an Operation makes yo
 cost_term(Q(AND(typ('$c', 'response'), eq(g('$p', 'aplog'), 1)), -1, 0))
 fx('Foretold Collision', mattr=2, mop=[{'label': 'Foretold Collision (Tradecraft mission)', 'targets': [slot(['list', '$opp'], prompt='Target: the opposing Headquarters')]}],
    pre=[SET('$me', 'fcCost', -1), IF(gt(cnt(DECK('$me')), 0), [
-       emit('revealed', cards=['map', ['top', '$me', 'deck', 2], g('$it', 'card')], p='$me', owner='$me'),
-       choose(['top', '$me', 'deck', 2], '$v', 'Foretold Collision: discard one of them for +3 Tradecraft?', 0, 1),
-       IF(isObj('$v'), [SET('$me', 'fcCost', g('$v', 'cost')), ['move', '$v', 'grave'], INC('game', 'am', 3)])])],
+       C('lookTop', '$me', 2), emit('revealed', cards=['map', ['cards', '$me', 'look'], g('$it', 'card')], p='$me', owner='$me'),
+       choose(['cards', '$me', 'look'], '$v', 'Foretold Collision: discard one of them for +3 Tradecraft?', 0, 1),
+       IF(isObj('$v'), [SET('$me', 'fcCost', g('$v', 'cost')), ['move', '$v', 'grave'], INC('game', 'am', 3)]), C('topBack', '$me')])],
    succ=[dom(Q(ge(g('$me', 'fcCost'), 3), 2, 1))])
 fx('The Hundredth Warning', abilities=[trig('scried', [IF(gt(cnt(DECK('$me')), 0), [C('revealTop', '$me', '$me'),
     IF(ge(g(first(DECK('$me')), 'cost'), 3), [pick(flt(CULT(), eq(g('$it', 'ex'), 1)), '$v', 'Ready which Cultist?', 0, 1), IF(isObj('$v'), [ready('$v')]), tmp(1)])])],
@@ -95,9 +95,10 @@ fx('The Hundredth Warning', abilities=[trig('scried', [IF(gt(cnt(DECK('$me')), 0
 # ---------------------------------------------------------------- 1.4 bridge cards
 fx('Reverend Silas Hark, Contactee', abilities=[on_played(has('$e.c', 'alien'), [rev(1)], once_per_turn=True)])
 attr_term(self_term('Reverend Silas Hark, Contactee', 'W', 2, AND(defending('$o'), ge(cnt(flt(OPS(ctrl('$o')), AND(ne('$it', '$o'), has('$it', 'cultist')))), 2))))
-fx('The Listening Dish at Black Mesa', abilities=[at_refresh([IF(ge(cnt(DECK('$me')), 1), [
-    choose(flt(['top', '$me', 'deck', 2], OR(has('$it', 'entity'), has('$it', 'alien'))), '$v', 'The Listening Dish: take an Entity or Alien Asset (and skip your draw)?', 0, 1),
-    IF(isObj('$v'), [emit('revealed', card=g('$v', 'card'), p='$me', owner='$me'), ['move', '$v', 'hand'], SET('$me', 'skipDraw', 1), ['move', ['top', '$me', 'deck', 1], 'deck']])])])])
+fx('The Listening Dish at Black Mesa', abilities=[at_refresh([IF(ge(cnt(DECK('$me')), 1), [C('lookTop', '$me', 2),
+    choose(flt(['cards', '$me', 'look'], OR(has('$it', 'entity'), has('$it', 'alien'))), '$v', 'The Listening Dish: take an Entity or Alien Asset (and skip your draw)?', 0, 1),
+    IF(isObj('$v'), [emit('revealed', card=g('$v', 'card'), p='$me', owner='$me'), ['move', '$v', 'hand'], SET('$me', 'skipDraw', 1), C('lookBottom', '$me')],
+       [C('topBack', '$me')])])])])
 fx('Stellar Alignment Almanac', deploy=[scry(3)], abilities=[
     trig('refresh', [choose(opts('Strike', 'Infiltrate', 'Subvert'), '$r', 'Stellar Alignment Almanac: name a basic mission'),
                      SET('$self', 'almK', Q(eq('$r', 'Strike'), 1, Q(eq('$r', 'Infiltrate'), 2, 3)))], AND(ne('$e.p', SELF_P), C('active', '$self'))),

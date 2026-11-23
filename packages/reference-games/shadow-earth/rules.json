@@ -102,6 +102,17 @@
    "hideEmpty": true
   },
   {
+   "id": "look",
+   "vis": "owner",
+   "ordered": true,
+   "hideEmpty": true
+  },
+  {
+   "id": "shown",
+   "vis": "public",
+   "hideEmpty": true
+  },
+  {
    "id": "grave",
    "vis": "public",
    "ordered": true
@@ -4486,13 +4497,29 @@
      [
       "?",
       [
-       "=",
+       "and",
        [
-        "get",
-        "$c",
-        "taxT"
+        "=",
+        [
+         "get",
+         "$p",
+         "taxT"
+        ],
+        "$turn"
        ],
-       "$turn"
+       [
+        "=",
+        [
+         "get",
+         "$c",
+         "cno"
+        ],
+        [
+         "get",
+         "$p",
+         "taxCno"
+        ]
+       ]
       ],
       1,
       0
@@ -8666,6 +8693,100 @@
     ]
    ]
   },
+  "lookTop": {
+   "params": [
+    "$p",
+    "$n"
+   ],
+   "do": [
+    [
+     "move",
+     [
+      "top",
+      "$p",
+      "deck",
+      "$n"
+     ],
+     "look"
+    ]
+   ]
+  },
+  "topBack": {
+   "params": [
+    "$p"
+   ],
+   "do": [
+    [
+     "move",
+     [
+      "reverse",
+      [
+       "cards",
+       "$p",
+       "look"
+      ]
+     ],
+     "deck",
+     {
+      "pos": "top"
+     }
+    ]
+   ]
+  },
+  "lookBottom": {
+   "params": [
+    "$p"
+   ],
+   "do": [
+    [
+     "move",
+     [
+      "cards",
+      "$p",
+      "look"
+     ],
+     "deck"
+    ]
+   ]
+  },
+  "showHand": {
+   "params": [
+    "$p"
+   ],
+   "do": [
+    [
+     "move",
+     [
+      "cards",
+      "$p",
+      "hand"
+     ],
+     "shown"
+    ],
+    [
+     "set",
+     "$me",
+     "sawT",
+     1
+    ]
+   ]
+  },
+  "hideHand": {
+   "params": [
+    "$p"
+   ],
+   "do": [
+    [
+     "move",
+     [
+      "cards",
+      "$p",
+      "shown"
+     ],
+     "hand"
+    ]
+   ]
+  },
   "scry": {
    "params": [
     "$p",
@@ -8688,13 +8809,18 @@
      ],
      [
       [
+       "call",
+       "lookTop",
+       "$p",
+       "$n"
+      ],
+      [
        "choose",
        {
         "from": [
-         "top",
+         "cards",
          "$p",
-         "deck",
-         "$n"
+         "look"
         ],
         "as": "$bs",
         "prompt": "Scry: choose cards to put on the bottom (the rest stay on top)",
@@ -8707,6 +8833,11 @@
        "move",
        "$bs",
        "deck"
+      ],
+      [
+       "call",
+       "topBack",
+       "$p"
       ],
       [
        "inc",
@@ -16821,9 +16952,17 @@
    ],
    "do": [
     [
+     "move",
+     "$self",
+     "limbo",
+     {
+      "as": "$cx"
+     }
+    ],
+    [
      "call",
      "opStart",
-     "$self"
+     "$cx"
     ]
    ]
   },
@@ -16877,9 +17016,17 @@
    ],
    "do": [
     [
+     "move",
+     "$self",
+     "limbo",
+     {
+      "as": "$cx"
+     }
+    ],
+    [
      "call",
      "opStart",
-     "$self"
+     "$cx"
     ]
    ]
   },
