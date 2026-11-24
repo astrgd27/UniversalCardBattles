@@ -229,9 +229,12 @@ export function setVar(m: Mod, s: State, ref: any, name: string, val: number) {
 function choose(m: Mod, s: State, o: any, ctx: Ctx) {
   const single = (o.max ?? 1) === 1;
   const options = uniq(list(ev(m, s, o.from, ctx)).map(String));
-  if (o.required && options.length < (o.min ?? 1)) throw new CostError(`Cannot pay: no ${o.prompt ?? 'choice'} available.`);
-  const max = Math.min(o.max ?? 1, options.length);
-  const min = Math.min(o.min ?? 1, max);
+  // min/max may be expressions (e.g. "discard down to 7", "tribute as many as its level needs")
+  const lo = o.min === undefined ? 1 : Math.max(0, num(ev(m, s, o.min, ctx)));
+  const hi = o.max === undefined ? 1 : Math.max(0, num(ev(m, s, o.max, ctx)));
+  if (o.required && options.length < lo) throw new CostError(`Cannot pay: no ${o.prompt ?? 'choice'} available.`);
+  const max = Math.min(hi, options.length);
+  const min = Math.min(lo, max);
   if (max === 0) { ctx[o.as] = single ? null : []; return; }
   if (min === options.length) { ctx[o.as] = single ? options[0] : options; return; } // forced: no real choice
   s.pending = {

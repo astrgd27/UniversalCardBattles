@@ -8,7 +8,8 @@
     "#harness": "./packages/test-harness/src/index.ts",
     "#sdk": "./packages/module-sdk/src/index.ts",
     "#sdk/node": "./packages/module-sdk/src/node.ts",
-    "#campaign": "./packages/campaign/src/index.ts"
+    "#campaign": "./packages/campaign/src/index.ts",
+    "#maker": "./packages/maker/src/index.ts"
   },
   "scripts": {
     "test": "node --test --test-reporter=dot \"packages/*/tests/*.test.ts\"",

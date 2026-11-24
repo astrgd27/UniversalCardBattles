@@ -87,7 +87,7 @@ Effects run in effect lists `[[op...], [op...]]`.
 | `setSlot obj slot` | repositions an object inside its slotted zone; a full one-object slot swaps the two. Emits `slotted` |
 | `flip objs up?` | turns face up (default) or face down. Emits `flipped` (with `card` when turned face up) |
 
-`choose` also takes `secret: true` (masks the pick from others) and `required: true`: if fewer options than `min` exist (typically during a cost), the whole action is rejected and nothing changes.
+`choose` `min`/`max` may be expressions ("discard down to your hand size"); only a literal `max` of 1 binds a single id. `choose` also takes `secret: true` (masks the pick from others) and `required: true`: if fewer options than `min` exist (typically during a cost), the whole action is rejected and nothing changes.
 
 `draw`, `move`, `destroy`, `damage` and `lose` are **proposed events** that pass through the replacement pipeline.
 
