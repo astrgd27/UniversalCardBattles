@@ -16,9 +16,10 @@ import { connectSync, initSync, openStore, persistStorage, store, sync, unlinkSy
 import { PackageError } from '#sdk';
 import { MODULES, loadZipModule } from './modules.ts';
 import { render } from './ui/render.ts';
+import { type MakerUI, makerActions, registerPublished } from './maker.ts';
 
 export type Seat = 'human' | 'heuristic' | 'random';
-export type Screen = 'library' | 'home' | 'setup' | 'game' | 'decks' | 'gallery' | 'campaign' | 'encounter' | 'reward' | 'shop' | 'saves' | 'tutorials';
+export type Screen = 'library' | 'home' | 'setup' | 'game' | 'decks' | 'gallery' | 'campaign' | 'encounter' | 'reward' | 'shop' | 'saves' | 'tutorials' | 'maker';
 /** Choosing targets for an action template, or answering a pending decision. */
 export interface Selection { tpl?: Template; slot: number; picks: Record<string, string[]> }
 export interface DeckEdit { name: string; original: string | null; deck: Record<string, string[]>; section: string; campaign?: boolean }
@@ -60,6 +61,8 @@ export interface UI {
   fxFrom: number; // first event not yet animated
   banners?: { text: string; at: number }[]; // queued announcements (start times in ms), kept across redraws
   counts: Record<string, number>; // zone sizes at the last render (pile bumps)
+  mk?: MakerUI; // Game Maker screen state
+  makerReturn?: string | null; // playtesting a Game Maker project: its id
 }
 
 const PROFILE = (id: string) => `ucb-profile:${id}`;
@@ -666,6 +669,8 @@ export const actions = {
   },
 };
 
+Object.assign(actions, makerActions(ui, () => redraw(), actions));
+
 // Touch: a long press (or a right-click) shows a card up close; on the table it opens the card's live details.
 // Moving the finger cancels it (scrolling), and the tap that ends a long press is swallowed so it plays nothing.
 let press: { timer: ReturnType<typeof setTimeout>; x: number; y: number } | null = null;
@@ -702,6 +707,7 @@ export const storageInfo: { backend: string; persisted: boolean; used: number | 
 openStore((msg) => { ui.note = { title: 'Storage problem', text: msg }; redraw(); }).then(async (b) => {
   storageInfo.backend = b;
   migrateLegacySaves();
+  registerPublished();
   ui.theme = store.get<'light' | 'dark'>('ucb-theme', 'dark') === 'light' ? 'light' : 'dark';
   ui.cardSize = (['s', 'm', 'l'] as const).find((z) => z === store.get<string>('ucb-cards', 'm')) ?? 'm';
   redraw();

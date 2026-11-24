@@ -88,7 +88,7 @@ export function cardFace(m: Mod, cardId: string, o: FaceOpts = {}): HTMLElement 
   const tapped = !!th?.tapVar && (o.vars?.[th.tapVar] ?? 0) > 0;
   const mid = m.manifest.moduleId;
   const full = assetUrl(mid, undefined, `assets/full/${def.id}`);
-  const art = customArt(mid, def.id) ?? assetUrl(mid, typeof def.art === 'string' ? def.art : undefined, `assets/cards/${def.id}`) ?? procArt(def, GLYPH[def.type] ?? '◆');
+  const art = customArt(mid, def.id) ?? assetUrl(mid, typeof def.art === 'string' ? def.art : undefined, `assets/cards/${def.id}`) ?? procArt(def, typeof def.glyph === 'string' ? def.glyph : GLYPH[def.type] ?? '◆');
   const corners = new Map<string, StatSlot[]>();
   for (const s of placed) if (s.pos !== 'line') corners.set(s.pos, [...(corners.get(s.pos) ?? []), s]);
   const line = placed.filter((s) => s.pos === 'line');
@@ -111,7 +111,7 @@ export function cardFace(m: Mod, cardId: string, o: FaceOpts = {}): HTMLElement 
   return h('button', {
     class: cls('card', `tpl-${tpl.base}`, `layout-${tpl.layout}`, `size-${o.size ?? 'md'}`, `t-${def.type}`, o.faceDown && 'fd', tapped && 'tapped',
       (corners.has('bl') || corners.has('br')) && 'low-stats', o.state),
-    style: `--h:${hue(def.id)}`, onclick: o.onclick, title: def.text ?? def.name, 'data-template': tpl.base, 'data-card': def.id, 'data-obj': o.obj,
+    style: `--h:${typeof def.hue === 'number' ? def.hue : hue(def.id)}`, onclick: o.onclick, title: def.text ?? def.name, 'data-template': tpl.base, 'data-card': def.id, 'data-obj': o.obj,
     'aria-label': label,
   },
   tpl.cost !== 'none' && def.cost !== undefined && (typeof def.cost === 'object'

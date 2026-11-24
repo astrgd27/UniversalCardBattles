@@ -263,6 +263,29 @@ A survey of about 30 published TCG rulebooks (`docs/COVERAGE.md`, second table) 
   - Tall popups scroll.
   - Tap/untap uses the CSS `rotate`/`scale` properties with event-log animation. This fixes the card showing untapped while hovered and then snapping to tapped.
 
+## Done: Game Maker (design a card game in the app)
+- **Package:** `packages/maker`. A blueprint format (`#maker`) compiles to an engine module; `lint`/`build` report "bugs" and "tips" in plain language. See `docs/MAKER.md`.
+- **Starter blueprints:** seven original, playable games covering the main families of TCG structure:
+  - lands, colored mana, the stack and blocking;
+  - a rune deck, battlefields and points;
+  - active and bench, attached energy, evolution and prizes;
+  - tributes, positions, traps, chains and a fusion deck;
+  - a leader with life cards, a resource deck, boosts and counters;
+  - any card as energy, an awakening leader and counters;
+  - a blank canvas.
+- **Web Workshop:**
+  - 12 build stations with quests, XP and ranks; Gizmo the guide; a Checks panel; live card previews;
+  - frame designer; types, stats and roles; board renaming; turn phase blocks with timing;
+  - resource, combat and win system cards; keywords mapped to built-in rules;
+  - card editor with When/If/Do ability blocks, attacks, evolution, materials and attachment bonuses;
+  - deck editor with auto-fill; playtest versus the AI or a friend; AI Lab balance runs;
+  - publish to the library (kept across reloads); export as a .zip module or a .maker.json blueprint;
+  - Script Lab: rules patch, triggers, functions, procedures and AI hints, plus per-card raw JSON.
+- **Engine:** `choose` evaluates `min`/`max` expressions. Golden hashes refreshed.
+- **Tests:**
+  - `maker.test.ts`: every blueprint builds, plays to the end under the heuristic AI with its signature mechanics firing, replays identically, keeps hidden cards hidden and conserves cards; plus lint, text and the advanced patch;
+  - e2e: every blueprint and station, the AI Lab, playtest and back, publish, phone width.
+
 ## Done: Shadow Earth 2.1 (distinct factions)
 - Each Headquarters has a Doctrine:
   - PsyList: Will Wetwork that plants Control counters.
@@ -294,6 +317,7 @@ A survey of about 30 published TCG rulebooks (`docs/COVERAGE.md`, second table) 
 ## Possible next steps
 - NIGHTFALL: the remaining art; human playtests to confirm the AI-tuned numbers.
 - Shadow Earth: card art prompts, a tutorial, human playtests of the 2.0 numbers.
+- Game Maker: custom card art upload per card, more effect blocks (copy, gain control, transform), multiplayer blueprints, sharing blueprints online.
 - Campaigns for the other reference games.
 - IndexedDB storage (localStorage today) and cloud sync of backups.
 - Card art pipeline: an asset browser in the gallery, using art in reference games.

@@ -1,4 +1,4 @@
-// Browser smoke test over the real UI: library -> game menu -> setup -> table, deckbuilder, gallery, saves, hot-seat, phone width.
+// Browser smoke test over the real UI: library -> game menu -> setup -> table, deckbuilder, gallery, saves, hot-seat, phone width, Game Maker.
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 const { chromium } = createRequire(import.meta.url)('playwright'); // pre-installed globally in CI images; else: npm i -D playwright
@@ -330,6 +330,44 @@ try {
   await pad.setViewportSize({ width: 834, height: 1194 });
   ok(await pad.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'iPad portrait: no sideways scroll');
   await ctx.close();
+
+  // Game Maker: every blueprint builds and every station renders; add an ability; AI lab; playtest and back; publish.
+  const mkp = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  mkp.on('pageerror', (e) => fail.push(`maker pageerror: ${e.message}`));
+  mkp.on('dialog', (d) => d.accept());
+  await mkp.goto(`http://localhost:${port}/`);
+  await mkp.click('[data-act=maker]');
+  for (const bpId of ['stack', 'lanes', 'duel', 'chain', 'leaderLife', 'leaderEnergy', 'blank']) {
+    await mkp.click('[data-act=mk-new]');
+    await mkp.click(`[data-blueprint=${bpId}]`);
+    ok(await mkp.isVisible('.mk-bugs.good'), `maker ${bpId}: builds with no bugs`);
+    for (const st of ['identity', 'frames', 'types', 'board', 'turn', 'rules', 'keywords', 'cards', 'decks', 'test', 'publish', 'lab']) await mkp.click(`[data-station=${st}]`);
+    await mkp.click('[data-station=cards]');
+    await mkp.click('.mk-grid .card >> nth=2');
+    await mkp.click('[data-act=mk-ability]');
+    ok(await mkp.isVisible('.mk-bugs.good'), `maker ${bpId}: still builds after adding an ability`);
+    await mkp.click('text=← Projects');
+  }
+  await mkp.click('.mk-proj-open >> nth=0');
+  await mkp.click('[data-station=test]');
+  await mkp.click('[data-act=mk-sim]');
+  await mkp.waitForSelector('.mk-report', { timeout: 180000 });
+  ok((await mkp.textContent('.mk-report')).includes('10 AI games'), 'maker: AI lab report');
+  await mkp.click('[data-act=mk-play]');
+  await mkp.waitForSelector('.hud-status', { timeout: 20000 });
+  await mkp.click('[data-act=mk-back]');
+  await mkp.click('[data-station=publish]');
+  await mkp.click('[data-act=mk-publish]');
+  await mkp.setViewportSize({ width: 390, height: 844 });
+  await mkp.click('[data-station=cards]');
+  ok(await mkp.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'maker phone: no sideways scroll');
+  await mkp.setViewportSize({ width: 1280, height: 900 });
+  await mkp.click('text=← Projects');
+  await mkp.click('text=← Library');
+  ok(await mkp.isVisible('[data-module=my-card-game]'), 'maker: published game in the library');
+  await mkp.click('[data-module=my-card-game]');
+  ok(await mkp.isVisible('[data-menu=play]'), 'maker: published game has a home menu');
+  await mkp.close();
   await browser.close();
 } finally {
   server.kill();

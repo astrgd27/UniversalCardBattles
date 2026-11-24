@@ -133,8 +133,7 @@ export function abilityText(a: Ability, bp: Blueprint, role: Role): string {
 export function cardText(k: CardBP, bp: Blueprint): string {
   if (k.text) return k.text;
   const role = bp.types.find((t) => t.id === k.type)?.role ?? 'unit';
-  const kws = k.keywords.map((id) => bp.keywords.find((w) => w.id === id)?.name).filter(Boolean).join(', ');
-  const parts = [kws, ...k.abilities.map((a) => abilityText(a, bp, role))];
+  const parts = k.abilities.map((a) => abilityText(a, bp, role));
   if (k.bonus) parts.push(`Attach to one of your units: ${Object.entries(k.bonus).map(([s, n]) => `${n >= 0 ? '+' : ''}${n} ${bp.stats.find((x) => x.id === s)?.name ?? s}`).join(', ')}.`);
   if (role === 'evolution' && k.evolvesFrom) parts.unshift(`Evolves from ${k.evolvesFrom}.`);
   if (role === 'extra' && k.materials) parts.unshift(`Summon from your extra deck by sending ${k.materials} of your units to the discard pile.`);
@@ -237,7 +236,10 @@ function compileCard(x: Ctx, k: CardBP): Record<string, X> {
   if (role === 'token') { kws.push('token'); out.maxCopies = 0; }
   if (role === 'resource') out.maxCopies = 99;
   if (kws.length) out.keywords = [...new Set(kws)];
-  if (k.art) out.art = k.art;
+  const glyph = k.art || bp.types.find((t) => t.id === k.type)?.icon;
+  if (glyph) out.glyph = glyph;
+  const hex = bp.colors.find((cl) => cl.id === k.color)?.hex;
+  if (hex) out.hue = hexHue(hex);
   if (k.evolvesFrom) out.evolvesFrom = k.evolvesFrom;
   if (k.materials) out.materials = k.materials;
   if (k.weakness) out.weakness = k.weakness;
@@ -617,7 +619,7 @@ export function compileBlueprint(bp: Blueprint): ModuleDef {
     licensing: `Made with the Universal Card Battles Game Maker${bp.author ? ` by ${bp.author}` : ''}.`,
     tagline: bp.tagline,
     theme: { accent: bp.look.accent, accent2: bp.look.accent2, glyph: bp.look.glyph, tapVar: 'ex', labels,
-      hideStats: ['role', 'res', 'trapOn', 'evolvesFrom', 'materials', 'retreat', ...(c.mode === 'duel' ? [] : ['weakness'])],
+      hideStats: ['role', 'res', 'trapOn', 'evolvesFrom', 'materials', 'retreat', 'hue', 'glyph', ...(c.mode === 'duel' ? [] : ['weakness'])],
       hideVars: ['ex', 'newT', 'pos', 'shu', 'att', 'cap', 'turns', 'first', 'started', 'bat', 'rem', ...(x.points ? [] : ['score']), ...(x.life ? [] : ['life'])],
       hideKeywords: ['token'] },
     presentation: { templates, byType },
@@ -652,3 +654,13 @@ function deepMerge(a: Record<string, any>, b: Record<string, any>) {
   }
 }
 export { slug };
+/** The hue (0-359) of a #rrggbb color, used to tint card frames by color. */
+export function hexHue(hex: string): number {
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex.trim());
+  if (!m) return 220;
+  const [r, g2, b] = [m[1], m[2], m[3]].map((x) => parseInt(x, 16) / 255);
+  const mxv = Math.max(r, g2, b), mnv = Math.min(r, g2, b), d = mxv - mnv;
+  if (!d) return 220;
+  const h = mxv === r ? ((g2 - b) / d) % 6 : mxv === g2 ? (b - r) / d + 2 : (r - g2) / d + 4;
+  return Math.round((h * 60 + 360) % 360);
+}

@@ -232,7 +232,7 @@ test('nightfall: the Night Track advances after the second player\'s Toll and Da
   g = settle(pass(g));
   assert.equal(g.s.vars.hour, 1);
   g.s.vars.hour = 9;
-  g = settle(pass(pass(g)), () => []);
+  g = settle(pass(pass(g)));
   assert.ok(g.s.result, 'Dawn');
   assert.ok(g.s.events.some((e) => e.type === 'dawn'));
 });
