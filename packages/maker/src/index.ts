@@ -55,6 +55,8 @@ export function lint(bp: Blueprint): Problem[] {
     if (x.leader && !d.leader) bug(`Deck "${d.name}" needs a leader.`, `deck:${d.id}`);
   }
   if (bp.colors.length && !bp.cards.some((k) => k.color)) tip('You defined colors, but no card uses one.', 'look');
+  const hiddenZ = new Set(['deck', 'life', 'prizes', 'resdeck', ...(bp.zones ?? []).filter((z) => z.vis !== 'public').map((z) => z.id)]);
+  for (const k of bp.cards) for (const a of k.abilities) for (const e of a.do) if (e.filter?.zone && hiddenZ.has(e.filter.zone) && !['search'].includes(e.k)) bug(`${k.name} targets cards in a hidden zone, which players can't see. Use a public zone.`, `card:${k.id}`);
   if (bp.colors.length && bp.cards.some((k) => k.abilities.some((a) => a.do.some((e) => e.k === 'costMod')))) tip('Cost reducers only work in games without colored costs.', 'cards');
   return out;
 }

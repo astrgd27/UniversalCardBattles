@@ -231,6 +231,7 @@ function types(bp: Blueprint, A: any) {
         txt(bp, A, ['types', i, 'icon'], { label: 'Icon' }), txt(bp, A, ['types', i, 'name'], { label: 'Name', q: 'types' }),
         sel(bp, A, ['types', i, 'role'], ROLE_OPTS, { label: 'Role', q: 'types' }),
         h('span', { class: 'muted mk-rolehint' }, ROLES[t.role].hint),
+        t.role === 'permanent' && (bp.zones ?? []).length > 0 && sel(bp, A, ['types', i, 'playTo'], [['', 'Support area'], ...bp.zones!.map((z) => [z.id, z.name] as [string, string])], { label: 'Played to', map: (v) => v || undefined }),
         !!bp.combat.arenas?.length && UNIT_ROLES.includes(t.role) && sel(bp, A, ['types', i, 'zone'], bp.combat.arenas.map((z) => [z.id, z.name] as [string, string]), { label: 'Enters' }),
         h('button', { class: 'x', disabled: used(t.id), title: used(t.id) ? 'Cards still use this type' : 'Remove', onclick: () => A.mkEdit((b: Blueprint) => { b.types.splice(i, 1); }) }, '🗑'))),
       h('div', { class: 'mk-addrow' }, h('span', { class: 'muted' }, 'Add:'), (Object.keys(ROLES) as Role[]).map((r) => h('button', { class: 'chip', onclick: () => A.mkEdit((b: Blueprint) => {
@@ -266,6 +267,14 @@ function board(bp: Blueprint, A: any, mod: Mod | null) {
           h('button', { class: 'x', onclick: () => A.mkEdit((b: Blueprint) => { b.combat.arenas!.splice(i, 1); if (!b.combat.arenas!.length) b.combat.arenas = undefined; for (const t of b.types) if (t.zone === ar.id) delete t.zone; }), 'aria-label': 'Remove area' }, '🗑'))),
         row(h('button', { onclick: () => A.mkEdit((b: Blueprint) => { const list = (b.combat.arenas ??= []); let id = `area${list.length + 1}`; while (list.some((z) => z.id === id)) id += 'x'; list.push({ id, name: `Area ${list.length + 1}`, size: 5, attack: true }); }, 'board') }, '+ Add area'),
           (bp.combat.arenas?.length ?? 0) > 1 && chk(bp, A, ['combat', 'sameArena'], 'Units only fight units in their own area'))),
+      h('div', { class: 'mk-sub' }, h('strong', {}, 'Extra zones'),
+        hint('Make your own piles and slots: a banished pile already exists; add a Stadium slot both players share, a graveyard for spells, a hidden vault... Permanent card types can be played into them (Card Types station).'),
+        (bp.zones ?? []).map((z, i) => row(txt(bp, A, ['zones', i, 'name'], { label: 'Zone' }),
+          sel(bp, A, ['zones', i, 'vis'], [['public', 'Everyone sees it'], ['owner', 'Only its owner sees it'], ['hidden', 'Face down']], { label: 'Visibility' }),
+          num(bp, A, ['zones', i, 'size'], { label: 'Holds (0 = any)', min: 0, max: 30 }), chk(bp, A, ['zones', i, 'inPlay'], 'Cards here are in play'),
+          chk(bp, A, ['zones', i, 'global'], 'One for the whole table (new replaces old)'), h('span', { class: 'muted' }, `id: ${z.id}`),
+          h('button', { class: 'x', onclick: () => A.mkEdit((b: Blueprint) => { b.zones!.splice(i, 1); for (const t of b.types) if (t.playTo === z.id) delete t.playTo; }), 'aria-label': 'Remove zone' }, '🗑'))),
+        h('button', { onclick: () => A.mkEdit((b: Blueprint) => { const list = (b.zones ??= []); let id = `zone${list.length + 1}`; while (list.some((z) => z.id === id)) id += 'x'; list.push({ id, name: `Zone ${list.length + 1}`, vis: 'public', size: 0, inPlay: false }); }, 'board') }, '+ Add zone')),
       bp.combat.mode === 'lanes' && [hint('Battlefields are shared lanes both players fight over.'),
         bp.combat.lanes.map((_, i) => row(txt(bp, A, ['combat', 'lanes', i], { label: `Battlefield ${i + 1}` }), h('button', { class: 'x', disabled: bp.combat.lanes.length < 2, onclick: () => A.mkEdit((b: Blueprint) => { b.combat.lanes.splice(i, 1); }) }, '🗑'))),
         bp.combat.lanes.length < 4 && h('button', { onclick: () => A.mkEdit((b: Blueprint) => { b.combat.lanes.push(`Battlefield ${b.combat.lanes.length + 1}`); }, 'board') }, '+ Add battlefield')]),
@@ -420,12 +429,13 @@ const EFF: [EffectKind, string, string[]][] = [
   ['score', 'Score points', ['n']], ['addLife', 'Add life cards', ['n']], ['aura', 'Aura stat boost', ['n', 'stat', 'scope']], ['addCounter', 'Add counters', ['n', 'counter', 'target']],
   ['removeCounter', 'Remove counters', ['n', 'counter', 'target']], ['strike', 'Attack with power N', ['n']], ['deploy', 'Deploy this leader as a unit', []],
   ['restrict', "Can't… (restriction)", ['rule', 'target', 'until']], ['prevent', 'Prevent damage (instead)', ['n', 'scope']], ['costMod', 'Make cards cost less', ['n', 'type']],
-  ['insteadDestroy', 'If destroyed, instead…', ['to']], ['win', 'Win the game', []], ['raw', 'Custom script (JSON)', ['raw']],
+  ['insteadDestroy', 'If destroyed, instead…', ['to']], ['moveTo', 'Move / banish', ['zone', 'target']], ['win', 'Win the game', []], ['raw', 'Custom script (JSON)', ['raw']],
 ];
 const TGT: [TargetKind, string][] = [['enemyUnit', 'an enemy unit (choose)'], ['anyUnit', 'any unit (choose)'], ['ownUnit', 'one of your units'], ['otherOwnUnit', 'another of your units'], ['enemyAny', 'enemy unit or opponent'],
   ['opponent', 'the opponent'], ['you', 'you'], ['self', 'this card'], ['randomEnemyUnit', 'a random enemy unit'], ['allEnemyUnits', 'all enemy units'], ['allUnits', 'all units'], ['allOwnUnits', 'all your units'],
   ['eachPlayer', 'each player'], ['attacker', 'the attacker (in a battle)'], ['battleTarget', 'the attacked unit (in a battle)']];
 const SCOPE: [TargetKind, string][] = [['allOwnUnits', 'your units'], ['otherOwnUnit', 'your other units'], ['allEnemyUnits', 'enemy units'], ['allUnits', 'all units'], ['self', 'this card']];
+const zoneOpts = (bp: Blueprint): [string, string][] => [['banished', 'Banished pile'], ['grave', 'Discard pile'], ['hand', 'Hand'], ['deck', 'Deck (bottom)'], ...(bp.zones ?? []).map((z) => [z.id, z.name] as [string, string])];
 const RESTRICT: [string, string][] = [['noAttack', "can't attack"], ['noBlock', "can't block"], ['noBeAttacked', "can't be attacked"], ['unblockable', "can't be blocked"], ['entersExhausted', 'enters exhausted']];
 function effectRow(bp: Blueprint, A: any, ep: Path, e: Effect, onDel: () => void, kwId?: string, isStatic = false) {
   const def = EFF.find((x) => x[0] === e.k)!;
@@ -440,6 +450,7 @@ function effectRow(bp: Blueprint, A: any, ep: Path, e: Effect, onDel: () => void
     P.has('stat') && sel(bp, A, [...ep, 'stat'], bp.stats.map((s) => [s.id, s.name]), { label: 'Stat' }),
     P.has('target') && sel(bp, A, [...ep, 'target'], isStatic ? SCOPE : TGT, { label: isStatic ? 'Affects' : 'Target' }),
     P.has('rule') && sel(bp, A, [...ep, 'rule'], [...RESTRICT, ...bp.keywords.filter((k) => !RESTRICT.some(([r]) => r === k.rule) && k.rule !== 'none').map((k) => [k.rule, `gains ${k.name}`] as [string, string])], { label: 'Rule' }),
+    P.has('zone') && sel(bp, A, [...ep, 'zone'], zoneOpts(bp), { label: 'To' }),
     P.has('to') && sel(bp, A, [...ep, 'to'], [['hand', 'return it to hand'], ['deck', 'put it on the bottom of the deck']], { label: 'Instead' }),
     P.has('scope') && sel(bp, A, [...ep, 'target'], SCOPE, { label: 'Affects' }),
     P.has('until') && !isStatic && sel(bp, A, [...ep, 'until'], [['turn', 'until end of turn'], ['forever', 'until it leaves play']], { label: 'Lasts' }),
@@ -453,7 +464,9 @@ function effectRow(bp: Blueprint, A: any, ep: Path, e: Effect, onDel: () => void
       sel(bp, A, [...ep, 'filter', 'stat'], [['', 'no stat limit'], ...bp.stats.map((s) => [s.id, s.name] as [string, string])], { label: 'Stat', map: (v) => v || undefined }),
       e.filter?.stat && sel(bp, A, [...ep, 'filter', 'op'], [['le', 'or less'], ['ge', 'or more']], { label: 'Compare' }),
       e.filter?.stat && num(bp, A, [...ep, 'filter', 'val'], { label: 'Value', min: -100000, max: 100000 }),
-      chk(bp, A, [...ep, 'filter', 'exhausted'], 'Only exhausted')),
+      chk(bp, A, [...ep, 'filter', 'exhausted'], 'Only exhausted'),
+      sel(bp, A, [...ep, 'filter', 'zone'], [['', 'in play'], ...zoneOpts(bp).filter(([z]) => z !== 'deck')], { label: 'Where', map: (v) => v || undefined }),
+      txt(bp, A, [...ep, 'filter', 'name'], { label: 'Named', ph: 'name or family' })),
     P.has('raw') && h('textarea', { class: 'code', rows: 2, 'aria-label': 'Custom effects JSON', onchange: (ev: Event) => A.mkRaw(ep.join('.'), [...ep, 'raw'], (ev.target as HTMLTextAreaElement).value) }, JSON.stringify(e.raw ?? [['draw', '$me', 1]])),
     h('span', { class: 'mk-eff-text muted' }, effectText(e, bp)),
     h('button', { class: 'x', onclick: onDel, 'aria-label': 'Remove effect' }, '✕'));
@@ -464,12 +477,14 @@ function abilityBox(bp: Blueprint, A: any, cp: Path, a: Ability, ai: number, rol
     h('div', { class: 'mk-ab-head' },
       sel(bp, A, [...ap, 'when'], WHEN.filter(([w]) => (w === 'opAttack' ? role === 'trap' : true)), { label: 'When', q: 'cards' }),
       a.when === 'activated' && [chk(bp, A, [...ap, 'tap'], 'Exhaust this'), num(bp, A, [...ap, 'cost'], { label: 'Pay', min: 0, max: 20 }), num(bp, A, [...ap, 'discard'], { label: 'Discard', min: 0, max: 5 }),
-        chk(bp, A, [...ap, 'sacrifice'], 'Sacrifice a unit'), bp.win.life > 0 && num(bp, A, [...ap, 'life'], { label: 'Pay life', min: 0, max: 100000 }),
+        chk(bp, A, [...ap, 'sacrifice'], 'Sacrifice a unit'), num(bp, A, [...ap, 'banish'], { label: 'Banish from discard', min: 0, max: 10 }),
+        ['cards', 'anycard', 'deck'].includes(bp.resource.mode) && num(bp, A, [...ap, 'returnRes'], { label: `Return ${bp.resource.name}`, min: 0, max: 10 }), bp.win.life > 0 && num(bp, A, [...ap, 'life'], { label: 'Pay life', min: 0, max: 100000 }),
         (bp.counters ?? []).length > 0 && h('label', { class: 'fld' }, h('span', {}, 'Remove counters'), h('select', { 'aria-label': 'Counter cost', onchange: (ev: Event) => { const v = (ev.target as HTMLSelectElement).value; A.mkSet([...ap, 'uncount'], v ? { id: v, n: a.uncount?.n ?? 1 } : undefined); } },
           [['', 'none'], ...bp.counters!.map((k) => [k.id, k.name])].map(([v, l]) => h('option', { value: v, selected: (a.uncount?.id ?? '') === v }, l)))),
         a.uncount && num(bp, A, [...ap, 'uncount', 'n'], { label: 'How many', min: 1, max: 20 })],
       h('label', { class: 'fld' }, h('span', {}, 'If'), h('select', { 'aria-label': 'Condition', onchange: (e: Event) => { const v = (e.target as HTMLSelectElement).value; A.mkSet([...ap, 'if'], v ? { k: v, n: a.if?.n ?? 1 } : undefined); } },
-        [['', 'always'], ['units', 'if you control N+ units'], ['life', 'if your life is N or less'], ['hand', 'if your hand has N or fewer'], ['yourTurn', 'during your turn'], ['res', 'if you have N+ resources'], ['counter', 'if this has N+ counters']].map(([v, l]) => h('option', { value: v, selected: (a.if?.k ?? '') === v }, l)))),
+        [['', 'always'], ['units', 'if you control N+ units'], ['life', 'if your life is N or less'], ['hand', 'if your hand has N or fewer'], ['yourTurn', 'during your turn'], ['res', 'if you have N+ resources'], ['counter', 'if this has N+ counters'], ['zone', 'if you have N+ cards in a zone']].map(([v, l]) => h('option', { value: v, selected: (a.if?.k ?? '') === v }, l)))),
+      a.if?.k === 'zone' && sel(bp, A, [...ap, 'if', 'zone'], zoneOpts(bp).filter(([z]) => z !== 'deck' && z !== 'hand'), { label: 'Zone' }),
       a.if?.k === 'counter' && sel(bp, A, [...ap, 'if', 'counter'], (bp.counters ?? []).map((k) => [k.id, k.name] as [string, string]), { label: 'Counter' }),
       a.if && a.if.k !== 'yourTurn' && num(bp, A, [...ap, 'if', 'n'], { label: 'N', min: 0, max: 100000 }),
       h('label', { class: 'fld' }, h('span', {}, 'Limit'), h('select', { 'aria-label': 'Limit', onchange: (e: Event) => { const v = (e.target as HTMLSelectElement).value; A.mkSet([...ap, 'once'], v === 'turn' ? true : v === 'game' ? 'game' : undefined); } },

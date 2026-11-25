@@ -337,6 +337,24 @@ export const RECIPES: Recipe[] = [
       if (ut) addCard(bp, { name: 'Ember Phoenix', type: ut.id, cost: 3, stats: { [bp.combat.power]: scale(bp), ...(bp.combat.health ? { [bp.combat.health]: scale(bp) } : {}) },
         abilities: [{ when: 'static', do: [{ k: 'insteadDestroy', to: 'hand' }] }] }, 2);
     } },
+  { id: 'banish', name: 'Banished pile', icon: '🌀', group: 'Board', desc: 'Banish cards out of the game for good. Adds a removal spell that banishes, and a unit that banishes a card from your discard pile to power up.',
+    apply: (bp) => {
+      const sp = bp.types.find((t) => t.role === 'spell') ?? ensureType(bp, 'action', 'Action', 'spell', '✦');
+      addCard(bp, { name: 'Void Exile', type: sp.id, cost: 3, stats: {}, abilities: [{ when: 'play', do: [{ k: 'moveTo', zone: 'banished', target: 'enemyUnit' }] }] }, 2);
+      const ut = unitTypes(bp)[0];
+      if (ut) addCard(bp, { name: 'Grave Feaster', type: ut.id, cost: 2, stats: { [bp.combat.power]: Math.max(1, Math.round(scale(bp) / 2)), ...(bp.combat.health ? { [bp.combat.health]: scale(bp) } : {}) },
+        abilities: [{ when: 'activated', banish: 2, once: true, do: [{ k: 'buff', n: scale(bp), target: 'self' }], label: 'Banish 2 from your discard pile: +power this turn' }] }, 2);
+    } },
+  { id: 'stadium', name: 'Shared stadium', icon: '🏟', group: 'Board', desc: 'A single Stadium slot for the whole table: playing a new Stadium replaces the one in play, whoever owns it. Stadiums buff everyone\'s units.',
+    apply: (bp) => {
+      bp.zones ??= [];
+      if (!bp.zones.some((z) => z.id === 'stadium')) bp.zones.push({ id: 'stadium', name: 'Stadium', vis: 'public', size: 1, inPlay: true, global: true });
+      const st = ensureType(bp, 'stadium-card', 'Stadium', 'permanent', '🏟');
+      st.playTo = 'stadium';
+      const s = Math.max(1, Math.round(scale(bp) / 3));
+      addCard(bp, { name: 'Roaring Coliseum', type: st.id, cost: 1, stats: {}, abilities: [{ when: 'static', do: [{ k: 'aura', n: s, stat: bp.combat.power, target: 'allUnits' }] }] }, 2);
+      addCard(bp, { name: 'Quiet Sanctuary', type: st.id, cost: 1, stats: {}, abilities: [{ when: 'static', do: [{ k: 'prevent', n: s, target: 'allUnits' }] }] }, 2);
+    } },
   { id: 'restore', name: 'Keyword with its own abilities', icon: '🧩', group: 'Keywords & counters', desc: 'Example of a custom keyword with a number: "Restore N" (when this attacks, gain N life).',
     apply: (bp) => {
       const k = ensureKeyword(bp, 'restore', 'Restore', 'none', 'When this attacks, you gain N life.', true);
@@ -365,7 +383,7 @@ export const RANDOM_PICKS: string[][] = [
   ['lifeTotal', 'lifeCards', 'shields', 'prizes'],
   ['stack', 'chain', 'alternate', 'combatPhase', 'drawTo'],
   ['traps', 'tribute', 'evolution', 'extraDeck', 'gear', 'songs', 'items'],
-  ['keywordKit', 'growth', 'restrictions', 'conditions', 'costReducer', 'prevention', 'restore', 'counterStep', 'boost', 'leader'],
+  ['keywordKit', 'growth', 'restrictions', 'conditions', 'costReducer', 'prevention', 'restore', 'counterStep', 'boost', 'leader', 'banish', 'stadium'],
 ];
 export function surpriseRecipes(seed: number): string[] {
   let x = (seed >>> 0) || 1;

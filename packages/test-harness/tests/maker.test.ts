@@ -231,3 +231,26 @@ test('maker: "Surprise me" mash-ups always build and play to a finish', async ()
     assert.ok(end.s.result && end.s.result.reason !== 'turnLimit', ids.join('+'));
   }
 });
+
+test('maker zones: a shared Stadium replaces the one in play; banishing moves cards to the banished pile; zone filters and costs compile', () => {
+  const bp = withRecipes('blank', ['stadium', 'banish']);
+  const def = compileBlueprint(bp) as any;
+  assert.ok(def.rules.zones.some((z: any) => z.id === 'stadium' && z.abilities));
+  assert.ok(def.rules.zones.some((z: any) => z.id === 'banished'));
+  assert.match(def.cards.find((c: any) => c.id === 'void-exile').text, /Banish an enemy unit/);
+  assert.match(def.cards.find((c: any) => c.id === 'grave-feaster').text, /Banish 2 from your discard pile/);
+  const { mod, problems } = build(bp);
+  assert.ok(mod, problems.map((p) => p.text).join('; '));
+  let g = createMatch(mod!, { decks: decksOf(mod!, 1), seed: 4 });
+  while (g.s.pending) g = submitDecision(g, g.s.pending.player, g.s.pending.id, g.s.pending.options.slice(0, Math.max(1, g.s.pending.min)));
+  const me = g.s.players[g.s.turn.active].id, opp = g.s.players[1 - g.s.turn.active].id;
+  place(g, opp, 'roaring-coliseum', 'stadium');
+  const mine = place(g, me, 'quiet-sanctuary', 'hand');
+  g.s.players.find((x) => x.id === me)!.vars['mana:c'] = 5;
+  g = commitAction(g, me, { action: 'deploy', source: mine, targets: {} });
+  assert.deepEqual(g.s.zones[`${opp}:stadium`], [], 'the old Stadium is gone');
+  assert.equal(g.s.zones[`${me}:stadium`].length, 1, 'the new one is in play');
+  const bad = blank();
+  bad.cards[4].abilities[0].do[0] = { k: 'destroy', target: 'enemyUnit', filter: { zone: 'deck' } };
+  assert.match(lint(bad).map((p) => p.text).join(' '), /hidden zone/);
+});
