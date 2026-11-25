@@ -13,13 +13,15 @@ export type TargetKind =
 export type EffectKind =
   | 'draw' | 'damage' | 'heal' | 'buff' | 'destroy' | 'bounce' | 'exhaust' | 'ready' | 'token' | 'gain' | 'discard' | 'mill'
   | 'search' | 'recover' | 'counter' | 'lifeGain' | 'lifeLoss' | 'score' | 'addLife' | 'aura' | 'win' | 'raw'
-  | 'addCounter' | 'removeCounter' | 'strike' | 'deploy';
+  | 'addCounter' | 'removeCounter' | 'strike' | 'deploy'
+  | 'restrict' | 'prevent' | 'costMod' | 'insteadDestroy';
 export type KeywordRule = 'none' | 'haste' | 'guard' | 'blocker' | 'flying' | 'vigilance' | 'lifesteal' | 'deadly' | 'shield' | 'double' | 'overflow' | 'ward'
-  | 'firstStrike' | 'resist' | 'challenger' | 'saboteur' | 'goAgain' | 'trigger' | 'song';
+  | 'firstStrike' | 'resist' | 'challenger' | 'saboteur' | 'goAgain' | 'trigger' | 'song'
+  | 'noAttack' | 'noBlock' | 'noBeAttacked' | 'unblockable' | 'entersExhausted';
 
 export interface StatDef { id: string; name: string; icon?: string }
 export interface Color { id: string; name: string; hex: string; icon?: string }
-export interface Counter { id: string; name: string; icon?: string; adds?: Record<string, number> } // e.g. +1/+1: adds {power: 1, health: 1}
+export interface Counter { id: string; name: string; icon?: string; adds?: Record<string, number>; stops?: ('attack' | 'block')[]; expires?: boolean } // expires: removed at the end of its controller's turn // +1/+1: adds {power: 1, health: 1}; sleep: stops attack
 export interface Arena { id: string; name: string; size: number; attack: boolean } // a board area units are played into; `attack`: units here can attack/block
 export interface StatSlot { stat: string; pos: Pos; icon?: string; label?: string }
 export interface FrameDef { base: string; cost: 'tl' | 'tr' | 'none'; stats: StatSlot[]; art: number; level?: string; text: boolean; layout?: 'portrait' | 'landscape' }
@@ -64,7 +66,7 @@ export interface Setup { hand: number; mulligan: boolean; handLimit: number; dec
 
 export interface Cond { k: 'units' | 'life' | 'hand' | 'yourTurn' | 'res' | 'counter' | 'raw'; n?: number; counter?: string; raw?: unknown }
 export interface Filter { type?: string; color?: string; keyword?: string; stat?: string; op?: 'le' | 'ge'; val?: number; exhausted?: boolean }
-export interface Effect { k: EffectKind; n?: number; kw?: string; target?: TargetKind; filter?: Filter; stat?: string; until?: 'turn' | 'forever'; who?: 'me' | 'opp' | 'each'; card?: string; type?: string; raw?: unknown[] }
+export interface Effect { k: EffectKind; n?: number; kw?: string; target?: TargetKind; filter?: Filter; stat?: string; until?: 'turn' | 'forever'; who?: 'me' | 'opp' | 'each'; card?: string; type?: string; rule?: KeywordRule; to?: 'hand' | 'deck'; raw?: unknown[] }
 export interface Ability {
   when: When; if?: Cond; do: Effect[]; once?: boolean | 'game'; label?: string;
   cost?: number; tap?: boolean; discard?: number; sacrifice?: boolean; life?: number; uncount?: { id: string; n: number }; // activation costs
@@ -143,6 +145,11 @@ export const KEYWORD_RULES: Record<KeywordRule, { label: string; text: string; v
   goAgain: { label: 'Go again (refunds its action point)', text: 'Gives back the action point it used.' },
   trigger: { label: 'Life-card trigger', text: 'When this is taken from your life cards, you may use it for free.' },
   song: { label: 'Song (a unit can sing it instead of paying)', text: 'Instead of paying, exhaust one of your units whose cost is at least this card\'s cost.' },
+  noAttack: { label: "Can't attack", text: "Can't attack (or quest)." },
+  noBlock: { label: "Can't block", text: "Can't block or intercept attacks." },
+  noBeAttacked: { label: "Can't be attacked", text: "Enemies can't choose it as an attack target." },
+  unblockable: { label: "Can't be blocked", text: "Can't be blocked." },
+  entersExhausted: { label: 'Enters exhausted', text: 'Enters play exhausted (tapped).' },
 };
 
 export const ROLES: Record<Role, { label: string; hint: string }> = {

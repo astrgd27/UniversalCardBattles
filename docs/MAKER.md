@@ -119,6 +119,17 @@ The Maker is built from a few concepts that combine, rather than one fixed menu 
 - **Leaders:** a leader can deploy into play as a unit (the "deploy" effect, e.g. gated on 6+ resources, once per game).
 - **Life cards** can have triggers, used for free when taken.
 
+## "Instead" and "can't" blocks
+- **Restrictions:**
+  - built-in keyword rules: can't attack (also stops questing), can't block, can't be attacked, can't be blocked, enters exhausted;
+  - a static ability can grant any of them to a scope, e.g. "enemy units with 2 or less power can't attack";
+  - a triggered effect can apply one "until end of turn" or "until it leaves play".
+- **Counters as conditions:** a counter can stop attacking and/or blocking and can wear off at the end of its controller's turn (stun, sleep, freeze).
+- **Prevent damage** (static): damage dealt to a scope is reduced by N. This compiles to a replacement on the card.
+- **Instead of destroyed** (static): "if this would be destroyed, return it to your hand / put it on the bottom of your deck instead".
+- **Cost reducers** (static): "your [type] cards cost N less" while the card is in play. This only works for games without colored costs.
+- Shelf recipes: restriction keywords (Defender, Elusive, Untouchable, Sluggish), stun & sleep conditions, cost reducers, damage prevention & second chances.
+
 ## Mechanics Shelf (mix and match)
 A station listing 40 recipes in seven groups:
 - Resources

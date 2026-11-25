@@ -307,6 +307,36 @@ export const RECIPES: Recipe[] = [
       const sp = bp.types.find((t) => t.role === 'spell') ?? ensureType(bp, 'action', 'Action', 'spell', '✦');
       addCard(bp, { name: 'Nurture', type: sp.id, cost: 1, stats: {}, abilities: [{ when: 'play', do: [{ k: 'addCounter', card: 'growth', n: 2, target: 'ownUnit' }] }] }, 2);
     } },
+  { id: 'restrictions', name: 'Restriction keywords', icon: '⛔', group: 'Keywords & counters', desc: 'Defender (can\'t attack), Elusive (can\'t be blocked), Untouchable (can\'t be attacked) and Sluggish (enters exhausted), plus a wall unit.',
+    apply: (bp) => {
+      ensureKeyword(bp, 'defender', 'Defender', 'noAttack', "Can't attack.");
+      ensureKeyword(bp, 'elusive', 'Elusive', 'unblockable', "Can't be blocked.");
+      ensureKeyword(bp, 'untouchable', 'Untouchable', 'noBeAttacked', "Can't be attacked.");
+      ensureKeyword(bp, 'sluggish', 'Sluggish', 'entersExhausted', 'Enters play exhausted.');
+      const ut = unitTypes(bp)[0];
+      if (ut) { const s = scale(bp); addCard(bp, { name: 'Stone Rampart', type: ut.id, cost: 2, stats: { [bp.combat.power]: Math.max(0, Math.round(s / 2)), ...(bp.combat.health ? { [bp.combat.health]: s * 3 } : {}) }, keywords: ['defender'] }, 2); }
+    } },
+  { id: 'conditions', name: 'Stun & sleep conditions', icon: '💤', group: 'Keywords & counters', desc: 'A Stun counter stops a unit attacking and blocking until the end of its controller\'s next turn. Adds a card that stuns.',
+    apply: (bp) => {
+      bp.counters ??= [];
+      if (!bp.counters.some((k) => k.id === 'stun')) bp.counters.push({ id: 'stun', name: 'Stun', icon: '💤', stops: ['attack', 'block'], expires: true });
+      const sp = bp.types.find((t) => t.role === 'spell') ?? ensureType(bp, 'action', 'Action', 'spell', '✦');
+      addCard(bp, { name: 'Lullaby Dart', type: sp.id, cost: 1, stats: {}, abilities: [{ when: 'play', do: [{ k: 'addCounter', card: 'stun', n: 1, target: 'enemyUnit' }] }] }, 2);
+    } },
+  { id: 'costReducer', name: 'Cost reducers', icon: '🏷', group: 'Keywords & counters', desc: 'A permanent that makes your units cheaper while it is in play.',
+    apply: (bp) => {
+      const it = bp.types.find((t) => t.role === 'permanent') ?? ensureType(bp, 'item', 'Item', 'permanent', '🏛');
+      const ut = unitTypes(bp)[0];
+      addCard(bp, { name: 'Guild Charter', type: it.id, cost: 2, stats: {}, abilities: [{ when: 'static', do: [{ k: 'costMod', n: 1, ...(ut ? { type: ut.id } : {}) }] }] }, 2);
+    } },
+  { id: 'prevention', name: 'Damage prevention & second chances', icon: '🛡', group: 'Keywords & counters', desc: '"Instead" effects: a totem that reduces damage to your units, and a unit that returns to hand instead of being destroyed.',
+    apply: (bp) => {
+      const it = bp.types.find((t) => t.role === 'permanent') ?? ensureType(bp, 'item', 'Item', 'permanent', '🏛');
+      addCard(bp, { name: 'Aegis Totem', type: it.id, cost: 2, stats: {}, abilities: [{ when: 'static', do: [{ k: 'prevent', n: Math.max(1, Math.round(scale(bp) / 3)), target: 'allOwnUnits' }] }] }, 2);
+      const ut = unitTypes(bp)[0];
+      if (ut) addCard(bp, { name: 'Ember Phoenix', type: ut.id, cost: 3, stats: { [bp.combat.power]: scale(bp), ...(bp.combat.health ? { [bp.combat.health]: scale(bp) } : {}) },
+        abilities: [{ when: 'static', do: [{ k: 'insteadDestroy', to: 'hand' }] }] }, 2);
+    } },
   { id: 'restore', name: 'Keyword with its own abilities', icon: '🧩', group: 'Keywords & counters', desc: 'Example of a custom keyword with a number: "Restore N" (when this attacks, gain N life).',
     apply: (bp) => {
       const k = ensureKeyword(bp, 'restore', 'Restore', 'none', 'When this attacks, you gain N life.', true);

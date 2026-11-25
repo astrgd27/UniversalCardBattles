@@ -55,6 +55,7 @@ export function lint(bp: Blueprint): Problem[] {
     if (x.leader && !d.leader) bug(`Deck "${d.name}" needs a leader.`, `deck:${d.id}`);
   }
   if (bp.colors.length && !bp.cards.some((k) => k.color)) tip('You defined colors, but no card uses one.', 'look');
+  if (bp.colors.length && bp.cards.some((k) => k.abilities.some((a) => a.do.some((e) => e.k === 'costMod')))) tip('Cost reducers only work in games without colored costs.', 'cards');
   return out;
 }
 

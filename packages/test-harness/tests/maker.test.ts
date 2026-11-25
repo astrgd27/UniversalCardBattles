@@ -177,3 +177,46 @@ test('maker blocks: filters, cost blocks, counters and valued keywords compile t
   assert.ok(mod, problems.map((p) => p.text).join('; '));
   assert.ok(play(mod!, 3).s.result);
 });
+
+// ---------------------------------------------------------------- "instead" and "can't" blocks, cost reducers
+import { place } from './helpers.ts';
+import { commitAction, submitDecision } from '#engine';
+function maker(ids: string[], seed = 5) {
+  const mod = build(withRecipes('blank', ids)).mod!;
+  let g = createMatch(mod, { decks: decksOf(mod, 1), seed });
+  while (g.s.pending) g = submitDecision(g, g.s.pending.player, g.s.pending.id, g.s.pending.options.slice(0, Math.max(1, g.s.pending.min)));
+  return { mod, g, me: `p${g.s.turn.active}` };
+}
+const attackers = (g: Match, p: string) => listActions(g, p).filter((a: any) => a.action === 'attack').map((a: any) => a.source);
+
+test('maker blocks: Defender cannot attack, a stunned unit cannot attack, and the stun wears off at the end of its controller\'s turn', () => {
+  const { g, me } = maker(['restrictions', 'conditions']);
+  const wall = place(g, me, 'stone-rampart', 'field', { newT: -1 });
+  const squire = place(g, me, 'squire', 'field', { newT: -1 });
+  g.s.turn.n = 3;
+  assert.ok(!attackers(g, me).includes(wall), 'Defender is not offered as an attacker');
+  assert.ok(attackers(g, me).includes(squire), 'a normal unit can attack');
+  g.s.objects[squire].vars.c_stun = 1;
+  assert.ok(!attackers(g, me).includes(squire), 'stunned: no attack');
+  const def = compileBlueprint(withRecipes('blank', ['conditions'])) as any;
+  assert.ok(JSON.stringify(def.rules.phases.find((p: any) => p.id === 'end')).includes('c_stun'), 'stun is cleared at end of turn');
+});
+
+test('maker blocks: a cost reducer makes cards cheaper; prevention and "instead of destroyed" compile to replacements', () => {
+  const bp = withRecipes('blank', ['costReducer', 'prevention']);
+  const def = compileBlueprint(bp) as any;
+  assert.equal(def.cards.find((c: any) => c.id === 'guild-charter').cmN, -1);
+  assert.match(def.cards.find((c: any) => c.id === 'guild-charter').text, /Your Units cost 1 less/);
+  assert.ok(def.cards.find((c: any) => c.id === 'aegis-totem').replacements.some((r: any) => r.replace === 'damage'));
+  assert.ok(def.cards.find((c: any) => c.id === 'ember-phoenix').replacements.some((r: any) => r.replace === 'destroy'));
+  const { g, me } = maker(['costReducer']);
+  const giant = place(g, me, 'giant', 'hand');
+  const pl = g.s.players.find((x) => x.id === me)!;
+  pl.vars['mana:c'] = 4; // Giant costs 5
+  const canSummon = () => listActions(g, me).some((a: any) => a.action === 'summon' && a.source === giant);
+  assert.ok(!canSummon(), '4 energy is not enough for a 5-cost unit');
+  place(g, me, 'guild-charter', 'support');
+  assert.ok(canSummon(), 'with Guild Charter in play it costs 4');
+  const g2 = commitAction(g, me, { action: 'summon', source: giant, targets: {} });
+  assert.equal(g2.s.players.find((x) => x.id === me)!.vars['mana:c'] ?? 0, 0, 'paid the reduced cost');
+});

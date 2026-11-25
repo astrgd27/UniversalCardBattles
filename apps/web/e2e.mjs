@@ -352,7 +352,7 @@ try {
   await mkp.click('[data-act=mk-new]');
   await mkp.click('[data-blueprint=blank]');
   await mkp.click('[data-station=shelf]');
-  for (const r of ['inkwell', 'quest', 'shields', 'twinArenas', 'keywordKit', 'growth', 'restore', 'songs']) {
+  for (const r of ['inkwell', 'quest', 'shields', 'twinArenas', 'keywordKit', 'growth', 'restore', 'songs', 'restrictions', 'conditions', 'prevention']) {
     await mkp.click(`[data-recipe=${r}]`);
     ok(await mkp.isVisible('.mk-bugs.good'), `maker shelf: still builds after ${r} (${await mkp.textContent('.mk-bugs')})`);
   }

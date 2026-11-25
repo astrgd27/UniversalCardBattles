@@ -84,7 +84,7 @@ export function rulebook(bp0: Blueprint): RuleSection[] {
 
   out.push({ title: 'Card types', items: bp.types.map((t) => `${t.name}: ${ROLES[t.role].hint}`) });
   if (bp.keywords.length) out.push({ title: 'Keywords', items: bp.keywords.map((k) => `${k.name}${k.valued ? ' N' : ''}: ${k.text || KEYWORD_RULES[k.rule].text || 'see the card.'}`) });
-  if (bp.counters?.length) out.push({ title: 'Counters', items: bp.counters.map((k) => `${k.name}${k.adds ? `: each gives ${Object.entries(k.adds).map(([s, n]) => `${n >= 0 ? '+' : ''}${n} ${stat(s)}`).join(', ')}` : ''}.`) });
+  if (bp.counters?.length) out.push({ title: 'Counters', items: bp.counters.map((k) => `${k.name}${k.adds ? `: each gives ${Object.entries(k.adds).map(([s, n]) => `${n >= 0 ? '+' : ''}${n} ${stat(s)}`).join(', ')}` : ''}${k.stops?.length ? `. A unit with one can't ${k.stops.join(' or ')}` : ''}${k.expires ? '. It wears off at the end of its controller\'s turn' : ''}.`) });
   out.push({ title: 'Timing', items: [bp.timing === 'stack' ? 'Players may respond with quick cards; the last card played resolves first.' : bp.timing === 'chain' ? 'Players add responses to a chain in turn; it resolves from the last link back.' : 'Only the active player acts, except for quick cards and traps during battles.'] });
   return out.filter((s) => s.items.length);
 }

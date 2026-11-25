@@ -25,12 +25,12 @@ export const SETUP0: Setup = { hand: 4, mulligan: true, handLimit: 8, deckMin: 2
 const STD_TURN = [ph('ready', 'Ready', 'ready'), ph('draw', 'Draw', 'draw', 1), ph('main', 'Main', 'main'), ph('end', 'End', 'end')];
 
 export function base(o: Partial<Blueprint>): Blueprint {
-  return {
+  return structuredClone({
     v: 1, id: 'my-game', name: 'My Game', tagline: '', look: { accent: '#7c5cff', accent2: '#38bdf8', glyph: '✦' }, colors: [],
     stats: [{ id: 'power', name: 'Power', icon: '⚔' }, { id: 'health', name: 'Health', icon: '♥' }],
     types: [], keywords: [], turn: STD_TURN, timing: 'simple', resource: { ...RESOURCE0 }, combat: { ...COMBAT0, compare: { ...COMBAT0.compare } },
     win: { ...WIN0 }, setup: { ...SETUP0 }, zoneNames: {}, cards: [], decks: [], ...o,
-  };
+  });
 }
 
 // ================================================================ blank
