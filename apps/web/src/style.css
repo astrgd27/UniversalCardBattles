@@ -639,3 +639,4 @@ button.chip { min-height: 34px; padding: 4px 12px; font-size: 13px; }
 .mk-rules ul { margin: 0; padding-left: 18px; }
 .file-btn input { display: none; }
 .file-btn { cursor: pointer; }
+.mk-surprise { --accent: #f59e0b; border: 2px dashed #f59e0b; }

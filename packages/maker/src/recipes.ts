@@ -357,3 +357,21 @@ export function applyRecipe(bp: Blueprint, id: string): Blueprint {
   bp.recipes = [...new Set([...(bp.recipes ?? []), id])];
   return bp;
 }
+
+/** "Surprise me": a playable game made by stacking random recipes (one per system), checked by the caller's build. */
+export const RANDOM_PICKS: string[][] = [
+  ['ramp', 'lands', 'inkwell', 'manaZone', 'hiddenResources', 'resDeck', 'pitch'],
+  ['block', 'target', 'compare', 'positions', 'quest', 'twinArenas', 'lines', 'lanes'],
+  ['lifeTotal', 'lifeCards', 'shields', 'prizes'],
+  ['stack', 'chain', 'alternate', 'combatPhase', 'drawTo'],
+  ['traps', 'tribute', 'evolution', 'extraDeck', 'gear', 'songs', 'items'],
+  ['keywordKit', 'growth', 'restrictions', 'conditions', 'costReducer', 'prevention', 'restore', 'counterStep', 'boost', 'leader'],
+];
+export function surpriseRecipes(seed: number): string[] {
+  let x = (seed >>> 0) || 1;
+  const rnd = (n: number) => { x ^= x << 13; x ^= x >>> 17; x ^= x << 5; return (x >>> 0) % n; };
+  const out = RANDOM_PICKS.map((g) => g[rnd(g.length)]);
+  const extra = RANDOM_PICKS[4 + rnd(2)];
+  out.push(extra[rnd(extra.length)]);
+  return [...new Set(out)];
+}

@@ -220,3 +220,14 @@ test('maker blocks: a cost reducer makes cards cheaper; prevention and "instead 
   const g2 = commitAction(g, me, { action: 'summon', source: giant, targets: {} });
   assert.equal(g2.s.players.find((x) => x.id === me)!.vars['mana:c'] ?? 0, 0, 'paid the reduced cost');
 });
+
+test('maker: "Surprise me" mash-ups always build and play to a finish', async () => {
+  const { surpriseRecipes } = await import('#maker');
+  for (let seed = 1; seed <= 8; seed++) {
+    const ids = surpriseRecipes(seed);
+    const { mod, problems } = build(withRecipes('blank', ids));
+    assert.ok(mod, `${ids.join('+')}: ${problems.map((p) => p.text).join('; ')}`);
+    const end = play(mod!, seed);
+    assert.ok(end.s.result && end.s.result.reason !== 'turnLimit', ids.join('+'));
+  }
+});

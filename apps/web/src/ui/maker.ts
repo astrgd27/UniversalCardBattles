@@ -93,7 +93,9 @@ function picker(A: any) {
     h('div', { class: 'mk-picker' },
       h('div', { class: 'mk-picker-head' }, h('h2', {}, 'Pick a blueprint'), h('button', { class: 'x', onclick: () => A.mkPicker(false), 'aria-label': 'Close' }, '×')),
       hint('Each blueprint is a complete, playable game built around one family of mechanics. Reshape anything once you are in the Workshop.'),
-      h('div', { class: 'mk-bps' }, BLUEPRINTS.map((b) => h('button', { class: 'mk-bp', onclick: () => A.mkNew(b.id), 'data-blueprint': b.id },
+      h('div', { class: 'mk-bps' }, h('button', { class: 'mk-bp mk-surprise', onclick: () => A.mkSurprise(), 'data-blueprint': 'surprise' }, h('span', { class: 'mk-bp-icon' }, '🎲'), h('strong', {}, 'Surprise me'),
+        h('span', {}, 'A random, playable mash-up of mechanics from the shelf: a resource system, a combat style, a way to win, timing and special card types.'), h('span', { class: 'mk-bp-sys' }, h('span', { class: 'chip' }, 'Random recipes'))),
+        BLUEPRINTS.map((b) => h('button', { class: 'mk-bp', onclick: () => A.mkNew(b.id), 'data-blueprint': b.id },
         h('span', { class: 'mk-bp-icon' }, b.icon), h('strong', {}, b.name), h('span', {}, b.pitch), h('span', { class: 'mk-bp-sys' }, b.systems.map((s) => h('span', { class: 'chip' }, s))))))));
 }
 

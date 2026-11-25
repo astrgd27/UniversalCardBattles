@@ -348,6 +348,10 @@ try {
     ok(await mkp.isVisible('.mk-bugs.good'), `maker ${bpId}: still builds after adding an ability`);
     await mkp.click('text=← Projects');
   }
+  await mkp.click('[data-act=mk-new]');
+  await mkp.click('[data-blueprint=surprise]');
+  ok(await mkp.isVisible('.mk-bugs.good'), `maker: surprise game builds (${await mkp.textContent('.mk-bugs')})`);
+  await mkp.click('text=← Projects');
   // Mechanics Shelf: stack recipes from different games, still builds; undo takes one back.
   await mkp.click('[data-act=mk-new]');
   await mkp.click('[data-blueprint=blank]');
@@ -366,7 +370,7 @@ try {
   await mkp.click('[data-station=publish]');
   ok(await mkp.isVisible('.mk-rules'), 'maker: rulebook renders');
   await mkp.click('text=← Projects');
-  await mkp.click('.mk-proj-open >> nth=1');
+  await mkp.click('.mk-proj-open >> nth=2');
   await mkp.click('[data-station=test]');
   await mkp.click('[data-act=mk-sim]');
   await mkp.waitForSelector('.mk-report', { timeout: 180000 });

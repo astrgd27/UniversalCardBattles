@@ -5,7 +5,7 @@ import type { Match } from '#engine';
 import { IllegalAction, commitAction, createMatch, determinize, listActions, observe, submitDecision } from '#engine';
 import { makeAgent } from '#ai';
 import { packFiles } from '#sdk';
-import { type Blueprint, type CardBP, type Problem, BLUEPRINTS, applyRecipe, build, cardsFromCsv, cardsToCsv, compileBlueprint, fromBlueprint, normalize, rulebookMarkdown, slug } from '#maker';
+import { type Blueprint, type CardBP, type Problem, BLUEPRINTS, RECIPES, applyRecipe, build, surpriseRecipes, cardsFromCsv, cardsToCsv, compileBlueprint, fromBlueprint, normalize, rulebookMarkdown, slug } from '#maker';
 import { MODULES } from './modules.ts';
 import { store } from './storage.ts';
 
@@ -115,6 +115,10 @@ function download(name: string, data: BlobPart, type: string) {
   document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+function hslHex(h: number): string {
+  const f = (n: number) => { const k = (n + h / 30) % 12; const c = 0.5 - 0.35 * Math.max(-1, Math.min(k - 3, 9 - k, 1)); return Math.round(255 * c).toString(16).padStart(2, '0'); };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
 export function blip(freq = 660, ms = 90) {
   try {
     const AC = (window as any).AudioContext ?? (window as any).webkitAudioContext;
@@ -181,6 +185,20 @@ export function makerActions(ui: any, redraw: () => void, A: any) {
       Object.assign(mk(), { project: id, station: 'identity', picker: false, card: null, deck: null, type: bp.types[0]?.id ?? null });
       firstDecks(bp);
       award('start', 20, 'Quest complete: start your first game.');
+      redraw();
+    },
+    mkSurprise() {
+      out.mkNew('blank');
+      const seed = Math.floor(Math.random() * 1e9);
+      const ids = surpriseRecipes(seed);
+      const hue = seed % 360;
+      edit((bp) => {
+        for (const r of ids) applyRecipe(bp, r);
+        bp.name = `Mystery Game #${seed % 1000}`;
+        bp.tagline = `Built from: ${ids.map((r) => RECIPES.find((x) => x.id === r)?.name ?? r).join(', ')}.`;
+        bp.look = { accent: `hsl(${hue} 70% 50%)`.replace(/hsl\((\d+) 70% 50%\)/, (_m, h) => hslHex(+h)), accent2: hslHex((hue + 140) % 360), glyph: '🎲' };
+      });
+      mk().toast = { text: 'A surprise game! Playtest it, or open the Mechanics Shelf to see what went in.', xp: 0, at: Date.now() };
       redraw();
     },
     mkLoad(id: string) { const p = store.get<Project | null>(PKEY(id), null); if (!p) return; Object.assign(mk(), { project: id, station: 'identity', card: null, deck: null, type: p.bp.types[0]?.id ?? null, sim: null, undo: [], redo: [] }); firstDecks(p.bp); redraw(); },
