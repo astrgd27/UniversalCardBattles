@@ -17,7 +17,8 @@ The Maker is built to feel like a game in its own right.
 
 - **Workshop path.** Twelve build stations, each with a quest:
   1. Name & Look
-  2. Card Frames
+  2. Mechanics Shelf
+  3. Card Frames
   3. Card Types & Stats
   4. The Board
   5. Turn Sequence
@@ -92,6 +93,67 @@ Each one is an original, complete and playable game that shows off one family of
     - gain or lose life, score points, add life cards;
     - an aura, win the game, or a custom script.
   - Targets: a chosen enemy unit, any unit or one of yours; the opponent; yourself; this card; a random enemy; all enemy units, all units or all of yours; each player; or, inside a battle, the attacker or the attacked unit.
+
+## Building blocks (v2)
+The Maker is built from a few concepts that combine, rather than one fixed menu per game:
+- **Board areas (arenas).** Split the board into named areas: ground/space, or a front line and a reserve. Each card type enters an area; areas marked "fights from here" attack and block. Optionally, units only fight units in their own area. A "Move to the front" action appears when some areas can't fight.
+- **Counters** with any name. Each one can raise stats per counter (+1/+1). Effects add and remove them; conditions check them; activation costs can spend them.
+- **Keywords.** A keyword can map to a built-in rule, carry a number ("Resist 2", "Challenger 3"), and hold its own When → If → Do abilities that every card with it gets. Effects can use the keyword's number as their amount ("Restore N").
+  - New built-in rules: first strike, resist N, challenger N (+N power while attacking), saboteur (ignores "must be attacked first"), go again, life-card trigger, song.
+  - Flying now also protects in target combat: only flyers can attack a flyer.
+- **Target filters.** Any targeted effect or aura can narrow its targets: type, color, keyword, a stat (≤ or ≥ N), or only exhausted units.
+- **Cost blocks** for activated abilities: exhaust, pay resources, discard N, sacrifice a unit, pay life, remove counters.
+- **Conditions:** "if you have N+ resources" and "if this has N+ counters" join the earlier ones.
+- **Combat options:**
+  - direct attacks always, only when the defender has no units, or never;
+  - questing (exhaust a unit to score a stat);
+  - up to N blockers per attacker, with damage assigned in order and first strike;
+  - **attack cards**: a combat style where cards from hand attack and the defender blocks with cards from hand (plus ready equipment).
+- **Resource options:**
+  - face-down resources, and "only cards with keyword X can become resources";
+  - pitch from hand (pay with cards' pitch values; pitched cards go to the bottom of the deck);
+  - a level requirement (a stat ≤ resources in play);
+  - an energy requirement (units' generated stat ≥ the card's need; nothing is spent);
+  - action points with Go again.
+- **Phase options:** both players ready/draw together; draw up to N; players alternate actions in a main phase.
+- **Leaders:** a leader can deploy into play as a unit (the "deploy" effect, e.g. gated on 6+ resources, once per game).
+- **Life cards** can have triggers, used for free when taken.
+
+## Mechanics Shelf (mix and match)
+A station listing 40 recipes in seven groups:
+- Resources
+- Combat
+- Board
+- Winning
+- Timing & turns
+- Card types
+- Keywords & counters
+
+Each recipe is a one-click edit that adds a whole mechanic to any game: its stats, types, keywords, rules settings and example cards. Examples:
+- colored lands; inkwell; any card as mana; face-down resources;
+- resource deck; attached energy; pitch & attack cards; action points; level requirement; energy requirement; power boosts;
+- attack & block; power duels; positions; questing; counter step; life-card triggers;
+- twin arenas; front line & reserve; battlefields; active & bench; leader; deployable leader;
+- life cards; shields; prizes;
+- stack; chains; alternating actions; draw up to; combat phase;
+- traps; tributes; evolution/shift; fusion deck; gear & pilots; songs; items;
+- keyword toolkit; +1/+1 counters; a custom keyword with abilities.
+
+Recipes stack, are recorded on the blueprint (`recipes`), and can be undone. `maker.test.ts` builds every recipe on a blank game, plays mixed combinations through, and checks replay and hidden information.
+
+The recipes cover the structures needed for future starter games:
+- an inkwell with lore questing and songs;
+- shields with free triggers and mana from any card;
+- a level-gated resource deck with pilots and shields;
+- twin arenas with a base, alternating actions and a deployable leader;
+- pitch with attack cards, blocking from hand and go again;
+- action points with energy lines and life triggers.
+
+## Workshop extras
+- **Undo / redo** (↶ ↷ in the top bar). Fast typing collapses into one step.
+- **Auto-written rulebook** on the Publish station, downloadable as Markdown (`rulebook()`/`rulebookMarkdown()`).
+- **Spreadsheet:** export cards as CSV and import CSV to add or update cards in bulk (`cardsToCsv`/`cardsFromCsv`). Valued keywords are written as `resist:2`; abilities stay on matching card ids.
+- **AI Lab per-card stats:** after a run, a table shows how many games each card was played in and the win rate when played (hot and cold cards are highlighted).
 
 ## Deeper scripting
 - **A card's Advanced box:** JSON merged over the compiled card. Use it for extra `abilities`, `statics`, `replacements` or any DSL field.

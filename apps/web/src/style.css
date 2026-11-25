@@ -620,3 +620,22 @@ button.chip { min-height: 34px; padding: 4px 12px; font-size: 13px; }
   .mk-cards, .mk-split { grid-template-columns: 1fr; }
   .mk-editor, .mk-preview { position: static; max-height: none; }
 }
+/* Game Maker v2: shelf, keyword bundles, filters, lab card stats, rulebook */
+.mk-recipes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.mk-recipe { display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel-solid); }
+.mk-recipe.on { border-color: var(--accent); background: linear-gradient(150deg, color-mix(in srgb, var(--accent) 22%, var(--panel-solid)), var(--panel-solid)); }
+.mk-recipe-icon { font-size: 26px; }
+.mk-recipe .chip { align-self: flex-start; margin-top: auto; }
+.mk-kwbox { padding: 6px 0 10px; border-bottom: 1px dashed var(--line); }
+.mk-kwab summary, .mk-filter summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+.mk-kwab { padding: 6px 0 0 12px; display: flex; flex-direction: column; gap: 6px; }
+.mk-filter { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; flex-basis: 100%; }
+.mk-filter[open] { padding: 6px 8px; border-radius: 10px; border: 1px dashed var(--line); }
+.mk-cardstats { border-collapse: collapse; width: 100%; font-size: 13px; }
+.mk-cardstats th, .mk-cardstats td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--line); }
+.mk-cardstats tr.hot td:last-child { color: var(--bad); font-weight: 700; }
+.mk-cardstats tr.cold td:last-child { color: var(--muted); }
+.mk-rules h4 { margin: 8px 0 2px; }
+.mk-rules ul { margin: 0; padding-left: 18px; }
+.file-btn input { display: none; }
+.file-btn { cursor: pointer; }

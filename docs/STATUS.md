@@ -263,6 +263,12 @@ A survey of about 30 published TCG rulebooks (`docs/COVERAGE.md`, second table) 
   - Tall popups scroll.
   - Tap/untap uses the CSS `rotate`/`scale` properties with event-log animation. This fixes the card showing untapped while hovered and then snapping to tapped.
 
+## Done: Game Maker v2 (mix-and-match building blocks)
+- **Blocks:** board areas, counters, keywords with numbers and their own ability bundles, target filters, activation cost blocks, new keyword rules, combat options (direct, questing, multiple blockers, attack cards), resource options (face-down/keyword-only, pitch, level and energy requirements, action points), phase options (both players, draw up to, alternating actions), life-card triggers and leader deploy.
+- **Mechanics Shelf:** 40 recipes that drop whole mechanics into any game (`packages/maker/src/recipes.ts`).
+- **Workshop extras:** undo/redo, the auto rulebook, CSV import/export, AI Lab per-card stats.
+- **Tests:** every recipe on a blank game; mixed combinations for replay and hidden information; block compilation.
+
 ## Done: Game Maker (design a card game in the app)
 - **Package:** `packages/maker`. A blueprint format (`#maker`) compiles to an engine module; `lint`/`build` report "bugs" and "tips" in plain language. See `docs/MAKER.md`.
 - **Starter blueprints:** seven original, playable games covering the main families of TCG structure:

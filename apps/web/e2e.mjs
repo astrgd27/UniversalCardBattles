@@ -341,14 +341,32 @@ try {
     await mkp.click('[data-act=mk-new]');
     await mkp.click(`[data-blueprint=${bpId}]`);
     ok(await mkp.isVisible('.mk-bugs.good'), `maker ${bpId}: builds with no bugs`);
-    for (const st of ['identity', 'frames', 'types', 'board', 'turn', 'rules', 'keywords', 'cards', 'decks', 'test', 'publish', 'lab']) await mkp.click(`[data-station=${st}]`);
+    for (const st of ['identity', 'shelf', 'frames', 'types', 'board', 'turn', 'rules', 'keywords', 'cards', 'decks', 'test', 'publish', 'lab']) await mkp.click(`[data-station=${st}]`);
     await mkp.click('[data-station=cards]');
     await mkp.click('.mk-grid .card >> nth=2');
     await mkp.click('[data-act=mk-ability]');
     ok(await mkp.isVisible('.mk-bugs.good'), `maker ${bpId}: still builds after adding an ability`);
     await mkp.click('text=← Projects');
   }
-  await mkp.click('.mk-proj-open >> nth=0');
+  // Mechanics Shelf: stack recipes from different games, still builds; undo takes one back.
+  await mkp.click('[data-act=mk-new]');
+  await mkp.click('[data-blueprint=blank]');
+  await mkp.click('[data-station=shelf]');
+  for (const r of ['inkwell', 'quest', 'shields', 'twinArenas', 'keywordKit', 'growth', 'restore', 'songs']) {
+    await mkp.click(`[data-recipe=${r}]`);
+    ok(await mkp.isVisible('.mk-bugs.good'), `maker shelf: still builds after ${r} (${await mkp.textContent('.mk-bugs')})`);
+  }
+  const nCards = async () => { await mkp.click('[data-station=cards]'); return mkp.$$eval('.mk-grid .card', (c) => c.length); };
+  const cardsBefore = await nCards();
+  await mkp.click('[data-station=shelf]');
+  await mkp.click('[data-recipe=traps]');
+  ok(await nCards() > cardsBefore, 'maker shelf: traps recipe added a card');
+  await mkp.click('[data-act=mk-undo]');
+  ok(await nCards() === cardsBefore, 'maker: undo removes it again');
+  await mkp.click('[data-station=publish]');
+  ok(await mkp.isVisible('.mk-rules'), 'maker: rulebook renders');
+  await mkp.click('text=← Projects');
+  await mkp.click('.mk-proj-open >> nth=1');
   await mkp.click('[data-station=test]');
   await mkp.click('[data-act=mk-sim]');
   await mkp.waitForSelector('.mk-report', { timeout: 180000 });

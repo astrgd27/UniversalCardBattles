@@ -5,11 +5,11 @@ import type { Match } from '#engine';
 import { IllegalAction, commitAction, createMatch, determinize, listActions, observe, submitDecision } from '#engine';
 import { makeAgent } from '#ai';
 import { packFiles } from '#sdk';
-import { type Blueprint, type CardBP, type Problem, BLUEPRINTS, build, compileBlueprint, fromBlueprint, slug } from '#maker';
+import { type Blueprint, type CardBP, type Problem, BLUEPRINTS, applyRecipe, build, cardsFromCsv, cardsToCsv, compileBlueprint, fromBlueprint, normalize, rulebookMarkdown, slug } from '#maker';
 import { MODULES } from './modules.ts';
 import { store } from './storage.ts';
 
-export type Station = 'identity' | 'frames' | 'types' | 'board' | 'turn' | 'rules' | 'keywords' | 'cards' | 'decks' | 'test' | 'publish' | 'lab';
+export type Station = 'identity' | 'shelf' | 'frames' | 'types' | 'board' | 'turn' | 'rules' | 'keywords' | 'cards' | 'decks' | 'test' | 'publish' | 'lab';
 export interface MakerUI {
   project: string | null;
   station: Station;
@@ -20,11 +20,12 @@ export interface MakerUI {
   picker: boolean;
   toast: { text: string; xp: number; at: number } | null;
   celebrate: number;
-  sim: { done: number; total: number; lines: string[]; running: boolean } | null;
+  sim: { done: number; total: number; lines: string[]; running: boolean; cards?: { id: string; name: string; games: number; wins: number }[] } | null;
+  undo: string[]; redo: string[]; lastEdit: number;
   rawErr: Record<string, string>;
   test: { a: string; b: string; opp: 'heuristic' | 'random' | 'human' };
 }
-export const newMakerUI = (): MakerUI => ({ project: null, station: 'identity', card: null, deck: null, type: null, filter: null, picker: false, toast: null, celebrate: 0, sim: null, rawErr: {}, test: { a: '', b: '', opp: 'heuristic' } });
+export const newMakerUI = (): MakerUI => ({ project: null, station: 'identity', card: null, deck: null, type: null, filter: null, picker: false, toast: null, celebrate: 0, sim: null, rawErr: {}, test: { a: '', b: '', opp: 'heuristic' }, undo: [], redo: [], lastEdit: 0 });
 
 interface Project { bp: Blueprint; created: string; updated: string }
 interface Profile { xp: number; quests: string[] }
@@ -34,12 +35,13 @@ const PROFILE = 'ucb-maker-profile';
 
 export const STATIONS: { id: Station; name: string; icon: string; quest: string; xp: number; goal: string }[] = [
   { id: 'identity', name: 'Name & Look', icon: '✎', quest: 'look', xp: 25, goal: 'Name your game and pick its colors and emblem.' },
+  { id: 'shelf', name: 'Mechanics Shelf', icon: '🧰', quest: 'recipe', xp: 40, goal: 'Mix in a mechanic from the shelf.' },
   { id: 'frames', name: 'Card Frames', icon: '▭', quest: 'frame', xp: 25, goal: 'Design how one card type looks: frame, corners, art size.' },
   { id: 'types', name: 'Card Types & Stats', icon: '⧉', quest: 'types', xp: 25, goal: 'Shape your card types and the numbers they carry.' },
   { id: 'board', name: 'The Board', icon: '▦', quest: 'board', xp: 25, goal: 'Name the zones on your table.' },
   { id: 'turn', name: 'Turn Sequence', icon: '⟳', quest: 'turn', xp: 25, goal: 'Arrange the phases of a turn.' },
   { id: 'rules', name: 'Rules of Play', icon: '⚖', quest: 'rules', xp: 35, goal: 'Choose how resources, combat and winning work.' },
-  { id: 'keywords', name: 'Keywords', icon: '✧', quest: 'keyword', xp: 25, goal: 'Invent a keyword and give it a rule.' },
+  { id: 'keywords', name: 'Keywords & Counters', icon: '✧', quest: 'keyword', xp: 25, goal: 'Invent a keyword and give it a rule or abilities.' },
   { id: 'cards', name: 'Cards', icon: '🂠', quest: 'ability', xp: 50, goal: 'Create a card and give it an ability.' },
   { id: 'decks', name: 'Decks', icon: '▤', quest: 'deck', xp: 25, goal: 'Build or tune a deck.' },
   { id: 'test', name: 'Playtest', icon: '▶', quest: 'win', xp: 100, goal: 'Win a playtest against the AI.' },
@@ -155,6 +157,10 @@ export function makerActions(ui: any, redraw: () => void, A: any) {
   function edit(fn: (bp: Blueprint) => void, quest?: Station) {
     const p = cur();
     if (!p) return;
+    const m = mk();
+    if (Date.now() - m.lastEdit > 700) { m.undo.push(JSON.stringify(p.bp)); if (m.undo.length > 80) m.undo.shift(); }
+    m.redo = []; m.lastEdit = Date.now();
+    normalize(p.bp);
     fn(p.bp);
     save(p);
     if (quest) { const q = questFor(quest); award(q.quest, q.xp, `Quest complete: ${q.goal}`); }
@@ -177,7 +183,20 @@ export function makerActions(ui: any, redraw: () => void, A: any) {
       award('start', 20, 'Quest complete: start your first game.');
       redraw();
     },
-    mkLoad(id: string) { const p = store.get<Project | null>(PKEY(id), null); if (!p) return; Object.assign(mk(), { project: id, station: 'identity', card: null, deck: null, type: p.bp.types[0]?.id ?? null, sim: null }); firstDecks(p.bp); redraw(); },
+    mkLoad(id: string) { const p = store.get<Project | null>(PKEY(id), null); if (!p) return; Object.assign(mk(), { project: id, station: 'identity', card: null, deck: null, type: p.bp.types[0]?.id ?? null, sim: null, undo: [], redo: [] }); firstDecks(p.bp); redraw(); },
+    mkUndo() { const p = cur(); const m = mk(); const prev = m.undo.pop(); if (!p || !prev) return; m.redo.push(JSON.stringify(p.bp)); p.bp = JSON.parse(prev); save(p); m.lastEdit = 0; redraw(); },
+    mkRedo() { const p = cur(); const m = mk(); const next = m.redo.pop(); if (!p || !next) return; m.undo.push(JSON.stringify(p.bp)); p.bp = JSON.parse(next); save(p); m.lastEdit = 0; redraw(); },
+    mkRecipe(id: string, name: string) { mk().lastEdit = 0; edit((bp) => applyRecipe(bp, id), 'shelf'); if (!mk().toast || Date.now() - mk().toast!.at > 300) mk().toast = { text: `Added ${name} to your game. Undo if it isn't what you wanted.`, xp: 0, at: Date.now() }; blip(760, 120); redraw(); },
+    mkCsvExport() { const p = cur(); if (p) download(`${p.bp.id}-cards.csv`, cardsToCsv(p.bp), 'text/csv'); },
+    async mkCsvImport(file: File) {
+      const text = await file.text();
+      let res = { added: 0, updated: 0, errors: [] as string[] };
+      mk().lastEdit = 0;
+      edit((bp) => { res = cardsFromCsv(bp, text); }, 'cards');
+      ui.note = { title: 'Cards imported', text: [`${res.added} added, ${res.updated} updated.`, ...res.errors.slice(0, 12)].join('\n') };
+      redraw();
+    },
+    mkRulebook() { const p = cur(); if (p) download(`${p.bp.id}-rules.md`, rulebookMarkdown(p.bp), 'text/markdown'); },
     mkDelete(id: string) { const p = store.get<Project | null>(PKEY(id), null); if (p && window.confirm(`Delete "${p.bp.name}"? This can't be undone.`)) { store.del(PKEY(id)); redraw(); } },
     mkClose() { mk().project = null; redraw(); },
     mkStation(s: Station) { mk().station = s; window.scrollTo(0, 0); redraw(); },
@@ -292,10 +311,12 @@ export function makerActions(ui: any, redraw: () => void, A: any) {
       const s: NonNullable<MakerUI['sim']> = { done: 0, total: n, lines: [], running: true };
       mk().sim = s;
       const wins: Record<string, number> = {}, games: Record<string, number> = {};
+      const cardStats: Record<string, { games: number; wins: number }> = {};
       let turns = 0, limits = 0, errors = 0;
       const step = () => {
         if (s !== mk().sim || s.done >= s.total) {
           s.running = false;
+          s.cards = Object.entries(cardStats).map(([id, v]) => ({ id, name: p.bp.cards.find((k) => k.id === id)?.name ?? id, ...v })).sort((a, b) => b.games - a.games);
           const rows = Object.keys(games).map((d) => `${p.bp.decks.find((x) => x.id === d)?.name ?? d}: won ${wins[d] ?? 0} of ${games[d]} (${Math.round((100 * (wins[d] ?? 0)) / games[d])}%)`);
           s.lines = [`${s.done} AI games · average ${(turns / Math.max(1, s.done)).toFixed(1)} turns${limits ? ` · ${limits} hit the turn limit` : ''}${errors ? ` · ${errors} crashed` : ''}`, ...rows];
           award('lab', 30, 'Quest complete: run the AI lab.');
@@ -310,6 +331,10 @@ export function makerActions(ui: any, redraw: () => void, A: any) {
           turns += g.s.turn.n;
           for (const d of order) games[d] = (games[d] ?? 0) + 1;
           const w = g.s.result?.winners?.[0];
+          for (const pl of ['p0', 'p1']) {
+            const played = new Set((g.s.events as any[]).filter((e) => e.type === 'action' && e.player === pl && e.card).map((e) => e.card as string));
+            for (const id of played) { const cs = (cardStats[id] ??= { games: 0, wins: 0 }); cs.games++; if (w === pl) cs.wins++; }
+          }
           if (!g.s.result || g.s.result.reason === 'turnLimit') limits++;
           else if (w) wins[order[+w.slice(1)]] = (wins[order[+w.slice(1)]] ?? 0) + 1;
         } catch { errors++; }
