@@ -98,3 +98,82 @@ test('maker: end of turn discards down to the hand limit (choose with expression
   const discards = (g.s.events as any[]).filter((e) => e.type === 'moved' && e.from === 'hand' && e.to === 'grave').length;
   assert.ok(discards >= 6, `expected end-of-turn discards, saw ${discards}`);
 });
+
+// ---------------------------------------------------------------- mechanic recipes (mix and match)
+import { RECIPES, applyRecipe } from '#maker';
+const COMBOS: [string, string[]][] = [
+  ['blank', ['inkwell', 'quest', 'songs', 'evolution', 'keywordKit']],
+  ['blank', ['manaZone', 'shields', 'compare', 'keywordKit']],
+  ['blank', ['resDeck', 'levelGate', 'gear', 'lifeTriggers']],
+  ['blank', ['hiddenResources', 'twinArenas', 'deployLeader', 'alternate', 'restore']],
+  ['blank', ['pitch', 'actionPoints', 'drawTo', 'items']],
+  ['blank', ['ramp', 'lines', 'energyNeed', 'lifeCards', 'lifeTriggers']],
+  ['chain', ['traps', 'positions', 'tribute', 'extraDeck']],
+  ['leaderLife', ['counterStep', 'boost']],
+];
+const withRecipes = (base: string, ids: string[]) => { const bp = fromBlueprint(base); for (const r of ids) applyRecipe(bp, r); return bp; };
+
+test('maker recipes: every recipe builds on a blank game and plays to the end', () => {
+  for (const r of RECIPES) {
+    const { mod, problems } = build(withRecipes('blank', [r.id]));
+    assert.ok(mod, `${r.id}: ${problems.map((p) => p.text).join('; ')}`);
+    for (let seed = 1; seed <= 2; seed++) assert.ok(play(mod!, seed).s.result, `${r.id} seed ${seed}`);
+  }
+});
+
+test('maker recipes: mixed combinations build, finish, replay identically and keep hidden cards hidden', () => {
+  for (const [base, ids] of COMBOS) {
+    const label = `${base}+${ids.join('+')}`;
+    const { mod, problems } = build(withRecipes(base, ids));
+    assert.ok(mod, `${label}: ${problems.map((p) => p.text).join('; ')}`);
+    assert.ok(play(mod!, 1).s.result, label);
+    const end = play(mod!, 2, 'random', (g) => {
+      for (const pl of g.s.players) {
+        const txt = JSON.stringify([observe(g, pl.id), listActions(g, pl.id), eventsFor(g, pl.id)]);
+        for (const hdn of hiddenFrom(g, pl.id)) assert.ok(!txt.includes(`"${hdn}"`), `${label}: ${pl.id} can see ${hdn}`);
+      }
+    });
+    assert.equal(replay(mod!, end.s.opts, end.s.cmds).hash, eventHash(end.s), label);
+    assert.deepEqual(invariantErrors(end), [], label);
+  }
+});
+
+test('maker recipes: signature mechanics fire (questing, pitching, arenas, inkwell, shields, multiple blockers)', () => {
+  const seen = (base: string, ids: string[], seeds = 4) => {
+    const mod = build(withRecipes(base, ids)).mod!;
+    const s = new Set<string>();
+    for (let seed = 1; seed <= seeds; seed++) for (const e of play(mod, seed).s.events as any[]) { s.add(e.type); if (e.type === 'action') s.add(`action:${e.action.split('#')[0]}`); }
+    return s;
+  };
+  const ink = seen('blank', ['inkwell', 'quest']);
+  assert.ok(ink.has('action:quest') && ink.has('action:resource') && ink.has('quest'), 'inkwell + questing');
+  const pitch = seen('blank', ['pitch']);
+  assert.ok(pitch.has('action:attackCard') && pitch.has('hit'), 'pitch + attack cards');
+  const lines = seen('blank', ['lines']);
+  assert.ok(lines.has('action:advance'), 'front line & reserve');
+  const sh = seen('blank', ['shields']);
+  assert.ok(sh.has('lifeLost'), 'shields break');
+  const bl = seen('stack', ['block']);
+  assert.ok(bl.has('blocked'), 'blocking with up to two units');
+});
+
+test('maker blocks: filters, cost blocks, counters and valued keywords compile to working rules', () => {
+  const bp = blank();
+  bp.counters = [{ id: 'growth', name: 'Growth', adds: { power: 1, health: 1 } }];
+  bp.keywords.push({ id: 'resist', name: 'Resist', rule: 'resist', text: '', valued: true });
+  bp.cards.push({ id: 'oak', name: 'Old Oak', type: 'unit', cost: 2, stats: { power: 1, health: 4 }, keywords: ['resist'], kwv: { resist: 2 },
+    abilities: [{ when: 'activated', tap: true, discard: 1, do: [{ k: 'addCounter', card: 'growth', n: 1, target: 'self' }] }] });
+  bp.cards.push({ id: 'snipe', name: 'Snipe', type: 'spell', cost: 1, stats: {}, keywords: [], abilities: [{ when: 'play', do: [{ k: 'destroy', target: 'enemyUnit', filter: { stat: 'power', op: 'le', val: 2 } }] }] });
+  bp.decks[0].main.oak = 3; bp.decks[0].main.snipe = 3;
+  const def = compileBlueprint(bp) as any;
+  const oak = def.cards.find((c: any) => c.id === 'oak');
+  assert.equal(oak.kw_resist, 2);
+  assert.match(oak.text, /Resist 2/);
+  assert.match(oak.text, /Exhaust, discard 1: Put 1 Growth counter on this/);
+  assert.match(def.cards.find((c: any) => c.id === 'snipe').text, /with 2 or less Power/);
+  assert.ok(def.rules.replacements.some((r: any) => r.text === 'Resist'));
+  assert.ok(def.rules.statics.some((s: any) => s.text === 'Growth'));
+  const { mod, problems } = build(bp);
+  assert.ok(mod, problems.map((p) => p.text).join('; '));
+  assert.ok(play(mod!, 3).s.result);
+});

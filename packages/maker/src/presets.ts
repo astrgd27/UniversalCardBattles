@@ -3,16 +3,16 @@
 import type { Ability, Blueprint, CardBP, CardType, Combat, Effect, FrameDef, Keyword, Phase, Resource, Setup, Win } from './blueprint.ts';
 import { slug } from './compile.ts';
 
-const frame = (base: string, cost: FrameDef['cost'], stats: FrameDef['stats'] = [], o: Partial<FrameDef> = {}): FrameDef => ({ base, cost, stats, art: 48, text: true, ...o });
-const type = (id: string, name: string, role: CardType['role'], f: FrameDef, icon = ''): CardType => ({ id, name, role, frame: f, icon });
-const kw = (id: string, name: string, rule: Keyword['rule'], text: string): Keyword => ({ id, name, rule, text });
-const ph = (id: string, name: string, kind: Phase['kind'], n?: number): Phase => ({ id, name, kind, ...(n ? { n } : {}) });
-const fx = (k: Effect['k'], o: Partial<Effect> = {}): Effect => ({ k, ...o });
-const on = (when: Ability['when'], d: Effect[], o: Partial<Ability> = {}): Ability => ({ when, do: d, ...o });
-function card(name: string, t: string, cost: CardBP['cost'], stats: Record<string, number> = {}, o: Partial<CardBP> = {}): CardBP {
+export const frame = (base: string, cost: FrameDef['cost'], stats: FrameDef['stats'] = [], o: Partial<FrameDef> = {}): FrameDef => ({ base, cost, stats, art: 48, text: true, ...o });
+export const type = (id: string, name: string, role: CardType['role'], f: FrameDef, icon = ''): CardType => ({ id, name, role, frame: f, icon });
+export const kw = (id: string, name: string, rule: Keyword['rule'], text: string): Keyword => ({ id, name, rule, text });
+export const ph = (id: string, name: string, kind: Phase['kind'], n?: number): Phase => ({ id, name, kind, ...(n ? { n } : {}) });
+export const fx = (k: Effect['k'], o: Partial<Effect> = {}): Effect => ({ k, ...o });
+export const on = (when: Ability['when'], d: Effect[], o: Partial<Ability> = {}): Ability => ({ when, do: d, ...o });
+export function card(name: string, t: string, cost: CardBP['cost'], stats: Record<string, number> = {}, o: Partial<CardBP> = {}): CardBP {
   return { id: slug(name), name, type: t, cost, stats, keywords: [], abilities: [], ...o };
 }
-const deck = (id: string, name: string, main: Record<string, number>, o: Partial<Blueprint['decks'][number]> = {}) => ({ id, name, main, ...o });
+export const deck = (id: string, name: string, main: Record<string, number>, o: Partial<Blueprint['decks'][number]> = {}) => ({ id, name, main, ...o });
 
 export const RESOURCE0: Resource = { mode: 'ramp', name: 'Energy', icon: '◆', start: 1, perTurn: 1, max: 10, deckSize: 10, boost: 0, summonsPerTurn: 0, tribute: [] };
 export const COMBAT0: Combat = {
@@ -24,7 +24,7 @@ export const WIN0: Win = { life: 20, lifeCards: 0, prizes: 0, points: 0, deckOut
 export const SETUP0: Setup = { hand: 4, mulligan: true, handLimit: 8, deckMin: 20, deckMax: 40, maxCopies: 3, skipFirstDraw: true, leader: false, extraMax: 15, turnLimit: 80 };
 const STD_TURN = [ph('ready', 'Ready', 'ready'), ph('draw', 'Draw', 'draw', 1), ph('main', 'Main', 'main'), ph('end', 'End', 'end')];
 
-function base(o: Partial<Blueprint>): Blueprint {
+export function base(o: Partial<Blueprint>): Blueprint {
   return {
     v: 1, id: 'my-game', name: 'My Game', tagline: '', look: { accent: '#7c5cff', accent2: '#38bdf8', glyph: '✦' }, colors: [],
     stats: [{ id: 'power', name: 'Power', icon: '⚔' }, { id: 'health', name: 'Health', icon: '♥' }],
