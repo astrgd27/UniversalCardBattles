@@ -68,12 +68,22 @@
     - attack the Headliner or a rested wrestler; attackers win ties;
     - Run-In (Blocker) redirect, then a counter step: discard Counter values from hand or play Reversals;
     - life cards go to hand, with Comeback (Trigger) plays; Double Team takes 2 life, Pinfall trashes them; 5 wrestlers max.
-  - Balance: heuristic vs heuristic, 8–10 games per pairing, is about 25–75 after two tuning passes.
+  - Second pass, after checking the source game's later sets:
+    - counters last one battle only;
+    - Reversals can be played only in the counter step;
+    - traits on every card (Luchador Guild, Elf Kingdom, Broadcast Network, Royal Family, Demon Court, Undead Circuit, Hall of Fame, Isekai'd), with a "look at the top 5, reveal a {trait}" card in each style and trait-based plays;
+    - Hype!! verbs: add from the deck, set active, give spent Hype!! to the Headliner;
+    - life verbs: hand to life, Title Belt Shrine;
+    - keywords Springboard (Rush: Character), Blind Tag (Unblockable), Iron Chin (can't be K.O.'d in battle);
+    - triggers "When this blocks" and "When your opponent attacks"; an "opponent's turn" passive;
+    - trashing a wrestler to play one into a full ring.
+    - 79 cards.
+  - Balance: heuristic vs heuristic, 8 games per pairing, is about 35–65 after the second pass.
   - Not yet emulated:
-    - "rest your DON" costs other than returning Hype!!;
-    - card types/attributes (traits) and searching by them;
-    - choosing which wrestler to trash when the ring is full;
-    - counters lasting "this battle" (they last the turn).
+    - face-up life cards (life is a hidden zone);
+    - attributes (Slash/Strike/…; few effects use them);
+    - "this card can't be rested" protections and power-setting effects;
+    - [Opponent's Turn] activated abilities.
 - **Clean slate (done):**
   - Every module and its artwork was deleted (NIGHTFALL, Shadow Earth and the Workshop starter games; git history keeps them).
   - The eight small reference games survive only as engine test fixtures in `packages/test-harness/fixtures`.

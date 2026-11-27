@@ -153,7 +153,18 @@ Ringworld Rumble (`packages/modules/ringworld-rumble`) is built from these optio
 - **Condition "if this has N or more given to it"** (`attached`): the "×N" style of ability, e.g. "When this attacks, if it has 1 or more Hype!! given to it: …".
 - **Keyword rule `banish`:** life cards this attacker takes go to the discard pile with no trigger.
 - **`combat.firstTurnEach`** (with `firstTurnAttack` off): neither player attacks on their own first turn, not just on turn 1.
-- Counter events are quick spells that target "the unit being attacked" (`battleTarget`) or "the attacking unit" (`attacker`), played in the response step.
+- Counter events are quick spells that target "the card being attacked" (`battleTarget`) or "the attacker" (`attacker`), played in the response step.
+- **Battle-only boosts:** counter values from hand, and "boost … during this battle" (`until: 'battle'`), last until that battle's damage step, so each new attack must be countered again.
+- **`combat.counterOnly`:** quick spells can be played only while defending. **`combat.replaceFull`:** with a full board, playing a unit first trashes one of yours.
+- **Traits** (`card.traits`, a list of affiliations shown as `{Trait}`) and a **Trait** filter on any target or search.
+- **New effects:**
+  - "look at the top N, reveal up to 1 matching card and add it to hand, the rest to the bottom" (`dig`; the cards wait in a zone only their owner sees);
+  - "play a unit for free from hand or discard pile" (`putIntoPlay`, with filters);
+  - resource verbs: add from the resource deck (`addRes`), set spent ones active (`readyRes`), give spent ones to a card (`giveRes`);
+  - life verbs: top life card to hand (`lifeToHand`), a card from hand onto life (`handToLife`).
+- **New triggers and conditions:** "when it blocks", "when the opponent attacks" (for any card, not just traps), "during the opponent's turn", "if the opponent has N or less life". Activated abilities can cost life cards (taken into hand), and in "give" games a resource cost reads "rest N".
+- **New keyword rules:** attacks units the turn it is played (`rushUnits`), can't be destroyed in battle (`noKO`). "Can't be blocked" is the existing `unblockable` rule.
+- **Targets:** your leader (`ownLeader`), and your leader or one of your units (`ownAny`).
 
 ## Mechanics Shelf (mix and match)
 A station listing 40 recipes in seven groups:

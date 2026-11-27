@@ -1,6 +1,7 @@
 // Ringworld Rumble (default module; mechanics reference: One Piece Card Game). Checks the shipped files match the Workshop
 // blueprint, decks are legal, and AI games show the rules: Hype!! deck (1 on the first player's first turn, then 2),
-// giving Hype!! for power, no attacks on either player's first turn, life cards from the Headliner, counters, Run-In.
+// giving Hype!! for power, no attacks on either player's first turn, life cards from the Headliner, counters that last one
+// battle, Reversals only while defending, top-5 trait searches.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -35,19 +36,22 @@ test('ringworld-rumble: AI games follow the turn, Hype!! and battle rules', () =
   const seen: Record<string, number> = {};
   for (let i = 0; i < 4; i++) {
     const hype: number[] = [];
-    let earlyAttacks = -1;
+    let earlyAttacks = -1, lingering = 0;
     const g: Match = playMatch(createMatch(mod, { decks: [structuredClone(mod.decks![ids[i]]), structuredClone(mod.decks![ids[(i + 1) % ids.length]])], seed: 200 + i }),
       [makeAgent('heuristic', 200 + i), makeAgent('heuristic', 207 + i)], (m) => {
         const s = m.s, ph = m.m.rules.phases[s.turn.phase]?.id;
         if (s.turn.n <= 2 && ph === 'main' && hype.length < s.turn.n) hype.push((s.zones[`${s.players[s.turn.active].id}:resources`] ?? []).length);
         if (s.turn.n === 3 && earlyAttacks < 0) earlyAttacks = s.events.filter((e) => e.type === 'attack').length;
+        if (!s.windows.length) for (const o of Object.values(s.objects)) if ((o.vars.bb ?? 0) !== 0) lingering++;
       });
     assert.deepEqual(invariantErrors(g), []);
     assert.ok(g.s.result?.winners?.length === 1, `game ${i} has a winner`);
     assert.deepEqual(hype, [1, 2], 'the first player gets 1 Hype!! on turn 1, the second player 2');
     assert.equal(earlyAttacks, 0, 'nobody attacks on their own first turn');
+    assert.equal(lingering, 0, 'counter boosts end with the battle');
+    for (let j = 0; j < g.s.events.length; j++) { const e = g.s.events[j]; if (e.type === 'action' && e.action === 'quick') assert.ok(g.s.events.slice(0, j).some((x) => x.type === 'windowOpened'), 'Reversals only while defending'); }
     for (const e of g.s.events) { const k = e.type === 'action' ? `action:${String(e.action).split('#')[0]}` : e.type; seen[k] = (seen[k] ?? 0) + 1; }
     assert.equal(replay(mod, g.s.opts, g.s.cmds).hash, eventHash(g.s));
   }
-  for (const t of ['given', 'attack', 'lifeLost', 'action:counterCard', 'action:quick', 'destroyed']) assert.ok(seen[t] > 0, `${t} happens`);
+  for (const t of ['given', 'attack', 'lifeLost', 'action:counterCard', 'action:quick', 'destroyed', 'revealed']) assert.ok(seen[t] > 0, `${t} happens`);
 });

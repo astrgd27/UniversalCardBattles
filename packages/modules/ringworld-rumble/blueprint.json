@@ -199,6 +199,24 @@
    "text": "Comeback: when this is taken from your life, you may play it for free."
   },
   {
+   "id": "springboard",
+   "name": "Springboard",
+   "rule": "rushUnits",
+   "text": "Springboard: can attack wrestlers (not the Headliner) the turn it is played."
+  },
+  {
+   "id": "unblockable",
+   "name": "Blind Tag",
+   "rule": "unblockable",
+   "text": "Blind Tag: Run-In can't stop its attacks."
+  },
+  {
+   "id": "ironchin",
+   "name": "Iron Chin",
+   "rule": "noKO",
+   "text": "Iron Chin: can't be K.O.'d in battle."
+  },
+  {
    "id": "vision",
    "name": "Scouting Report",
    "rule": "none",
@@ -279,6 +297,8 @@
   },
   "positions": false,
   "counterStep": true,
+  "counterOnly": true,
+  "replaceFull": true,
   "fieldSize": 5,
   "benchSize": 0,
   "attackEndsTurn": false,
@@ -331,7 +351,10 @@
     "rush"
    ],
    "abilities": [],
-   "flavor": "Fell through a portal mid-moonsault. Landed it."
+   "flavor": "Fell through a portal mid-moonsault. Landed it.",
+   "traits": [
+    "Luchador Guild"
+   ]
   },
   {
    "id": "little-comet",
@@ -345,7 +368,11 @@
    "color": "flyer",
    "keywords": [],
    "abilities": [],
-   "flavor": "Twelve years old, three feet tall, all elbow."
+   "flavor": "Twelve years old, three feet tall, all elbow.",
+   "traits": [
+    "Luchador Guild",
+    "Isekai'd"
+   ]
   },
   {
    "id": "masked-sparrow",
@@ -357,7 +384,9 @@
     "counter": 1000
    },
    "color": "flyer",
-   "keywords": [],
+   "keywords": [
+    "springboard"
+   ],
    "abilities": [
     {
      "when": "attack",
@@ -370,7 +399,10 @@
      ]
     }
    ],
-   "flavor": "Her mask was blessed by a sky goddess. Allegedly."
+   "flavor": "Her mask was blessed by a sky goddess. Allegedly.",
+   "traits": [
+    "Luchador Guild"
+   ]
   },
   {
    "id": "phoenix-splash-prodigy",
@@ -386,7 +418,10 @@
     "trigger"
    ],
    "abilities": [],
-   "flavor": "Dies on every dive. Rises before the three-count."
+   "flavor": "Dies on every dive. Rises before the three-count.",
+   "traits": [
+    "Luchador Guild"
+   ]
   },
   {
    "id": "cometfall-luchador",
@@ -402,7 +437,11 @@
     "rush"
    ],
    "abilities": [],
-   "flavor": "Arrives from the top turnbuckle, the rafters, or orbit."
+   "flavor": "Arrives from the top turnbuckle, the rafters, or orbit.",
+   "traits": [
+    "Luchador Guild",
+    "Isekai'd"
+   ]
   },
   {
    "id": "springboard-saint",
@@ -427,7 +466,10 @@
      ]
     }
    ],
-   "flavor": "Blesses the ropes before every match. The ropes appreciate it."
+   "flavor": "Blesses the ropes before every match. The ropes appreciate it.",
+   "traits": [
+    "Luchador Guild"
+   ]
   },
   {
    "id": "sky-kingdom-sentai",
@@ -443,7 +485,69 @@
     "double"
    ],
    "abilities": [],
-   "flavor": "Five rangers. One giant cannonball."
+   "flavor": "Five rangers. One giant cannonball.",
+   "traits": [
+    "Isekai'd"
+   ]
+  },
+  {
+   "id": "luchador-talent-scout",
+   "name": "Luchador Talent Scout",
+   "type": "wrestler",
+   "cost": 1,
+   "stats": {
+    "power": 1000,
+    "counter": 1000
+   },
+   "color": "flyer",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "dig",
+       "n": 5,
+       "filter": {
+        "trait": "Luchador Guild"
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "Signs anyone who can survive a fall from the third rope.",
+   "traits": [
+    "Luchador Guild"
+   ]
+  },
+  {
+   "id": "tag-partner-callout",
+   "name": "Tag Partner Callout",
+   "type": "spot",
+   "cost": 1,
+   "stats": {},
+   "color": "flyer",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "putIntoPlay",
+       "filter": {
+        "trait": "Luchador Guild",
+        "stat": "cost",
+        "op": "le",
+        "val": 3
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "\"Get in here, cousin!\"",
+   "traits": [
+    "Luchador Guild"
+   ]
   },
   {
    "id": "top-rope-dive",
@@ -465,7 +569,10 @@
      ]
     }
    ],
-   "flavor": "Ill-advised. Spectacular."
+   "flavor": "Ill-advised. Spectacular.",
+   "traits": [
+    "Luchador Guild"
+   ]
   },
   {
    "id": "meteor-senton",
@@ -491,7 +598,10 @@
      ]
     }
    ],
-   "flavor": "The signature move of a masked legend, borrowed without asking."
+   "flavor": "The signature move of a masked legend, borrowed without asking.",
+   "traits": [
+    "Luchador Guild"
+   ]
   },
   {
    "id": "second-wind",
@@ -508,7 +618,8 @@
       {
        "k": "buff",
        "n": 2000,
-       "target": "battleTarget"
+       "target": "battleTarget",
+       "until": "battle"
       }
      ]
     }
@@ -557,7 +668,40 @@
     "blocker"
    ],
    "abilities": [],
-   "flavor": "Took a vow of silence. Breaks it only to say \"ask him.\""
+   "flavor": "Took a vow of silence. Breaks it only to say \"ask him.\"",
+   "traits": [
+    "Elf Kingdom"
+   ]
+  },
+  {
+   "id": "elf-kingdom-recruiter",
+   "name": "Elf Kingdom Recruiter",
+   "type": "wrestler",
+   "cost": 1,
+   "stats": {
+    "power": 1000,
+    "counter": 2000
+   },
+   "color": "grappler",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "dig",
+       "n": 5,
+       "filter": {
+        "trait": "Elf Kingdom"
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "Recruits at dawn. Trains at dawn. Everything at dawn.",
+   "traits": [
+    "Elf Kingdom"
+   ]
   },
   {
    "id": "gentle-giant-trainee",
@@ -570,7 +714,11 @@
    "color": "grappler",
    "keywords": [],
    "abilities": [],
-   "flavor": "Apologizes after every slam."
+   "flavor": "Apologizes after every slam.",
+   "traits": [
+    "Isekai'd",
+    "Elf Kingdom"
+   ]
   },
   {
    "id": "armbar-acolyte",
@@ -599,7 +747,10 @@
      ]
     }
    ],
-   "flavor": "Holds you down while explaining the elf tax code."
+   "flavor": "Holds you down while explaining the elf tax code.",
+   "traits": [
+    "Elf Kingdom"
+   ]
   },
   {
    "id": "kneebar-dryad",
@@ -617,13 +768,16 @@
      "when": "play",
      "do": [
       {
-       "k": "ready",
-       "target": "ownUnit"
+       "k": "readyRes",
+       "n": 2
       }
      ]
     }
    ],
-   "flavor": "Wraps around you like ivy. Very patient ivy."
+   "flavor": "Wraps around you like ivy. Very patient ivy.",
+   "traits": [
+    "Elf Kingdom"
+   ]
   },
   {
    "id": "forest-troll-grappler",
@@ -637,8 +791,23 @@
    "keywords": [
     "blocker"
    ],
-   "abilities": [],
-   "flavor": "Lives under the ring apron. Charges a toll to leave."
+   "abilities": [
+    {
+     "when": "block",
+     "do": [
+      {
+       "k": "buff",
+       "n": 2000,
+       "target": "self",
+       "until": "battle"
+      }
+     ]
+    }
+   ],
+   "flavor": "Lives under the ring apron. Charges a toll to leave.",
+   "traits": [
+    "Elf Kingdom"
+   ]
   },
   {
    "id": "ankle-lock-ent",
@@ -667,7 +836,10 @@
      ]
     }
    ],
-   "flavor": "Takes four hundred years to apply. Never lets go."
+   "flavor": "Takes four hundred years to apply. Never lets go.",
+   "traits": [
+    "Elf Kingdom"
+   ]
   },
   {
    "id": "submission-sage",
@@ -691,7 +863,11 @@
      ]
     }
    ],
-   "flavor": "Knows two thousand holds. Teaches none of them."
+   "flavor": "Knows two thousand holds. Teaches none of them.",
+   "traits": [
+    "Isekai'd",
+    "Elf Kingdom"
+   ]
   },
   {
    "id": "world-tree-powerbomber",
@@ -716,7 +892,10 @@
      ]
     }
    ],
-   "flavor": "Its roots reach the underworld. So does its powerbomb."
+   "flavor": "Its roots reach the underworld. So does its powerbomb.",
+   "traits": [
+    "Elf Kingdom"
+   ]
   },
   {
    "id": "chain-wrestling",
@@ -742,7 +921,10 @@
      ]
     }
    ],
-   "flavor": "Hold, reverse, reverse the reverse. The crowd falls asleep. Then it erupts."
+   "flavor": "Hold, reverse, reverse the reverse. The crowd falls asleep. Then it erupts.",
+   "traits": [
+    "Elf Kingdom"
+   ]
   },
   {
    "id": "rope-break",
@@ -759,7 +941,8 @@
       {
        "k": "buff",
        "n": 4000,
-       "target": "battleTarget"
+       "target": "battleTarget",
+       "until": "battle"
       }
      ]
     }
@@ -789,7 +972,40 @@
      ]
     }
    ],
-   "flavor": "Canvas woven from moss. Smells like victory and mildew."
+   "flavor": "Canvas woven from moss. Smells like victory and mildew.",
+   "traits": [
+    "Elf Kingdom"
+   ]
+  },
+  {
+   "id": "royal-herald",
+   "name": "Royal Herald",
+   "type": "wrestler",
+   "cost": 1,
+   "stats": {
+    "power": 1000,
+    "counter": 1000
+   },
+   "color": "showboat",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "dig",
+       "n": 5,
+       "filter": {
+        "trait": "Royal Family"
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "Announces the princess. Then announces the announcement.",
+   "traits": [
+    "Royal Family"
+   ]
   },
   {
    "id": "mic-check-manager",
@@ -805,7 +1021,10 @@
     "vision"
    ],
    "abilities": [],
-   "flavor": "\"Is this thing on? IS THIS THING ON?\""
+   "flavor": "\"Is this thing on? IS THIS THING ON?\"",
+   "traits": [
+    "Broadcast Network"
+   ]
   },
   {
    "id": "catchphrase-knight",
@@ -820,8 +1039,21 @@
    "keywords": [
     "blocker"
    ],
-   "abilities": [],
-   "flavor": "Has trademarked four words. None in a row."
+   "abilities": [
+    {
+     "when": "block",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Has trademarked four words. None in a row.",
+   "traits": [
+    "Royal Family"
+   ]
   },
   {
    "id": "promo-bard",
@@ -849,7 +1081,10 @@
      ]
     }
    ],
-   "flavor": "Rhymes \"suplex\" with \"duplex\" every single night."
+   "flavor": "Rhymes \"suplex\" with \"duplex\" every single night.",
+   "traits": [
+    "Broadcast Network"
+   ]
   },
   {
    "id": "merch-table-merchant",
@@ -873,7 +1108,10 @@
      ]
     }
    ],
-   "flavor": "T-shirts, foam fingers, cursed amulets."
+   "flavor": "T-shirts, foam fingers, cursed amulets.",
+   "traits": [
+    "Broadcast Network"
+   ]
   },
   {
    "id": "spotlight-sorceress",
@@ -902,7 +1140,11 @@
      ]
     }
    ],
-   "flavor": "Points a spotlight at you. You vanish. Applause."
+   "flavor": "Points a spotlight at you. You vanish. Applause.",
+   "traits": [
+    "Isekai'd",
+    "Broadcast Network"
+   ]
   },
   {
    "id": "commentary-golem",
@@ -930,7 +1172,10 @@
      }
     }
    ],
-   "flavor": "\"OH MY GOODNESS. OH MY GOODNESS.\" Repeat until destroyed."
+   "flavor": "\"OH MY GOODNESS. OH MY GOODNESS.\" Repeat until destroyed.",
+   "traits": [
+    "Broadcast Network"
+   ]
   },
   {
    "id": "pay-per-view-paladin",
@@ -959,7 +1204,10 @@
      ]
     }
    ],
-   "flavor": "Only appears for a fee. Worth it."
+   "flavor": "Only appears for a fee. Worth it.",
+   "traits": [
+    "Royal Family"
+   ]
   },
   {
    "id": "cut-a-promo",
@@ -980,7 +1228,10 @@
      ]
     }
    ],
-   "flavor": "Five minutes of yelling. The crowd loves it."
+   "flavor": "Five minutes of yelling. The crowd loves it.",
+   "traits": [
+    "Broadcast Network"
+   ]
   },
   {
    "id": "distraction-finish",
@@ -997,7 +1248,8 @@
       {
        "k": "buff",
        "n": 2000,
-       "target": "battleTarget"
+       "target": "battleTarget",
+       "until": "battle"
       }
      ]
     }
@@ -1019,7 +1271,8 @@
       {
        "k": "buff",
        "n": 4000,
-       "target": "battleTarget"
+       "target": "battleTarget",
+       "until": "battle"
       }
      ]
     }
@@ -1052,7 +1305,68 @@
      "once": true
     }
    ],
-   "flavor": "Three rings, one champion, a lot of clowns."
+   "flavor": "Three rings, one champion, a lot of clowns.",
+   "traits": [
+    "Broadcast Network"
+   ]
+  },
+  {
+   "id": "hype-man-imp",
+   "name": "Hype Man Imp",
+   "type": "wrestler",
+   "cost": 1,
+   "stats": {
+    "power": 2000,
+    "counter": 1000
+   },
+   "color": "heel",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "giveRes",
+       "n": 2,
+       "target": "ownLeader"
+      }
+     ]
+    }
+   ],
+   "flavor": "\"Make some noise for my boss!\" The noise is mandatory.",
+   "traits": [
+    "Demon Court"
+   ]
+  },
+  {
+   "id": "demon-court-herald",
+   "name": "Demon Court Herald",
+   "type": "wrestler",
+   "cost": 2,
+   "stats": {
+    "power": 2000,
+    "counter": 1000
+   },
+   "color": "heel",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "dig",
+       "n": 5,
+       "filter": {
+        "trait": "Demon Court"
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "Reads the card for the main event. In blood. Mostly ketchup.",
+   "traits": [
+    "Demon Court"
+   ]
   },
   {
    "id": "chair-swinging-imp",
@@ -1081,7 +1395,10 @@
      }
     }
    ],
-   "flavor": "Brought a folding chair to the end of the world."
+   "flavor": "Brought a folding chair to the end of the world.",
+   "traits": [
+    "Demon Court"
+   ]
   },
   {
    "id": "brass-knuckle-goblin",
@@ -1106,7 +1423,10 @@
      ]
     }
    ],
-   "flavor": "The referee looked away. The referee always looks away."
+   "flavor": "The referee looked away. The referee always looks away.",
+   "traits": [
+    "Demon Court"
+   ]
   },
   {
    "id": "manager-with-a-briefcase",
@@ -1124,13 +1444,16 @@
      "when": "play",
      "do": [
       {
-       "k": "gain",
+       "k": "addRes",
        "n": 1
       }
      ]
     }
    ],
-   "flavor": "What is in the briefcase? Hype. Mostly hype."
+   "flavor": "What is in the briefcase? Hype. Mostly hype.",
+   "traits": [
+    "Demon Court"
+   ]
   },
   {
    "id": "interference-twins",
@@ -1145,8 +1468,24 @@
    "keywords": [
     "blocker"
    ],
-   "abilities": [],
-   "flavor": "Nobody has ever seen both at once. Nobody has ever checked."
+   "abilities": [
+    {
+     "when": "opAttack",
+     "do": [
+      {
+       "k": "buff",
+       "n": -1000,
+       "target": "attacker",
+       "until": "battle"
+      }
+     ],
+     "once": true
+    }
+   ],
+   "flavor": "Nobody has ever seen both at once. Nobody has ever checked.",
+   "traits": [
+    "Demon Court"
+   ]
   },
   {
    "id": "low-blow-lich",
@@ -1171,7 +1510,11 @@
      ]
     }
    ],
-   "flavor": "Undead. Unsporting. Unpinnable."
+   "flavor": "Undead. Unsporting. Unpinnable.",
+   "traits": [
+    "Demon Court",
+    "Undead Circuit"
+   ]
   },
   {
    "id": "cheap-shot-specter",
@@ -1196,7 +1539,10 @@
      ]
     }
    ],
-   "flavor": "Haunts the turnbuckle you are about to hit."
+   "flavor": "Haunts the turnbuckle you are about to hit.",
+   "traits": [
+    "Undead Circuit"
+   ]
   },
   {
    "id": "ref-bump-vampire",
@@ -1223,7 +1569,10 @@
      "once": true
     }
    ],
-   "flavor": "Knocks out the referee in round one. Every round is round one."
+   "flavor": "Knocks out the referee in round one. Every round is round one.",
+   "traits": [
+    "Demon Court"
+   ]
   },
   {
    "id": "syndicate-boss-in-a-silk-mask",
@@ -1238,7 +1587,11 @@
     "double"
    ],
    "abilities": [],
-   "flavor": "Runs every promotion on the Ringworld. Wrestles in only one."
+   "flavor": "Runs every promotion on the Ringworld. Wrestles in only one.",
+   "traits": [
+    "Isekai'd",
+    "Demon Court"
+   ]
   },
   {
    "id": "foreign-object",
@@ -1303,7 +1656,8 @@
       {
        "k": "buff",
        "n": -3000,
-       "target": "attacker"
+       "target": "attacker",
+       "until": "battle"
       }
      ]
     }
@@ -1332,7 +1686,10 @@
      ]
     }
    ],
-   "flavor": "Wrapped in wire. Says it is comfortable."
+   "flavor": "Wrapped in wire. Says it is comfortable.",
+   "traits": [
+    "Undead Circuit"
+   ]
   },
   {
    "id": "thumbtack-wraith",
@@ -1344,7 +1701,9 @@
     "counter": 1000
    },
    "color": "hardcore",
-   "keywords": [],
+   "keywords": [
+    "springboard"
+   ],
    "abilities": [
     {
      "when": "play",
@@ -1361,7 +1720,10 @@
      ]
     }
    ],
-   "flavor": "Scatters tacks across the mat. Floats above them."
+   "flavor": "Scatters tacks across the mat. Floats above them.",
+   "traits": [
+    "Undead Circuit"
+   ]
   },
   {
    "id": "light-tube-banshee",
@@ -1374,10 +1736,14 @@
    },
    "color": "hardcore",
    "keywords": [
-    "banish"
+    "banish",
+    "unblockable"
    ],
    "abilities": [],
-   "flavor": "Her scream shatters fluorescent tubes. And careers."
+   "flavor": "Her scream shatters fluorescent tubes. And careers.",
+   "traits": [
+    "Undead Circuit"
+   ]
   },
   {
    "id": "ladder-necromancer",
@@ -1401,7 +1767,11 @@
      ]
     }
    ],
-   "flavor": "Climbs the ladder to the afterlife. Brings people back down."
+   "flavor": "Climbs the ladder to the afterlife. Brings people back down.",
+   "traits": [
+    "Demon Court",
+    "Undead Circuit"
+   ]
   },
   {
    "id": "bone-crusher-brute",
@@ -1417,7 +1787,10 @@
     "banish"
    ],
    "abilities": [],
-   "flavor": "Three-count? He counts to one."
+   "flavor": "Three-count? He counts to one.",
+   "traits": [
+    "Demon Court"
+   ]
   },
   {
    "id": "table-breaker-ogre",
@@ -1431,7 +1804,10 @@
    "color": "hardcore",
    "keywords": [],
    "abilities": [],
-   "flavor": "Has never once gone through a table. The tables go through him."
+   "flavor": "Has never once gone through a table. The tables go through him.",
+   "traits": [
+    "Demon Court"
+   ]
   },
   {
    "id": "deathmatch-revenant",
@@ -1460,7 +1836,10 @@
      ]
     }
    ],
-   "flavor": "Lost every deathmatch. Keeps coming back."
+   "flavor": "Lost every deathmatch. Keeps coming back.",
+   "traits": [
+    "Undead Circuit"
+   ]
   },
   {
    "id": "hardcore-lich-king",
@@ -1488,7 +1867,11 @@
      ]
     }
    ],
-   "flavor": "Rules the Underring. No rules apply."
+   "flavor": "Rules the Underring. No rules apply.",
+   "traits": [
+    "Isekai'd",
+    "Undead Circuit"
+   ]
   },
   {
    "id": "no-disqualification",
@@ -1557,12 +1940,69 @@
       {
        "k": "buff",
        "n": 4000,
-       "target": "battleTarget"
+       "target": "battleTarget",
+       "until": "battle"
       }
      ]
     }
    ],
    "flavor": "Bamboo: nature's apology."
+  },
+  {
+   "id": "hall-of-fame-historian",
+   "name": "Hall of Fame Historian",
+   "type": "wrestler",
+   "cost": 2,
+   "stats": {
+    "power": 2000,
+    "counter": 1000
+   },
+   "color": "legend",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "dig",
+       "n": 5,
+       "filter": {
+        "trait": "Hall of Fame"
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "Has a binder on every match ever fought. Two binders on yours.",
+   "traits": [
+    "Hall of Fame"
+   ]
+  },
+  {
+   "id": "title-belt-shrine",
+   "name": "Title Belt Shrine",
+   "type": "venue",
+   "cost": 1,
+   "stats": {},
+   "color": "legend",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "handToLife"
+      }
+     ],
+     "tap": true,
+     "once": true,
+     "if": {
+      "k": "life",
+      "n": 2
+     }
+    }
+   ],
+   "flavor": "Every belt ever held, polished nightly by monks."
   },
   {
    "id": "old-school-jobber",
@@ -1578,7 +2018,10 @@
     "trigger"
    ],
    "abilities": [],
-   "flavor": "Has lost eleven thousand matches. Still shows up."
+   "flavor": "Has lost eleven thousand matches. Still shows up.",
+   "traits": [
+    "Hall of Fame"
+   ]
   },
   {
    "id": "ringside-grandma",
@@ -1604,7 +2047,10 @@
      ]
     }
    ],
-   "flavor": "Hits harder with the purse than you do with the elbow."
+   "flavor": "Hits harder with the purse than you do with the elbow.",
+   "traits": [
+    "Hall of Fame"
+   ]
   },
   {
    "id": "sunset-flip-elder",
@@ -1619,8 +2065,25 @@
    "keywords": [
     "trigger"
    ],
-   "abilities": [],
-   "flavor": "Older than the Ringworld. Flips like it is new."
+   "abilities": [
+    {
+     "when": "static",
+     "do": [
+      {
+       "k": "aura",
+       "n": 1000,
+       "target": "self"
+      }
+     ],
+     "if": {
+      "k": "oppTurn"
+     }
+    }
+   ],
+   "flavor": "Older than the Ringworld. Flips like it is new.",
+   "traits": [
+    "Hall of Fame"
+   ]
   },
   {
    "id": "veteran-ring-crier",
@@ -1650,7 +2113,11 @@
      }
     }
    ],
-   "flavor": "Announces every match. Remembers every one."
+   "flavor": "Announces every match. Remembers every one.",
+   "traits": [
+    "Royal Family",
+    "Hall of Fame"
+   ]
   },
   {
    "id": "legendary-comeback-kid",
@@ -1678,7 +2145,11 @@
      }
     }
    ],
-   "flavor": "Down to his last breath. Exactly where he likes it."
+   "flavor": "Down to his last breath. Exactly where he likes it.",
+   "traits": [
+    "Isekai'd",
+    "Hall of Fame"
+   ]
   },
   {
    "id": "hall-of-fame-inductee",
@@ -1691,10 +2162,14 @@
    },
    "color": "legend",
    "keywords": [
-    "trigger"
+    "trigger",
+    "ironchin"
    ],
    "abilities": [],
-   "flavor": "Retired nine times. Unretired ten."
+   "flavor": "Retired nine times. Unretired ten.",
+   "traits": [
+    "Hall of Fame"
+   ]
   },
   {
    "id": "golden-era-tag-team",
@@ -1710,7 +2185,11 @@
     "double"
    ],
    "abilities": [],
-   "flavor": "Matching jackets since the first age of the world."
+   "flavor": "Matching jackets since the first age of the world.",
+   "traits": [
+    "Royal Family",
+    "Hall of Fame"
+   ]
   },
   {
    "id": "thirty-year-champion",
@@ -1726,7 +2205,11 @@
     "trigger"
    ],
    "abilities": [],
-   "flavor": "Held the belt so long it grew roots."
+   "flavor": "Held the belt so long it grew roots.",
+   "traits": [
+    "Royal Family",
+    "Hall of Fame"
+   ]
   },
   {
    "id": "last-second-kickout",
@@ -1768,7 +2251,8 @@
       {
        "k": "buff",
        "n": 2000,
-       "target": "battleTarget"
+       "target": "battleTarget",
+       "until": "battle"
       }
      ]
     }
@@ -1821,7 +2305,10 @@
       {
        "k": "buff",
        "n": 1000,
-       "target": "ownUnit"
+       "target": "ownUnit",
+       "filter": {
+        "trait": "Luchador Guild"
+       }
       }
      ],
      "if": {
@@ -1830,7 +2317,11 @@
      }
     }
    ],
-   "flavor": "Crashed into the Ringworld from a burning sky, mask first."
+   "flavor": "Crashed into the Ringworld from a burning sky, mask first.",
+   "traits": [
+    "Luchador Guild",
+    "Isekai'd"
+   ]
   },
   {
    "id": "baron-backbreaker",
@@ -1863,7 +2354,10 @@
      }
     }
    ],
-   "flavor": "Once the demon lord's bodyguard. Now the demon lord's problem."
+   "flavor": "Once the demon lord's bodyguard. Now the demon lord's problem.",
+   "traits": [
+    "Demon Court"
+   ]
   },
   {
    "id": "princess-piledriver",
@@ -1889,7 +2383,11 @@
      "once": true
     }
    ],
-   "flavor": "Summoned to save the kingdom. Chose the main event instead."
+   "flavor": "Summoned to save the kingdom. Chose the main event instead.",
+   "traits": [
+    "Isekai'd",
+    "Royal Family"
+   ]
   },
   {
    "id": "grandmaster-suplex",
@@ -1897,7 +2395,7 @@
    "type": "headliner",
    "stats": {
     "power": 5000,
-    "life": 4
+    "life": 5
    },
    "color": "grappler",
    "color2": "showboat",
@@ -1917,7 +2415,11 @@
      }
     }
    ],
-   "flavor": "Has suplexed a mountain. The mountain tapped out."
+   "flavor": "Has suplexed a mountain. The mountain tapped out.",
+   "traits": [
+    "Elf Kingdom",
+    "Broadcast Network"
+   ]
   },
   {
    "id": "hype",
@@ -1935,18 +2437,21 @@
    "name": "High Risk, High Flight",
    "leader": "the-meteor-mask",
    "main": {
-    "rookie-rudo-hopper": 3,
-    "little-comet": 3,
-    "masked-sparrow": 3,
-    "phoenix-splash-prodigy": 3,
-    "cometfall-luchador": 3,
+    "rookie-rudo-hopper": 2,
+    "little-comet": 2,
+    "masked-sparrow": 2,
+    "phoenix-splash-prodigy": 2,
+    "cometfall-luchador": 2,
     "springboard-saint": 2,
     "sky-kingdom-sentai": 2,
+    "luchador-talent-scout": 2,
+    "tag-partner-callout": 2,
     "top-rope-dive": 2,
     "meteor-senton": 2,
     "second-wind": 2,
     "ringworld-skydome": 2,
-    "mat-monk": 3,
+    "mat-monk": 2,
+    "elf-kingdom-recruiter": 2,
     "gentle-giant-trainee": 2,
     "armbar-acolyte": 2,
     "kneebar-dryad": 2,
@@ -1969,16 +2474,18 @@
    "main": {
     "barbed-wire-ghoul": 3,
     "thumbtack-wraith": 3,
-    "light-tube-banshee": 3,
-    "ladder-necromancer": 3,
-    "bone-crusher-brute": 3,
+    "light-tube-banshee": 2,
+    "ladder-necromancer": 2,
+    "bone-crusher-brute": 2,
     "table-breaker-ogre": 2,
     "deathmatch-revenant": 2,
     "hardcore-lich-king": 2,
     "no-disqualification": 2,
     "steel-cage": 2,
     "kendo-stick-save": 2,
-    "chair-swinging-imp": 3,
+    "hype-man-imp": 2,
+    "demon-court-herald": 2,
+    "chair-swinging-imp": 2,
     "brass-knuckle-goblin": 2,
     "manager-with-a-briefcase": 2,
     "interference-twins": 2,
@@ -1999,18 +2506,21 @@
    "name": "Royal Entrance",
    "leader": "princess-piledriver",
    "main": {
-    "mic-check-manager": 3,
-    "catchphrase-knight": 3,
-    "promo-bard": 3,
-    "merch-table-merchant": 3,
-    "spotlight-sorceress": 3,
+    "royal-herald": 2,
+    "mic-check-manager": 2,
+    "catchphrase-knight": 2,
+    "promo-bard": 2,
+    "merch-table-merchant": 2,
+    "spotlight-sorceress": 2,
     "commentary-golem": 2,
     "pay-per-view-paladin": 2,
     "cut-a-promo": 2,
     "distraction-finish": 2,
     "stall-for-time": 2,
     "ringworld-big-top": 2,
-    "old-school-jobber": 3,
+    "hall-of-fame-historian": 2,
+    "title-belt-shrine": 2,
+    "old-school-jobber": 2,
     "ringside-grandma": 2,
     "sunset-flip-elder": 2,
     "veteran-ring-crier": 2,
@@ -2032,17 +2542,19 @@
    "leader": "grandmaster-suplex",
    "main": {
     "mat-monk": 3,
-    "gentle-giant-trainee": 3,
-    "armbar-acolyte": 3,
-    "kneebar-dryad": 3,
-    "forest-troll-grappler": 3,
+    "elf-kingdom-recruiter": 3,
+    "gentle-giant-trainee": 2,
+    "armbar-acolyte": 2,
+    "kneebar-dryad": 2,
+    "forest-troll-grappler": 2,
     "ankle-lock-ent": 2,
     "submission-sage": 2,
     "world-tree-powerbomber": 2,
     "chain-wrestling": 2,
     "rope-break": 2,
     "the-sacred-mat-grove": 2,
-    "mic-check-manager": 3,
+    "royal-herald": 2,
+    "mic-check-manager": 2,
     "catchphrase-knight": 2,
     "promo-bard": 2,
     "merch-table-merchant": 2,

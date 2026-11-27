@@ -341,8 +341,11 @@ function rules(bp: Blueprint, A: any) {
       r.need && sel(bp, A, [...R, 'need', 'gen'], stats, { label: 'Made by units\' stat' })),
     row(txt(bp, A, [...R, 'name'], { label: 'Resource name' }), txt(bp, A, [...R, 'icon'], { label: 'Icon' }),
       r.mode === 'ramp' && [num(bp, A, [...R, 'start'], { label: 'First turn', min: 0, max: 20 }), num(bp, A, [...R, 'perTurn'], { label: 'Growth per turn', min: 0, max: 10 }), num(bp, A, [...R, 'max'], { label: 'Maximum', min: 1, max: 99 })],
-      r.mode === 'deck' && [num(bp, A, [...R, 'deckSize'], { label: 'Resource deck size', min: 1, max: 40 }), num(bp, A, [...R, 'start'], { label: 'First turn', min: 0, max: 10 }), num(bp, A, [...R, 'perTurn'], { label: 'Per turn', min: 0, max: 10 })]),
+      r.mode === 'deck' && [num(bp, A, [...R, 'deckSize'], { label: 'Resource deck size', min: 1, max: 40 }), num(bp, A, [...R, 'start'], { label: 'First turn', min: 0, max: 10 }), num(bp, A, [...R, 'perTurn'], { label: 'Per turn', min: 0, max: 10 }),
+        num(bp, A, [...R, 'secondBonus'], { label: "Extra on the second player's first turn", min: 0, max: 5 })]),
+    r.mode === 'deck' && row(chk(bp, A, [...R, 'recycle'], 'Colored costs: recycle resources of that color (each still gives 1 generic)')),
     row(['ramp', 'cards', 'anycard', 'deck'].includes(r.mode) && num(bp, A, [...R, 'boost'], { label: 'Boost (+power per resource, 0 = off)', min: 0, max: 100000, step: 1 }),
+      r.boost > 0 && chk(bp, A, [...R, 'give'], 'Boost is "give": main phase only, counted on the card (for "N given" conditions)'),
       num(bp, A, [...R, 'summonsPerTurn'], { label: 'Summons per turn (0 = any)', min: 0, max: 10 })),
     h('div', { class: 'mk-sub' }, h('strong', {}, 'Tribute summons'), hint('Units at or above a level must send units to the discard pile to be summoned.'),
       r.tribute.map((t, i) => row(num(bp, A, [...R, 'tribute', i, 'level'], { label: 'Level at least', min: 1, max: 20 }), num(bp, A, [...R, 'tribute', i, 'n'], { label: 'Tributes', min: 1, max: 5 }),
@@ -354,6 +357,8 @@ function rules(bp: Blueprint, A: any) {
       ['cards', '🗡', 'Attack cards', 'Play attack cards from hand; the defender blocks with cards from hand.'], ['none', '☮', 'No combat', 'Win through card effects, points or races.'],
     ], (v) => A.mkSet([...Cb, 'mode'], v, 'rules')),
     c.mode === 'cards' && row(sel(bp, A, [...Cb, 'blockStat'], stats, { label: 'Blocking stat (cards discarded to defend)' })),
+    c.mode === 'lanes' && row(chk(bp, A, [...Cb, 'conquest'], 'Conquest: group moves, showdowns, fights with Tank, recall on a tie'), chk(bp, A, [...Cb, 'finalPoint'], 'The winning point needs every battlefield scored this turn'),
+      bp.types.some((t) => t.role === 'battlefield') && num(bp, A, [...S, 'sites'], { label: 'Battlefield cards per deck', min: 0, max: 5 })),
     c.mode === 'block' && row(num(bp, A, [...Cb, 'maxBlockers'], { label: 'Blockers per attacker', min: 1, max: 5 })),
     ['block', 'target'].includes(c.mode) && row(sel(bp, A, [...Cb, 'quest'], [['', 'No questing'], ...stats], { label: 'Questing: exhaust to score this stat', map: (v) => v || null })),
     c.mode !== 'none' && [
@@ -361,11 +366,13 @@ function rules(bp: Blueprint, A: any) {
         c.mode === 'target' && sel(bp, A, [...Cb, 'defense'], [['', 'None'], ...stats], { label: 'Defense stat', map: (v) => v || null }),
         c.health && sel(bp, A, [...Cb, 'damage'], [['heal', 'Damage heals each turn'], ['persist', 'Damage stays']], { label: 'Damage' })),
       row(chk(bp, A, [...Cb, 'sickness'], 'New units wait a turn to attack'), chk(bp, A, [...Cb, 'firstTurnAttack'], 'First player may attack on turn 1'),
+        !c.firstTurnAttack && chk(bp, A, [...Cb, 'firstTurnEach'], 'Nobody attacks on their own first turn'),
         c.mode === 'duel' && chk(bp, A, [...Cb, 'attackEndsTurn'], 'Attacking ends your turn'), c.mode === 'duel' && num(bp, A, [...Cb, 'weakness'], { label: 'Weakness multiplier', min: 1, max: 4 })),
       c.mode === 'target' && [
         row(sel(bp, A, [...Cb, 'targetUnits'], [['any', 'Any enemy unit'], ['exhausted', 'Only exhausted (rested) units'], ['none', 'Never units']], { label: 'Units you may attack' }),
           sel(bp, A, [...Cb, 'direct'], [['always', 'May attack the player directly'], ['ifEmpty', 'Directly only when they have no units'], ['never', 'Never attack the player']], { label: 'Direct attacks' }), chk(bp, A, [...Cb, 'positions'], 'Attack / defense positions & face-down units'),
           chk(bp, A, [...Cb, 'counterStep'], 'Counter step (defender plays counter cards)')),
+        row(chk(bp, A, [...Cb, 'counterOnly'], 'Quick spells only while defending'), chk(bp, A, [...Cb, 'replaceFull'], 'Full board: playing a unit trashes one of yours'), num(bp, A, [...Cb, 'fieldSize'], { label: 'Units in play (max)', min: 1, max: 30 })),
         !c.health && row(sel(bp, A, [...Cb, 'compare', 'ties'], [['defender', 'Equal power: attacker wins'], ['both', 'Equal power: both destroyed'], ['none', 'Equal power: nothing happens']], { label: 'Ties' }),
           chk(bp, A, [...Cb, 'compare', 'loser'], 'A weaker attacker is destroyed'), chk(bp, A, [...Cb, 'compare', 'overflow'], 'The difference hits the player')),
         (bp.setup.leader || bp.types.some((t) => t.role === 'leader')) && row(chk(bp, A, [...Cb, 'leaderAttacks'], 'The leader can attack'), chk(bp, A, [...Cb, 'leaderDefends'], 'Attacks on the leader compare power'))]],
@@ -380,7 +387,9 @@ function rules(bp: Blueprint, A: any) {
     panel('Setup',
       row(num(bp, A, [...S, 'hand'], { label: 'Opening hand', min: 0, max: 15 }), num(bp, A, [...S, 'handLimit'], { label: 'Hand limit', min: 1, max: 99 }), num(bp, A, [...S, 'deckMin'], { label: 'Deck min', min: 5, max: 100 }),
         num(bp, A, [...S, 'deckMax'], { label: 'Deck max', min: 5, max: 120 }), num(bp, A, [...S, 'maxCopies'], { label: 'Copies per card', min: 1, max: 20 }), num(bp, A, [...S, 'turnLimit'], { label: 'Turn limit', min: 10, max: 400 })),
-      row(chk(bp, A, [...S, 'mulligan'], 'Free mulligan'), chk(bp, A, [...S, 'skipFirstDraw'], 'First player skips the first draw'), chk(bp, A, [...S, 'leader'], 'Each deck has a leader card'),
+      row(chk(bp, A, [...S, 'mulligan'], 'Free mulligan'), bp.setup.mulligan && num(bp, A, [...S, 'mulliganN'], { label: 'Mulligan: set aside up to N (0 = whole hand)', min: 0, max: 10 }),
+        chk(bp, A, [...S, 'champion'], 'Each deck names a champion (playable from its own zone)'), bp.setup.leader && chk(bp, A, [...S, 'leaderColors'], "Cards must match the leader's two colors")),
+      row(chk(bp, A, [...S, 'skipFirstDraw'], 'First player skips the first draw'), chk(bp, A, [...S, 'leader'], 'Each deck has a leader card'),
         bp.types.some((t) => t.role === 'extra') && num(bp, A, [...S, 'extraMax'], { label: 'Extra deck size', min: 0, max: 30 }))),
   ];
 }
@@ -424,7 +433,8 @@ function shelf(bp: Blueprint, A: any) {
 
 // ---------------------------------------------------------------- 8. cards and the ability builder
 const WHEN: [When, string][] = [['play', 'When played'], ['leave', 'When destroyed'], ['attack', 'When it attacks'], ['hit', 'When it hits the opponent'], ['quest', 'When it quests'], ['startTurn', 'At the start of your turn'],
-  ['endTurn', 'At the end of your turn'], ['activated', 'Activated (exhaust and/or pay)'], ['static', 'Always on (aura)'], ['opAttack', 'Trap: when an enemy attacks']];
+  ['endTurn', 'At the end of your turn'], ['activated', 'Activated (exhaust and/or pay)'], ['static', 'Always on (aura)'], ['opAttack', 'When the opponent attacks (traps: spring)'], ['block', 'When it blocks'],
+  ['conquer', 'When it conquers (battlefields: when you conquer here)'], ['hold', 'When you hold its battlefield (battlefields: here)']];
 const EFF: [EffectKind, string, string[]][] = [
   ['draw', 'Draw cards', ['n', 'who']], ['damage', 'Deal damage', ['n', 'target']], ['heal', 'Heal', ['n', 'target']], ['buff', 'Boost a stat', ['n', 'stat', 'target', 'until']],
   ['destroy', 'Destroy', ['target']], ['bounce', 'Return to hand', ['target']], ['exhaust', 'Exhaust (tap)', ['target']], ['ready', 'Ready (untap)', ['target']],
@@ -433,11 +443,14 @@ const EFF: [EffectKind, string, string[]][] = [
   ['score', 'Score points', ['n']], ['addLife', 'Add life cards', ['n']], ['aura', 'Aura stat boost', ['n', 'stat', 'scope']], ['addCounter', 'Add counters', ['n', 'counter', 'target']],
   ['removeCounter', 'Remove counters', ['n', 'counter', 'target']], ['strike', 'Attack with power N', ['n']], ['deploy', 'Deploy this leader as a unit', []],
   ['restrict', "Can't… (restriction)", ['rule', 'target', 'until']], ['prevent', 'Prevent damage (instead)', ['n', 'scope']], ['costMod', 'Make cards cost less', ['n', 'type']],
-  ['insteadDestroy', 'If destroyed, instead…', ['to']], ['moveTo', 'Move / banish', ['zone', 'target']], ['win', 'Win the game', []], ['raw', 'Custom script (JSON)', ['raw']],
+  ['insteadDestroy', 'If destroyed, instead…', ['to']], ['moveTo', 'Move / banish', ['zone', 'target']], ['win', 'Win the game', []],
+  ['scry', 'Look at the top card (may bottom it)', ['n']], ['dig', 'Look at the top N, reveal 1 matching', ['n', 'type', 'dfilter']], ['putIntoPlay', 'Play a unit for free', ['type', 'from', 'dfilter']],
+  ['addRes', 'Add resources from the resource deck', ['n']], ['readyRes', 'Set spent resources active', ['n']], ['giveRes', 'Give spent resources (+power)', ['n', 'target']],
+  ['lifeToHand', 'Top life card to hand', ['n']], ['handToLife', 'A card from hand to the top of life', []], ['raw', 'Custom script (JSON)', ['raw']],
 ];
 const TGT: [TargetKind, string][] = [['enemyUnit', 'an enemy unit (choose)'], ['anyUnit', 'any unit (choose)'], ['ownUnit', 'one of your units'], ['otherOwnUnit', 'another of your units'], ['enemyAny', 'enemy unit or opponent'],
   ['opponent', 'the opponent'], ['you', 'you'], ['self', 'this card'], ['randomEnemyUnit', 'a random enemy unit'], ['allEnemyUnits', 'all enemy units'], ['allUnits', 'all units'], ['allOwnUnits', 'all your units'],
-  ['eachPlayer', 'each player'], ['attacker', 'the attacker (in a battle)'], ['battleTarget', 'the attacked unit (in a battle)']];
+  ['eachPlayer', 'each player'], ['attacker', 'the attacker (in a battle)'], ['battleTarget', 'the attacked card (in a battle)'], ['ownLeader', 'your leader'], ['ownAny', 'your leader or one of your units']];
 const SCOPE: [TargetKind, string][] = [['allOwnUnits', 'your units'], ['otherOwnUnit', 'your other units'], ['allEnemyUnits', 'enemy units'], ['allUnits', 'all units'], ['self', 'this card']];
 const zoneOpts = (bp: Blueprint): [string, string][] => [['banished', 'Banished pile'], ['grave', 'Discard pile'], ['hand', 'Hand'], ['deck', 'Deck (bottom)'], ...(bp.zones ?? []).map((z) => [z.id, z.name] as [string, string])];
 const RESTRICT: [string, string][] = [['noAttack', "can't attack"], ['noBlock', "can't block"], ['noBeAttacked', "can't be attacked"], ['unblockable', "can't be blocked"], ['entersExhausted', 'enters exhausted']];
@@ -457,11 +470,12 @@ function effectRow(bp: Blueprint, A: any, ep: Path, e: Effect, onDel: () => void
     P.has('zone') && sel(bp, A, [...ep, 'zone'], zoneOpts(bp), { label: 'To' }),
     P.has('to') && sel(bp, A, [...ep, 'to'], [['hand', 'return it to hand'], ['deck', 'put it on the bottom of the deck']], { label: 'Instead' }),
     P.has('scope') && sel(bp, A, [...ep, 'target'], SCOPE, { label: 'Affects' }),
-    P.has('until') && !isStatic && sel(bp, A, [...ep, 'until'], [['turn', 'until end of turn'], ['forever', 'until it leaves play']], { label: 'Lasts' }),
+    P.has('until') && !isStatic && sel(bp, A, [...ep, 'until'], [['turn', 'until end of turn'], ['battle', 'during this battle'], ['forever', 'until it leaves play']], { label: 'Lasts' }),
+    P.has('from') && sel(bp, A, [...ep, 'zone'], [['hand', 'from your hand'], ['grave', 'from your discard pile']], { label: 'From' }),
     P.has('who') && sel(bp, A, [...ep, 'who'], [['me', 'you'], ['opp', 'the opponent'], ['each', 'each player']], { label: 'Who' }),
     P.has('card') && sel(bp, A, [...ep, 'card'], tokens.length ? tokens.map((t) => [t.id, t.name]) : [['', '(make a Token card first)']], { label: 'Token' }),
     P.has('type') && sel(bp, A, [...ep, 'type'], [['', 'any card'], ...bp.types.map((t) => [t.id, t.name] as [string, string])], { label: 'Type', map: (v) => v || undefined }),
-    (P.has('target') || P.has('scope')) && h('details', { class: 'mk-filter', open: !!e.filter }, h('summary', {}, e.filter ? 'where…' : '+ where…'),
+    (P.has('target') || P.has('scope') || P.has('dfilter')) && h('details', { class: 'mk-filter', open: !!e.filter }, h('summary', {}, e.filter ? 'where…' : '+ where…'),
       sel(bp, A, [...ep, 'filter', 'type'], [['', 'any type'], ...bp.types.map((t) => [t.id, t.name] as [string, string])], { label: 'Type', map: (v) => v || undefined }),
       bp.colors.length > 0 && sel(bp, A, [...ep, 'filter', 'color'], [['', 'any color'], ...bp.colors.map((k) => [k.id, k.name] as [string, string])], { label: 'Color', map: (v) => v || undefined }),
       sel(bp, A, [...ep, 'filter', 'keyword'], [['', 'any keyword'], ...bp.keywords.map((k) => [k.id, k.name] as [string, string])], { label: 'Keyword', map: (v) => v || undefined }),
@@ -470,7 +484,7 @@ function effectRow(bp: Blueprint, A: any, ep: Path, e: Effect, onDel: () => void
       e.filter?.stat && num(bp, A, [...ep, 'filter', 'val'], { label: 'Value', min: -100000, max: 100000 }),
       chk(bp, A, [...ep, 'filter', 'exhausted'], 'Only exhausted'),
       sel(bp, A, [...ep, 'filter', 'zone'], [['', 'in play'], ...zoneOpts(bp).filter(([z]) => z !== 'deck')], { label: 'Where', map: (v) => v || undefined }),
-      txt(bp, A, [...ep, 'filter', 'name'], { label: 'Named', ph: 'name or family' })),
+      txt(bp, A, [...ep, 'filter', 'name'], { label: 'Named', ph: 'name or family' }), txt(bp, A, [...ep, 'filter', 'trait'], { label: 'Trait', ph: 'e.g. Sky Pirates' })),
     P.has('raw') && h('textarea', { class: 'code', rows: 2, 'aria-label': 'Custom effects JSON', onchange: (ev: Event) => A.mkRaw(ep.join('.'), [...ep, 'raw'], (ev.target as HTMLTextAreaElement).value) }, JSON.stringify(e.raw ?? [['draw', '$me', 1]])),
     h('span', { class: 'mk-eff-text muted' }, effectText(e, bp)),
     h('button', { class: 'x', onclick: onDel, 'aria-label': 'Remove effect' }, '✕'));
@@ -479,18 +493,19 @@ function abilityBox(bp: Blueprint, A: any, cp: Path, a: Ability, ai: number, rol
   const ap: Path = [...cp, 'abilities', ai];
   return h('div', { class: 'mk-ability' },
     h('div', { class: 'mk-ab-head' },
-      sel(bp, A, [...ap, 'when'], WHEN.filter(([w]) => (w === 'opAttack' ? role === 'trap' : true)), { label: 'When', q: 'cards' }),
+      sel(bp, A, [...ap, 'when'], WHEN.filter(([w]) => (['conquer', 'hold'].includes(w) ? bp.combat.mode === 'lanes' : true)), { label: 'When', q: 'cards' }),
       a.when === 'activated' && [chk(bp, A, [...ap, 'tap'], 'Exhaust this'), num(bp, A, [...ap, 'cost'], { label: 'Pay', min: 0, max: 20 }), num(bp, A, [...ap, 'discard'], { label: 'Discard', min: 0, max: 5 }),
         chk(bp, A, [...ap, 'sacrifice'], 'Sacrifice a unit'), num(bp, A, [...ap, 'banish'], { label: 'Banish from discard', min: 0, max: 10 }),
-        ['cards', 'anycard', 'deck'].includes(bp.resource.mode) && num(bp, A, [...ap, 'returnRes'], { label: `Return ${bp.resource.name}`, min: 0, max: 10 }), bp.win.life > 0 && num(bp, A, [...ap, 'life'], { label: 'Pay life', min: 0, max: 100000 }),
+        ['cards', 'anycard', 'deck'].includes(bp.resource.mode) && num(bp, A, [...ap, 'returnRes'], { label: `Return ${bp.resource.name}`, min: 0, max: 10 }), (bp.win.life > 0 || bp.win.lifeCards > 0 || bp.setup.leader) && num(bp, A, [...ap, 'life'], { label: bp.win.life > 0 ? 'Pay life' : 'Life cards to hand', min: 0, max: 100000 }),
         (bp.counters ?? []).length > 0 && h('label', { class: 'fld' }, h('span', {}, 'Remove counters'), h('select', { 'aria-label': 'Counter cost', onchange: (ev: Event) => { const v = (ev.target as HTMLSelectElement).value; A.mkSet([...ap, 'uncount'], v ? { id: v, n: a.uncount?.n ?? 1 } : undefined); } },
           [['', 'none'], ...bp.counters!.map((k) => [k.id, k.name])].map(([v, l]) => h('option', { value: v, selected: (a.uncount?.id ?? '') === v }, l)))),
         a.uncount && num(bp, A, [...ap, 'uncount', 'n'], { label: 'How many', min: 1, max: 20 })],
       h('label', { class: 'fld' }, h('span', {}, 'If'), h('select', { 'aria-label': 'Condition', onchange: (e: Event) => { const v = (e.target as HTMLSelectElement).value; A.mkSet([...ap, 'if'], v ? { k: v, n: a.if?.n ?? 1 } : undefined); } },
-        [['', 'always'], ['units', 'if you control N+ units'], ['life', 'if your life is N or less'], ['hand', 'if your hand has N or fewer'], ['yourTurn', 'during your turn'], ['res', 'if you have N+ resources'], ['counter', 'if this has N+ counters'], ['zone', 'if you have N+ cards in a zone']].map(([v, l]) => h('option', { value: v, selected: (a.if?.k ?? '') === v }, l)))),
+        [['', 'always'], ['units', 'if you control N+ units'], ['life', 'if your life is N or less'], ['hand', 'if your hand has N or fewer'], ['yourTurn', 'during your turn'], ['res', 'if you have N+ resources'], ['counter', 'if this has N+ counters'], ['zone', 'if you have N+ cards in a zone'],
+          ['played', 'if you played N other cards this turn'], ['attached', 'if this was given N+ resources'], ['oppTurn', "during the opponent's turn"], ['oppLife', 'if the opponent has N or less life']].map(([v, l]) => h('option', { value: v, selected: (a.if?.k ?? '') === v }, l)))),
       a.if?.k === 'zone' && sel(bp, A, [...ap, 'if', 'zone'], zoneOpts(bp).filter(([z]) => z !== 'deck' && z !== 'hand'), { label: 'Zone' }),
       a.if?.k === 'counter' && sel(bp, A, [...ap, 'if', 'counter'], (bp.counters ?? []).map((k) => [k.id, k.name] as [string, string]), { label: 'Counter' }),
-      a.if && a.if.k !== 'yourTurn' && num(bp, A, [...ap, 'if', 'n'], { label: 'N', min: 0, max: 100000 }),
+      a.if && a.if.k !== 'yourTurn' && a.if.k !== 'oppTurn' && num(bp, A, [...ap, 'if', 'n'], { label: 'N', min: 0, max: 100000 }),
       h('label', { class: 'fld' }, h('span', {}, 'Limit'), h('select', { 'aria-label': 'Limit', onchange: (e: Event) => { const v = (e.target as HTMLSelectElement).value; A.mkSet([...ap, 'once'], v === 'turn' ? true : v === 'game' ? 'game' : undefined); } },
         [['', 'every time'], ['turn', 'once per turn'], ['game', 'once per game']].map(([v, l]) => h('option', { value: v, selected: (a.once === true ? 'turn' : a.once || '') === v }, l)))),
       h('button', { class: 'x', onclick: () => A.mkEdit((b: Blueprint) => { get(b, cp).abilities.splice(ai, 1); }), 'aria-label': 'Remove ability' }, '🗑')),
@@ -528,7 +543,10 @@ function cardEditor(bp: Blueprint, A: any, mk: MakerUI, ci: number, c: CardBP, m
         txt(bp, A, [...cp, 'name'], { label: 'Name', q: 'cards', onval: (v) => A.mkRenameCard(c.id, v) }),
         row(sel(bp, A, [...cp, 'type'], bp.types.map((x) => [x.id, x.name]), { label: 'Type' }),
           bp.colors.length > 0 && sel(bp, A, [...cp, 'color'], [['', 'colorless'], ...bp.colors.map((k) => [k.id, k.name] as [string, string])], { label: 'Color', map: (v) => v || undefined }),
+          role === 'leader' && bp.colors.length > 0 && sel(bp, A, [...cp, 'color2'], [['', 'no second color'], ...bp.colors.map((k) => [k.id, k.name] as [string, string])], { label: 'Second color', map: (v) => v || undefined }),
           txt(bp, A, [...cp, 'art'], { label: 'Art glyph', ph: t?.icon || '◆' })),
+        h('label', { class: 'fld' }, h('span', {}, 'Traits (comma-separated affiliations)'), h('input', { type: 'text', value: (c.traits ?? []).join(', '), placeholder: 'e.g. Sky Pirates, Royal Navy', 'aria-label': 'Traits',
+          onchange: (e: Event) => { const v = (e.target as HTMLInputElement).value.split(',').map((s) => s.trim()).filter(Boolean); A.mkSet([...cp, 'traits'], v.length ? v : undefined, 'cards'); } })),
         !['resource', 'leader', 'token'].includes(role) && bp.resource.mode !== 'none' && bp.resource.mode !== 'attach' && h('div', { class: 'mk-cost' }, h('span', { class: 'muted' }, `Cost (${costLabel(c.cost, bp)})`),
           typed ? [h('label', { class: 'fld' }, h('span', {}, 'Any'), h('input', { type: 'number', min: 0, max: 20, value: costMap.any ?? 0, onchange: (e: Event) => setCost('any', Number((e.target as HTMLInputElement).value)) })),
             bp.colors.map((k) => h('label', { class: 'fld' }, h('span', {}, k.name), h('input', { type: 'number', min: 0, max: 20, value: costMap[k.id] ?? 0, onchange: (e: Event) => setCost(k.id, Number((e.target as HTMLInputElement).value)) })))]

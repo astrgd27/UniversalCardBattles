@@ -6,19 +6,20 @@
 export type Role = 'unit' | 'spell' | 'fast' | 'permanent' | 'attachment' | 'resource' | 'trap' | 'leader' | 'evolution' | 'extra' | 'token' | 'attack' | 'battlefield';
 export type Pos = 'tl' | 'tr' | 'bl' | 'br' | 'line';
 export type PhaseKind = 'ready' | 'draw' | 'resource' | 'main' | 'combat' | 'end' | 'custom';
-export type When = 'play' | 'leave' | 'attack' | 'hit' | 'quest' | 'startTurn' | 'endTurn' | 'activated' | 'static' | 'opAttack' | 'conquer' | 'hold';
+export type When = 'play' | 'leave' | 'attack' | 'hit' | 'quest' | 'startTurn' | 'endTurn' | 'activated' | 'static' | 'opAttack' | 'conquer' | 'hold' | 'block';
 export type TargetKind =
   | 'self' | 'enemyUnit' | 'anyUnit' | 'ownUnit' | 'otherOwnUnit' | 'enemyAny' | 'opponent' | 'you' | 'eachPlayer'
-  | 'allEnemyUnits' | 'allUnits' | 'allOwnUnits' | 'randomEnemyUnit' | 'attacker' | 'battleTarget';
+  | 'allEnemyUnits' | 'allUnits' | 'allOwnUnits' | 'randomEnemyUnit' | 'attacker' | 'battleTarget' | 'ownLeader' | 'ownAny';
 export type EffectKind =
   | 'draw' | 'damage' | 'heal' | 'buff' | 'destroy' | 'bounce' | 'exhaust' | 'ready' | 'token' | 'gain' | 'discard' | 'mill'
   | 'search' | 'recover' | 'counter' | 'lifeGain' | 'lifeLoss' | 'score' | 'addLife' | 'aura' | 'win' | 'raw'
   | 'addCounter' | 'removeCounter' | 'strike' | 'deploy'
-  | 'restrict' | 'prevent' | 'costMod' | 'insteadDestroy' | 'moveTo' | 'scry';
+  | 'restrict' | 'prevent' | 'costMod' | 'insteadDestroy' | 'moveTo' | 'scry'
+  | 'dig' | 'putIntoPlay' | 'addRes' | 'readyRes' | 'giveRes' | 'lifeToHand' | 'handToLife';
 export type KeywordRule = 'none' | 'haste' | 'guard' | 'blocker' | 'flying' | 'vigilance' | 'lifesteal' | 'deadly' | 'shield' | 'double' | 'overflow' | 'ward'
   | 'firstStrike' | 'resist' | 'challenger' | 'saboteur' | 'goAgain' | 'trigger' | 'song'
   | 'noAttack' | 'noBlock' | 'noBeAttacked' | 'unblockable' | 'entersExhausted'
-  | 'tank' | 'bulwark' | 'accelerate' | 'ganking' | 'temporary' | 'banish';
+  | 'tank' | 'bulwark' | 'accelerate' | 'ganking' | 'temporary' | 'banish' | 'rushUnits' | 'noKO';
 
 export interface StatDef { id: string; name: string; icon?: string }
 export interface Color { id: string; name: string; hex: string; icon?: string }
@@ -66,6 +67,8 @@ export interface Combat {
   maxBlockers?: number; // block mode: how many units may block one attacker
   blockStat?: string | null; // cards mode: the stat that blocks when a card is discarded from hand to defend
   conquest?: boolean; // lanes: units enter exhausted and move in groups; moving into an enemy battlefield opens a showdown (response window), then a fight (Tank first, lethal damage, survivors heal, attackers recalled on a tie)
+  counterOnly?: boolean; // quick spells can be played only while defending (in the response step)
+  replaceFull?: boolean; // with a full board, playing a unit first trashes one of yours
   firstTurnEach?: boolean; // with firstTurnAttack off: neither player attacks on their own first turn (not just turn 1)
   finalPoint?: boolean; // lanes: a conquest can't win the game unless you scored every battlefield this turn (draw a card instead)
 }
@@ -77,9 +80,9 @@ export interface Setup { hand: number; mulligan: boolean; handLimit: number; dec
   sites?: number; // lanes: battlefield cards per deck; one is chosen at random for each player's battlefield
 }
 
-export interface Cond { k: 'units' | 'life' | 'hand' | 'yourTurn' | 'res' | 'counter' | 'zone' | 'played' | 'attached' | 'raw'; n?: number; counter?: string; zone?: string; raw?: unknown }
-export interface Filter { type?: string; color?: string; keyword?: string; stat?: string; op?: 'le' | 'ge'; val?: number; exhausted?: boolean; zone?: string; name?: string }
-export interface Effect { k: EffectKind; n?: number; kw?: string; target?: TargetKind; filter?: Filter; stat?: string; until?: 'turn' | 'forever'; who?: 'me' | 'opp' | 'each'; card?: string; type?: string; rule?: KeywordRule; to?: 'hand' | 'deck'; zone?: string; raw?: unknown[] }
+export interface Cond { k: 'units' | 'life' | 'hand' | 'yourTurn' | 'res' | 'counter' | 'zone' | 'played' | 'attached' | 'oppTurn' | 'oppLife' | 'raw'; n?: number; counter?: string; zone?: string; raw?: unknown }
+export interface Filter { type?: string; color?: string; keyword?: string; stat?: string; op?: 'le' | 'ge'; val?: number; exhausted?: boolean; zone?: string; name?: string; trait?: string }
+export interface Effect { k: EffectKind; n?: number; kw?: string; target?: TargetKind; filter?: Filter; stat?: string; until?: 'turn' | 'forever' | 'battle'; who?: 'me' | 'opp' | 'each'; card?: string; type?: string; rule?: KeywordRule; to?: 'hand' | 'deck'; zone?: string; raw?: unknown[] }
 export interface Ability {
   when: When; if?: Cond; do: Effect[]; once?: boolean | 'game'; label?: string;
   cost?: number; tap?: boolean; discard?: number; sacrifice?: boolean; life?: number; uncount?: { id: string; n: number }; banish?: number; returnRes?: number; // activation costs
@@ -90,6 +93,7 @@ export interface CardBP {
   cost?: number | Record<string, number>;
   stats: Record<string, number>;
   color?: string; color2?: string; keywords: string[]; abilities: Ability[];
+  traits?: string[]; // affiliations other cards can name ("look for a {Luchador Guild} card")
   kwv?: Record<string, number>; // numbers for valued keywords (Resist 2)
   family?: string; // a shared base name (evolution/shift onto any card of this family)
   text?: string; flavor?: string; art?: string;
@@ -170,6 +174,8 @@ export const KEYWORD_RULES: Record<KeywordRule, { label: string; text: string; v
   ganking: { label: 'Moves between battlefields', text: 'Can move from one battlefield straight to another.' },
   temporary: { label: 'Leaves at your next turn', text: 'At the start of your next turn, destroy it.' },
   banish: { label: 'Its hits trash life cards', text: 'Life cards it takes go to the discard pile instead of the hand (no triggers).' },
+  rushUnits: { label: 'Attacks units the turn it is played', text: 'Can attack enemy units (not the leader or player) the turn it is played.' },
+  noKO: { label: "Can't be destroyed in battle", text: "Can't be destroyed in battle." },
 };
 
 export const ROLES: Record<Role, { label: string; hint: string }> = {
