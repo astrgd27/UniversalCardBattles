@@ -115,6 +115,14 @@ try {
   await page.click('text=← Projects');
   await page.click('text=← Library');
 
+  // ---- Storyweavers: in the library, and its remix builds in the Workshop (places, shift, rhymes)
+  ok(await page.isVisible('[data-module=storyweavers]'), 'Storyweavers in the library');
+  await page.click('[data-module=storyweavers]');
+  await page.click('[data-menu=remix]');
+  ok(await page.isVisible('.mk-bugs.good'), `Storyweavers remix builds (${await page.textContent('.mk-bugs').catch(() => '')})`);
+  await page.click('text=← Projects');
+  await page.click('text=← Library');
+
   // ---- Taste Dimension: in the library, and its remix builds in the Workshop
   ok(await page.isVisible('[data-module=taste-dimension]'), 'Taste Dimension in the library');
   await page.click('[data-module=taste-dimension]');

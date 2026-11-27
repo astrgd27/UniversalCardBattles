@@ -192,6 +192,8 @@ h1, h2, h3 { margin: 0; letter-spacing: .02em; }
 .unit-stack .atts { display: flex; margin-top: calc(var(--card-sm) * -.18); z-index: 1; }
 .unit-stack .atts .card { --w: calc(var(--card-sm) * .4); }
 .unit-stack .atts > * + * { margin-left: calc(var(--card-sm) * -.22); }
+.unit-tags { display: flex; gap: 3px; margin-top: 2px; max-width: calc(var(--card-sm) * 1.1); flex-wrap: wrap; justify-content: center; }
+.unit-tags .chip { font-size: 10px; padding: 1px 6px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (hover: hover) { .unit-stack .atts .card:hover { z-index: 2; transform: translateY(-4px) scale(1.6); } }
 .zone.compact .card { --w: calc(var(--card-sm) * .6); }
 .zone.compact .row > * + * { margin-left: calc(var(--card-sm) * -.36); }

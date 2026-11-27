@@ -50,7 +50,7 @@ test('wizard: options only appear when they fit earlier answers', () => {
 
 test('wizard: random answer sets all build and play AI games without rule errors', () => {
   let finished = 0;
-  const N = 40;
+  const N = 60;
   for (let seed = 1; seed <= N; seed++) {
     const a = randomAnswers(seed);
     const desc = Object.entries(a.picks).map(([k, v]) => `${k}=${v.join('+')}`).join(' ');

@@ -1,0 +1,2105 @@
+{
+ "v": 1,
+ "id": "storyweavers",
+ "name": "Storyweavers",
+ "blueprint": "blank",
+ "author": "Universal Card Battles",
+ "tagline": "Fables, legends and nursery rhymes come to life. Quest for 20 lore before your rival's story ends.",
+ "look": {
+  "accent": "#b45309",
+  "accent2": "#7c3aed",
+  "glyph": "📖"
+ },
+ "colors": [
+  {
+   "id": "hearth",
+   "name": "Hearth",
+   "hex": "#d97706",
+   "icon": "🕯"
+  },
+  {
+   "id": "moonlit",
+   "name": "Moonlit",
+   "hex": "#7c3aed",
+   "icon": "🌙"
+  },
+  {
+   "id": "thicket",
+   "name": "Thicket",
+   "hex": "#15803d",
+   "icon": "🌿"
+  },
+  {
+   "id": "ember",
+   "name": "Ember",
+   "hex": "#dc2626",
+   "icon": "🔥"
+  },
+  {
+   "id": "tide",
+   "name": "Tide",
+   "hex": "#2563eb",
+   "icon": "🌊"
+  },
+  {
+   "id": "iron",
+   "name": "Iron",
+   "hex": "#64748b",
+   "icon": "🛡"
+  }
+ ],
+ "stats": [
+  {
+   "id": "strength",
+   "name": "Strength",
+   "icon": "⚔"
+  },
+  {
+   "id": "willpower",
+   "name": "Willpower",
+   "icon": "⛉"
+  },
+  {
+   "id": "lore",
+   "name": "Lore",
+   "icon": "◆"
+  },
+  {
+   "id": "move",
+   "name": "Move cost",
+   "icon": "🥾"
+  }
+ ],
+ "types": [
+  {
+   "id": "character",
+   "name": "Character",
+   "role": "unit",
+   "frame": {
+    "base": "skirmisher",
+    "cost": "tl",
+    "stats": [
+     {
+      "stat": "strength",
+      "pos": "bl",
+      "icon": "⚔"
+     },
+     {
+      "stat": "willpower",
+      "pos": "br",
+      "icon": "⛉"
+     },
+     {
+      "stat": "lore",
+      "pos": "tr",
+      "icon": "◆"
+     }
+    ],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🧝"
+  },
+  {
+   "id": "action",
+   "name": "Action",
+   "role": "spell",
+   "frame": {
+    "base": "spell",
+    "cost": "tl",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "✦"
+  },
+  {
+   "id": "rhyme",
+   "name": "Rhyme",
+   "role": "spell",
+   "frame": {
+    "base": "spell",
+    "cost": "tl",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🎵"
+  },
+  {
+   "id": "item",
+   "name": "Item",
+   "role": "permanent",
+   "frame": {
+    "base": "spell",
+    "cost": "tl",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🗝"
+  },
+  {
+   "id": "place",
+   "name": "Place",
+   "role": "location",
+   "frame": {
+    "base": "spell",
+    "cost": "tl",
+    "stats": [
+     {
+      "stat": "move",
+      "pos": "bl",
+      "icon": "🥾"
+     },
+     {
+      "stat": "willpower",
+      "pos": "br",
+      "icon": "⛉"
+     },
+     {
+      "stat": "lore",
+      "pos": "tr",
+      "icon": "◆"
+     }
+    ],
+    "art": 52,
+    "text": true,
+    "layout": "landscape"
+   },
+   "icon": "🏰"
+  }
+ ],
+ "keywords": [
+  {
+   "id": "inkable",
+   "name": "Wishful",
+   "rule": "none",
+   "text": "Wishful: can be dropped face down into your Wishing Well."
+  },
+  {
+   "id": "song",
+   "name": "Rhyme",
+   "rule": "song",
+   "text": "Rhyme: instead of paying, a character of yours with cost at least this card's can recite it (exhaust them)."
+  },
+  {
+   "id": "round",
+   "name": "Round",
+   "rule": "singTogether",
+   "valued": true,
+   "text": "Round N: instead of paying, exhaust any of your characters whose costs add up to N or more."
+  },
+  {
+   "id": "songbird",
+   "name": "Songbird",
+   "rule": "singer",
+   "valued": true,
+   "text": "Songbird N: recites rhymes as if it cost N."
+  },
+  {
+   "id": "steadfast",
+   "name": "Steadfast",
+   "rule": "bodyguard",
+   "text": "Steadfast: may enter play exhausted. An opposing character who challenges one of yours must challenge one with Steadfast if able."
+  },
+  {
+   "id": "brave",
+   "name": "Brave",
+   "rule": "challenger",
+   "valued": true,
+   "text": "Brave +N: gets +N strength while challenging."
+  },
+  {
+   "id": "elusive",
+   "name": "Elusive",
+   "rule": "flying",
+   "text": "Elusive: only characters with Elusive or Watchful can challenge it."
+  },
+  {
+   "id": "watchful",
+   "name": "Watchful",
+   "rule": "reach",
+   "text": "Watchful: can challenge characters with Elusive."
+  },
+  {
+   "id": "headstrong",
+   "name": "Headstrong",
+   "rule": "reckless",
+   "text": "Headstrong: can't quest. You can't end your turn while it is able to challenge."
+  },
+  {
+   "id": "wanderlust",
+   "name": "Wanderlust",
+   "rule": "adventurous",
+   "text": "Wanderlust: can't challenge. You can't end your turn while it is able to quest."
+  },
+  {
+   "id": "sturdy",
+   "name": "Sturdy",
+   "rule": "resist",
+   "valued": true,
+   "text": "Sturdy +N: damage dealt to it is reduced by N."
+  },
+  {
+   "id": "swift",
+   "name": "Swift",
+   "rule": "rushUnits",
+   "text": "Swift: can challenge the turn it is played."
+  },
+  {
+   "id": "help",
+   "name": "Helping Hand",
+   "rule": "support",
+   "text": "Helping Hand: when this quests, you may give another of your characters +strength equal to this one's this turn."
+  },
+  {
+   "id": "charmed",
+   "name": "Charmed",
+   "rule": "ward",
+   "text": "Charmed: opponents can't choose it except to challenge it."
+  },
+  {
+   "id": "fleeting",
+   "name": "Fleeting",
+   "rule": "vanish",
+   "text": "Fleeting: when an opponent chooses this for an action or rhyme, banish it."
+  },
+  {
+   "id": "bookmark",
+   "name": "Bookmark",
+   "rule": "boost",
+   "valued": true,
+   "text": "Bookmark N: once a turn, pay N to put the top card of your deck face down under this."
+  },
+  {
+   "id": "latebloomer",
+   "name": "Late Bloomer",
+   "rule": "underdog",
+   "text": "Late Bloomer: on your first turn, if you went second, this costs 1 less."
+  }
+ ],
+ "turn": [
+  {
+   "id": "ready",
+   "name": "Ready",
+   "kind": "ready"
+  },
+  {
+   "id": "draw",
+   "name": "Draw",
+   "kind": "draw",
+   "n": 1
+  },
+  {
+   "id": "main",
+   "name": "Main",
+   "kind": "main"
+  },
+  {
+   "id": "end",
+   "name": "End",
+   "kind": "end"
+  }
+ ],
+ "timing": "simple",
+ "resource": {
+  "mode": "anycard",
+  "name": "Wonder",
+  "icon": "✧",
+  "start": 0,
+  "perTurn": 1,
+  "max": 99,
+  "deckSize": 0,
+  "boost": 0,
+  "summonsPerTurn": 0,
+  "tribute": [],
+  "faceDown": true,
+  "onlyKeyword": "inkable"
+ },
+ "combat": {
+  "mode": "target",
+  "power": "strength",
+  "health": "willpower",
+  "defense": null,
+  "damage": "persist",
+  "sickness": true,
+  "firstTurnAttack": true,
+  "targetUnits": "exhausted",
+  "direct": "never",
+  "quest": "lore",
+  "directOnlyIfEmpty": false,
+  "leaderDefends": false,
+  "leaderAttacks": false,
+  "compare": {
+   "ties": "defender",
+   "loser": false,
+   "overflow": false
+  },
+  "positions": false,
+  "counterStep": false,
+  "fieldSize": 30,
+  "benchSize": 0,
+  "attackEndsTurn": false,
+  "weakness": 1,
+  "lanes": []
+ },
+ "win": {
+  "life": 0,
+  "lifeCards": 0,
+  "prizes": 0,
+  "points": 20,
+  "deckOut": false,
+  "emptyEnd": true,
+  "noUnits": false
+ },
+ "setup": {
+  "hand": 7,
+  "mulligan": true,
+  "mulliganN": 7,
+  "handLimit": 99,
+  "deckMin": 60,
+  "deckMax": 80,
+  "maxCopies": 4,
+  "maxColors": 2,
+  "skipFirstDraw": true,
+  "leader": false,
+  "extraMax": 0,
+  "turnLimit": 90
+ },
+ "zoneNames": {
+  "field": "Storyland",
+  "support": "Items",
+  "grave": "Discard",
+  "resources": "Wishing Well",
+  "locations": "Places",
+  "under": "Tucked under"
+ },
+ "cards": [
+  {
+   "id": "goldilocks-porridge-critic",
+   "name": "Goldilocks - Porridge Critic",
+   "type": "character",
+   "cost": 1,
+   "stats": {
+    "strength": 1,
+    "willpower": 3,
+    "lore": 1
+   },
+   "color": "hearth",
+   "keywords": [
+    "inkable",
+    "help"
+   ],
+   "abilities": [],
+   "flavor": "Too hot. Too cold. She has notes."
+  },
+  {
+   "id": "mother-goose-keeper-of-rhymes",
+   "name": "Mother Goose - Keeper of Rhymes",
+   "type": "character",
+   "cost": 3,
+   "stats": {
+    "strength": 1,
+    "willpower": 4,
+    "lore": 1
+   },
+   "color": "hearth",
+   "keywords": [
+    "inkable",
+    "songbird"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "recover",
+       "type": "rhyme"
+      }
+     ]
+    }
+   ],
+   "kwv": {
+    "songbird": 5
+   },
+   "flavor": "Every rhyme you know, she wrote down first."
+  },
+  {
+   "id": "three-little-pigs-brick-builders",
+   "name": "Three Little Pigs - Brick Builders",
+   "type": "character",
+   "cost": 2,
+   "stats": {
+    "strength": 1,
+    "willpower": 4,
+    "lore": 1
+   },
+   "color": "hearth",
+   "keywords": [
+    "inkable",
+    "steadfast"
+   ],
+   "abilities": [],
+   "flavor": "Two of them have learned a valuable lesson about straw."
+  },
+  {
+   "id": "fairy-godmother-midnight-tailor",
+   "name": "Fairy Godmother - Midnight Tailor",
+   "type": "character",
+   "cost": 4,
+   "stats": {
+    "strength": 2,
+    "willpower": 4,
+    "lore": 2
+   },
+   "color": "hearth",
+   "keywords": [
+    "inkable"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "ready",
+       "target": "ownUnit"
+      },
+      {
+       "k": "buff",
+       "n": 2,
+       "target": "ownUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "The deadline is midnight. It is always midnight."
+  },
+  {
+   "id": "cinderella-hearth-sweeper",
+   "name": "Cinderella - Hearth Sweeper",
+   "type": "character",
+   "cost": 2,
+   "stats": {
+    "strength": 2,
+    "willpower": 3,
+    "lore": 1
+   },
+   "color": "hearth",
+   "keywords": [
+    "inkable",
+    "latebloomer",
+    "songbird"
+   ],
+   "abilities": [],
+   "kwv": {
+    "songbird": 4
+   },
+   "flavor": "Hums while she works. The mice harmonize."
+  },
+  {
+   "id": "cinderella-belle-of-the-ball",
+   "name": "Cinderella - Belle of the Ball",
+   "type": "character",
+   "cost": 5,
+   "stats": {
+    "strength": 3,
+    "willpower": 5,
+    "lore": 3
+   },
+   "color": "hearth",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "quest",
+     "do": [
+      {
+       "k": "heal",
+       "n": 2,
+       "target": "allOwnUnits"
+      }
+     ]
+    }
+   ],
+   "shift": 3,
+   "flavor": "One dance, and the whole kingdom forgot its manners."
+  },
+  {
+   "id": "little-red-hen-diligent-baker",
+   "name": "Little Red Hen - Diligent Baker",
+   "type": "character",
+   "cost": 3,
+   "stats": {
+    "strength": 2,
+    "willpower": 3,
+    "lore": 2
+   },
+   "color": "hearth",
+   "keywords": [
+    "inkable",
+    "wanderlust"
+   ],
+   "abilities": [
+    {
+     "when": "quest",
+     "do": [
+      {
+       "k": "heal",
+       "n": 1,
+       "target": "ownUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "\"Who will help me bake the bread?\" Nobody. Again."
+  },
+  {
+   "id": "twinkle-twinkle",
+   "name": "Twinkle, Twinkle",
+   "type": "rhyme",
+   "cost": 1,
+   "stats": {},
+   "color": "hearth",
+   "keywords": [
+    "inkable",
+    "song"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "heal",
+       "n": 3,
+       "target": "ownUnit"
+      },
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "How I wonder what you are. (A star. It is a star.)"
+  },
+  {
+   "id": "ring-around-the-rosie",
+   "name": "Ring Around the Rosie",
+   "type": "rhyme",
+   "cost": 5,
+   "stats": {},
+   "color": "hearth",
+   "keywords": [
+    "song",
+    "round"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "heal",
+       "n": 2,
+       "target": "allOwnUnits"
+      },
+      {
+       "k": "score",
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "kwv": {
+    "round": 6
+   },
+   "flavor": "Everyone in the circle. Everyone falls down. Everyone gets up again."
+  },
+  {
+   "id": "glass-slipper",
+   "name": "Glass Slipper",
+   "type": "item",
+   "cost": 2,
+   "stats": {},
+   "color": "hearth",
+   "keywords": [
+    "inkable"
+   ],
+   "abilities": [
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "buff",
+       "n": 1,
+       "stat": "lore",
+       "target": "ownUnit"
+      }
+     ],
+     "tap": true,
+     "label": "Exhaust: a character of yours gets +1 lore this turn"
+    }
+   ],
+   "flavor": "Fits exactly one foot in the kingdom. Very bad for shoe sales."
+  },
+  {
+   "id": "will-o-the-wisp-marsh-lantern",
+   "name": "Will-o'-the-Wisp - Marsh Lantern",
+   "type": "character",
+   "cost": 1,
+   "stats": {
+    "strength": 2,
+    "willpower": 1,
+    "lore": 1
+   },
+   "color": "moonlit",
+   "keywords": [
+    "inkable",
+    "fleeting",
+    "elusive"
+   ],
+   "abilities": [],
+   "flavor": "Follow the light. Do not follow the light."
+  },
+  {
+   "id": "baba-yaga-bone-fence-crone",
+   "name": "Baba Yaga - Bone-Fence Crone",
+   "type": "character",
+   "cost": 4,
+   "stats": {
+    "strength": 3,
+    "willpower": 4,
+    "lore": 1
+   },
+   "color": "moonlit",
+   "keywords": [
+    "inkable"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "bounce",
+       "target": "enemyUnit",
+       "filter": {
+        "stat": "cost",
+        "op": "le",
+        "val": 3
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "Her house has chicken legs and opinions."
+  },
+  {
+   "id": "snow-queen-mirror-shard-sovereign",
+   "name": "Snow Queen - Mirror-Shard Sovereign",
+   "type": "character",
+   "cost": 6,
+   "stats": {
+    "strength": 4,
+    "willpower": 5,
+    "lore": 2
+   },
+   "color": "moonlit",
+   "keywords": [
+    "charmed"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "exhaust",
+       "target": "allEnemyUnits"
+      }
+     ]
+    }
+   ],
+   "flavor": "She asked for silence. Winter obliged."
+  },
+  {
+   "id": "merlins-apprentice-spell-scribbler",
+   "name": "Merlin's Apprentice - Spell Scribbler",
+   "type": "character",
+   "cost": 2,
+   "stats": {
+    "strength": 1,
+    "willpower": 2,
+    "lore": 1
+   },
+   "color": "moonlit",
+   "keywords": [
+    "inkable"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Has turned himself into a teapot twice this week."
+  },
+  {
+   "id": "genie-of-the-lamp-bound-wish-granter",
+   "name": "Genie of the Lamp - Bound Wish-Granter",
+   "type": "character",
+   "cost": 5,
+   "stats": {
+    "strength": 3,
+    "willpower": 5,
+    "lore": 2
+   },
+   "color": "moonlit",
+   "keywords": [
+    "inkable",
+    "bookmark"
+   ],
+   "abilities": [
+    {
+     "when": "static",
+     "do": [
+      {
+       "k": "aura",
+       "n": 2,
+       "stat": "lore",
+       "target": "self"
+      }
+     ],
+     "if": {
+      "k": "under",
+      "n": 1
+     }
+    }
+   ],
+   "kwv": {
+    "bookmark": 2
+   },
+   "flavor": "Three wishes. Terms and conditions apply."
+  },
+  {
+   "id": "pied-piper-tune-of-hamelin",
+   "name": "Pied Piper - Tune of Hamelin",
+   "type": "character",
+   "cost": 3,
+   "stats": {
+    "strength": 2,
+    "willpower": 3,
+    "lore": 1
+   },
+   "color": "moonlit",
+   "keywords": [
+    "inkable",
+    "songbird",
+    "fleeting"
+   ],
+   "abilities": [
+    {
+     "when": "quest",
+     "do": [
+      {
+       "k": "buff",
+       "n": -2,
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ],
+   "kwv": {
+    "songbird": 5
+   },
+   "flavor": "Payment is due on receipt. Ask Hamelin how that went."
+  },
+  {
+   "id": "rumpelstiltskin-straw-spinner",
+   "name": "Rumpelstiltskin - Straw Spinner",
+   "type": "character",
+   "cost": 3,
+   "stats": {
+    "strength": 2,
+    "willpower": 3,
+    "lore": 2
+   },
+   "color": "moonlit",
+   "keywords": [
+    "inkable",
+    "bookmark"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "scry",
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "kwv": {
+    "bookmark": 1
+   },
+   "flavor": "Guess his name and he leaves. Nobody ever guesses."
+  },
+  {
+   "id": "hey-diddle-diddle",
+   "name": "Hey Diddle Diddle",
+   "type": "rhyme",
+   "cost": 3,
+   "stats": {},
+   "color": "moonlit",
+   "keywords": [
+    "inkable",
+    "song"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "bounce",
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "The cow jumped over the moon, and so did your knight."
+  },
+  {
+   "id": "rock-a-bye-baby",
+   "name": "Rock-a-bye Baby",
+   "type": "rhyme",
+   "cost": 2,
+   "stats": {},
+   "color": "moonlit",
+   "keywords": [
+    "inkable",
+    "song"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "exhaust",
+       "target": "enemyUnit"
+      },
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "When the bough breaks, everybody naps."
+  },
+  {
+   "id": "mirror-mirror",
+   "name": "Mirror, Mirror",
+   "type": "action",
+   "cost": 2,
+   "stats": {},
+   "color": "moonlit",
+   "keywords": [
+    "inkable"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "draw",
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "flavor": "Tells the truth. Rarely the one you wanted."
+  },
+  {
+   "id": "anansi-web-of-stories",
+   "name": "Anansi - Web of Stories",
+   "type": "character",
+   "cost": 3,
+   "stats": {
+    "strength": 2,
+    "willpower": 3,
+    "lore": 2
+   },
+   "color": "thicket",
+   "keywords": [
+    "inkable",
+    "elusive"
+   ],
+   "abilities": [
+    {
+     "when": "quest",
+     "do": [
+      {
+       "k": "score",
+       "n": 1,
+       "who": "opp"
+      }
+     ]
+    }
+   ],
+   "flavor": "He owns every story ever told. He bought them from the sky."
+  },
+  {
+   "id": "puss-in-boots-booted-schemer",
+   "name": "Puss in Boots - Booted Schemer",
+   "type": "character",
+   "cost": 2,
+   "stats": {
+    "strength": 2,
+    "willpower": 2,
+    "lore": 1
+   },
+   "color": "thicket",
+   "keywords": [
+    "inkable",
+    "elusive",
+    "help"
+   ],
+   "abilities": [],
+   "flavor": "Wears the boots. Runs the kingdom. Takes no credit, only cream."
+  },
+  {
+   "id": "reynard-the-fox-silver-tongued-rogue",
+   "name": "Reynard the Fox - Silver-Tongued Rogue",
+   "type": "character",
+   "cost": 4,
+   "stats": {
+    "strength": 3,
+    "willpower": 3,
+    "lore": 2
+   },
+   "color": "thicket",
+   "keywords": [
+    "inkable",
+    "elusive",
+    "charmed"
+   ],
+   "abilities": [],
+   "flavor": "Has been sentenced to hang eleven times. Talked his way out of all of them."
+  },
+  {
+   "id": "robin-hood-archer-of-the-greenwood",
+   "name": "Robin Hood - Archer of the Greenwood",
+   "type": "character",
+   "cost": 3,
+   "stats": {
+    "strength": 3,
+    "willpower": 2,
+    "lore": 1
+   },
+   "color": "thicket",
+   "keywords": [
+    "inkable",
+    "elusive"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "damage",
+       "n": 1,
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Never misses. Occasionally misses on purpose, to be polite."
+  },
+  {
+   "id": "robin-hood-outlaw-king-of-sherwood",
+   "name": "Robin Hood - Outlaw King of Sherwood",
+   "type": "character",
+   "cost": 5,
+   "stats": {
+    "strength": 4,
+    "willpower": 4,
+    "lore": 2
+   },
+   "color": "thicket",
+   "keywords": [
+    "elusive"
+   ],
+   "abilities": [
+    {
+     "when": "quest",
+     "do": [
+      {
+       "k": "score",
+       "n": 1,
+       "who": "opp"
+      },
+      {
+       "k": "score",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "shift": 3,
+   "flavor": "Robs the rich. Gives to the poor. Keeps the hat."
+  },
+  {
+   "id": "tortoise-slow-and-steady",
+   "name": "Tortoise - Slow and Steady",
+   "type": "character",
+   "cost": 1,
+   "stats": {
+    "strength": 1,
+    "willpower": 3,
+    "lore": 1
+   },
+   "color": "thicket",
+   "keywords": [
+    "inkable",
+    "wanderlust",
+    "sturdy"
+   ],
+   "abilities": [],
+   "kwv": {
+    "sturdy": 1
+   },
+   "flavor": "Has never lost a race. Has rarely finished one either."
+  },
+  {
+   "id": "hare-overconfident-sprinter",
+   "name": "Hare - Overconfident Sprinter",
+   "type": "character",
+   "cost": 2,
+   "stats": {
+    "strength": 3,
+    "willpower": 2,
+    "lore": 1
+   },
+   "color": "thicket",
+   "keywords": [
+    "inkable",
+    "swift",
+    "headstrong"
+   ],
+   "abilities": [],
+   "flavor": "Fastest in the forest. Napping champion, three years running."
+  },
+  {
+   "id": "hickory-dickory-dock",
+   "name": "Hickory Dickory Dock",
+   "type": "rhyme",
+   "cost": 2,
+   "stats": {},
+   "color": "thicket",
+   "keywords": [
+    "inkable",
+    "song"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "buff",
+       "n": -3,
+       "target": "enemyUnit"
+      },
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "The clock struck one. The mouse had a plan."
+  },
+  {
+   "id": "vanishing-trick",
+   "name": "Vanishing Trick",
+   "type": "action",
+   "cost": 2,
+   "stats": {},
+   "color": "thicket",
+   "keywords": [
+    "inkable"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "bounce",
+       "target": "ownUnit"
+      },
+      {
+       "k": "draw",
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "flavor": "Now you see him. Now he is home having tea."
+  },
+  {
+   "id": "sherwood-glade",
+   "name": "Sherwood Glade",
+   "type": "place",
+   "cost": 2,
+   "stats": {
+    "move": 1,
+    "willpower": 6,
+    "lore": 1
+   },
+   "color": "thicket",
+   "keywords": [
+    "inkable"
+   ],
+   "abilities": [
+    {
+     "when": "static",
+     "do": [
+      {
+       "k": "aura",
+       "n": 2,
+       "stat": "willpower",
+       "target": "allOwnUnits",
+       "filter": {
+        "here": true
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "The sheriff has searched it many times. The trees have not cooperated."
+  },
+  {
+   "id": "big-bad-wolf-huff-and-puff",
+   "name": "Big Bad Wolf - Huff and Puff",
+   "type": "character",
+   "cost": 4,
+   "stats": {
+    "strength": 4,
+    "willpower": 3,
+    "lore": 1
+   },
+   "color": "ember",
+   "keywords": [
+    "inkable",
+    "brave",
+    "swift"
+   ],
+   "abilities": [],
+   "kwv": {
+    "brave": 2
+   },
+   "flavor": "Lungs like a blacksmith's bellows. Manners like one too."
+  },
+  {
+   "id": "big-bad-wolf-grandmothers-disguise",
+   "name": "Big Bad Wolf - Grandmother's Disguise",
+   "type": "character",
+   "cost": 6,
+   "stats": {
+    "strength": 5,
+    "willpower": 5,
+    "lore": 2
+   },
+   "color": "ember",
+   "keywords": [
+    "brave"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "destroy",
+       "target": "enemyUnit",
+       "filter": {
+        "stat": "strength",
+        "op": "le",
+        "val": 3
+       }
+      }
+     ]
+    }
+   ],
+   "kwv": {
+    "brave": 2
+   },
+   "shift": 4,
+   "flavor": "What big teeth you have. What a big shift cost, too."
+  },
+  {
+   "id": "sun-wukong-monkey-of-the-mountain",
+   "name": "Sun Wukong - Monkey of the Mountain",
+   "type": "character",
+   "cost": 3,
+   "stats": {
+    "strength": 3,
+    "willpower": 2,
+    "lore": 1
+   },
+   "color": "ember",
+   "keywords": [
+    "inkable",
+    "swift",
+    "brave"
+   ],
+   "abilities": [],
+   "kwv": {
+    "brave": 1
+   },
+   "flavor": "Was born from a stone. Has been throwing them ever since."
+  },
+  {
+   "id": "beowulf-monster-slayer",
+   "name": "Beowulf - Monster Slayer",
+   "type": "character",
+   "cost": 5,
+   "stats": {
+    "strength": 5,
+    "willpower": 5,
+    "lore": 1
+   },
+   "color": "ember",
+   "keywords": [
+    "inkable",
+    "brave"
+   ],
+   "abilities": [],
+   "kwv": {
+    "brave": 3
+   },
+   "flavor": "Fought the monster bare-handed. Then fought its mother. Then wrote it all down."
+  },
+  {
+   "id": "fire-dragon-hoard-keeper",
+   "name": "Fire Dragon - Hoard Keeper",
+   "type": "character",
+   "cost": 7,
+   "stats": {
+    "strength": 6,
+    "willpower": 6,
+    "lore": 2
+   },
+   "color": "ember",
+   "keywords": [
+    "headstrong"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "damage",
+       "n": 2,
+       "target": "allEnemyUnits"
+      }
+     ]
+    }
+   ],
+   "flavor": "Has counted every coin. Has noticed the missing cup."
+  },
+  {
+   "id": "jack-giant-killer",
+   "name": "Jack - Giant Killer",
+   "type": "character",
+   "cost": 2,
+   "stats": {
+    "strength": 2,
+    "willpower": 2,
+    "lore": 1
+   },
+   "color": "ember",
+   "keywords": [
+    "inkable",
+    "brave"
+   ],
+   "abilities": [],
+   "kwv": {
+    "brave": 3
+   },
+   "flavor": "The bigger they are, the better the story."
+  },
+  {
+   "id": "firebird-ember-plume",
+   "name": "Firebird - Ember Plume",
+   "type": "character",
+   "cost": 3,
+   "stats": {
+    "strength": 2,
+    "willpower": 3,
+    "lore": 1
+   },
+   "color": "ember",
+   "keywords": [
+    "inkable",
+    "swift"
+   ],
+   "abilities": [
+    {
+     "when": "leave",
+     "do": [
+      {
+       "k": "damage",
+       "n": 2,
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "One feather lights a palace. One bird burns down the rest."
+  },
+  {
+   "id": "humpty-dumpty",
+   "name": "Humpty Dumpty",
+   "type": "rhyme",
+   "cost": 3,
+   "stats": {},
+   "color": "ember",
+   "keywords": [
+    "inkable",
+    "song"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "destroy",
+       "target": "enemyUnit",
+       "filter": {
+        "stat": "willpower",
+        "op": "le",
+        "val": 3
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "All the king's horses were unavailable."
+  },
+  {
+   "id": "pop-goes-the-weasel",
+   "name": "Pop Goes the Weasel",
+   "type": "rhyme",
+   "cost": 2,
+   "stats": {},
+   "color": "ember",
+   "keywords": [
+    "inkable",
+    "song",
+    "round"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "damage",
+       "n": 2,
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ],
+   "kwv": {
+    "round": 3
+   },
+   "flavor": "That's the way the money goes."
+  },
+  {
+   "id": "huff-and-puff",
+   "name": "Huff and Puff",
+   "type": "action",
+   "cost": 2,
+   "stats": {},
+   "color": "ember",
+   "keywords": [
+    "inkable"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "damage",
+       "n": 3,
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Works on straw, sticks and most knights."
+  },
+  {
+   "id": "sinbad-seven-voyage-sailor",
+   "name": "Sinbad - Seven-Voyage Sailor",
+   "type": "character",
+   "cost": 3,
+   "stats": {
+    "strength": 2,
+    "willpower": 3,
+    "lore": 2
+   },
+   "color": "tide",
+   "keywords": [
+    "inkable"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "drops",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Shipwrecked seven times. Considers it research."
+  },
+  {
+   "id": "little-mermaid-seas-daughter",
+   "name": "Little Mermaid - Sea's Daughter",
+   "type": "character",
+   "cost": 2,
+   "stats": {
+    "strength": 1,
+    "willpower": 3,
+    "lore": 1
+   },
+   "color": "tide",
+   "keywords": [
+    "inkable"
+   ],
+   "abilities": [
+    {
+     "when": "quest",
+     "do": [
+      {
+       "k": "scry",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Collects things that fall from ships. Mostly forks."
+  },
+  {
+   "id": "little-mermaid-voice-for-legs",
+   "name": "Little Mermaid - Voice for Legs",
+   "type": "character",
+   "cost": 4,
+   "stats": {
+    "strength": 3,
+    "willpower": 4,
+    "lore": 2
+   },
+   "color": "tide",
+   "keywords": [
+    "inkable"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "shift": 2,
+   "flavor": "A fair trade, said the sea witch. It was not."
+  },
+  {
+   "id": "urashima-taro-turtles-rider",
+   "name": "Urashima Taro - Turtle's Rider",
+   "type": "character",
+   "cost": 4,
+   "stats": {
+    "strength": 2,
+    "willpower": 5,
+    "lore": 2
+   },
+   "color": "tide",
+   "keywords": [
+    "inkable"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "raw",
+       "raw": [
+        [
+         "move",
+         [
+          "top",
+          "$me",
+          "deck",
+          1
+         ],
+         "resources",
+         {
+          "faceDown": true
+         }
+        ]
+       ]
+      }
+     ]
+    }
+   ],
+   "flavor": "Visited the palace under the sea for three days. Came back three hundred years later."
+  },
+  {
+   "id": "ali-baba-cave-opener",
+   "name": "Ali Baba - Cave Opener",
+   "type": "character",
+   "cost": 3,
+   "stats": {
+    "strength": 2,
+    "willpower": 3,
+    "lore": 1
+   },
+   "color": "tide",
+   "keywords": [
+    "inkable"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "search",
+       "type": "item"
+      }
+     ]
+    }
+   ],
+   "flavor": "Knows the password. Has never told anyone. Mostly."
+  },
+  {
+   "id": "wishing-fish-golden-flounder",
+   "name": "Wishing Fish - Golden Flounder",
+   "type": "character",
+   "cost": 1,
+   "stats": {
+    "strength": 0,
+    "willpower": 2,
+    "lore": 1
+   },
+   "color": "tide",
+   "keywords": [
+    "inkable"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "drops",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Grants wishes. Disapproves of greed. Has a list."
+  },
+  {
+   "id": "kraken-deep-leviathan",
+   "name": "Kraken - Deep Leviathan",
+   "type": "character",
+   "cost": 7,
+   "stats": {
+    "strength": 6,
+    "willpower": 7,
+    "lore": 2
+   },
+   "color": "tide",
+   "keywords": [
+    "sturdy"
+   ],
+   "abilities": [],
+   "kwv": {
+    "sturdy": 1
+   },
+   "flavor": "Sailors' maps mark it simply as \"No.\""
+  },
+  {
+   "id": "row-row-row-your-boat",
+   "name": "Row, Row, Row Your Boat",
+   "type": "rhyme",
+   "cost": 1,
+   "stats": {},
+   "color": "tide",
+   "keywords": [
+    "inkable",
+    "song"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "drops",
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "flavor": "Gently down the stream. Merrily, if possible."
+  },
+  {
+   "id": "magic-beans",
+   "name": "Magic Beans",
+   "type": "item",
+   "cost": 1,
+   "stats": {},
+   "color": "tide",
+   "keywords": [
+    "inkable"
+   ],
+   "abilities": [
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "raw",
+       "raw": [
+        [
+         "move",
+         [
+          "top",
+          "$me",
+          "deck",
+          1
+         ],
+         "resources",
+         {
+          "faceDown": true
+         }
+        ]
+       ]
+      }
+     ],
+     "tap": true,
+     "sacSelf": true,
+     "label": "Exhaust, banish this: put the top card of your deck into your Wishing Well"
+    }
+   ],
+   "flavor": "Traded for a cow. The cow got the worse deal."
+  },
+  {
+   "id": "beanstalk-summit",
+   "name": "Beanstalk Summit",
+   "type": "place",
+   "cost": 3,
+   "stats": {
+    "move": 2,
+    "willpower": 7,
+    "lore": 2
+   },
+   "color": "tide",
+   "keywords": [
+    "inkable"
+   ],
+   "abilities": [],
+   "flavor": "Above the clouds, the views are lovely and the giants are loud."
+  },
+  {
+   "id": "treasure-cave",
+   "name": "Treasure Cave",
+   "type": "place",
+   "cost": 1,
+   "stats": {
+    "move": 1,
+    "willpower": 5,
+    "lore": 1
+   },
+   "color": "tide",
+   "keywords": [
+    "inkable"
+   ],
+   "abilities": [
+    {
+     "when": "static",
+     "do": [
+      {
+       "k": "aura",
+       "n": 1,
+       "stat": "lore",
+       "target": "allOwnUnits",
+       "filter": {
+        "here": true
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "Open sesame. Close sesame. Leave a review."
+  },
+  {
+   "id": "tin-soldier-steadfast-sentry",
+   "name": "Tin Soldier - Steadfast Sentry",
+   "type": "character",
+   "cost": 2,
+   "stats": {
+    "strength": 1,
+    "willpower": 4,
+    "lore": 1
+   },
+   "color": "iron",
+   "keywords": [
+    "inkable",
+    "steadfast"
+   ],
+   "abilities": [],
+   "flavor": "One leg, no complaints."
+  },
+  {
+   "id": "tin-soldier-one-legged-hero",
+   "name": "Tin Soldier - One-Legged Hero",
+   "type": "character",
+   "cost": 4,
+   "stats": {
+    "strength": 3,
+    "willpower": 5,
+    "lore": 1
+   },
+   "color": "iron",
+   "keywords": [
+    "inkable",
+    "steadfast",
+    "sturdy"
+   ],
+   "abilities": [],
+   "kwv": {
+    "sturdy": 1
+   },
+   "shift": 2,
+   "flavor": "Survived the fish, the fire and the gutter. A dragon is fine."
+  },
+  {
+   "id": "john-henry-steel-driving-man",
+   "name": "John Henry - Steel-Driving Man",
+   "type": "character",
+   "cost": 5,
+   "stats": {
+    "strength": 4,
+    "willpower": 5,
+    "lore": 2
+   },
+   "color": "iron",
+   "keywords": [
+    "inkable",
+    "sturdy",
+    "watchful"
+   ],
+   "abilities": [],
+   "kwv": {
+    "sturdy": 1
+   },
+   "flavor": "Raced the steam drill and won. The drill is still sulking."
+  },
+  {
+   "id": "sir-gawain-green-knights-challenger",
+   "name": "Sir Gawain - Green Knight's Challenger",
+   "type": "character",
+   "cost": 3,
+   "stats": {
+    "strength": 3,
+    "willpower": 3,
+    "lore": 1
+   },
+   "color": "iron",
+   "keywords": [
+    "inkable",
+    "watchful",
+    "brave"
+   ],
+   "abilities": [],
+   "kwv": {
+    "brave": 1
+   },
+   "flavor": "Keeps his promises, even the ones about axes."
+  },
+  {
+   "id": "king-arthur-once-and-future-king",
+   "name": "King Arthur - Once and Future King",
+   "type": "character",
+   "cost": 7,
+   "stats": {
+    "strength": 5,
+    "willpower": 7,
+    "lore": 3
+   },
+   "color": "iron",
+   "keywords": [
+    "steadfast"
+   ],
+   "abilities": [
+    {
+     "when": "static",
+     "do": [
+      {
+       "k": "aura",
+       "n": 1,
+       "stat": "willpower",
+       "target": "allOwnUnits"
+      }
+     ]
+    }
+   ],
+   "flavor": "Pulled the sword from the stone. Put the kingdom back together."
+  },
+  {
+   "id": "clay-golem-city-guardian",
+   "name": "Clay Golem - City Guardian",
+   "type": "character",
+   "cost": 3,
+   "stats": {
+    "strength": 2,
+    "willpower": 5,
+    "lore": 1
+   },
+   "color": "iron",
+   "keywords": [
+    "inkable",
+    "sturdy"
+   ],
+   "abilities": [],
+   "kwv": {
+    "sturdy": 1
+   },
+   "flavor": "Woken by a word, stopped by a word. Nobody remembers the second word."
+  },
+  {
+   "id": "paul-bunyan-lumber-giant",
+   "name": "Paul Bunyan - Lumber Giant",
+   "type": "character",
+   "cost": 6,
+   "stats": {
+    "strength": 5,
+    "willpower": 6,
+    "lore": 2
+   },
+   "color": "iron",
+   "keywords": [
+    "inkable",
+    "brave"
+   ],
+   "abilities": [],
+   "kwv": {
+    "brave": 2
+   },
+   "flavor": "Dug a lake for his ox to drink from. The ox was still thirsty."
+  },
+  {
+   "id": "london-bridge",
+   "name": "London Bridge",
+   "type": "rhyme",
+   "cost": 4,
+   "stats": {},
+   "color": "iron",
+   "keywords": [
+    "inkable",
+    "song"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "damage",
+       "n": 3,
+       "target": "enemyUnit"
+      },
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Falling down, falling down, onto someone else."
+  },
+  {
+   "id": "excalibur",
+   "name": "Excalibur",
+   "type": "item",
+   "cost": 2,
+   "stats": {},
+   "color": "iron",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "buff",
+       "n": 2,
+       "target": "ownUnit"
+      }
+     ],
+     "tap": true,
+     "cost": 1,
+     "label": "Exhaust, pay 1: a character of yours gets +2 strength this turn"
+    }
+   ],
+   "flavor": "Lent by a lake. Must be returned in the same condition."
+  },
+  {
+   "id": "camelot-round-table",
+   "name": "Camelot Round Table",
+   "type": "place",
+   "cost": 4,
+   "stats": {
+    "move": 2,
+    "willpower": 9,
+    "lore": 1
+   },
+   "color": "iron",
+   "keywords": [
+    "inkable"
+   ],
+   "abilities": [
+    {
+     "when": "static",
+     "do": [
+      {
+       "k": "aura",
+       "n": 1,
+       "stat": "strength",
+       "target": "allOwnUnits",
+       "filter": {
+        "here": true
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "No head of the table. Constant arguments about the chairs."
+  }
+ ],
+ "decks": [
+  {
+   "id": "rhymes-and-shields",
+   "name": "Rhymes and Shields",
+   "main": {
+    "goldilocks-porridge-critic": 3,
+    "mother-goose-keeper-of-rhymes": 3,
+    "three-little-pigs-brick-builders": 3,
+    "fairy-godmother-midnight-tailor": 3,
+    "cinderella-hearth-sweeper": 3,
+    "cinderella-belle-of-the-ball": 3,
+    "little-red-hen-diligent-baker": 3,
+    "twinkle-twinkle": 3,
+    "ring-around-the-rosie": 3,
+    "glass-slipper": 3,
+    "tin-soldier-steadfast-sentry": 3,
+    "tin-soldier-one-legged-hero": 3,
+    "john-henry-steel-driving-man": 3,
+    "sir-gawain-green-knights-challenger": 3,
+    "king-arthur-once-and-future-king": 3,
+    "clay-golem-city-guardian": 3,
+    "paul-bunyan-lumber-giant": 3,
+    "london-bridge": 3,
+    "excalibur": 3,
+    "camelot-round-table": 3
+   }
+  },
+  {
+   "id": "moonlit-voyage",
+   "name": "Moonlit Voyage",
+   "main": {
+    "will-o-the-wisp-marsh-lantern": 3,
+    "baba-yaga-bone-fence-crone": 3,
+    "snow-queen-mirror-shard-sovereign": 2,
+    "merlins-apprentice-spell-scribbler": 3,
+    "genie-of-the-lamp-bound-wish-granter": 3,
+    "pied-piper-tune-of-hamelin": 3,
+    "rumpelstiltskin-straw-spinner": 3,
+    "hey-diddle-diddle": 3,
+    "rock-a-bye-baby": 3,
+    "mirror-mirror": 3,
+    "sinbad-seven-voyage-sailor": 3,
+    "little-mermaid-seas-daughter": 3,
+    "little-mermaid-voice-for-legs": 3,
+    "urashima-taro-turtles-rider": 3,
+    "ali-baba-cave-opener": 3,
+    "wishing-fish-golden-flounder": 3,
+    "kraken-deep-leviathan": 2,
+    "row-row-row-your-boat": 3,
+    "magic-beans": 2,
+    "beanstalk-summit": 3,
+    "treasure-cave": 3
+   }
+  },
+  {
+   "id": "big-bad-forest",
+   "name": "The Big Bad Forest",
+   "main": {
+    "anansi-web-of-stories": 3,
+    "puss-in-boots-booted-schemer": 3,
+    "reynard-the-fox-silver-tongued-rogue": 3,
+    "robin-hood-archer-of-the-greenwood": 3,
+    "robin-hood-outlaw-king-of-sherwood": 3,
+    "tortoise-slow-and-steady": 3,
+    "hare-overconfident-sprinter": 3,
+    "hickory-dickory-dock": 3,
+    "vanishing-trick": 3,
+    "sherwood-glade": 3,
+    "big-bad-wolf-huff-and-puff": 3,
+    "big-bad-wolf-grandmothers-disguise": 3,
+    "sun-wukong-monkey-of-the-mountain": 3,
+    "beowulf-monster-slayer": 3,
+    "fire-dragon-hoard-keeper": 3,
+    "jack-giant-killer": 3,
+    "firebird-ember-plume": 3,
+    "humpty-dumpty": 3,
+    "pop-goes-the-weasel": 3,
+    "huff-and-puff": 3
+   }
+  },
+  {
+   "id": "treasure-and-fire",
+   "name": "Treasure and Fire",
+   "main": {
+    "big-bad-wolf-huff-and-puff": 3,
+    "big-bad-wolf-grandmothers-disguise": 2,
+    "sun-wukong-monkey-of-the-mountain": 3,
+    "beowulf-monster-slayer": 3,
+    "fire-dragon-hoard-keeper": 2,
+    "jack-giant-killer": 3,
+    "firebird-ember-plume": 3,
+    "humpty-dumpty": 3,
+    "pop-goes-the-weasel": 3,
+    "huff-and-puff": 3,
+    "sinbad-seven-voyage-sailor": 3,
+    "little-mermaid-seas-daughter": 3,
+    "little-mermaid-voice-for-legs": 3,
+    "urashima-taro-turtles-rider": 3,
+    "ali-baba-cave-opener": 3,
+    "wishing-fish-golden-flounder": 3,
+    "kraken-deep-leviathan": 2,
+    "row-row-row-your-boat": 3,
+    "magic-beans": 3,
+    "beanstalk-summit": 3,
+    "treasure-cave": 3
+   }
+  }
+ ]
+}

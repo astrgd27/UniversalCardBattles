@@ -322,6 +322,27 @@ Taste Dimension (`packages/modules/taste-dimension`) is built from these.
   - traps can have counter speed (`speed3`, responds to anything) or be continuous (stay face up; their statics apply).
 - **Battle:** keyword rules `directAttack` (may attack the player past units) and `extraAttack` (attacks twice). Piercing is the existing `overflow` rule in compare combat.
 
+## Questing, places and shift (Advanced)
+Built for Storyweavers (mechanics reference: Lorcana). They also work in other games.
+- **Places** (role `location`): played into a public `locations` zone. Stats: `move` (move cost), the combat health stat (willpower) and the quest stat (lore).
+  - "Move to a location": any of your units, ready or exhausted, pays the place's move cost and is linked to it (rel `at`). A tag under the card shows where it is.
+  - With questing, each place scores its lore at the start of its owner's turn.
+  - Enemy places can always be attacked (exhausted or not), deal no damage back, and are destroyed when their damage reaches their health.
+  - Filter "here" (`filter.here`) means units at this place, for static bonuses such as "characters here get +1 lore". Condition `here` holds when this unit is at a place (or this place has a unit).
+- **Shift** (`card.shift`): pay the shift cost to play the card on top of your unit with the same name. The name is the part before " - ", so "Red Riding Hood - Wolf Hunter" shifts onto any "Red Riding Hood". It keeps the old card's damage, exhaustion, play turn (so it can act if the old one could), place and the cards under it. The old card goes under the new one (an `under` zone, rel `host`). When the unit leaves play, every card under it goes to the discard pile.
+- **Keyword rules:**
+  - `bodyguard`: may enter exhausted; attackers must pick a Bodyguard if they can (places are still fair game).
+  - `support`: when it quests, may give another unit its power this turn.
+  - `reckless`: can't quest; you can't end the turn while it can attack. `adventurous`: can't attack; you can't end the turn while it can quest. Both use the engine's `phases[].mustAct`.
+  - `vanish`: destroyed when an opponent's spell chooses it.
+  - `boost` N: once a turn, pay N to put the top card of your deck face down under it. Condition `under` N checks how many cards are under it.
+  - `underdog`: costs 1 less on the second player's first turn.
+  - `singer` N: sings songs as if it cost N. `singTogether` N (on songs): exhaust any of your units whose costs add up to N or more; they are picked one at a time until the total is reached.
+  - `reach` (Alert) now also lets a unit attack flyers (Evasive) in target combat.
+- **Saved resources (ink drops):** the effect "Save resources for later" (`drops` N) stores N on the player. "Spend a saved resource" gives 1 resource this turn at any time.
+- **Setup and winning:** `setup.maxColors` (a deck may use at most N colors); `win.emptyEnd` (ending your turn with an empty deck loses). The effect `score` with `who: 'opp'` takes points from the opponent.
+- **Shelf recipes:** "Places (locations)" and "Shift (upgraded versions)". The wizard offers both in Optional systems.
+
 ## Mechanics Shelf (mix and match)
 A station listing 40 recipes in seven groups:
 - Resources

@@ -34,6 +34,7 @@ const FRAMES: Record<Role, CardType['frame']> = {
   extra: { base: 'monster', cost: 'none', stats: [], art: 48, text: true }, token: { base: 'token', cost: 'none', stats: [], art: 48, text: true },
   walker: { base: 'leader', cost: 'tl', stats: [], art: 52, text: true },
   battlefield: { base: 'spell', cost: 'none', stats: [], art: 52, text: true, layout: 'landscape' },
+  location: { base: 'spell', cost: 'tl', stats: [], art: 52, text: true, layout: 'landscape' },
 };
 function ensureType(bp: Blueprint, id: string, name: string, role: Role, icon = '', zone?: string): CardType {
   let t = bp.types.find((x) => x.id === id);
@@ -346,6 +347,24 @@ export const RECIPES: Recipe[] = [
       const ut = unitTypes(bp)[0];
       if (ut) addCard(bp, { name: 'Grave Feaster', type: ut.id, cost: 2, stats: { [bp.combat.power]: Math.max(1, Math.round(scale(bp) / 2)), ...(bp.combat.health ? { [bp.combat.health]: scale(bp) } : {}) },
         abilities: [{ when: 'activated', banish: 2, once: true, do: [{ k: 'buff', n: scale(bp), target: 'self' }], label: 'Banish 2 from your discard pile: +power this turn' }] }, 2);
+    } },
+  { id: 'places', name: 'Places (locations)', icon: '🏰', group: 'Board', desc: 'Location cards you play to the board. Units move there for its move cost and get its bonus; with questing it scores its lore at the start of your turn. Enemies can attack it.',
+    apply: (bp) => {
+      ensureStat(bp, 'move', 'Move cost', '🥾');
+      const t = ensureType(bp, 'place', 'Place', 'location', '🏰');
+      t.frame = { ...t.frame, layout: 'landscape', stats: [{ stat: 'move', pos: 'bl' }, ...(bp.combat.health ? [{ stat: bp.combat.health, pos: 'br' as const }] : []), ...(bp.combat.quest ? [{ stat: bp.combat.quest, pos: 'tr' as const }] : [])] };
+      const st = (move: number, hp: number, lore: number) => ({ move, ...(bp.combat.health ? { [bp.combat.health]: hp } : {}), ...(bp.combat.quest ? { [bp.combat.quest]: lore } : {}) });
+      addCard(bp, { name: 'Training Grounds', type: t.id, cost: 2, stats: st(1, 6, 1), abilities: [{ when: 'static', do: [{ k: 'aura', n: 1, stat: bp.combat.power, target: 'allOwnUnits', filter: { here: true } }] }] }, 2);
+      addCard(bp, { name: 'Hidden Sanctuary', type: t.id, cost: 3, stats: st(2, 8, 2), abilities: bp.combat.health ? [{ when: 'static', do: [{ k: 'aura', n: 2, stat: bp.combat.health, target: 'allOwnUnits', filter: { here: true } }] }] : [] }, 2);
+    } },
+  { id: 'shift', name: 'Shift (upgraded versions)', icon: '⇪', group: 'Card types', desc: 'Stronger versions of a unit that can be played on top of it for a shift cost, keeping its damage and readiness. Cards share a name before " - ".',
+    apply: (bp) => {
+      const pick = unitCards(bp).filter((c) => !c.shift && !c.name.includes(' - ')).slice(0, 2);
+      for (const c of pick) {
+        const n = Math.max(2, costNum(c) + 2);
+        addCard(bp, { name: `${c.name} - Legendary`, type: c.type, cost: n, color: c.color, stats: Object.fromEntries(Object.entries(c.stats).map(([k, v]) => [k, typeof v === 'number' ? v + 2 : v])),
+          shift: Math.max(1, n - 2), abilities: [{ when: 'play', do: [{ k: 'draw', n: 1 }] }] }, 2);
+      }
     } },
   { id: 'stadium', name: 'Shared stadium', icon: '🏟', group: 'Board', desc: 'A single Stadium slot for the whole table: playing a new Stadium replaces the one in play, whoever owns it. Stadiums buff everyone\'s units.',
     apply: (bp) => {

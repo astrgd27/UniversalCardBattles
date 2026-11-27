@@ -15,6 +15,9 @@
   | Generation Wars | Riftbound | satire: five generations fight over cultural battlefields |
   | Ringworld Rumble | One Piece | isekai pro wrestling |
   | Looboo | Pokémon TCG | cute alien creatures; nutrients as resources |
+  | Storyweavers | Disney Lorcana | public-domain fables and fairy tales; nursery rhymes as songs |
+  | (planned) | Universus | an original fighting-game cast, serious to goofy |
+  | (planned) | Android: Netrunner | evil lords and their dungeons against a party of adventurers |
 
 - **Order:**
   1. Clean slate (done).
@@ -106,6 +109,13 @@
   - Also: coin-flip attacks, bench damage, energy-scaling attacks, gust/switch, deck search, Leap Candy (skip a stage).
   - Balance and content are deferred, per the user (mechanics and tests first).
   - Not yet: abilities usable from the bench with restrictions (they work as once-per-turn activations), Tera, Lost Zone, devolving.
+- **Storyweavers (sixth clone, playable; mechanics reference: Disney Lorcana, rules 2.3 / Hyperia City):** `packages/modules/storyweavers`. Public-domain fables, legends and fairy tales; songs are nursery rhymes.
+  - 61 cards in six colors (Hearth, Moonlit, Thicket, Ember, Tide, Iron) and four 60-card two-color decks.
+  - Rules: Wonder from a face-down Wishing Well (inkable cards only, one a turn); characters with strength, willpower and lore; questing to 20 lore; challenges against exhausted characters and any place; damage stays; "drying" (no questing or challenging the turn played; Swift can challenge). Hand 7 with a partial mulligan; first player skips the draw; at most 2 colors; ending your turn with an empty deck loses.
+  - Keywords: Steadfast (Bodyguard), Brave (Challenger), Elusive (Evasive), Watchful (Alert), Headstrong (Reckless), Wanderlust (Adventurous), Sturdy (Resist), Swift (Rush), Helping Hand (Support), Charmed (Ward), Fleeting (Vanish), Bookmark (Boost), Late Bloomer (Underdog), Songbird (Singer), Round (Sing Together), Rhyme (Song).
+  - Shift versions; places with move costs, lore at the start of the turn and "here" bonuses; items; saved Wonder (ink drops).
+  - Tests: `tests/storyweavers.test.ts` (10 tests: AI games won on lore, and set pieces for each rule).
+  - Not modeled yet: Universal and named-class Shift, "if an ink drop was spent" bonuses, and discard-choice effects.
 - **Taste Dimension (fifth clone, playable; mechanics reference: Yu-Gi-Oh!):** `packages/modules/taste-dimension`.
   - Content:
     - 46 cards (a content pass comes later): four kitchens (Dim Sum Dynasty, Inferno Noodle House, Patisserie Royale, Spice Market);

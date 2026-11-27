@@ -302,7 +302,7 @@ function frames(bp: Blueprint, A: any, mk: MakerUI, mod: Mod | null) {
 
 // ---------------------------------------------------------------- 3. types & stats
 const ROLE_OPTS = Object.entries(ROLES).map(([k, v]) => [k, v.label] as [string, string]);
-const FRAME_FOR: Record<Role, string> = { attack: 'classic', unit: 'skirmisher', spell: 'spell', fast: 'spell', permanent: 'spell', attachment: 'spell', resource: 'resource', trap: 'spell', leader: 'leader', evolution: 'vital', extra: 'monster', token: 'token', battlefield: 'spell', walker: 'leader' };
+const FRAME_FOR: Record<Role, string> = { location: 'spell', attack: 'classic', unit: 'skirmisher', spell: 'spell', fast: 'spell', permanent: 'spell', attachment: 'spell', resource: 'resource', trap: 'spell', leader: 'leader', evolution: 'vital', extra: 'monster', token: 'token', battlefield: 'spell', walker: 'leader' };
 function types(bp: Blueprint, A: any) {
   const used = (id: string) => bp.cards.some((c) => c.type === id);
   return [
@@ -467,16 +467,16 @@ function rules(bp: Blueprint, A: any) {
     panel('Winning',
       row(num(bp, A, [...W, 'life'], { label: 'Starting life (0 = none)', min: 0, max: 100000, q: 'rules' }), num(bp, A, [...W, 'lifeCards'], { label: 'Life cards (0 = none)', min: 0, max: 15 }),
         num(bp, A, [...W, 'prizes'], { label: 'Prize cards (0 = none)', min: 0, max: 10 }), num(bp, A, [...W, 'points'], { label: 'Points to win (0 = none)', min: 0, max: 50 })),
-      row(chk(bp, A, [...W, 'deckOut'], 'Drawing from an empty deck loses'), chk(bp, A, [...W, 'burnOut'], 'Burn out instead: the opponent scores 1 and your discard pile is reshuffled'), chk(bp, A, [...W, 'noUnits'], 'Having no units in play loses'),
+      row(chk(bp, A, [...W, 'deckOut'], 'Drawing from an empty deck loses'), chk(bp, A, [...W, 'burnOut'], 'Burn out instead: the opponent scores 1 and your discard pile is reshuffled'), chk(bp, A, [...W, 'emptyEnd'], 'Ending your turn with an empty deck loses'), chk(bp, A, [...W, 'noUnits'], 'Having no units in play loses'),
         bp.win.lifeCards > 0 && chk(bp, A, [...W, 'lifeTriggers'], 'Life cards with a trigger can be used for free')),
       hint([bp.win.life && `Reduce the opponent from ${bp.win.life} life to 0.`, bp.win.lifeCards && `Each hit takes one of ${bp.win.lifeCards} life cards; a hit with none left wins.`,
         bp.win.prizes && `Take a prize for each enemy unit destroyed; take all ${bp.win.prizes} to win.`, (bp.win.points || c.mode === 'lanes') && `First to ${bp.win.points || 8} points wins.`].filter(Boolean).join(' ') || 'Choose at least one way to win.')),
     panel('Setup',
       row(num(bp, A, [...S, 'hand'], { label: 'Opening hand', min: 0, max: 15 }), num(bp, A, [...S, 'handLimit'], { label: 'Hand limit', min: 1, max: 99 }), num(bp, A, [...S, 'deckMin'], { label: 'Deck min', min: 5, max: 100 }),
         num(bp, A, [...S, 'deckMax'], { label: 'Deck max', min: 5, max: 120 }), num(bp, A, [...S, 'maxCopies'], { label: 'Copies per card', min: 1, max: 20 }), num(bp, A, [...S, 'turnLimit'], { label: 'Turn limit', min: 10, max: 400 })),
-      more('setup', 'More setup options', count(bp.setup.mulliganN, bp.setup.london, bp.setup.champion, bp.setup.leaderColors, bp.setup.benchSetup, bp.setup.mulliganBonus, bp.setup.noEvolveFirstTurn, bp.setup.leader),
+      more('setup', 'More setup options', count(bp.setup.mulliganN, bp.setup.london, bp.setup.maxColors, bp.setup.champion, bp.setup.leaderColors, bp.setup.benchSetup, bp.setup.mulliganBonus, bp.setup.noEvolveFirstTurn, bp.setup.leader),
       row(chk(bp, A, [...S, 'mulligan'], 'Free mulligan'), bp.setup.mulligan && num(bp, A, [...S, 'mulliganN'], { label: 'Mulligan: set aside up to N (0 = whole hand)', min: 0, max: 10 }),
-        bp.setup.mulligan && chk(bp, A, [...S, 'london'], 'London mulligan (redraw, then bottom 1 per mulligan)'), chk(bp, A, [...S, 'champion'], 'Each deck names a champion (playable from its own zone)'), bp.setup.leader && chk(bp, A, [...S, 'leaderColors'], "Cards must match the leader's two colors")),
+        bp.setup.mulligan && chk(bp, A, [...S, 'london'], 'London mulligan (redraw, then bottom 1 per mulligan)'), bp.colors.length > 1 && num(bp, A, [...S, 'maxColors'], { label: 'Colors per deck (0 = any)', min: 0, max: bp.colors.length }), chk(bp, A, [...S, 'champion'], 'Each deck names a champion (playable from its own zone)'), bp.setup.leader && chk(bp, A, [...S, 'leaderColors'], "Cards must match the leader's two colors")),
       bp.combat.mode === 'duel' && row(chk(bp, A, [...S, 'benchSetup'], 'Also put basic units on the bench at setup'), chk(bp, A, [...S, 'mulliganBonus'], 'Mulligan only without a basic unit; the opponent draws 1 per mulligan')),
       row(chk(bp, A, [...S, 'noEvolveFirstTurn'], 'Nobody evolves on their own first turn'), chk(bp, A, [...S, 'skipFirstDraw'], 'First player skips the first draw'), chk(bp, A, [...S, 'leader'], 'Each deck has a leader card'),
         bp.types.some((t) => t.role === 'extra') && num(bp, A, [...S, 'extraMax'], { label: 'Extra deck size', min: 0, max: 30 })))),
@@ -558,7 +558,7 @@ const EFF: [EffectKind, string, string[]][] = [
   ['lifeToHand', 'Top life card to hand', ['n']], ['handToLife', 'A card from hand to the top of life', []],
   ['inflict', 'Give a status', ['status', 'n', 'target']], ['cure', 'Cure a status', ['statusAll', 'target']], ['flip', 'Flip coins (heads / tails)', ['n', 'flip']],
   ['switch', 'Switch the active unit', ['side']], ['tutor', 'Search your deck (choose)', ['n', 'type', 'dest', 'dfilter']], ['attachFrom', 'Attach a resource card from a zone', ['src', 'target', 'dfilter']],
-  ['drawTo', 'Draw up to N in hand', ['n']], ['skipEvolve', 'Evolve two stages at once', []], ['fight', 'Fight (one of your units)', ['target']], ['roll', 'Roll dice', ['n', 'roll']], ['fusion', 'Fusion summon (from extra deck)', []], ['ritual', 'Ritual summon (from hand)', []], ['surveil', 'Surveil (top cards to discard)', ['n']], ['raw', 'Custom script (JSON)', ['raw']],
+  ['drawTo', 'Draw up to N in hand', ['n']], ['skipEvolve', 'Evolve two stages at once', []], ['fight', 'Fight (one of your units)', ['target']], ['roll', 'Roll dice', ['n', 'roll']], ['fusion', 'Fusion summon (from extra deck)', []], ['ritual', 'Ritual summon (from hand)', []], ['surveil', 'Surveil (top cards to discard)', ['n']], ['drops', 'Save resources for later (ink drops)', ['n']], ['raw', 'Custom script (JSON)', ['raw']],
 ];
 const TGT: [TargetKind, string][] = [['enemyUnit', 'an enemy unit (choose)'], ['anyUnit', 'any unit (choose)'], ['ownUnit', 'one of your units'], ['otherOwnUnit', 'another of your units'], ['enemyAny', 'enemy unit or opponent'],
   ['opponent', 'the opponent'], ['you', 'you'], ['self', 'this card'], ['randomEnemyUnit', 'a random enemy unit'], ['allEnemyUnits', 'all enemy units'], ['allUnits', 'all units'], ['allOwnUnits', 'all your units'],
@@ -617,6 +617,7 @@ function effectRow(bp: Blueprint, A: any, ep: Path, e: Effect, onDel: () => void
       chk(bp, A, [...ep, 'filter', 'exhausted'], 'Only exhausted'),
       sel(bp, A, [...ep, 'filter', 'zone'], [['', 'in play'], ...zoneOpts(bp).filter(([z]) => z !== 'deck')], { label: 'Where', map: (v) => v || undefined }),
       txt(bp, A, [...ep, 'filter', 'name'], { label: 'Named', ph: 'name or family' }), txt(bp, A, [...ep, 'filter', 'trait'], { label: 'Trait', ph: 'e.g. Sky Pirates' }),
+      bp.types.some((t) => t.role === 'location') && chk(bp, A, [...ep, 'filter', 'here'], 'At this location'),
       bp.combat.grid && [chk(bp, A, [...ep, 'filter', 'adjacent'], 'Next to this'), chk(bp, A, [...ep, 'filter', 'opposite'], 'Facing this'), bp.combat.emz && chk(bp, A, [...ep, 'filter', 'pointed'], 'This points to it')],
       (bp.statuses ?? []).length > 0 && sel(bp, A, [...ep, 'filter', 'status'], [['', 'any status'], ...bp.statuses!.map((s) => [s.id, `that is ${s.name}`] as [string, string])], { label: 'Status', map: (v) => v || undefined })),
     P.has('raw') && h('textarea', { class: 'code', rows: 2, 'aria-label': 'Custom effects JSON', onchange: (ev: Event) => A.mkRaw(ep.join('.'), [...ep, 'raw'], (ev.target as HTMLTextAreaElement).value) }, JSON.stringify(e.raw ?? [['draw', '$me', 1]])),
@@ -637,7 +638,7 @@ function abilityBox(bp: Blueprint, A: any, cp: Path, a: Ability, ai: number, rol
         a.uncount && num(bp, A, [...ap, 'uncount', 'n'], { label: 'How many', min: 1, max: 20 })],
       h('label', { class: 'fld' }, h('span', {}, 'If'), h('select', { 'aria-label': 'Condition', onchange: (e: Event) => { const v = (e.target as HTMLSelectElement).value; A.mkSet([...ap, 'if'], v ? { k: v, n: a.if?.n ?? 1 } : undefined); } },
         [['', 'always'], ['units', 'if you control N+ units'], ['life', 'if your life is N or less'], ['hand', 'if your hand has N or fewer'], ['yourTurn', 'during your turn'], ['res', 'if you have N+ resources'], ['counter', 'if this has N+ counters'], ['zone', 'if you have N+ cards in a zone'],
-          ['played', 'if you played N other cards this turn'], ['status', 'if this has a status'], ['kicked', 'if it was kicked'], ['linked', 'if this is linked (arrows)'], ['charged', 'if this has N+ charge'], ['attached', 'if this was given N+ resources'], ['oppTurn', "during the opponent's turn"], ['oppLife', 'if the opponent has N or less life']].map(([v, l]) => h('option', { value: v, selected: (a.if?.k ?? '') === v }, l)))),
+          ['played', 'if you played N other cards this turn'], ['status', 'if this has a status'], ['kicked', 'if it was kicked'], ['linked', 'if this is linked (arrows)'], ['charged', 'if this has N+ charge'], ['under', 'if this has N+ cards under it'], ['here', 'if this is at a location (or a unit is here)'], ['attached', 'if this was given N+ resources'], ['oppTurn', "during the opponent's turn"], ['oppLife', 'if the opponent has N or less life']].map(([v, l]) => h('option', { value: v, selected: (a.if?.k ?? '') === v }, l)))),
       a.if?.k === 'zone' && sel(bp, A, [...ap, 'if', 'zone'], zoneOpts(bp).filter(([z]) => z !== 'deck' && z !== 'hand'), { label: 'Zone' }),
       a.if?.k === 'status' && sel(bp, A, [...ap, 'if', 'status'], (bp.statuses ?? []).map((k) => [k.id, k.name] as [string, string]), { label: 'Status' }),
       a.if?.k === 'counter' && sel(bp, A, [...ap, 'if', 'counter'], (bp.counters ?? []).map((k) => [k.id, k.name] as [string, string]), { label: 'Counter' }),
@@ -710,6 +711,7 @@ function cardEditor(bp: Blueprint, A: any, mk: MakerUI, ci: number, c: CardBP, m
         role === 'resource' && row(num(bp, A, [...cp, 'provides'], { label: 'Counts as N energy', min: 1, max: 4 }), chk(bp, A, [...cp, 'rainbow'], 'Counts as every color'),
           bp.colors.length > 1 && sel(bp, A, [...cp, 'color2'], [['', 'single color'], ...bp.colors.map((k) => [k.id, k.name] as [string, string])], { label: 'Also makes (dual)', map: (v) => v || undefined })),
         ['ramp', 'cards', 'anycard', 'deck'].includes(bp.resource.mode) && row(!['resource', 'token'].includes(role) && num(bp, A, [...cp, 'kicker'], { label: 'Kicker (extra cost, 0 = none)', min: 0, max: 10 }),
+          ['unit', 'evolution'].includes(role) && num(bp, A, [...cp, 'shift'], { label: 'Shift cost (onto a same-named unit; 0 = none)', min: 0, max: 15 }),
           ['spell', 'fast'].includes(role) && num(bp, A, [...cp, 'flashback'], { label: 'Flashback cost', min: 0, max: 10 }), !['resource', 'token'].includes(role) && num(bp, A, [...cp, 'cycling'], { label: 'Cycling cost', min: 0, max: 10 }),
           role === 'attachment' && num(bp, A, [...cp, 'equipCost'], { label: 'Equip cost', min: 0, max: 10 })),
         bp.types.find((tt) => tt.id === c.type)?.method === 'link' && h('div', { class: 'mk-row' }, h('span', { class: 'muted' }, 'Link arrows'), (['TL', 'T', 'TR', 'L', 'R', 'BL', 'B', 'BR'] as const).map((a) =>

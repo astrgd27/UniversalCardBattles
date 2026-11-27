@@ -152,6 +152,8 @@ export const WIZARD: WizStep[] = [
       { id: 'prevention', name: 'Damage prevention', icon: '🛡', desc: 'Shields and second chances.' },
       { id: 'banish', name: 'Banished pile', icon: '🕳', desc: 'Effects that remove cards for good.' },
       { id: 'stadium', name: 'Shared stadium', icon: '🏟', desc: 'One shared location card both players play into.' },
+      { id: 'places', name: 'Places (locations)', icon: '🏰', desc: 'Location cards units move to for bonuses (and lore, with questing).', when: (a) => ['target', 'block', 'compare'].includes(combatOf(a)) && !['pitch', 'free', 'attachEnergy'].includes(one(a, 'resources', 'ramp')) },
+      { id: 'shift', name: 'Shift (upgraded versions)', icon: '⇪', desc: 'Legendary versions you can play on top of a unit for a shift cost.', when: (a) => !['pitch', 'free', 'attachEnergy'].includes(one(a, 'resources', 'ramp')) && combatOf(a) !== 'duel' },
       { id: 'chance', name: 'Coins & dice', icon: '🎲', desc: 'Cards that flip coins or roll dice.' }] },
   { id: 'review', title: 'Review & create', icon: '✅', help: 'Here is your game. Create it, then playtest straight away or keep shaping it in the Workshop.', options: [] },
 ];

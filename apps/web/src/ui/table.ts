@@ -270,6 +270,11 @@ function attsOf(c: C, id: string): ObjView[] {
 }
 function withAtts(c: C, o: ObjView) {
   const atts = attsOf(c, o.id);
+  // a unit at a location, or with cards tucked under it (shift, boost): a small tag under the card
+  const under = Object.values(c.v.zones).reduce((n, z) => n + (z.cards ?? []).filter((x) => x.rel?.host === o.id).length, 0);
+  const at = o.rel?.at && Object.values(c.v.zones).some((z) => z.cards?.some((x) => x.id === o.rel!.at)) ? o.rel.at : null;
+  if (!atts.length && (at || under)) return h('div', { class: 'unit-stack' }, obj(c, o, 'sm'),
+    h('div', { class: 'unit-tags' }, at && h('span', { class: 'chip', title: 'At this location' }, `📍 ${c.label(at)}`), under > 0 && h('span', { class: 'chip', title: 'Cards under it' }, `📚 ${under}`)));
   if (!atts.length) return obj(c, o, 'sm');
   return h('div', { class: 'unit-stack' }, obj(c, o, 'sm'), h('div', { class: 'atts', 'aria-label': `${atts.length} attached` }, atts.map((a) => obj(c, a, 'sm'))));
 }
@@ -278,7 +283,7 @@ function zoneBlock(c: C, key: string, z: ZoneDef) {
   if (!zv) return null;
   if (z.hideEmpty && !zv.count && !zv.show) return null;
   if (!zv.cards) return pile(c, key, z);
-  const shown = zv.cards.filter((o) => !(o.rel?.bearer && Object.values(c.v.zones).some((q) => q.cards?.some((x) => x.id === o.rel!.bearer))));
+  const shown = zv.cards.filter((o) => !(o.rel?.bearer && Object.values(c.v.zones).some((q) => q.cards?.some((x) => x.id === o.rel!.bearer))) && !(o.rel?.host && Object.values(c.v.zones).some((q) => q.cards?.some((x) => x.id === o.rel!.host))));
   if (z.hideEmpty && !shown.length && !zv.show) return null;
   if (z.slots?.length) return slotted(c, key, z, zv.cards);
   if (!shown.length && !z.abilities) return null;
@@ -546,6 +551,15 @@ function friendly(e: Record<string, any>, c: C): string | null {
     case 'lifeLost': return `${who(e.p)} lose${s(e.p)} a life card`;
     case 'prize': return `${who(e.p)} take${s(e.p)} ${(e.n ?? 1) > 1 ? `${e.n} prize cards` : 'a prize card'}`;
     case 'quest': return `${c.label(e.o)} quests for ${e.n}`;
+    case 'locLore': return `${c.label(e.o)} gives ${who(e.p) === 'You' ? 'you' : who(e.p)} ${e.n} point${e.n === 1 ? '' : 's'}`;
+    case 'movedTo': return `${c.label(e.o)} moves to ${c.label(e.loc)}`;
+    case 'shifted': return `${who(e.p)} shift${s(e.p)} ${c.label(e.o)} onto its earlier self`;
+    case 'boosted': return `${who(e.p)} tuck${s(e.p)} a card under ${c.label(e.o)}`;
+    case 'supported': return `${c.label(e.o)} gets +${e.n} from a helping hand`;
+    case 'vanished': return `${c.label(e.o)} vanishes when chosen`;
+    case 'drops': return `${who(e.p)} save${s(e.p)} ${e.n} for later`;
+    case 'dropSpent': return `${who(e.p)} spend${s(e.p)} a saved resource`;
+    case 'emptyDeck': return `${who(e.p)} end${s(e.p)} the turn with no cards left`;
     case 'conquer': return `${who(e.p)} conquer${s(e.p)} ${lbl(e.z)} (+1 point)`;
     case 'hold': return `${who(e.p)} hold${s(e.p)} ${lbl(e.z)} (+1 point)`;
     case 'retaken': return `${who(e.p)} retake${s(e.p)} ${lbl(e.z)} (already scored this turn)`;

@@ -3,7 +3,7 @@
 // The vocabulary is small on purpose: zones (arenas), counters, keywords (optionally with a number and an ability
 // bundle), and When → If → Do ability blocks whose targets take filters and whose activations take cost blocks.
 
-export type Role = 'unit' | 'spell' | 'fast' | 'permanent' | 'attachment' | 'resource' | 'trap' | 'leader' | 'evolution' | 'extra' | 'token' | 'attack' | 'battlefield' | 'walker';
+export type Role = 'unit' | 'spell' | 'fast' | 'permanent' | 'attachment' | 'resource' | 'trap' | 'leader' | 'evolution' | 'extra' | 'token' | 'attack' | 'battlefield' | 'walker' | 'location';
 export type Pos = 'tl' | 'tr' | 'bl' | 'br' | 'line';
 export type PhaseKind = 'ready' | 'draw' | 'resource' | 'main' | 'combat' | 'end' | 'custom';
 export type When = 'play' | 'leave' | 'attack' | 'hit' | 'quest' | 'startTurn' | 'endTurn' | 'activated' | 'static' | 'opAttack' | 'conquer' | 'hold' | 'block' | 'castSpell' | 'landfall' | 'flip';
@@ -16,13 +16,14 @@ export type EffectKind =
   | 'addCounter' | 'removeCounter' | 'strike' | 'deploy'
   | 'restrict' | 'prevent' | 'costMod' | 'insteadDestroy' | 'moveTo' | 'scry'
   | 'dig' | 'putIntoPlay' | 'addRes' | 'readyRes' | 'giveRes' | 'lifeToHand' | 'handToLife'
-  | 'inflict' | 'cure' | 'flip' | 'switch' | 'tutor' | 'attachFrom' | 'drawTo' | 'skipEvolve' | 'fight' | 'surveil' | 'roll' | 'fusion' | 'ritual';
+  | 'inflict' | 'cure' | 'flip' | 'switch' | 'tutor' | 'attachFrom' | 'drawTo' | 'skipEvolve' | 'fight' | 'surveil' | 'roll' | 'fusion' | 'ritual' | 'drops';
 export type KeywordRule = 'none' | 'haste' | 'guard' | 'blocker' | 'flying' | 'vigilance' | 'lifesteal' | 'deadly' | 'shield' | 'double' | 'overflow' | 'ward'
   | 'firstStrike' | 'resist' | 'challenger' | 'saboteur' | 'goAgain' | 'trigger' | 'song'
   | 'noAttack' | 'noBlock' | 'noBeAttacked' | 'unblockable' | 'entersExhausted'
   | 'tank' | 'bulwark' | 'accelerate' | 'ganking' | 'temporary' | 'banish' | 'rushUnits' | 'noKO'
   | 'reach' | 'doubleStrike' | 'menace' | 'indestructible' | 'flash' | 'wardTax' | 'legendary'
-  | 'tuner' | 'directAttack' | 'extraAttack' | 'hidden' | 'deflect';
+  | 'tuner' | 'directAttack' | 'extraAttack' | 'hidden' | 'deflect'
+  | 'bodyguard' | 'support' | 'reckless' | 'adventurous' | 'vanish' | 'boost' | 'underdog' | 'singer' | 'singTogether';
 
 export interface StatDef { id: string; name: string; icon?: string }
 export interface Color { id: string; name: string; hex: string; icon?: string }
@@ -100,8 +101,9 @@ export interface Combat {
   playToControlled?: boolean; // conquest: units may be played straight to a battlefield you control
   assignDamage?: boolean; // conquest: each side chooses which enemy gets lethal damage next (Tank first) // lanes: a conquest can't win the game unless you scored every battlefield this turn (draw a card instead)
 }
-export interface Win { life: number; lifeCards: number; prizes: number; points: number; deckOut: boolean; noUnits: boolean; lifeTriggers?: boolean; burnOut?: boolean } // burnOut: drawing from an empty deck gives the opponent a point and shuffles the discard pile back
+export interface Win { life: number; lifeCards: number; prizes: number; points: number; deckOut: boolean; noUnits: boolean; lifeTriggers?: boolean; burnOut?: boolean; emptyEnd?: boolean } // emptyEnd: a player who ends their turn with an empty deck loses // burnOut: drawing from an empty deck gives the opponent a point and shuffles the discard pile back
 export interface Setup { hand: number; mulligan: boolean; handLimit: number; deckMin: number; deckMax: number; maxCopies: number; skipFirstDraw: boolean; leader: boolean; extraMax: number; turnLimit: number;
+  maxColors?: number; // a deck may use at most this many colors
   mulliganN?: number; // > 0: mulligan by setting aside up to N cards (to the bottom) and drawing that many
   champion?: boolean; // each deck names a champion unit that starts in a champion zone and can be played from there
   leaderColors?: boolean; // every card must match one of the leader's two colors
@@ -112,9 +114,9 @@ export interface Setup { hand: number; mulligan: boolean; handLimit: number; dec
   london?: boolean; // mulligan: shuffle and draw a full hand again, then put 1 card on the bottom per mulligan
 }
 
-export interface Cond { k: 'units' | 'life' | 'hand' | 'yourTurn' | 'res' | 'counter' | 'zone' | 'played' | 'attached' | 'oppTurn' | 'oppLife' | 'status' | 'kicked' | 'charged' | 'linked' | 'raw'; n?: number; counter?: string; zone?: string; status?: string; raw?: unknown }
+export interface Cond { k: 'units' | 'life' | 'hand' | 'yourTurn' | 'res' | 'counter' | 'zone' | 'played' | 'attached' | 'oppTurn' | 'oppLife' | 'status' | 'kicked' | 'charged' | 'linked' | 'under' | 'here' | 'raw'; n?: number; counter?: string; zone?: string; status?: string; raw?: unknown }
 export interface Filter { type?: string; color?: string; keyword?: string; stat?: string; op?: 'le' | 'ge'; val?: number; exhausted?: boolean; zone?: string; name?: string; trait?: string; status?: string;
-  adjacent?: boolean; opposite?: boolean; pointed?: boolean } // grid boards: in a neighboring column of this; in the column facing this; pointed at by this card's link arrows
+  adjacent?: boolean; opposite?: boolean; pointed?: boolean; here?: boolean } // here: at this location (locations' abilities) // grid boards: in a neighboring column of this; in the column facing this; pointed at by this card's link arrows
 export interface Effect { k: EffectKind; n?: number; kw?: string; target?: TargetKind; filter?: Filter; stat?: string; until?: 'turn' | 'forever' | 'battle'; who?: 'me' | 'opp' | 'each'; card?: string; type?: string; rule?: KeywordRule; to?: 'hand' | 'deck' | 'play'; zone?: string; raw?: unknown[];
   status?: string; // inflict / cure (cure: empty = every status)
   heads?: Effect[]; tails?: Effect[]; perHeads?: boolean; // flip: n coins; heads/tails effects (several coins: heads only if all are heads, or once per heads with perHeads)
@@ -141,6 +143,7 @@ export interface CardBP {
   kwv?: Record<string, number>; // numbers for valued keywords (Resist 2)
   family?: string; // a shared base name (evolution/shift onto any card of this family)
   text?: string; flavor?: string; art?: string;
+  shift?: number; // Shift N: may be played for N on top of your unit with the same name (the part before " - "), keeping its state
   moves?: Move[]; evolvesFrom?: string; materials?: number; weakness?: string; retreat?: number;
   resist?: string; // takes less attack damage from this color (combat.resistance)
   prizes?: number; // prize cards the opponent takes when it is destroyed (default 1)
@@ -232,7 +235,7 @@ export const KEYWORD_RULES: Record<KeywordRule, { label: string; text: string; v
   banish: { label: 'Its hits trash life cards', text: 'Life cards it takes go to the discard pile instead of the hand (no triggers).' },
   rushUnits: { label: 'Attacks units the turn it is played', text: 'Can attack enemy units (not the leader or player) the turn it is played.' },
   noKO: { label: "Can't be destroyed in battle", text: "Can't be destroyed in battle." },
-  reach: { label: 'Can block flyers', text: 'Can block units with flying.' },
+  reach: { label: 'Can block and challenge flyers', text: 'Can block and challenge units with flying.' },
   doubleStrike: { label: 'Strikes twice', text: 'Deals combat damage in both the first-strike and the regular damage step.' },
   menace: { label: 'Needs 2+ blockers', text: "Can't be blocked except by two or more units." },
   indestructible: { label: "Can't be destroyed", text: "Damage and destroy effects don't destroy it." },
@@ -243,6 +246,15 @@ export const KEYWORD_RULES: Record<KeywordRule, { label: string; text: string; v
   tuner: { label: 'Tuner (synchro material)', text: 'Tuner: needed for synchro summons.' },
   directAttack: { label: 'Can attack directly', text: 'Can attack the opponent directly even while they have units.' },
   extraAttack: { label: 'Attacks twice', text: 'Can attack twice each turn.' },
+  bodyguard: { label: 'Bodyguard (may enter exhausted; must be attacked first)', text: 'May enter play exhausted. An enemy unit attacking one of your units must choose one with this if able.' },
+  support: { label: 'Support (lends its power when it quests)', text: 'When this quests, you may give another of your units +power equal to this power this turn.' },
+  reckless: { label: "Reckless (can't quest; must attack if able)", text: "Can't quest. You can't end your turn while it is able to attack." },
+  adventurous: { label: "Adventurous (can't attack; must quest if able)", text: "Can't attack. You can't end your turn while it is able to quest." },
+  vanish: { label: 'Vanish (destroyed when an enemy spell picks it)', text: "When an opponent's spell chooses this, destroy this instead." },
+  boost: { label: 'Boost N (stack a card under it)', text: 'Once a turn, pay N: put the top card of your deck face down under this.', valued: true },
+  underdog: { label: 'Underdog (cheaper for the second player at first)', text: "On your first turn, if you didn't go first, this costs 1 less." },
+  singer: { label: 'Singer N (sings as if it cost N)', text: 'Counts as cost N when singing songs.', valued: true },
+  singTogether: { label: 'Sing Together N (several units sing it)', text: 'Instead of paying, exhaust any of your units whose costs add up to N or more.', valued: true },
   legendary: { label: 'Legendary (only one of each name)', text: 'If you control two with the same name, the older one goes to the discard pile.' },
 };
 
@@ -259,6 +271,7 @@ export const ROLES: Record<Role, { label: string; hint: string }> = {
   evolution: { label: 'Evolution', hint: 'Played on top of a named unit (or a family), keeping its damage and attachments.' },
   extra: { label: 'Extra-deck unit', hint: 'Waits in a separate deck; summon it by giving up units.' },
   token: { label: 'Token', hint: 'Made by effects; never in a deck.' },
+  location: { label: 'Location', hint: 'A place you play into the board: units move there for its move cost, it scores its lore at the start of your turn, and enemies can attack it.' },
   walker: { label: 'Walker (loyalty permanent)', hint: 'A permanent with loyalty: use one + or - loyalty ability per turn; enemies can attack it, and damage removes loyalty.' },
   battlefield: { label: 'Battlefield', hint: 'A place to fight over. Each deck brings some; one is chosen for each player. Gives its effects to whoever conquers or holds it.' },
 };

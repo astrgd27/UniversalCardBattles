@@ -324,7 +324,12 @@ function evalAction(m: Mod, s: State, p: string, name: string, src: string | nul
   const fail = (r: Reason) => ({ r, slots: [], ctx: base });
   const g = gate(s, p);
   if (g) return fail(g);
-  if (name === 'pass') return { r: ok('Pass'), slots: [], ctx: base };
+  if (name === 'pass') {
+    const ph = m.rules.phases[s.turn.phase];
+    if (ph?.mustAct && !s.stack.length && !s.windows.length && p === s.players[s.turn.active]?.id)
+      for (const k of ph.mustAct) if (ev(m, s, k.if, base)) return fail(no('mustAct', k.why));
+    return { r: ok('Pass'), slots: [], ctx: base };
+  }
   const a = actionDef(m, s, name, src);
   if (!a || (a.activated && !name.includes('#'))) return fail(no('unknown', `Unknown action "${name}".`));
   const label = a.label ?? name;
@@ -376,7 +381,7 @@ export function listActions({ m, s }: Match, p: string): Template[] {
   }
   const tm = timingOf(m, s);
   const label = tm.mode === 'immediate' ? 'End phase' : s.stack.length ? 'Pass (let it resolve)' : 'Pass priority';
-  out.push({ action: 'pass', label, source: null, slots: [] });
+  if (evalAction(m, s, p, 'pass', null).r.ok) out.push({ action: 'pass', label, source: null, slots: [] });
   return out;
 }
 
