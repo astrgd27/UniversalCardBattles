@@ -85,6 +85,10 @@ try {
   ok(await page.isVisible('.mk-bugs.good'), `Generation Wars remix builds in the Workshop (${await page.textContent('.mk-bugs').catch(() => '')})`);
   await page.click('[data-station=cards]');
   ok(await page.$$eval('.mk-grid .card', (c) => c.length) >= 60, 'remix has all the cards');
+  await page.fill('.mk-search', 'rune');
+  const found = await page.$$eval('.mk-grid .card', (c) => c.length);
+  ok(found > 0 && found < 60, `card search narrows the list (${found})`);
+  await page.fill('.mk-search', '');
   await page.click('text=← Projects');
   await page.click('text=← Library');
 

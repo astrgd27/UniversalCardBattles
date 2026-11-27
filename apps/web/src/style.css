@@ -566,7 +566,19 @@ button.chip { min-height: 34px; padding: 4px 12px; font-size: 13px; }
 .mk-statname { min-width: 90px; }
 .mk-preview { display: flex; flex-direction: column; gap: 10px; align-items: center; position: sticky; top: 84px; }
 .mk-typerow { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; padding: 8px 0; border-bottom: 1px dashed var(--line); }
-.mk-typerow .fld:first-child input { width: 64px; }
+.mk-typerow .fld:first-child input { width: 150px; }
+.mk-kwbox .mk-typerow .fld:has(input.wide) { flex: 1 1 320px; }
+.mk-kwbox .mk-typerow input.wide { width: 100%; }
+.mk-more { margin-top: 10px; border: 1px dashed var(--line); border-radius: 12px; padding: 6px 12px; }
+.mk-more > summary { cursor: pointer; font-weight: 600; display: flex; gap: 8px; align-items: center; padding: 4px 0; }
+.mk-morecost { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.mk-morecost > summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+.mk-cardbar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; position: sticky; top: 70px; z-index: 3; background: var(--bg, #0f1117); padding: 6px 0; }
+.mk-search { grid-column: 1 / -1; min-width: 0; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: rgba(0,0,0,.25); color: inherit; font: inherit; }
+.mk-cardbar select { min-width: 0; }
+.mk-grid .card { --w: 112px; }
+.mk-body.side-off { grid-template-columns: 210px minmax(0, 1fr); }
+.mk-editor { position: sticky; top: 84px; max-height: calc(100dvh - 100px); overflow-y: auto; }
 .mk-rolehint { flex: 1 1 180px; }
 .mk-addrow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .mk-board { display: flex; flex-direction: column; gap: 10px; }
@@ -587,7 +599,7 @@ button.chip { min-height: 34px; padding: 4px 12px; font-size: 13px; }
 .mk-ph-btns { display: inline-flex; gap: 2px; }
 .mk-sub { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 14px; border: 1px dashed var(--line); }
 .mk-sub summary { cursor: pointer; font-weight: 600; }
-.mk-cards { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 16px; align-items: start; }
+.mk-cards { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
 .mk-cardlist { display: flex; flex-direction: column; gap: 10px; }
 .mk-grid { display: flex; flex-wrap: wrap; gap: 8px; }
 .mk-editor { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 18px; background: var(--panel); border: 1px solid var(--line); position: sticky; top: 84px; max-height: calc(100dvh - 100px); overflow-y: auto; }
@@ -612,10 +624,10 @@ button.chip { min-height: 34px; padding: 4px 12px; font-size: 13px; }
 .mk-compiled { max-height: 420px; overflow: auto; background: var(--panel-solid); padding: 10px; border-radius: 10px; }
 .mk-return { position: fixed; bottom: 12px; left: 12px; z-index: 9; }
 .ghost.bad { color: var(--bad); }
-.mk-toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 10; display: flex; gap: 10px; align-items: center; max-width: min(620px, calc(100vw - 24px));
+.mk-toast { position: fixed; right: 18px; bottom: 18px; z-index: 10; display: flex; gap: 10px; align-items: center; max-width: min(620px, calc(100vw - 24px));
   padding: 12px 18px; border-radius: 16px; background: var(--panel-solid); border: 1px solid #f59e0b; box-shadow: 0 10px 30px rgba(245,158,11,.35); animation: mk-pop .35s ease-out; text-align: left; }
 .mk-xp { font-weight: 900; color: #3a2500; background: linear-gradient(135deg, #f59e0b, #facc15); padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
-@keyframes mk-pop { from { transform: translate(-50%, 30px) scale(.9); opacity: 0; } }
+@keyframes mk-pop { from { transform: translateY(30px) scale(.9); opacity: 0; } }
 .mk-confetti { position: fixed; inset: 0; pointer-events: none; z-index: 11; overflow: hidden; }
 .mk-confetti i { position: absolute; top: -20px; left: calc(var(--i) * 3.6%); width: 10px; height: 16px; border-radius: 3px;
   background: hsl(calc(var(--i) * 47) 90% 60%); animation: mk-fall 2.6s ease-in forwards; transform: rotate(calc(var(--i) * 31deg)); }

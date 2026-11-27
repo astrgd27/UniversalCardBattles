@@ -7,6 +7,8 @@ import {
 } from '#maker';
 import { type MakerUI, type Station, BLUEPRINTS, RANKS, STATIONS, newMakerUI, previewMod, problems, profile, projects, published, rankOf } from '../maker.ts';
 import { store } from '../storage.ts';
+const sideOff = () => store.get<boolean>('ucb-mk-sideoff', false);
+const setSideOff = (v: boolean) => store.set('ucb-mk-sideoff', v);
 import { SOURCES } from '../modules.ts';
 import { type Child, cardFace, cls, h } from './kit.ts';
 import { BUILTIN } from '../templates.ts';
@@ -46,6 +48,12 @@ function colorIn(bp: Blueprint, A: any, path: Path, label: string, q?: Station) 
 const panel = (title: string, ...kids: Child[]) => h('section', { class: 'mk-panel' }, h('h3', {}, title), kids);
 const hint = (t: string) => h('p', { class: 'mk-hint' }, t);
 const row = (...kids: Child[]) => h('div', { class: 'mk-row' }, kids);
+/** Advanced options tucked behind a disclosure; its open state survives redraws. `on` counts options in use. */
+const moreOpen = new Set<string>();
+const more = (key: string, title: string, on: number, ...kids: Child[]) => h('details', { class: 'mk-more', open: moreOpen.has(key),
+  ontoggle: (e: Event) => { if ((e.target as HTMLDetailsElement).open) moreOpen.add(key); else moreOpen.delete(key); } },
+  h('summary', {}, title, on ? h('span', { class: 'chip good' }, `${on} in use`) : null), kids);
+const count = (...v: unknown[]) => v.filter((x) => x !== undefined && x !== null && x !== false && x !== 0 && x !== '' && !(Array.isArray(x) && !x.length)).length;
 function modeCards<T extends string>(cur: T, modes: [T, string, string, string][], pick: (v: T) => void) {
   return h('div', { class: 'mk-modes' }, modes.map(([v, icon, name, desc]) => h('button', { class: cls('mk-mode', v === cur && 'on'), onclick: () => pick(v), 'data-mode': v },
     h('span', { class: 'mk-mode-icon' }, icon), h('strong', {}, name), h('span', { class: 'muted' }, desc))));
@@ -124,12 +132,13 @@ function workshop(ui: any, A: any, mk: MakerUI, bp: Blueprint) {
       h('button', { class: 'x', onclick: A.mkUndo, disabled: !mk.undo.length, title: 'Undo', 'aria-label': 'Undo', 'data-act': 'mk-undo' }, '↶'),
       h('button', { class: 'x', onclick: A.mkRedo, disabled: !mk.redo.length, title: 'Redo', 'aria-label': 'Redo' }, '↷'),
       h('button', { class: cls('mk-bugs', bugs.length ? 'bad' : 'good'), onclick: () => A.mkStation('test'), title: 'Problems that stop the game from building' }, bugs.length ? `🐞 ${bugs.length} to fix` : '✓ Ready to play'),
-      h('button', { class: 'cta small', onclick: A.mkPlaytest, disabled: bugs.length > 0, 'data-act': 'mk-play' }, '▶ Playtest')),
-    h('div', { class: 'mk-body' },
+      h('button', { class: 'cta small', onclick: A.mkPlaytest, disabled: bugs.length > 0, 'data-act': 'mk-play' }, '▶ Playtest'),
+      h('button', { class: cls('chip', !sideOff() && 'on'), onclick: () => { setSideOff(!sideOff()); A.mkSel('filter', mk.filter); }, title: 'Show or hide the guide and quests', 'aria-label': 'Toggle the guide panel' }, sideOff() ? '💡 Guide' : '💡 Hide guide')),
+    h('div', { class: cls('mk-body', sideOff() && 'side-off') },
       h('nav', { class: 'mk-path', 'aria-label': 'Build stations' }, STATIONS.map((s, i) => h('button', { class: cls('mk-station', s.id === mk.station && 'on', done.has(s.quest) && 'done'), onclick: () => A.mkStation(s.id), 'data-station': s.id },
         h('span', { class: 'mk-st-n' }, done.has(s.quest) ? '★' : String(i + 1)), h('span', { class: 'mk-st-icon' }, s.icon), h('span', { class: 'mk-st-name' }, s.name)))),
       h('main', { class: 'mk-main' }, h('div', { class: 'mk-head' }, h('h2', {}, `${st.icon} ${st.name}`), h('span', { class: cls('chip', done.has(st.quest) && 'good') }, done.has(st.quest) ? `★ ${st.goal}` : `Quest · ${st.goal} (+${st.xp} XP)`)), views[mk.station]()),
-      h('aside', { class: 'mk-side' }, guide(mk.station, probs, A, mk))),
+      !sideOff() && h('aside', { class: 'mk-side' }, guide(mk.station, probs, A, mk))),
     mk.toast && Date.now() - mk.toast.at < 6000 && h('button', { class: 'mk-toast', onclick: A.mkToast }, mk.toast.xp ? h('span', { class: 'mk-xp' }, `+${mk.toast.xp} XP`) : null, mk.toast.text),
     celebrating && h('div', { class: 'mk-confetti', 'aria-hidden': 'true' }, Array.from({ length: 28 }, (_, i) => h('i', { style: `--i:${i};animation-delay:-${Date.now() - mk.celebrate}ms` }))));
 }
@@ -341,11 +350,11 @@ function rules(bp: Blueprint, A: any) {
     r.mode === 'anycard' && row(chk(bp, A, [...R, 'faceDown'], 'Placed face down (generic resource)'),
       sel(bp, A, [...R, 'onlyKeyword'], [['', 'Any card can be a resource'], ...bp.keywords.map((k) => [k.id, `Only cards with ${k.name}`] as [string, string])], { label: 'Which cards', map: (v) => v || undefined })),
     r.mode === 'pitch' && row(sel(bp, A, [...R, 'pitchStat'], stats, { label: 'Pitch value stat' })),
-    row(sel(bp, A, [...R, 'levelGate'], [['', 'No level requirement'], ...stats], { label: 'Level requirement (stat ≤ resources in play)', map: (v) => v || undefined }),
+    more('res', 'More resource options', count(r.levelGate, r.actions, r.need, r.tribute, r.summonsPerTurn), row(sel(bp, A, [...R, 'levelGate'], [['', 'No level requirement'], ...stats], { label: 'Level requirement (stat ≤ resources in play)', map: (v) => v || undefined }),
       num(bp, A, [...R, 'actions'], { label: 'Action points per turn (0 = off)', min: 0, max: 5 })),
     row(h('label', { class: 'fld' }, h('span', {}, 'Energy requirement'), h('select', { 'aria-label': 'Energy requirement', onchange: (e: Event) => { const v = (e.target as HTMLSelectElement).value; A.mkSet([...R, 'need'], v ? { stat: v, gen: r.need?.gen ?? v } : null, 'rules'); } },
       [['', 'Off'], ...stats].map(([v, l]) => h('option', { value: v, selected: (r.need?.stat ?? '') === v }, v ? `Needs: ${l}` : l)))),
-      r.need && sel(bp, A, [...R, 'need', 'gen'], stats, { label: 'Made by units\' stat' })),
+      r.need && sel(bp, A, [...R, 'need', 'gen'], stats, { label: 'Made by units\' stat' })), num(bp, A, [...R, 'summonsPerTurn'], { label: 'Summons per turn (0 = any)', min: 0, max: 10 }),
     row(txt(bp, A, [...R, 'name'], { label: 'Resource name' }), txt(bp, A, [...R, 'icon'], { label: 'Icon' }),
       r.mode === 'ramp' && [num(bp, A, [...R, 'start'], { label: 'First turn', min: 0, max: 20 }), num(bp, A, [...R, 'perTurn'], { label: 'Growth per turn', min: 0, max: 10 }), num(bp, A, [...R, 'max'], { label: 'Maximum', min: 1, max: 99 })],
       r.mode === 'deck' && [num(bp, A, [...R, 'deckSize'], { label: 'Resource deck size', min: 1, max: 40 }), num(bp, A, [...R, 'start'], { label: 'First turn', min: 0, max: 10 }), num(bp, A, [...R, 'perTurn'], { label: 'Per turn', min: 0, max: 10 }),
@@ -353,23 +362,23 @@ function rules(bp: Blueprint, A: any) {
     r.mode === 'deck' && row(chk(bp, A, [...R, 'recycle'], 'Colored costs: recycle resources of that color (each still gives 1 generic)')),
     row(['ramp', 'cards', 'anycard', 'deck'].includes(r.mode) && num(bp, A, [...R, 'boost'], { label: 'Boost (+power per resource, 0 = off)', min: 0, max: 100000, step: 1 }),
       r.boost > 0 && chk(bp, A, [...R, 'give'], 'Boost is "give": main phase only, counted on the card (for "N given" conditions)'),
-      num(bp, A, [...R, 'summonsPerTurn'], { label: 'Summons per turn (0 = any)', min: 0, max: 10 })),
+    ),
     h('div', { class: 'mk-sub' }, h('strong', {}, 'Tribute summons'), hint('Units at or above a level must send units to the discard pile to be summoned.'),
       r.tribute.map((t, i) => row(num(bp, A, [...R, 'tribute', i, 'level'], { label: 'Level at least', min: 1, max: 20 }), num(bp, A, [...R, 'tribute', i, 'n'], { label: 'Tributes', min: 1, max: 5 }),
         h('button', { class: 'x', onclick: () => A.mkEdit((b: Blueprint) => { b.resource.tribute.splice(i, 1); }), 'aria-label': 'Remove' }, '🗑'))),
-      h('button', { class: 'chip', onclick: () => A.mkEdit((b: Blueprint) => { b.resource.tribute.push({ level: 5, n: 1 }); if (!b.stats.some((s) => s.id === 'level')) b.stats.push({ id: 'level', name: 'Level', icon: '★' }); }, 'rules') }, '+ Tribute rule'))),
+      h('button', { class: 'chip', onclick: () => A.mkEdit((b: Blueprint) => { b.resource.tribute.push({ level: 5, n: 1 }); if (!b.stats.some((s) => s.id === 'level')) b.stats.push({ id: 'level', name: 'Level', icon: '★' }); }, 'rules') }, '+ Tribute rule')))),
     panel('Combat: how fights work', modeCards(c.mode, [
       ['block', '🛡', 'Attack & block', 'Attackers hit the player; the defender may block with a unit.'], ['target', '🎯', 'Pick a target', 'Attack a unit, the leader or the player directly.'],
       ['duel', '⚔', 'Active duel', 'One active unit fights; the rest wait on the bench. Units use printed attacks.'], ['lanes', '⟁', 'Battlefields', 'Move units onto shared battlefields; conquer and hold for points.'],
       ['cards', '🗡', 'Attack cards', 'Play attack cards from hand; the defender blocks with cards from hand.'], ['none', '☮', 'No combat', 'Win through card effects, points or races.'],
     ], (v) => A.mkSet([...Cb, 'mode'], v, 'rules')),
     c.mode === 'cards' && row(sel(bp, A, [...Cb, 'blockStat'], stats, { label: 'Blocking stat (cards discarded to defend)' })),
-    c.mode === 'lanes' && c.conquest && row(chk(bp, A, [...Cb, 'playToControlled'], 'Units may be played to a battlefield you control'), chk(bp, A, [...Cb, 'assignDamage'], 'Players assign fight damage (Tank first)')),
+    more('combat', 'More combat options', count(c.conquest, c.grid, c.mass, c.quest, c.finalPoint), c.mode === 'lanes' && c.conquest && row(chk(bp, A, [...Cb, 'playToControlled'], 'Units may be played to a battlefield you control'), chk(bp, A, [...Cb, 'assignDamage'], 'Players assign fight damage (Tank first)')),
     c.mode === 'lanes' && row(chk(bp, A, [...Cb, 'conquest'], 'Conquest: group moves, showdowns, fights with Tank, recall on a tie'), chk(bp, A, [...Cb, 'finalPoint'], 'The winning point needs every battlefield scored this turn'),
       bp.types.some((t) => t.role === 'battlefield') && num(bp, A, [...S, 'sites'], { label: 'Battlefield cards per deck', min: 0, max: 5 })),
     ['block', 'target'].includes(c.mode) && row(chk(bp, A, [...Cb, 'grid'], 'Board grid: units go in numbered columns (players choose), 5 support slots'), c.grid && chk(bp, A, [...Cb, 'emz'], 'Two shared extra zones + link arrows')),
     c.mode === 'block' && row(chk(bp, A, [...Cb, 'mass'], 'Declare all attackers at once; blockers per attacker; first-strike step; attack walkers'), !c.mass && num(bp, A, [...Cb, 'maxBlockers'], { label: 'Blockers per attacker', min: 1, max: 5 })),
-    ['block', 'target'].includes(c.mode) && row(sel(bp, A, [...Cb, 'quest'], [['', 'No questing'], ...stats], { label: 'Questing: exhaust to score this stat', map: (v) => v || null })),
+    ['block', 'target'].includes(c.mode) && row(sel(bp, A, [...Cb, 'quest'], [['', 'No questing'], ...stats], { label: 'Questing: exhaust to score this stat', map: (v) => v || null }))),
     c.mode !== 'none' && [
       row(sel(bp, A, [...Cb, 'power'], stats, { label: 'Attack stat' }), sel(bp, A, [...Cb, 'health'], [['', 'None (compare power)'], ...stats], { label: 'Health stat', map: (v) => v || null }),
         c.mode === 'target' && sel(bp, A, [...Cb, 'defense'], [['', 'None'], ...stats], { label: 'Defense stat', map: (v) => v || null }),
@@ -398,11 +407,12 @@ function rules(bp: Blueprint, A: any) {
     panel('Setup',
       row(num(bp, A, [...S, 'hand'], { label: 'Opening hand', min: 0, max: 15 }), num(bp, A, [...S, 'handLimit'], { label: 'Hand limit', min: 1, max: 99 }), num(bp, A, [...S, 'deckMin'], { label: 'Deck min', min: 5, max: 100 }),
         num(bp, A, [...S, 'deckMax'], { label: 'Deck max', min: 5, max: 120 }), num(bp, A, [...S, 'maxCopies'], { label: 'Copies per card', min: 1, max: 20 }), num(bp, A, [...S, 'turnLimit'], { label: 'Turn limit', min: 10, max: 400 })),
+      more('setup', 'More setup options', count(bp.setup.mulliganN, bp.setup.london, bp.setup.champion, bp.setup.leaderColors, bp.setup.benchSetup, bp.setup.mulliganBonus, bp.setup.noEvolveFirstTurn, bp.setup.leader),
       row(chk(bp, A, [...S, 'mulligan'], 'Free mulligan'), bp.setup.mulligan && num(bp, A, [...S, 'mulliganN'], { label: 'Mulligan: set aside up to N (0 = whole hand)', min: 0, max: 10 }),
         bp.setup.mulligan && chk(bp, A, [...S, 'london'], 'London mulligan (redraw, then bottom 1 per mulligan)'), chk(bp, A, [...S, 'champion'], 'Each deck names a champion (playable from its own zone)'), bp.setup.leader && chk(bp, A, [...S, 'leaderColors'], "Cards must match the leader's two colors")),
       bp.combat.mode === 'duel' && row(chk(bp, A, [...S, 'benchSetup'], 'Also put basic units on the bench at setup'), chk(bp, A, [...S, 'mulliganBonus'], 'Mulligan only without a basic unit; the opponent draws 1 per mulligan')),
       row(chk(bp, A, [...S, 'noEvolveFirstTurn'], 'Nobody evolves on their own first turn'), chk(bp, A, [...S, 'skipFirstDraw'], 'First player skips the first draw'), chk(bp, A, [...S, 'leader'], 'Each deck has a leader card'),
-        bp.types.some((t) => t.role === 'extra') && num(bp, A, [...S, 'extraMax'], { label: 'Extra deck size', min: 0, max: 30 }))),
+        bp.types.some((t) => t.role === 'extra') && num(bp, A, [...S, 'extraMax'], { label: 'Extra deck size', min: 0, max: 30 })))),
   ];
 }
 
@@ -571,16 +581,24 @@ function abilityBox(bp: Blueprint, A: any, cp: Path, a: Ability, ai: number, rol
     a.do.map((e, ei) => effectRow(bp, A, [...ap, 'do', ei], e, () => A.mkEdit((b: Blueprint) => { get(b, ap).do.splice(ei, 1); }), kwId, a.when === 'static')),
     h('button', { class: 'chip', onclick: () => A.mkEdit((b: Blueprint) => { get(b, ap).do.push({ k: a.when === 'static' ? 'aura' : 'draw', n: 1, target: a.when === 'static' ? 'allOwnUnits' : 'enemyUnit' }); }, 'cards') }, '+ then…'));
 }
+let cardQuery = '';
 function cardsView(bp: Blueprint, A: any, mk: MakerUI, mod: Mod | null) {
   const ci = bp.cards.findIndex((c) => c.id === mk.card);
   const c = bp.cards[ci];
   const filter = mk.filter && bp.types.some((t) => t.id === mk.filter) ? mk.filter : null;
-  const shown = bp.cards.filter((k) => !filter || k.type === filter);
+  const q = (cardQuery ?? '').trim().toLowerCase();
+  const shown = bp.cards.filter((k) => (!filter || k.type === filter) && (!q || k.name.toLowerCase().includes(q) || (k.traits ?? []).some((t) => t.toLowerCase().includes(q)) || k.keywords.some((w) => w.toLowerCase().includes(q))));
   return h('div', { class: 'mk-cards' },
     h('div', { class: 'mk-cardlist' },
-      h('div', { class: 'mk-tabs' }, h('button', { class: cls('chip', !filter && 'on'), onclick: () => A.mkSel('filter', null) }, `All (${bp.cards.length})`),
-        bp.types.map((t) => h('button', { class: cls('chip', filter === t.id && 'on'), onclick: () => A.mkSel('filter', t.id) }, `${t.icon ?? ''} ${t.name} (${bp.cards.filter((k) => k.type === t.id).length})`))),
-      h('div', { class: 'mk-addrow' }, h('span', { class: 'muted' }, 'New:'), bp.types.map((t) => h('button', { class: 'chip', onclick: () => A.mkNewCard(t.id), 'data-newcard': t.id }, `+ ${t.name}`))),
+      h('div', { class: 'mk-cardbar' },
+        h('input', { type: 'search', class: 'mk-search', placeholder: `Search ${bp.cards.length} cards (name, trait, keyword)`, value: cardQuery, 'aria-label': 'Search cards', 'data-keep': 'card-search',
+          oninput: (e: Event) => { cardQuery = (e.target as HTMLInputElement).value; A.mkSel('filter', filter); } }),
+        h('select', { 'aria-label': 'Filter by type', onchange: (e: Event) => A.mkSel('filter', (e.target as HTMLSelectElement).value || null) },
+          h('option', { value: '', selected: !filter }, `All types (${bp.cards.length})`),
+          bp.types.map((t) => h('option', { value: t.id, selected: filter === t.id }, `${t.icon ?? ''} ${t.name} (${bp.cards.filter((k) => k.type === t.id).length})`))),
+        h('select', { class: 'mk-newsel', 'aria-label': 'New card', onchange: (e: Event) => { const v = (e.target as HTMLSelectElement).value; if (v) A.mkNewCard(v); } },
+          h('option', { value: '' }, '+ New card…'), bp.types.map((t) => h('option', { value: t.id, 'data-newcard': t.id }, `${t.icon ?? ''} ${t.name}`)))),
+      q && h('p', { class: 'muted' }, `${shown.length} match${shown.length === 1 ? '' : 'es'}`),
       h('div', { class: 'mk-addrow' }, h('button', { class: 'chip', onclick: A.mkCsvExport }, '⬇ Spreadsheet (CSV)'),
         h('label', { class: 'chip file-btn' }, '⬆ Import CSV', h('input', { type: 'file', accept: '.csv,text/csv', onchange: (e: Event) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) A.mkCsvImport(f); } }))),
       h('div', { class: 'mk-grid' }, mod ? shown.map((k) => mod.card.has(k.id) && cardFace(mod, k.id, { size: 'sm', state: k.id === mk.card ? 'picked' : '', onclick: () => A.mkSel('card', k.id) }))
@@ -608,7 +626,12 @@ function cardEditor(bp: Blueprint, A: any, mk: MakerUI, ci: number, c: CardBP, m
           onchange: (e: Event) => { const v = (e.target as HTMLInputElement).value.split(',').map((s) => s.trim()).filter(Boolean); A.mkSet([...cp, 'traits'], v.length ? v : undefined, 'cards'); } })),
         !['resource', 'leader', 'token'].includes(role) && bp.resource.mode !== 'none' && bp.resource.mode !== 'attach' && h('div', { class: 'mk-cost' }, h('span', { class: 'muted' }, `Cost (${costLabel(c.cost, bp)})`),
           typed ? [h('label', { class: 'fld' }, h('span', {}, 'Any'), h('input', { type: 'number', min: 0, max: 20, value: costMap.any ?? 0, onchange: (e: Event) => setCost('any', Number((e.target as HTMLInputElement).value)) })),
-            bp.colors.map((k) => h('label', { class: 'fld' }, h('span', {}, k.name), h('input', { type: 'number', min: 0, max: 20, value: costMap[k.id] ?? 0, onchange: (e: Event) => setCost(k.id, Number((e.target as HTMLInputElement).value)) })))]
+            ...(() => {
+              const box = (k: { id: string; name: string }) => h('label', { class: 'fld' }, h('span', {}, k.name), h('input', { type: 'number', min: 0, max: 20, value: costMap[k.id] ?? 0, onchange: (e: Event) => setCost(k.id, Number((e.target as HTMLInputElement).value)) }));
+              const used = bp.colors.filter((k) => (costMap[k.id] ?? 0) > 0 || k.id === c.color);
+              const rest = bp.colors.filter((k) => !used.includes(k));
+              return [...used.map(box), rest.length ? h('details', { class: 'mk-morecost' }, h('summary', {}, '+ other colors'), rest.map(box)) : null];
+            })()]
             : num(bp, A, [...cp, 'cost'], { label: 'Cost', min: 0, max: 30 })),
         h('div', { class: 'mk-row' }, bp.stats.map((s) => num(bp, A, [...cp, 'stats', s.id], { label: s.name, min: -100000, max: 100000 }))),
         bp.keywords.length > 0 && h('div', { class: 'mk-kws' }, bp.keywords.map((k) => [h('button', { class: cls('chip', c.keywords.includes(k.id) && 'on'), title: k.text || KEYWORD_RULES[k.rule].text,
