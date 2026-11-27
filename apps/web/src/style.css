@@ -702,3 +702,18 @@ svg.sel-arrows { color: var(--accent2); }
 @keyframes play-in { 0% { transform: translateY(40px) scale(1.25); opacity: 0; } 60% { opacity: 1; } 100% { transform: none; } }
 .dock .pass { font-size: 15px; padding: 10px 22px; }
 .log-all { font-size: 12px; min-height: 0; }
+/* fit the whole board in one viewport on tablet and desktop */
+@media (min-width: 760px) {
+  .table { --card-sm: min(clamp(84px, 9.4vw, 140px), calc((100vh - 290px) / 5)); --card-md: min(clamp(96px, 10.4vw, 160px), calc((100vh - 290px) / 4.4)); padding-bottom: 104px; }
+  :root[data-cards=l] .table { --card-sm: min(clamp(96px, 10.5vw, 176px), calc((100vh - 280px) / 4.7)); --card-md: min(clamp(110px, 11.5vw, 190px), calc((100vh - 280px) / 4.1)); }
+  .seat-area { padding: 6px 10px; gap: 4px; }
+  .felt { gap: 8px; }
+  .seat-area.opp .hand .card { --w: calc(var(--card-sm) * .5); }
+  .seat-area.opp .hand.backs .card { margin-left: calc(var(--card-sm) * -.32); }
+  .hand.mine { flex-wrap: nowrap; justify-content: center; padding-top: 6px; }
+  .hand.mine .card + .card { margin-left: calc(var(--w) * -.22); }
+  .hand.mine .card { transition: transform .15s, margin .15s; }
+  .hand.mine .card:hover { transform: translateY(-18px) scale(1.06); z-index: 3; }
+  .hand.mine .card.legal { transform: translateY(-6px); }
+  .hand.mine .card.legal:hover { transform: translateY(-20px) scale(1.06); }
+}

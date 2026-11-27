@@ -37,7 +37,7 @@
   - the pass button says what it does ("Next: Combat ▸", "End turn ▸", "No response", "Continue");
   - draw (fly in from the deck) and play (drop onto the board) animations.
 
-  Phone layout is out of scope (tablet and desktop only). Next for the battle screen: fit the whole board in one viewport (a compact opponent hand, card sizes from the board's fill); "how to play this card" hints; per-card action menus with costs shown.
+  Phone layout is out of scope (tablet and desktop only). Also done: the board fits one viewport on tablet and desktop (card sizes follow the viewport height, the opponent's hand is a compact fan of backs, your hand fans and lifts on hover). Next for the battle screen, as the clones need them: "how to play this card" hints; per-card action menus with costs shown; showdown/chain panels for stack games.
 - **Clean slate (done):**
   - Every module and its artwork was deleted (NIGHTFALL, Shadow Earth and the Workshop starter games; git history keeps them).
   - The eight small reference games survive only as engine test fixtures in `packages/test-harness/fixtures`.

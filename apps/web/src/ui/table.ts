@@ -109,7 +109,7 @@ export function table(ui: UI, A: any) {
     sources: new Set(tpls.map((t) => t.source).filter(Boolean) as string[]),
     targets: new Set(step?.options ?? []),
     picked: new Set(step ? ui.sel!.picks[step.key] ?? [] : []),
-    label: (x) => (/^p\d+$/.test(x) ? whoOf(ui)(x) : names.get(x) ?? (/^[a-z][a-z-]*$/.test(x) ? title(x) : x)),
+    label: (x) => (/^p\d+$/.test(x) ? whoOf(ui)(x) : /^[ok]\d+$/.test(x) && !names.has(x) ? 'a card' : names.get(x) ?? (/^[a-z][a-z-]*$/.test(x) ? title(x) : x)),
     fx: effectsSince(ui, v),
   };
   const onGrid = new Set(mod.rules.grid?.zones ?? []);
@@ -499,7 +499,9 @@ function friendly(e: Record<string, any>, c: C): string | null {
       const d = mod.rules.actions[base];
       const ab = i !== undefined && d?.activated && e.card ? (mod.card.get(e.card) as any)?.[d.activated]?.[+i]?.label : undefined;
       const verb = (ab ?? d?.label ?? base).toLowerCase();
-      return `${who(e.player)} ${ab ? `use${s(e.player)} ${cn(e.card)}: ${ab}` : `${verb === 'play' || verb === 'summon' ? `play${s(e.player)}` : verb}${e.card ? ` ${cn(e.card)}` : ''}`}`;
+      const v1 = verb === 'play' || verb === 'summon' ? 'play' : verb.split(' ')[0];
+      const rest = verb.split(' ').slice(1).join(' ');
+      return `${who(e.player)} ${ab ? `use${s(e.player)} ${cn(e.card)}: ${ab}` : `${v1}${s(e.player)}${rest ? ` ${rest}` : ''} ${e.card ? cn(e.card) : 'a card'}`}`;
     }
     case 'moved':
       if (e.from === 'deck' && e.to === 'hand') return `${who(e.toPlayer ?? e.owner)} draw${s(e.toPlayer ?? e.owner)} ${e.card ? cn(e.card) : 'a card'}`;
