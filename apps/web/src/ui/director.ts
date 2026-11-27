@@ -17,7 +17,7 @@ export interface Beat {
 type Ev = Record<string, any>;
 const ICON: Record<Beat['kind'], string> = { play: '✦', attack: '⚔', block: '🛡', clash: '💥', hit: '♥', destroy: '✖', info: '•', stack: '⧗' };
 export const beatIcon = (k: Beat['kind']) => ICON[k];
-const BEAT_EVENTS = new Set(['quest', 'lifeLost', 'prize', 'conquer', 'hold', 'deployed', 'showdownFight', 'hit']);
+const BEAT_EVENTS = new Set(['quest', 'lifeLost', 'prize', 'conquer', 'hold', 'deployed', 'showdownFight', 'hit', 'marched', 'recalled', 'finalPoint']);
 
 /** Beats for a slice of the viewer's events. `who(p)` names a player ("You" / "Opponent"). */
 export function beatsOf(events: Ev[], mod: Mod, viewer: string, who: (p: string) => string, cardOf: (id: string) => string | undefined): Beat[] {
@@ -70,9 +70,12 @@ export function beatsOf(events: Ev[], mod: Mod, viewer: string, who: (p: string)
       default:
         if (BEAT_EVENTS.has(e.type) && !battle) {
           const p = e.p ?? e.player;
+          const zn = (z: string) => (mod.manifest.theme as any)?.labels?.[z] ?? 'a battlefield';
+          const s = who(p) === 'You' ? '' : 's';
           const text = e.type === 'quest' ? `${name(e.o)} quests for ${e.n}` : e.type === 'lifeLost' ? `${who(p)} lose${who(p) === 'You' ? '' : 's'} a life card` : e.type === 'prize' ? `${who(p)} take${who(p) === 'You' ? '' : 's'} a prize card`
-            : e.type === 'conquer' ? `${who(p)} conquer${who(p) === 'You' ? '' : 's'} a battlefield` : e.type === 'hold' ? `${who(p)} hold${who(p) === 'You' ? '' : 's'} a battlefield (+1)` : e.type === 'deployed' ? `${who(p)} deploy${who(p) === 'You' ? '' : 's'} their leader`
-              : e.type === 'showdownFight' ? 'A showdown breaks out!' : '';
+            : e.type === 'conquer' ? `${who(p)} conquer${s} ${zn(e.z)} (+1 point)` : e.type === 'hold' ? `${who(p)} hold${s} ${zn(e.z)} (+1 point)` : e.type === 'deployed' ? `${who(p)} deploy${s} their leader`
+              : e.type === 'showdownFight' ? `Fight at ${zn(e.z)}: ${e.a} might against ${e.b}!` : e.type === 'marched' ? `${who(p)} move${s} ${e.n} unit${e.n === 1 ? '' : 's'} into ${zn(e.z)}`
+                : e.type === 'recalled' ? 'Both sides survive: the attackers fall back to base' : e.type === 'finalPoint' ? `${who(p)} can't win by conquest without scoring every battlefield this turn: draw${s} a card instead` : '';
           if (text) out.push({ kind: e.type === 'lifeLost' ? 'hit' : 'info', mine: p === viewer, ms: 800, text });
         } else if (e.type === 'lifeLost' && battle) battle.dmg.set(e.p, (battle.dmg.get(e.p) ?? 0) + 1);
     }

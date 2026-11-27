@@ -3,10 +3,10 @@
 // The vocabulary is small on purpose: zones (arenas), counters, keywords (optionally with a number and an ability
 // bundle), and When → If → Do ability blocks whose targets take filters and whose activations take cost blocks.
 
-export type Role = 'unit' | 'spell' | 'fast' | 'permanent' | 'attachment' | 'resource' | 'trap' | 'leader' | 'evolution' | 'extra' | 'token' | 'attack';
+export type Role = 'unit' | 'spell' | 'fast' | 'permanent' | 'attachment' | 'resource' | 'trap' | 'leader' | 'evolution' | 'extra' | 'token' | 'attack' | 'battlefield';
 export type Pos = 'tl' | 'tr' | 'bl' | 'br' | 'line';
 export type PhaseKind = 'ready' | 'draw' | 'resource' | 'main' | 'combat' | 'end' | 'custom';
-export type When = 'play' | 'leave' | 'attack' | 'hit' | 'quest' | 'startTurn' | 'endTurn' | 'activated' | 'static' | 'opAttack';
+export type When = 'play' | 'leave' | 'attack' | 'hit' | 'quest' | 'startTurn' | 'endTurn' | 'activated' | 'static' | 'opAttack' | 'conquer' | 'hold';
 export type TargetKind =
   | 'self' | 'enemyUnit' | 'anyUnit' | 'ownUnit' | 'otherOwnUnit' | 'enemyAny' | 'opponent' | 'you' | 'eachPlayer'
   | 'allEnemyUnits' | 'allUnits' | 'allOwnUnits' | 'randomEnemyUnit' | 'attacker' | 'battleTarget';
@@ -14,10 +14,11 @@ export type EffectKind =
   | 'draw' | 'damage' | 'heal' | 'buff' | 'destroy' | 'bounce' | 'exhaust' | 'ready' | 'token' | 'gain' | 'discard' | 'mill'
   | 'search' | 'recover' | 'counter' | 'lifeGain' | 'lifeLoss' | 'score' | 'addLife' | 'aura' | 'win' | 'raw'
   | 'addCounter' | 'removeCounter' | 'strike' | 'deploy'
-  | 'restrict' | 'prevent' | 'costMod' | 'insteadDestroy' | 'moveTo';
+  | 'restrict' | 'prevent' | 'costMod' | 'insteadDestroy' | 'moveTo' | 'scry';
 export type KeywordRule = 'none' | 'haste' | 'guard' | 'blocker' | 'flying' | 'vigilance' | 'lifesteal' | 'deadly' | 'shield' | 'double' | 'overflow' | 'ward'
   | 'firstStrike' | 'resist' | 'challenger' | 'saboteur' | 'goAgain' | 'trigger' | 'song'
-  | 'noAttack' | 'noBlock' | 'noBeAttacked' | 'unblockable' | 'entersExhausted';
+  | 'noAttack' | 'noBlock' | 'noBeAttacked' | 'unblockable' | 'entersExhausted'
+  | 'tank' | 'bulwark' | 'accelerate' | 'ganking' | 'temporary';
 
 export interface StatDef { id: string; name: string; icon?: string }
 export interface Color { id: string; name: string; hex: string; icon?: string }
@@ -44,6 +45,8 @@ export interface Resource {
   need?: { stat: string; gen: string } | null; // a card needs the sum of `gen` on your units >= its `stat` (not spent)
   actions?: number; // action points per turn (0 = off): non-quick cards cost 1, Go again gives it back
   pitchStat?: string; // pitch mode: the stat a card is worth when pitched from hand
+  recycle?: boolean; // deck mode: each resource gives 1 generic; colored costs are paid by recycling resources of that color to the bottom of the resource deck
+  secondBonus?: number; // deck mode: extra resources the second player reveals on their first turn
 }
 export interface Combat {
   mode: 'block' | 'target' | 'duel' | 'lanes' | 'cards' | 'none';
@@ -61,11 +64,18 @@ export interface Combat {
   quest?: string | null; // a stat: units may exhaust to score that many points instead of attacking
   maxBlockers?: number; // block mode: how many units may block one attacker
   blockStat?: string | null; // cards mode: the stat that blocks when a card is discarded from hand to defend
+  conquest?: boolean; // lanes: units enter exhausted and move in groups; moving into an enemy battlefield opens a showdown (response window), then a fight (Tank first, lethal damage, survivors heal, attackers recalled on a tie)
+  finalPoint?: boolean; // lanes: a conquest can't win the game unless you scored every battlefield this turn (draw a card instead)
 }
 export interface Win { life: number; lifeCards: number; prizes: number; points: number; deckOut: boolean; noUnits: boolean; lifeTriggers?: boolean }
-export interface Setup { hand: number; mulligan: boolean; handLimit: number; deckMin: number; deckMax: number; maxCopies: number; skipFirstDraw: boolean; leader: boolean; extraMax: number; turnLimit: number }
+export interface Setup { hand: number; mulligan: boolean; handLimit: number; deckMin: number; deckMax: number; maxCopies: number; skipFirstDraw: boolean; leader: boolean; extraMax: number; turnLimit: number;
+  mulliganN?: number; // > 0: mulligan by setting aside up to N cards (to the bottom) and drawing that many
+  champion?: boolean; // each deck names a champion unit that starts in a champion zone and can be played from there
+  leaderColors?: boolean; // every card must match one of the leader's two colors
+  sites?: number; // lanes: battlefield cards per deck; one is chosen at random for each player's battlefield
+}
 
-export interface Cond { k: 'units' | 'life' | 'hand' | 'yourTurn' | 'res' | 'counter' | 'zone' | 'raw'; n?: number; counter?: string; zone?: string; raw?: unknown }
+export interface Cond { k: 'units' | 'life' | 'hand' | 'yourTurn' | 'res' | 'counter' | 'zone' | 'played' | 'raw'; n?: number; counter?: string; zone?: string; raw?: unknown }
 export interface Filter { type?: string; color?: string; keyword?: string; stat?: string; op?: 'le' | 'ge'; val?: number; exhausted?: boolean; zone?: string; name?: string }
 export interface Effect { k: EffectKind; n?: number; kw?: string; target?: TargetKind; filter?: Filter; stat?: string; until?: 'turn' | 'forever'; who?: 'me' | 'opp' | 'each'; card?: string; type?: string; rule?: KeywordRule; to?: 'hand' | 'deck'; zone?: string; raw?: unknown[] }
 export interface Ability {
@@ -77,7 +87,7 @@ export interface CardBP {
   id: string; name: string; type: string;
   cost?: number | Record<string, number>;
   stats: Record<string, number>;
-  color?: string; keywords: string[]; abilities: Ability[];
+  color?: string; color2?: string; keywords: string[]; abilities: Ability[];
   kwv?: Record<string, number>; // numbers for valued keywords (Resist 2)
   family?: string; // a shared base name (evolution/shift onto any card of this family)
   text?: string; flavor?: string; art?: string;
@@ -85,7 +95,7 @@ export interface CardBP {
   bonus?: Record<string, number>; // attachments: stat bonus to the bearer
   raw?: Record<string, unknown>; // advanced: merged over the compiled card
 }
-export interface DeckBP { id: string; name: string; main: Record<string, number>; leader?: string; extra?: Record<string, number>; res?: Record<string, number> }
+export interface DeckBP { id: string; name: string; main: Record<string, number>; leader?: string; champion?: string; sites?: string[]; extra?: Record<string, number>; res?: Record<string, number> }
 
 export interface Blueprint {
   v: 1;
@@ -152,6 +162,11 @@ export const KEYWORD_RULES: Record<KeywordRule, { label: string; text: string; v
   noBeAttacked: { label: "Can't be attacked", text: "Enemies can't choose it as an attack target." },
   unblockable: { label: "Can't be blocked", text: "Can't be blocked." },
   entersExhausted: { label: 'Enters exhausted', text: 'Enters play exhausted (tapped).' },
+  tank: { label: 'Takes the hits first', text: 'In a fight, enemies must deal lethal damage to this before other units.' },
+  bulwark: { label: '+N power while defending', text: 'Gets +N power while defending a battlefield.', valued: true },
+  accelerate: { label: 'Pay extra to enter ready', text: 'As you play it, you may pay 1 more and 1 more of its color to have it enter ready.' },
+  ganking: { label: 'Moves between battlefields', text: 'Can move from one battlefield straight to another.' },
+  temporary: { label: 'Leaves at your next turn', text: 'At the start of your next turn, destroy it.' },
 };
 
 export const ROLES: Record<Role, { label: string; hint: string }> = {
@@ -167,4 +182,5 @@ export const ROLES: Record<Role, { label: string; hint: string }> = {
   evolution: { label: 'Evolution', hint: 'Played on top of a named unit (or a family), keeping its damage and attachments.' },
   extra: { label: 'Extra-deck unit', hint: 'Waits in a separate deck; summon it by giving up units.' },
   token: { label: 'Token', hint: 'Made by effects; never in a deck.' },
+  battlefield: { label: 'Battlefield', hint: 'A place to fight over. Each deck brings some; one is chosen for each player. Gives its effects to whoever conquers or holds it.' },
 };

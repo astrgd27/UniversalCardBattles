@@ -187,6 +187,10 @@ h1, h2, h3 { margin: 0; letter-spacing: .02em; }
 .zone { display: flex; gap: 8px; align-items: center; }
 .zone-l { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
 .row { display: flex; flex-wrap: wrap; gap: 8px; min-height: 40px; align-items: center; }
+.zone.compact .row { flex-wrap: nowrap; gap: 0; }
+.zone.compact .card { --w: calc(var(--card-sm) * .6); }
+.zone.compact .row > * + * { margin-left: calc(var(--card-sm) * -.36); }
+@media (hover: hover) { .zone.compact .card:hover { z-index: 2; transform: translateY(-6px); } }
 .empty-slot { color: var(--muted); font-size: 12px; padding: 10px; border: 1px dashed var(--line); border-radius: 10px; }
 .hand { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; }
 .hand.backs .card { margin-left: -48px; }

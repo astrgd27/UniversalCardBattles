@@ -7,6 +7,7 @@ import {
 } from '#maker';
 import { type MakerUI, type Station, BLUEPRINTS, RANKS, STATIONS, newMakerUI, previewMod, problems, profile, projects, published, rankOf } from '../maker.ts';
 import { store } from '../storage.ts';
+import { SOURCES } from '../modules.ts';
 import { type Child, cardFace, cls, h } from './kit.ts';
 import { BUILTIN } from '../templates.ts';
 
@@ -96,7 +97,10 @@ function picker(A: any) {
       h('div', { class: 'mk-bps' }, h('button', { class: 'mk-bp mk-surprise', onclick: () => A.mkSurprise(), 'data-blueprint': 'surprise' }, h('span', { class: 'mk-bp-icon' }, '🎲'), h('strong', {}, 'Surprise me'),
         h('span', {}, 'A random, playable mash-up of mechanics from the shelf: a resource system, a combat style, a way to win, timing and special card types.'), h('span', { class: 'mk-bp-sys' }, h('span', { class: 'chip' }, 'Random recipes'))),
         BLUEPRINTS.map((b) => h('button', { class: 'mk-bp', onclick: () => A.mkNew(b.id), 'data-blueprint': b.id },
-        h('span', { class: 'mk-bp-icon' }, b.icon), h('strong', {}, b.name), h('span', {}, b.pitch), h('span', { class: 'mk-bp-sys' }, b.systems.map((s) => h('span', { class: 'chip' }, s))))))));
+        h('span', { class: 'mk-bp-icon' }, b.icon), h('strong', {}, b.name), h('span', {}, b.pitch), h('span', { class: 'mk-bp-sys' }, b.systems.map((s) => h('span', { class: 'chip' }, s))))),
+        [...SOURCES].map(([id, bp]) => h('button', { class: 'mk-bp', onclick: () => A.mkNew(`mod:${id}`), 'data-blueprint': `mod:${id}` },
+          h('span', { class: 'mk-bp-icon' }, bp.look?.glyph ?? '✦'), h('strong', {}, `Remix ${bp.name}`), h('span', {}, bp.tagline ?? ''),
+          h('span', { class: 'mk-bp-sys' }, h('span', { class: 'chip' }, 'Default game'), h('span', { class: 'chip' }, `${bp.cards?.length ?? 0} cards`)))))));
 }
 
 // ---------------------------------------------------------------- workshop shell
@@ -222,7 +226,7 @@ function frames(bp: Blueprint, A: any, mk: MakerUI, mod: Mod | null) {
 
 // ---------------------------------------------------------------- 3. types & stats
 const ROLE_OPTS = Object.entries(ROLES).map(([k, v]) => [k, v.label] as [string, string]);
-const FRAME_FOR: Record<Role, string> = { attack: 'classic', unit: 'skirmisher', spell: 'spell', fast: 'spell', permanent: 'spell', attachment: 'spell', resource: 'resource', trap: 'spell', leader: 'leader', evolution: 'vital', extra: 'monster', token: 'token' };
+const FRAME_FOR: Record<Role, string> = { attack: 'classic', unit: 'skirmisher', spell: 'spell', fast: 'spell', permanent: 'spell', attachment: 'spell', resource: 'resource', trap: 'spell', leader: 'leader', evolution: 'vital', extra: 'monster', token: 'token', battlefield: 'spell' };
 function types(bp: Blueprint, A: any) {
   const used = (id: string) => bp.cards.some((c) => c.type === id);
   return [

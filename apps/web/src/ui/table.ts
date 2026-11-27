@@ -267,7 +267,7 @@ function zoneBlock(c: C, key: string, z: ZoneDef) {
   if (z.hideEmpty && !zv.cards.length && !zv.show) return null;
   if (z.slots?.length) return slotted(c, key, z, zv.cards);
   if (!zv.cards.length && !z.abilities) return null;
-  return h('div', { class: 'zone' }, h('span', { class: 'zone-l' }, c.mod.manifest.theme?.labels?.[z.id] ?? title(z.id)),
+  return h('div', { class: cls('zone', z.compact && 'compact') }, h('span', { class: 'zone-l' }, c.mod.manifest.theme?.labels?.[z.id] ?? title(z.id)),
     h('div', { class: 'row' }, zv.cards.length ? zv.cards.map((o) => obj(c, o, 'sm')) : h('span', { class: 'empty-slot' }, 'empty')));
 }
 
@@ -521,7 +521,14 @@ function friendly(e: Record<string, any>, c: C): string | null {
     case 'lifeLost': return `${who(e.p)} lose${s(e.p)} a life card`;
     case 'prize': return `${who(e.p)} take${s(e.p)} a prize card`;
     case 'quest': return `${c.label(e.o)} quests for ${e.n}`;
-    case 'conquer': return `${who(e.p)} conquer${s(e.p)} a battlefield`;
+    case 'conquer': return `${who(e.p)} conquer${s(e.p)} ${lbl(e.z)} (+1 point)`;
+    case 'hold': return `${who(e.p)} hold${s(e.p)} ${lbl(e.z)} (+1 point)`;
+    case 'retaken': return `${who(e.p)} retake${s(e.p)} ${lbl(e.z)} (already scored this turn)`;
+    case 'finalPoint': return `${who(e.p)} can't win by conquest yet: draw${s(e.p)} a card instead`;
+    case 'marched': return `${who(e.p)} move${s(e.p)} ${e.n} unit${e.n === 1 ? '' : 's'} into ${lbl(e.z)}`;
+    case 'recalled': return `Attackers fall back from ${lbl(e.z)}`;
+    case 'showdownFight': return `Fight at ${lbl(e.z)}: ${e.a} against ${e.b}`;
+    case 'peek': return e.card ? `You look at the top card: ${cn(e.card)}` : null;
     case 'lost': return `${who(e.player)} ${who(e.player) === 'You' ? 'are' : 'is'} out`;
     case 'gameOver': return 'Game over';
     case 'dialogue': return `${e.speaker}: “${e.text}”`;

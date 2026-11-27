@@ -130,6 +130,23 @@ The Maker is built from a few concepts that combine, rather than one fixed menu 
 - **Cost reducers** (static): "your [type] cards cost N less" while the card is in play. This only works for games without colored costs.
 - Shelf recipes: restriction keywords (Defender, Elusive, Untouchable, Sluggish), stun & sleep conditions, cost reducers, damage prevention & second chances.
 
+## Conquest battlefields (Advanced)
+Options on the Battlefields combat mode, the resource deck and setup. Generation Wars (`packages/modules/generation-wars`) is built entirely from them.
+- **`combat.conquest`:**
+  - units enter exhausted (Accelerate pays 1 more and recycles 1 rune of its color to enter ready);
+  - a Move picks a destination, then any other ready units from the same place go along (Ganking units may move battlefield to battlefield);
+  - moving into a battlefield with enemy units, or one the opponent controls, opens a **showdown** window (players alternate quick spells, the defender first), then a **fight**;
+  - in a fight each side deals its total power. Damage goes to Tank units first, then lethal damage to the weakest. Survivors heal. If both sides survive, the attackers are recalled to base;
+  - the sole occupant takes control: **conquer** scores 1 point the first time a battlefield is scored each turn, and **hold** scores 1 point per controlled battlefield (with units) at the start of your turn.
+- **`combat.finalPoint`:** a conquest can't score the winning point unless you scored every battlefield this turn; you draw a card instead.
+- **Battlefield cards** (role `battlefield`, `setup.sites` per deck): one is picked at random for each player's battlefield. Its "When you conquer here" and "When you hold here" abilities go to whoever takes it, and units can have "When this conquers a battlefield" and "When you hold its battlefield".
+- **`resource.recycle`** (resource deck): each resource gives 1 energy per turn, and colored costs (`{any: 3, boomer: 1}`) are paid by recycling resources of that color to the bottom of the resource deck. **`resource.secondBonus`:** extra resources on the second player's first turn.
+- **Setup:** `champion` (each deck names a unit that waits in a champion zone and can be played from there), `leaderColors` (every card matches one of the leader's two colors, `color` and `color2`), `mulliganN` (set aside up to N cards, then redraw that many).
+- **New blocks:**
+  - keyword rules: Tank, +N while defending (`bulwark`), Accelerate, Ganking, Temporary. Assault is the existing +N while attacking;
+  - the effect "look at the top card, may put it on the bottom" (`scry`);
+  - the condition "if you played N other cards this turn" (`played`, i.e. Legion).
+
 ## Mechanics Shelf (mix and match)
 A station listing 40 recipes in seven groups:
 - Resources

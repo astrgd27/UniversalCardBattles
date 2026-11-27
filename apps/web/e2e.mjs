@@ -70,6 +70,24 @@ try {
   await page.click('text=← Projects');
   await page.click('text=← Library');
 
+  // ---- Generation Wars (default module): a full AI match, then a remix in the Workshop
+  ok(await page.isVisible('[data-module=generation-wars]'), 'Generation Wars in the library');
+  await page.click('[data-module=generation-wars]');
+  await page.click('[data-menu=play]');
+  for (const i of [1, 2]) await page.click(`[data-seat="${i}"] .seg button:text-is("Random")`);
+  await page.check('text=Fast AI');
+  await page.click('text=Start match');
+  await page.waitForSelector('.gameover', { timeout: 180000 });
+  const gw = await page.evaluate(() => ({ r: window.__ucb.match.s.result, t: window.__ucb.match.s.turn.n }));
+  console.log(`generation-wars: ${JSON.stringify(gw.r)} after ${gw.t} turns`);
+  await page.click('.gameover >> text=Game menu');
+  await page.click('[data-menu=remix]');
+  ok(await page.isVisible('.mk-bugs.good'), `Generation Wars remix builds in the Workshop (${await page.textContent('.mk-bugs').catch(() => '')})`);
+  await page.click('[data-station=cards]');
+  ok(await page.$$eval('.mk-grid .card', (c) => c.length) >= 60, 'remix has all the cards');
+  await page.click('text=← Projects');
+  await page.click('text=← Library');
+
   // ---- the published game, played like any module
   ok(await page.isVisible('[data-module=my-card-game]'), 'published game in the library');
   await page.click('[data-module=my-card-game]');

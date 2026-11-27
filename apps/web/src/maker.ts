@@ -6,7 +6,7 @@ import { IllegalAction, commitAction, createMatch, determinize, listActions, obs
 import { makeAgent } from '#ai';
 import { packFiles } from '#sdk';
 import { type Blueprint, type CardBP, type Problem, BLUEPRINTS, RECIPES, applyRecipe, build, surpriseRecipes, cardsFromCsv, cardsToCsv, compileBlueprint, fromBlueprint, normalize, rulebookMarkdown, slug } from '#maker';
-import { MODULES } from './modules.ts';
+import { MODULES, SOURCES } from './modules.ts';
 import { store } from './storage.ts';
 
 export type Station = 'identity' | 'shelf' | 'frames' | 'types' | 'board' | 'turn' | 'rules' | 'keywords' | 'cards' | 'decks' | 'test' | 'publish' | 'lab';
@@ -176,7 +176,8 @@ export function makerActions(ui: any, redraw: () => void, A: any) {
     mkOpen() { mk().project = null; mk().picker = false; ui.mod = null; A.go('maker'); },
     mkPicker(open: boolean) { mk().picker = open; redraw(); },
     mkNew(blueprintId: string) {
-      const bp = fromBlueprint(blueprintId);
+      const src = blueprintId.startsWith('mod:') ? SOURCES.get(blueprintId.slice(4)) : null;
+      const bp: Blueprint = src ? normalize(structuredClone(src)) : fromBlueprint(blueprintId);
       const taken = (s: string) => MODULES.has(s) || projects().some((x) => x.p.bp.id === s);
       bp.id = uniq(blueprintId === 'blank' ? 'my-card-game' : `my-${bp.id}`, taken);
       if (blueprintId !== 'blank') bp.name = `${bp.name} (my version)`;

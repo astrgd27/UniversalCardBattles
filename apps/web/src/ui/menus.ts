@@ -1,7 +1,7 @@
 // Menu screens: library (all games), game home, match setup, deckbuilder, card gallery.
 import type { Deck, Mod } from '#engine';
 import { deckErrors } from '#engine';
-import { MODULES } from '../modules.ts';
+import { MODULES, SOURCES } from '../modules.ts';
 import { allDecks, campaign, customDecks, hasSave, sections, slots, storageInfo, sync, type UI } from '../main.ts';
 import { syncSupported } from '../storage.ts';
 import { tutorialDone } from '#campaign';
@@ -108,6 +108,7 @@ export function home(ui: UI, A: any) {
     ...(slots(m).length > 1 ? [['Load game', `${slots(m).length} saved games`, () => A.go('saves'), 'load'] as [string, string, () => void, string]] : []),
     ['Deckbuilder', `Build decks from ${m.cards.length} cards`, () => A.go('decks'), 'decks'],
     ['Card gallery', 'Browse every card', () => A.go('gallery'), 'gallery'],
+    ...(SOURCES.has(m.manifest.moduleId) ? [['Edit in the Workshop', 'Open a copy of this game in the Game Maker and change anything', () => { A.mkOpen(); A.mkNew(`mod:${m.manifest.moduleId}`); }, 'remix'] as [string, string, () => void, string]] : []),
     ...(camp ? [['Campaign', ui.profile ? `${camp.name} · ${Object.keys(ui.profile.wins).length}/${Object.keys(camp.encounters).length} won` : camp.name, () => A.go('campaign'), 'campaign'] as [string, string, () => void, string]] : []),
     ...(camp?.shop?.length ? [['Shop', ui.profile ? `${ui.profile.currency} ${camp.currency.name} to spend` : 'Boosters and singles', () => A.go('shop'), 'shop'] as [string, string, () => void, string]] : []),
   ];

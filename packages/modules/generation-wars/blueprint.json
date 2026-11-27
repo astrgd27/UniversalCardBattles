@@ -1,0 +1,2196 @@
+{
+ "v": 1,
+ "id": "generation-wars",
+ "name": "Generation Wars",
+ "blueprint": "blank",
+ "author": "Universal Card Battles",
+ "tagline": "Five generations. Two battlefields. Zero consensus.",
+ "look": {
+  "accent": "#f59e0b",
+  "accent2": "#ec4899",
+  "glyph": "⌛"
+ },
+ "colors": [
+  {
+   "id": "silent",
+   "name": "Silent Generation",
+   "hex": "#a08362",
+   "icon": "📻"
+  },
+  {
+   "id": "boomer",
+   "name": "Baby Boomers",
+   "hex": "#d97706",
+   "icon": "🏡"
+  },
+  {
+   "id": "genx",
+   "name": "Generation X",
+   "hex": "#64748b",
+   "icon": "📼"
+  },
+  {
+   "id": "millennial",
+   "name": "Millennials",
+   "hex": "#ec4899",
+   "icon": "🥑"
+  },
+  {
+   "id": "genz",
+   "name": "Generation Z",
+   "hex": "#22d3ee",
+   "icon": "📱"
+  }
+ ],
+ "stats": [
+  {
+   "id": "might",
+   "name": "Might",
+   "icon": "✊"
+  }
+ ],
+ "types": [
+  {
+   "id": "unit",
+   "name": "Unit",
+   "role": "unit",
+   "frame": {
+    "base": "skirmisher",
+    "cost": "tl",
+    "stats": [
+     {
+      "stat": "might",
+      "pos": "br",
+      "icon": "✊"
+     }
+    ],
+    "art": 48,
+    "text": true
+   },
+   "icon": "✊"
+  },
+  {
+   "id": "spell",
+   "name": "Spell",
+   "role": "spell",
+   "frame": {
+    "base": "spell",
+    "cost": "tl",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "✦"
+  },
+  {
+   "id": "reaction",
+   "name": "Reaction",
+   "role": "fast",
+   "frame": {
+    "base": "spell",
+    "cost": "tl",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "⚡"
+  },
+  {
+   "id": "gear",
+   "name": "Gear",
+   "role": "attachment",
+   "frame": {
+    "base": "spell",
+    "cost": "tl",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "⚙"
+  },
+  {
+   "id": "legend",
+   "name": "Legend",
+   "role": "leader",
+   "frame": {
+    "base": "leader",
+    "cost": "none",
+    "stats": [],
+    "art": 52,
+    "text": true
+   },
+   "icon": "♛"
+  },
+  {
+   "id": "rune",
+   "name": "Rune",
+   "role": "resource",
+   "frame": {
+    "base": "resource",
+    "cost": "none",
+    "stats": [],
+    "art": 70,
+    "text": false
+   },
+   "icon": "◈"
+  },
+  {
+   "id": "battlefield",
+   "name": "Battlefield",
+   "role": "battlefield",
+   "frame": {
+    "base": "spell",
+    "cost": "none",
+    "stats": [],
+    "art": 52,
+    "text": true,
+    "layout": "landscape"
+   },
+   "icon": "⚑"
+  },
+  {
+   "id": "token",
+   "name": "Token",
+   "role": "token",
+   "frame": {
+    "base": "token",
+    "cost": "none",
+    "stats": [
+     {
+      "stat": "might",
+      "pos": "br",
+      "icon": "✊"
+     }
+    ],
+    "art": 48,
+    "text": true
+   },
+   "icon": "•"
+  }
+ ],
+ "keywords": [
+  {
+   "id": "assault",
+   "name": "Assault",
+   "rule": "challenger",
+   "valued": true,
+   "text": "Assault N: +N might while attacking."
+  },
+  {
+   "id": "shield",
+   "name": "Shield",
+   "rule": "bulwark",
+   "valued": true,
+   "text": "Shield N: +N might while defending."
+  },
+  {
+   "id": "tank",
+   "name": "Tank",
+   "rule": "tank",
+   "text": "In a fight, enemies must deal lethal damage to this first."
+  },
+  {
+   "id": "accelerate",
+   "name": "Accelerate",
+   "rule": "accelerate",
+   "text": "As you play it, you may pay 1 energy and recycle 1 rune of its generation to have it enter ready."
+  },
+  {
+   "id": "ganking",
+   "name": "Ganking",
+   "rule": "ganking",
+   "text": "Can move from one battlefield straight to another."
+  },
+  {
+   "id": "temporary",
+   "name": "Temporary",
+   "rule": "temporary",
+   "text": "At the start of your next turn, destroy it."
+  },
+  {
+   "id": "deathknell",
+   "name": "Deathknell",
+   "rule": "none",
+   "text": "Deathknell: something happens when it dies."
+  },
+  {
+   "id": "legion",
+   "name": "Legion",
+   "rule": "none",
+   "text": "Legion: a bonus if you played another card this turn."
+  },
+  {
+   "id": "vision",
+   "name": "Vision",
+   "rule": "none",
+   "text": "Vision: when played, look at the top card of your deck; you may put it on the bottom.",
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "scry",
+       "n": 1
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "turn": [
+  {
+   "id": "awaken",
+   "name": "Awaken",
+   "kind": "ready"
+  },
+  {
+   "id": "channel",
+   "name": "Channel",
+   "kind": "resource"
+  },
+  {
+   "id": "draw",
+   "name": "Draw",
+   "kind": "draw",
+   "n": 1
+  },
+  {
+   "id": "main",
+   "name": "Action",
+   "kind": "main"
+  },
+  {
+   "id": "end",
+   "name": "End",
+   "kind": "end"
+  }
+ ],
+ "timing": "simple",
+ "resource": {
+  "mode": "deck",
+  "name": "Runes",
+  "icon": "◈",
+  "start": 2,
+  "perTurn": 2,
+  "max": 12,
+  "deckSize": 12,
+  "boost": 0,
+  "summonsPerTurn": 0,
+  "tribute": [],
+  "recycle": true,
+  "secondBonus": 1
+ },
+ "combat": {
+  "mode": "lanes",
+  "power": "might",
+  "health": "might",
+  "defense": null,
+  "damage": "heal",
+  "sickness": false,
+  "firstTurnAttack": true,
+  "targetUnits": "none",
+  "directOnlyIfEmpty": false,
+  "leaderDefends": false,
+  "leaderAttacks": false,
+  "compare": {
+   "ties": "both",
+   "loser": true,
+   "overflow": false
+  },
+  "positions": false,
+  "counterStep": false,
+  "fieldSize": 30,
+  "benchSize": 0,
+  "attackEndsTurn": false,
+  "weakness": 1,
+  "lanes": [
+   "North Front",
+   "South Front"
+  ],
+  "conquest": true,
+  "finalPoint": true
+ },
+ "win": {
+  "life": 0,
+  "lifeCards": 0,
+  "prizes": 0,
+  "points": 8,
+  "deckOut": true,
+  "noUnits": false
+ },
+ "setup": {
+  "hand": 4,
+  "mulligan": true,
+  "mulliganN": 2,
+  "handLimit": 12,
+  "deckMin": 40,
+  "deckMax": 60,
+  "maxCopies": 3,
+  "skipFirstDraw": false,
+  "leader": true,
+  "champion": true,
+  "leaderColors": true,
+  "sites": 3,
+  "extraMax": 0,
+  "turnLimit": 60
+ },
+ "zoneNames": {
+  "base": "Base",
+  "grave": "Trash",
+  "resdeck": "Rune deck",
+  "resources": "Runes",
+  "leader": "Legend"
+ },
+ "cards": [
+  {
+   "id": "victory-gardener",
+   "name": "Victory Gardener",
+   "type": "unit",
+   "cost": 1,
+   "stats": {
+    "might": 1
+   },
+   "color": "silent",
+   "keywords": [
+    "shield"
+   ],
+   "kwv": {
+    "shield": 1
+   },
+   "abilities": [],
+   "flavor": "Grew forty pounds of beans in a window box. Out of spite."
+  },
+  {
+   "id": "ration-clerk",
+   "name": "Ration Clerk",
+   "type": "unit",
+   "cost": 2,
+   "stats": {
+    "might": 2
+   },
+   "color": "silent",
+   "keywords": [
+    "deathknell"
+   ],
+   "kwv": {},
+   "abilities": [
+    {
+     "when": "leave",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Kept the ledger. Took it with him."
+  },
+  {
+   "id": "telegraph-operator",
+   "name": "Telegraph Operator",
+   "type": "unit",
+   "cost": 2,
+   "stats": {
+    "might": 1
+   },
+   "color": "silent",
+   "keywords": [
+    "vision"
+   ],
+   "kwv": {},
+   "abilities": [],
+   "flavor": "Stop. Read the news. Stop."
+  },
+  {
+   "id": "porch-sitter",
+   "name": "Porch Sitter",
+   "type": "unit",
+   "cost": 3,
+   "stats": {
+    "might": 2
+   },
+   "color": "silent",
+   "keywords": [
+    "shield"
+   ],
+   "kwv": {
+    "shield": 2
+   },
+   "abilities": [],
+   "flavor": "Has not moved since 1974. Will not start now."
+  },
+  {
+   "id": "iron-lung-veteran",
+   "name": "Iron Lung Veteran",
+   "type": "unit",
+   "cost": 3,
+   "stats": {
+    "might": 3
+   },
+   "color": "silent",
+   "keywords": [
+    "tank",
+    "shield"
+   ],
+   "kwv": {
+    "shield": 1
+   },
+   "abilities": [],
+   "flavor": "Survived three wars and a polio ward. Your battlefield is a light breeze."
+  },
+  {
+   "id": "darning-needle-duchess",
+   "name": "Darning Needle Duchess",
+   "type": "unit",
+   "cost": {
+    "any": 4,
+    "silent": 1
+   },
+   "stats": {
+    "might": 3
+   },
+   "color": "silent",
+   "keywords": [],
+   "kwv": {},
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "recover",
+       "type": "unit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Nothing is ever thrown away. Not socks, not soldiers."
+  },
+  {
+   "id": "doughboy-drill-sergeant",
+   "name": "Doughboy Drill Sergeant",
+   "type": "unit",
+   "cost": {
+    "any": 3,
+    "silent": 1
+   },
+   "stats": {
+    "might": 4
+   },
+   "color": "silent",
+   "keywords": [
+    "tank"
+   ],
+   "kwv": {},
+   "abilities": [],
+   "flavor": "\"In my day we marched uphill. Both ways. In the snow.\""
+  },
+  {
+   "id": "sergeant-rationbook",
+   "name": "Sergeant Rationbook",
+   "type": "unit",
+   "cost": {
+    "any": 4,
+    "silent": 1
+   },
+   "stats": {
+    "might": 5
+   },
+   "color": "silent",
+   "keywords": [
+    "tank",
+    "shield"
+   ],
+   "kwv": {
+    "shield": 1
+   },
+   "abilities": [
+    {
+     "when": "hold",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Champion of the Silent Generation. Coupons clipped, ranks closed."
+  },
+  {
+   "id": "stiff-upper-lip",
+   "name": "Stiff Upper Lip",
+   "type": "reaction",
+   "cost": 1,
+   "stats": {},
+   "color": "silent",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "buff",
+       "n": 2,
+       "target": "ownUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "No crying in the trenches. Or at the bank."
+  },
+  {
+   "id": "duty-calls",
+   "name": "Duty Calls",
+   "type": "spell",
+   "cost": 2,
+   "stats": {},
+   "color": "silent",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "buff",
+       "n": 1,
+       "target": "allOwnUnits"
+      }
+     ]
+    }
+   ],
+   "flavor": "And everyone answered, on the rotary phone."
+  },
+  {
+   "id": "the-long-wait",
+   "name": "The Long Wait",
+   "type": "spell",
+   "cost": {
+    "any": 3,
+    "silent": 1
+   },
+   "stats": {},
+   "color": "silent",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "destroy",
+       "target": "enemyUnit",
+       "filter": {
+        "stat": "might",
+        "op": "le",
+        "val": 3
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "Patience is a weapon. So is outliving you."
+  },
+  {
+   "id": "sensible-shoes",
+   "name": "Sensible Shoes",
+   "type": "gear",
+   "cost": 1,
+   "stats": {},
+   "color": "silent",
+   "keywords": [],
+   "abilities": [],
+   "bonus": {
+    "might": 1
+   },
+   "flavor": "Orthopedic. Indestructible. Beige."
+  },
+  {
+   "id": "lawn-inspector",
+   "name": "Lawn Inspector",
+   "type": "unit",
+   "cost": 1,
+   "stats": {
+    "might": 2
+   },
+   "color": "boomer",
+   "keywords": [],
+   "kwv": {},
+   "abilities": [],
+   "flavor": "The grass is 2.6 inches. The bylaw says 2.5."
+  },
+  {
+   "id": "golf-cart-cavalry",
+   "name": "Golf Cart Cavalry",
+   "type": "unit",
+   "cost": 2,
+   "stats": {
+    "might": 2
+   },
+   "color": "boomer",
+   "keywords": [
+    "assault"
+   ],
+   "kwv": {
+    "assault": 1
+   },
+   "abilities": [],
+   "flavor": "Fourteen miles an hour of pure entitlement."
+  },
+  {
+   "id": "timeshare-salesman",
+   "name": "Timeshare Salesman",
+   "type": "unit",
+   "cost": 2,
+   "stats": {
+    "might": 2
+   },
+   "color": "boomer",
+   "keywords": [],
+   "kwv": {},
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ],
+     "if": {
+      "k": "res",
+      "n": 5
+     }
+    }
+   ],
+   "flavor": "Ninety minutes of your time for a free tote bag."
+  },
+  {
+   "id": "hoa-enforcer",
+   "name": "HOA Enforcer",
+   "type": "unit",
+   "cost": 3,
+   "stats": {
+    "might": 3
+   },
+   "color": "boomer",
+   "keywords": [],
+   "kwv": {},
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "exhaust",
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Your mailbox is the wrong shade of taupe."
+  },
+  {
+   "id": "retiree-snowbird",
+   "name": "Retiree Snowbird",
+   "type": "unit",
+   "cost": 3,
+   "stats": {
+    "might": 3
+   },
+   "color": "boomer",
+   "keywords": [
+    "ganking"
+   ],
+   "kwv": {},
+   "abilities": [],
+   "flavor": "Winters in Florida, summers in your business."
+  },
+  {
+   "id": "classic-car-collector",
+   "name": "Classic Car Collector",
+   "type": "unit",
+   "cost": {
+    "any": 4,
+    "boomer": 1
+   },
+   "stats": {
+    "might": 5
+   },
+   "color": "boomer",
+   "keywords": [],
+   "kwv": {},
+   "abilities": [],
+   "flavor": "Bought for $900 in 1971. Now worth more than your degree."
+  },
+  {
+   "id": "pickup-truck-patriarch",
+   "name": "Pickup Truck Patriarch",
+   "type": "unit",
+   "cost": {
+    "any": 5,
+    "boomer": 1
+   },
+   "stats": {
+    "might": 5
+   },
+   "color": "boomer",
+   "keywords": [
+    "tank"
+   ],
+   "kwv": {},
+   "abilities": [],
+   "flavor": "Has never once used the truck bed."
+  },
+  {
+   "id": "the-landlord-eternal",
+   "name": "The Landlord Eternal",
+   "type": "unit",
+   "cost": {
+    "any": 5,
+    "boomer": 1
+   },
+   "stats": {
+    "might": 6
+   },
+   "color": "boomer",
+   "keywords": [],
+   "kwv": {},
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "damage",
+       "n": 2,
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Champion of the Boomers. Rent is due. Rent was always due."
+  },
+  {
+   "id": "compound-interest",
+   "name": "Compound Interest",
+   "type": "spell",
+   "cost": {
+    "any": 2,
+    "boomer": 1
+   },
+   "stats": {},
+   "color": "boomer",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    },
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ],
+     "if": {
+      "k": "res",
+      "n": 6
+     }
+    }
+   ],
+   "flavor": "Money makes money. Especially the money you were born near."
+  },
+  {
+   "id": "back-in-my-day",
+   "name": "Back in My Day",
+   "type": "reaction",
+   "cost": 2,
+   "stats": {},
+   "color": "boomer",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "buff",
+       "n": -2,
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "A long story. You lose 2 might listening to it."
+  },
+  {
+   "id": "pull-up-the-ladder",
+   "name": "Pull Up the Ladder",
+   "type": "spell",
+   "cost": {
+    "any": 4,
+    "boomer": 1
+   },
+   "stats": {},
+   "color": "boomer",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "destroy",
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "We made it. Good luck to the rest of you."
+  },
+  {
+   "id": "gold-retirement-watch",
+   "name": "Gold Retirement Watch",
+   "type": "gear",
+   "cost": 2,
+   "stats": {},
+   "color": "boomer",
+   "keywords": [],
+   "abilities": [],
+   "bonus": {
+    "might": 2
+   },
+   "flavor": "Forty years, one employer, one watch."
+  },
+  {
+   "id": "latchkey-kid",
+   "name": "Latchkey Kid",
+   "type": "unit",
+   "cost": 1,
+   "stats": {
+    "might": 1
+   },
+   "color": "genx",
+   "keywords": [
+    "ganking"
+   ],
+   "kwv": {},
+   "abilities": [],
+   "flavor": "Key on a shoelace. Dinner is a microwave burrito. Mood: unsupervised."
+  },
+  {
+   "id": "mixtape-courier",
+   "name": "Mixtape Courier",
+   "type": "unit",
+   "cost": 2,
+   "stats": {
+    "might": 2
+   },
+   "color": "genx",
+   "keywords": [
+    "ganking"
+   ],
+   "kwv": {},
+   "abilities": [],
+   "flavor": "Side A: songs about you. Side B: also songs about you."
+  },
+  {
+   "id": "skate-park-nihilist",
+   "name": "Skate Park Nihilist",
+   "type": "unit",
+   "cost": 2,
+   "stats": {
+    "might": 2
+   },
+   "color": "genx",
+   "keywords": [
+    "assault"
+   ],
+   "kwv": {
+    "assault": 1
+   },
+   "abilities": [],
+   "flavor": "Nothing matters. Except this kickflip."
+  },
+  {
+   "id": "cubicle-saboteur",
+   "name": "Cubicle Saboteur",
+   "type": "unit",
+   "cost": 3,
+   "stats": {
+    "might": 2
+   },
+   "color": "genx",
+   "keywords": [],
+   "kwv": {},
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "damage",
+       "n": 2,
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Has unplugged the printer every Monday since 1997."
+  },
+  {
+   "id": "grunge-bassist",
+   "name": "Grunge Bassist",
+   "type": "unit",
+   "cost": 3,
+   "stats": {
+    "might": 4
+   },
+   "color": "genx",
+   "keywords": [],
+   "kwv": {},
+   "abilities": [],
+   "flavor": "Plays three notes. All of them loud."
+  },
+  {
+   "id": "weekend-dad",
+   "name": "Weekend Dad",
+   "type": "unit",
+   "cost": 3,
+   "stats": {
+    "might": 3
+   },
+   "color": "genx",
+   "keywords": [
+    "deathknell"
+   ],
+   "kwv": {},
+   "abilities": [
+    {
+     "when": "leave",
+     "do": [
+      {
+       "k": "damage",
+       "n": 2,
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Every other Saturday, and he makes them count."
+  },
+  {
+   "id": "arcade-hustler",
+   "name": "Arcade Hustler",
+   "type": "unit",
+   "cost": 4,
+   "stats": {
+    "might": 4
+   },
+   "color": "genx",
+   "keywords": [],
+   "kwv": {},
+   "abilities": [
+    {
+     "when": "conquer",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Three initials at the top of every board in town."
+  },
+  {
+   "id": "slacker-sensei",
+   "name": "Slacker Sensei",
+   "type": "unit",
+   "cost": {
+    "any": 4,
+    "genx": 1
+   },
+   "stats": {
+    "might": 4
+   },
+   "color": "genx",
+   "keywords": [
+    "ganking",
+    "assault"
+   ],
+   "kwv": {
+    "assault": 2
+   },
+   "abilities": [],
+   "flavor": "Champion of Generation X. Teaches by not showing up."
+  },
+  {
+   "id": "whatever",
+   "name": "Whatever",
+   "type": "reaction",
+   "cost": {
+    "any": 2,
+    "genx": 1
+   },
+   "stats": {},
+   "color": "genx",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "bounce",
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "A shrug so powerful it sends you home."
+  },
+  {
+   "id": "unsupervised-afternoon",
+   "name": "Unsupervised Afternoon",
+   "type": "spell",
+   "cost": 1,
+   "stats": {},
+   "color": "genx",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "ready",
+       "target": "ownUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Four hours, no adults, one bike. Anything is possible."
+  },
+  {
+   "id": "sarcasm",
+   "name": "Sarcasm",
+   "type": "reaction",
+   "cost": 1,
+   "stats": {},
+   "color": "genx",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "damage",
+       "n": 1,
+       "target": "enemyUnit"
+      },
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Oh, great. Another battlefield. How exciting."
+  },
+  {
+   "id": "flannel-armor",
+   "name": "Flannel Armor",
+   "type": "gear",
+   "cost": 1,
+   "stats": {},
+   "color": "genx",
+   "keywords": [],
+   "abilities": [],
+   "bonus": {
+    "might": 1
+   },
+   "flavor": "Thrifted. Unwashed. Iconic."
+  },
+  {
+   "id": "barista-with-a-degree",
+   "name": "Barista with a Degree",
+   "type": "unit",
+   "cost": 1,
+   "stats": {
+    "might": 2
+   },
+   "color": "millennial",
+   "keywords": [
+    "legion"
+   ],
+   "kwv": {},
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ],
+     "if": {
+      "k": "played",
+      "n": 1
+     }
+    }
+   ],
+   "flavor": "Master of Arts. Master of oat milk."
+  },
+  {
+   "id": "participation-trophy-squire",
+   "name": "Participation Trophy Squire",
+   "type": "unit",
+   "cost": 1,
+   "stats": {
+    "might": 2
+   },
+   "color": "millennial",
+   "keywords": [],
+   "kwv": {},
+   "abilities": [],
+   "flavor": "Came eleventh. Still got the trophy. Still proud."
+  },
+  {
+   "id": "side-hustler",
+   "name": "Side Hustler",
+   "type": "unit",
+   "cost": 2,
+   "stats": {
+    "might": 2
+   },
+   "color": "millennial",
+   "keywords": [],
+   "kwv": {},
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "token",
+       "card": "gig-worker",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Day job, night job, weekend job, podcast."
+  },
+  {
+   "id": "avocado-toast-knight",
+   "name": "Avocado Toast Knight",
+   "type": "unit",
+   "cost": 2,
+   "stats": {
+    "might": 2
+   },
+   "color": "millennial",
+   "keywords": [
+    "legion"
+   ],
+   "kwv": {},
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "buff",
+       "n": 2,
+       "target": "self",
+       "until": "forever"
+      }
+     ],
+     "if": {
+      "k": "played",
+      "n": 1
+     }
+    }
+   ],
+   "flavor": "This is why he can't afford a house. Worth it."
+  },
+  {
+   "id": "podcast-host",
+   "name": "Podcast Host",
+   "type": "unit",
+   "cost": 3,
+   "stats": {
+    "might": 3
+   },
+   "color": "millennial",
+   "keywords": [
+    "vision"
+   ],
+   "kwv": {},
+   "abilities": [],
+   "flavor": "Episode 412: we need to talk about the battlefield."
+  },
+  {
+   "id": "burnout-paladin",
+   "name": "Burnout Paladin",
+   "type": "unit",
+   "cost": 3,
+   "stats": {
+    "might": 4
+   },
+   "color": "millennial",
+   "keywords": [
+    "deathknell"
+   ],
+   "kwv": {},
+   "abilities": [
+    {
+     "when": "leave",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Gave 110% until there was 0% left."
+  },
+  {
+   "id": "student-debt-golem",
+   "name": "Student Debt Golem",
+   "type": "unit",
+   "cost": {
+    "any": 4,
+    "millennial": 1
+   },
+   "stats": {
+    "might": 5
+   },
+   "color": "millennial",
+   "keywords": [
+    "tank"
+   ],
+   "kwv": {},
+   "abilities": [],
+   "flavor": "Grows by 6.8% every year. Nobody knows how to kill it."
+  },
+  {
+   "id": "the-brunch-oracle",
+   "name": "The Brunch Oracle",
+   "type": "unit",
+   "cost": {
+    "any": 4,
+    "millennial": 1
+   },
+   "stats": {
+    "might": 4
+   },
+   "color": "millennial",
+   "keywords": [
+    "legion"
+   ],
+   "kwv": {},
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "token",
+       "card": "gig-worker",
+       "n": 2
+      }
+     ],
+     "if": {
+      "k": "played",
+      "n": 1
+     }
+    }
+   ],
+   "flavor": "Champion of the Millennials. Sees the future in the foam of a flat white."
+  },
+  {
+   "id": "group-project",
+   "name": "Group Project",
+   "type": "spell",
+   "cost": 2,
+   "stats": {},
+   "color": "millennial",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "token",
+       "card": "gig-worker",
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "flavor": "Two people do the work. Everyone gets the credit."
+  },
+  {
+   "id": "quarter-life-crisis",
+   "name": "Quarter-Life Crisis",
+   "type": "spell",
+   "cost": 1,
+   "stats": {},
+   "color": "millennial",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "draw",
+       "n": 2
+      },
+      {
+       "k": "discard",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "New haircut. New career. Same rent."
+  },
+  {
+   "id": "unpaid-internship",
+   "name": "Unpaid Internship",
+   "type": "reaction",
+   "cost": 1,
+   "stats": {},
+   "color": "millennial",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "buff",
+       "n": 1,
+       "target": "ownUnit"
+      }
+     ]
+    },
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ],
+     "if": {
+      "k": "played",
+      "n": 1
+     }
+    }
+   ],
+   "flavor": "Paid in exposure. And one pizza."
+  },
+  {
+   "id": "self-care-day",
+   "name": "Self-Care Day",
+   "type": "reaction",
+   "cost": 2,
+   "stats": {},
+   "color": "millennial",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "ready",
+       "target": "ownUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Face mask on. Battle plan off."
+  },
+  {
+   "id": "gig-worker",
+   "name": "Gig Worker",
+   "type": "token",
+   "stats": {
+    "might": 1
+   },
+   "color": "millennial",
+   "keywords": [],
+   "abilities": [],
+   "flavor": "Five stars. No benefits."
+  },
+  {
+   "id": "viral-dancer",
+   "name": "Viral Dancer",
+   "type": "unit",
+   "cost": 1,
+   "stats": {
+    "might": 3
+   },
+   "color": "genz",
+   "keywords": [
+    "temporary",
+    "accelerate"
+   ],
+   "kwv": {},
+   "abilities": [],
+   "flavor": "Famous for fifteen seconds. Exactly fifteen."
+  },
+  {
+   "id": "doomscroller",
+   "name": "Doomscroller",
+   "type": "unit",
+   "cost": 2,
+   "stats": {
+    "might": 3
+   },
+   "color": "genz",
+   "keywords": [
+    "vision"
+   ],
+   "kwv": {},
+   "abilities": [],
+   "flavor": "It is 3 a.m. and she knows everything. None of it is good."
+  },
+  {
+   "id": "e-sports-prodigy",
+   "name": "E-Sports Prodigy",
+   "type": "unit",
+   "cost": 2,
+   "stats": {
+    "might": 2
+   },
+   "color": "genz",
+   "keywords": [
+    "accelerate",
+    "assault"
+   ],
+   "kwv": {
+    "assault": 1
+   },
+   "abilities": [],
+   "flavor": "Reflexes of a hummingbird. Posture of a question mark."
+  },
+  {
+   "id": "fit-check-influencer",
+   "name": "Fit-Check Influencer",
+   "type": "unit",
+   "cost": 2,
+   "stats": {
+    "might": 2
+   },
+   "color": "genz",
+   "keywords": [],
+   "kwv": {},
+   "abilities": [
+    {
+     "when": "hold",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "The battlefield is just a backdrop."
+  },
+  {
+   "id": "meme-lord",
+   "name": "Meme Lord",
+   "type": "unit",
+   "cost": 3,
+   "stats": {
+    "might": 3
+   },
+   "color": "genz",
+   "keywords": [],
+   "kwv": {},
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "damage",
+       "n": 2,
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Has never told a joke in a complete sentence."
+  },
+  {
+   "id": "climate-striker",
+   "name": "Climate Striker",
+   "type": "unit",
+   "cost": 3,
+   "stats": {
+    "might": 3
+   },
+   "color": "genz",
+   "keywords": [
+    "shield"
+   ],
+   "kwv": {
+    "shield": 2
+   },
+   "abilities": [],
+   "flavor": "Skipping school to save the planet you broke."
+  },
+  {
+   "id": "hypebeast",
+   "name": "Hypebeast",
+   "type": "unit",
+   "cost": {
+    "any": 3,
+    "genz": 1
+   },
+   "stats": {
+    "might": 4
+   },
+   "color": "genz",
+   "keywords": [
+    "accelerate",
+    "assault"
+   ],
+   "kwv": {
+    "assault": 2
+   },
+   "abilities": [],
+   "flavor": "Wearing a month of rent. On his feet."
+  },
+  {
+   "id": "no-cap-captain",
+   "name": "No-Cap Captain",
+   "type": "unit",
+   "cost": {
+    "any": 4,
+    "genz": 1
+   },
+   "stats": {
+    "might": 5
+   },
+   "color": "genz",
+   "keywords": [
+    "accelerate",
+    "ganking"
+   ],
+   "kwv": {},
+   "abilities": [],
+   "flavor": "Champion of Generation Z. Leads from the front camera."
+  },
+  {
+   "id": "no-cap",
+   "name": "No Cap",
+   "type": "reaction",
+   "cost": 1,
+   "stats": {},
+   "color": "genz",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "buff",
+       "n": 2,
+       "target": "ownUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "For real for real."
+  },
+  {
+   "id": "ratioed",
+   "name": "Ratioed",
+   "type": "spell",
+   "cost": {
+    "any": 2,
+    "genz": 1
+   },
+   "stats": {},
+   "color": "genz",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "destroy",
+       "target": "enemyUnit",
+       "filter": {
+        "stat": "might",
+        "op": "le",
+        "val": 4
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "Four thousand replies. Zero likes. Gone."
+  },
+  {
+   "id": "ghosted",
+   "name": "Ghosted",
+   "type": "reaction",
+   "cost": 2,
+   "stats": {},
+   "color": "genz",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "exhaust",
+       "target": "enemyUnit"
+      },
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Read at 9:41 p.m. Never answered."
+  },
+  {
+   "id": "group-chat-leak",
+   "name": "Group Chat Leak",
+   "type": "spell",
+   "cost": 1,
+   "stats": {},
+   "color": "genz",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "discard",
+       "n": 1,
+       "who": "opp"
+      },
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Screenshots are forever."
+  },
+  {
+   "id": "the-mortgage-paladin",
+   "name": "The Mortgage Paladin",
+   "type": "legend",
+   "stats": {},
+   "color": "silent",
+   "color2": "boomer",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ],
+     "tap": true,
+     "if": {
+      "k": "res",
+      "n": 5
+     }
+    }
+   ],
+   "flavor": "Thirty years fixed. Sword optional."
+  },
+  {
+   "id": "the-severance-baron",
+   "name": "The Severance Baron",
+   "type": "legend",
+   "stats": {},
+   "color": "boomer",
+   "color2": "genx",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "damage",
+       "n": 1,
+       "target": "enemyUnit"
+      }
+     ],
+     "tap": true,
+     "cost": 3
+    }
+   ],
+   "flavor": "Restructuring the battlefield, one layoff at a time."
+  },
+  {
+   "id": "the-latchkey-ronin",
+   "name": "The Latchkey Ronin",
+   "type": "legend",
+   "stats": {},
+   "color": "genx",
+   "color2": "millennial",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "buff",
+       "n": 1,
+       "target": "ownUnit"
+      }
+     ],
+     "tap": true,
+     "cost": 1
+    }
+   ],
+   "flavor": "Raised himself. Has opinions about how you were raised."
+  },
+  {
+   "id": "the-influencer-oracle",
+   "name": "The Influencer Oracle",
+   "type": "legend",
+   "stats": {},
+   "color": "millennial",
+   "color2": "genz",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ],
+     "tap": true,
+     "cost": 1,
+     "if": {
+      "k": "played",
+      "n": 1
+     }
+    }
+   ],
+   "flavor": "Like, subscribe, and prophesy."
+  },
+  {
+   "id": "great-grandma-gigabyte",
+   "name": "Great-Grandma Gigabyte",
+   "type": "legend",
+   "stats": {},
+   "color": "genz",
+   "color2": "silent",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "token",
+       "card": "grandkid",
+       "n": 1
+      }
+     ],
+     "tap": true,
+     "cost": 1
+    }
+   ],
+   "flavor": "Ninety-four years old. Eleven million followers."
+  },
+  {
+   "id": "grandkid",
+   "name": "Grandkid",
+   "type": "token",
+   "stats": {
+    "might": 1
+   },
+   "color": "genz",
+   "keywords": [
+    "temporary"
+   ],
+   "abilities": [],
+   "flavor": "Only visits for the holidays."
+  },
+  {
+   "id": "rune-of-thrift",
+   "name": "Rune of Thrift",
+   "type": "rune",
+   "stats": {},
+   "color": "silent",
+   "keywords": [],
+   "abilities": []
+  },
+  {
+   "id": "rune-of-equity",
+   "name": "Rune of Equity",
+   "type": "rune",
+   "stats": {},
+   "color": "boomer",
+   "keywords": [],
+   "abilities": []
+  },
+  {
+   "id": "rune-of-irony",
+   "name": "Rune of Irony",
+   "type": "rune",
+   "stats": {},
+   "color": "genx",
+   "keywords": [],
+   "abilities": []
+  },
+  {
+   "id": "rune-of-hustle",
+   "name": "Rune of Hustle",
+   "type": "rune",
+   "stats": {},
+   "color": "millennial",
+   "keywords": [],
+   "abilities": []
+  },
+  {
+   "id": "rune-of-vibes",
+   "name": "Rune of Vibes",
+   "type": "rune",
+   "stats": {},
+   "color": "genz",
+   "keywords": [],
+   "abilities": []
+  },
+  {
+   "id": "the-cul-de-sac",
+   "name": "The Cul-de-Sac",
+   "type": "battlefield",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "conquer",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Twelve identical houses and one unforgivable lawn."
+  },
+  {
+   "id": "the-comment-section",
+   "name": "The Comment Section",
+   "type": "battlefield",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "conquer",
+     "do": [
+      {
+       "k": "damage",
+       "n": 1,
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Abandon hope, all ye who scroll here."
+  },
+  {
+   "id": "the-thanksgiving-table",
+   "name": "The Thanksgiving Table",
+   "type": "battlefield",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "hold",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Four generations, one turkey, no survivors."
+  },
+  {
+   "id": "the-open-plan-office",
+   "name": "The Open-Plan Office",
+   "type": "battlefield",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "conquer",
+     "do": [
+      {
+       "k": "ready",
+       "target": "ownUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Nowhere to hide. Everywhere to stand."
+  },
+  {
+   "id": "the-retirement-village",
+   "name": "The Retirement Village",
+   "type": "battlefield",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "hold",
+     "do": [
+      {
+       "k": "gain",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Bingo at two. War at three."
+  },
+  {
+   "id": "the-mall-food-court",
+   "name": "The Mall Food Court",
+   "type": "battlefield",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "conquer",
+     "do": [
+      {
+       "k": "scry",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Neutral ground. Mostly. Except near the pretzels."
+  }
+ ],
+ "decks": [
+  {
+   "id": "establishment",
+   "name": "The Establishment",
+   "leader": "the-mortgage-paladin",
+   "champion": "sergeant-rationbook",
+   "main": {
+    "victory-gardener": 2,
+    "ration-clerk": 2,
+    "telegraph-operator": 2,
+    "porch-sitter": 2,
+    "iron-lung-veteran": 2,
+    "darning-needle-duchess": 2,
+    "doughboy-drill-sergeant": 2,
+    "sergeant-rationbook": 2,
+    "stiff-upper-lip": 2,
+    "duty-calls": 2,
+    "the-long-wait": 2,
+    "sensible-shoes": 2,
+    "lawn-inspector": 2,
+    "golf-cart-cavalry": 2,
+    "timeshare-salesman": 2,
+    "hoa-enforcer": 1,
+    "retiree-snowbird": 1,
+    "classic-car-collector": 1,
+    "pickup-truck-patriarch": 1,
+    "the-landlord-eternal": 2,
+    "compound-interest": 1,
+    "back-in-my-day": 1,
+    "pull-up-the-ladder": 1,
+    "gold-retirement-watch": 1
+   },
+   "res": {
+    "rune-of-thrift": 6,
+    "rune-of-equity": 6
+   },
+   "sites": [
+    "the-cul-de-sac",
+    "the-thanksgiving-table",
+    "the-retirement-village"
+   ]
+  },
+  {
+   "id": "middle-management",
+   "name": "Middle Management",
+   "leader": "the-severance-baron",
+   "champion": "the-landlord-eternal",
+   "main": {
+    "lawn-inspector": 2,
+    "golf-cart-cavalry": 2,
+    "timeshare-salesman": 2,
+    "hoa-enforcer": 2,
+    "retiree-snowbird": 2,
+    "classic-car-collector": 2,
+    "pickup-truck-patriarch": 2,
+    "the-landlord-eternal": 2,
+    "compound-interest": 2,
+    "back-in-my-day": 2,
+    "pull-up-the-ladder": 2,
+    "gold-retirement-watch": 2,
+    "latchkey-kid": 2,
+    "mixtape-courier": 2,
+    "skate-park-nihilist": 2,
+    "cubicle-saboteur": 1,
+    "grunge-bassist": 1,
+    "weekend-dad": 1,
+    "arcade-hustler": 1,
+    "slacker-sensei": 2,
+    "whatever": 1,
+    "unsupervised-afternoon": 1,
+    "sarcasm": 1,
+    "flannel-armor": 1
+   },
+   "res": {
+    "rune-of-equity": 6,
+    "rune-of-irony": 6
+   },
+   "sites": [
+    "the-open-plan-office",
+    "the-retirement-village",
+    "the-comment-section"
+   ]
+  },
+  {
+   "id": "forgotten-middle",
+   "name": "The Forgotten Middle",
+   "leader": "the-latchkey-ronin",
+   "champion": "slacker-sensei",
+   "main": {
+    "latchkey-kid": 2,
+    "mixtape-courier": 2,
+    "skate-park-nihilist": 2,
+    "cubicle-saboteur": 2,
+    "grunge-bassist": 2,
+    "weekend-dad": 2,
+    "arcade-hustler": 2,
+    "slacker-sensei": 2,
+    "whatever": 2,
+    "unsupervised-afternoon": 2,
+    "sarcasm": 2,
+    "flannel-armor": 2,
+    "barista-with-a-degree": 2,
+    "participation-trophy-squire": 2,
+    "side-hustler": 2,
+    "avocado-toast-knight": 1,
+    "podcast-host": 1,
+    "burnout-paladin": 1,
+    "student-debt-golem": 1,
+    "the-brunch-oracle": 2,
+    "group-project": 1,
+    "quarter-life-crisis": 1,
+    "unpaid-internship": 1,
+    "self-care-day": 1
+   },
+   "res": {
+    "rune-of-irony": 6,
+    "rune-of-hustle": 6
+   },
+   "sites": [
+    "the-mall-food-court",
+    "the-open-plan-office",
+    "the-cul-de-sac"
+   ]
+  },
+  {
+   "id": "extremely-online",
+   "name": "Extremely Online",
+   "leader": "the-influencer-oracle",
+   "champion": "the-brunch-oracle",
+   "main": {
+    "barista-with-a-degree": 2,
+    "participation-trophy-squire": 2,
+    "side-hustler": 2,
+    "avocado-toast-knight": 2,
+    "podcast-host": 2,
+    "burnout-paladin": 2,
+    "student-debt-golem": 2,
+    "the-brunch-oracle": 2,
+    "group-project": 2,
+    "quarter-life-crisis": 2,
+    "unpaid-internship": 2,
+    "self-care-day": 2,
+    "viral-dancer": 2,
+    "doomscroller": 2,
+    "e-sports-prodigy": 2,
+    "fit-check-influencer": 1,
+    "meme-lord": 1,
+    "climate-striker": 1,
+    "hypebeast": 1,
+    "no-cap-captain": 2,
+    "no-cap": 1,
+    "ratioed": 1,
+    "ghosted": 1,
+    "group-chat-leak": 1
+   },
+   "res": {
+    "rune-of-hustle": 6,
+    "rune-of-vibes": 6
+   },
+   "sites": [
+    "the-comment-section",
+    "the-mall-food-court",
+    "the-thanksgiving-table"
+   ]
+  },
+  {
+   "id": "skip-a-generation",
+   "name": "Skip a Generation",
+   "leader": "great-grandma-gigabyte",
+   "champion": "no-cap-captain",
+   "main": {
+    "viral-dancer": 2,
+    "doomscroller": 2,
+    "e-sports-prodigy": 2,
+    "fit-check-influencer": 2,
+    "meme-lord": 2,
+    "climate-striker": 2,
+    "hypebeast": 2,
+    "no-cap-captain": 2,
+    "no-cap": 2,
+    "ratioed": 2,
+    "ghosted": 2,
+    "group-chat-leak": 2,
+    "victory-gardener": 2,
+    "ration-clerk": 2,
+    "telegraph-operator": 2,
+    "porch-sitter": 1,
+    "iron-lung-veteran": 1,
+    "darning-needle-duchess": 1,
+    "doughboy-drill-sergeant": 1,
+    "sergeant-rationbook": 2,
+    "stiff-upper-lip": 1,
+    "duty-calls": 1,
+    "the-long-wait": 1,
+    "sensible-shoes": 1
+   },
+   "res": {
+    "rune-of-vibes": 6,
+    "rune-of-thrift": 6
+   },
+   "sites": [
+    "the-thanksgiving-table",
+    "the-comment-section",
+    "the-cul-de-sac"
+   ]
+  }
+ ]
+}

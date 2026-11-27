@@ -19,7 +19,7 @@
 - **Order:**
   1. Clean slate (done).
   2. Battle-screen rebuild.
-  3. The games one at a time: Generation Wars → Ringworld Rumble → Looboo → Crystal Circuit → Taste Dimension.
+  3. The games one at a time: Generation Wars (playable) → Ringworld Rumble → Looboo → Crystal Circuit → Taste Dimension.
   4. Shop, campaign and multiplayer polish.
 - **Battle screen, part 1 (done):** a battle director (`apps/web/src/ui/director.ts`) turns the viewer's events into beats that play one at a time:
   - a caption for every opponent move;
@@ -38,6 +38,24 @@
   - draw (fly in from the deck) and play (drop onto the board) animations.
 
   Phone layout is out of scope (tablet and desktop only). Also done: the board fits one viewport on tablet and desktop (card sizes follow the viewport height, the opponent's hand is a compact fan of backs, your hand fans and lifts on hover). Next for the battle screen, as the clones need them: "how to play this card" hints; per-card action menus with costs shown; showdown/chain panels for stack games.
+- **Generation Wars (first clone, playable; mechanics reference: Riftbound):** `packages/modules/generation-wars`.
+  - The source of truth is the Workshop blueprint (`blueprint.json`); `npm run -s modules` compiles it into the module files. A test fails if they are stale. "Edit in the Workshop" on the game menu (and "Remix" in the blueprint picker) opens a copy.
+  - Content:
+    - 78 cards: 5 generations (domains) × 12, 5 legends, 5 runes, 6 battlefields, 2 tokens;
+    - 5 decks (40 main + champion + 6/6 runes + 3 battlefields).
+  - Rules:
+    - runes: 2 per turn, 3 on the second player's first turn; energy from the pool, power by recycling;
+    - legend in play, chosen champion zone, partial mulligan (up to 2);
+    - two battlefields, group moves, showdown window, fights (Tank, Assault, Shield, recall on a tie, heal);
+    - conquer/hold scoring, the final-point rule, 8 points to win.
+  - Keywords: Accelerate, Ganking, Temporary, Deathknell, Legion, Vision. All are Workshop options (see `docs/MAKER.md`, Conquest battlefields).
+  - Balance: heuristic vs heuristic, 10–12 games per pairing, is about 30–70 after one tuning pass. Middle Management is still the strongest and Extremely Online the weakest.
+  - Not yet emulated:
+    - Hidden (facedown cards at a battlefield), Deflect;
+    - Reaction-speed chains inside showdowns (the showdown is an alternating response window);
+    - choosing battlefields and damage assignment by hand (both are automatic);
+    - burn-out on an empty deck (decking out loses).
+  - Next: more cards per generation, a Hidden/Deflect pass, then Ringworld Rumble.
 - **Clean slate (done):**
   - Every module and its artwork was deleted (NIGHTFALL, Shadow Earth and the Workshop starter games; git history keeps them).
   - The eight small reference games survive only as engine test fixtures in `packages/test-harness/fixtures`.

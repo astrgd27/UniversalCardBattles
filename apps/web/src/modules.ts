@@ -7,6 +7,8 @@ const files = import.meta.glob(['../../../packages/modules/*/*.json', '../../../
 // Images bundled with the built-in modules (packages/modules/<id>/assets/**), served as hashed files.
 const images = import.meta.glob('../../../packages/modules/*/assets/**/*.{png,jpg,jpeg,webp,avif}', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 export const MODULES = new Map<string, Mod>();
+/** Workshop blueprints of the default modules (packages/modules/<id>/blueprint.json): open one in the Workshop to remix it. */
+export const SOURCES = new Map<string, any>();
 /** Asset URLs by module: moduleId -> package path ("assets/...") -> url. Bundled modules and loaded packages alike. */
 export const ASSETS = new Map<string, Map<string, string>>();
 for (const [path, url] of Object.entries(images)) {
@@ -28,6 +30,7 @@ for (const [path, data] of Object.entries(files)) {
   if (m) (byId[m[1]] ??= {})[m[2]] = data;
 }
 for (const [id, d] of Object.entries(byId)) {
+  if (d.blueprint) SOURCES.set(id, d.blueprint);
   MODULES.set(id, compileModule({ manifest: d.manifest, rules: d.rules, cards: d.cards, decks: d.decks ?? {}, ...(d.ai ? { ai: d.ai } : {}), ...(d.campaign ? { campaign: d.campaign } : {}) }));
 }
 

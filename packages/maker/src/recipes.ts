@@ -32,6 +32,7 @@ const FRAMES: Record<Role, CardType['frame']> = {
   resource: { base: 'resource', cost: 'none', stats: [], art: 70, text: false }, trap: { base: 'spell', cost: 'none', stats: [], art: 48, text: true },
   leader: { base: 'leader', cost: 'none', stats: [], art: 52, text: true }, evolution: { base: 'vital', cost: 'tl', stats: [], art: 48, text: true },
   extra: { base: 'monster', cost: 'none', stats: [], art: 48, text: true }, token: { base: 'token', cost: 'none', stats: [], art: 48, text: true },
+  battlefield: { base: 'spell', cost: 'none', stats: [], art: 52, text: true, layout: 'landscape' },
 };
 function ensureType(bp: Blueprint, id: string, name: string, role: Role, icon = '', zone?: string): CardType {
   let t = bp.types.find((x) => x.id === id);

@@ -19,7 +19,10 @@ export function readModuleDir(dir: string): ModuleDef {
     ...(existsSync(join(dir, 'campaign/campaign.json')) ? { campaign: j('campaign/campaign.json') } : {}),
   };
 }
-export const loadRef = (id: string): Mod => compileModule(readModuleDir(join(REF_DIR, id)));
+/** The default modules the app ships (packages/modules). */
+export const MOD_DIR = join(dirname(fileURLToPath(import.meta.url)), '../../modules');
+/** A test fixture or a default module, by id. */
+export const loadRef = (id: string): Mod => compileModule(readModuleDir(join(existsSync(join(REF_DIR, id)) ? REF_DIR : MOD_DIR, id)));
 
 export function deckOpts(m: Mod, names: string[], seed: number): MatchOpts {
   return { decks: names.map((n) => structuredClone(m.decks![n])), seed };
