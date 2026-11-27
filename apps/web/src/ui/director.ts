@@ -17,7 +17,7 @@ export interface Beat {
 type Ev = Record<string, any>;
 const ICON: Record<Beat['kind'], string> = { play: '✦', attack: '⚔', block: '🛡', clash: '💥', hit: '♥', destroy: '✖', info: '•', stack: '⧗' };
 export const beatIcon = (k: Beat['kind']) => ICON[k];
-const BEAT_EVENTS = new Set(['quest', 'lifeLost', 'prize', 'conquer', 'hold', 'deployed', 'showdownFight', 'hit', 'marched', 'recalled', 'finalPoint', 'coin', 'status', 'attackFailed', 'evolved', 'switched', 'statusTick']);
+const BEAT_EVENTS = new Set(['quest', 'lifeLost', 'prize', 'conquer', 'hold', 'deployed', 'showdownFight', 'hit', 'marched', 'recalled', 'finalPoint', 'coin', 'status', 'attackFailed', 'evolved', 'switched', 'statusTick', 'dice', 'rolled']);
 
 /** Beats for a slice of the viewer's events. `who(p)` names a player ("You" / "Opponent"). */
 export function beatsOf(events: Ev[], mod: Mod, viewer: string, who: (p: string) => string, cardOf: (id: string) => string | undefined): Beat[] {
@@ -86,6 +86,7 @@ export function beatsOf(events: Ev[], mod: Mod, viewer: string, who: (p: string)
           const text = e.type === 'quest' ? `${name(e.o)} quests for ${e.n}` : e.type === 'lifeLost' ? `${who(p)} lose${who(p) === 'You' ? '' : 's'} a life card` : e.type === 'prize' ? `${who(p)} take${who(p) === 'You' ? '' : 's'} ${(e.n ?? 1) > 1 ? `${e.n} prize cards` : 'a prize card'}`
             : e.type === 'conquer' ? `${who(p)} conquer${s} ${zn(e.z)} (+1 point)` : e.type === 'hold' ? `${who(p)} hold${s} ${zn(e.z)} (+1 point)` : e.type === 'deployed' ? `${who(p)} deploy${s} their leader`
               : e.type === 'showdownFight' ? `Fight at ${zn(e.z)}: ${e.a} might against ${e.b}!` : e.type === 'marched' ? `${who(p)} move${s} ${e.n} unit${e.n === 1 ? '' : 's'} into ${zn(e.z)}`
+                : e.type === 'dice' ? `🎲 ${who(p)} roll${s} a d${e.sides}… ${e.value}!` : e.type === 'rolled' ? (e.dice > 1 ? `🎲 Total: ${e.total}` : '')
                 : e.type === 'coin' ? `${who(p)} flip${s} a coin… ${e.heads ? 'Heads!' : 'Tails!'}` : e.type === 'status' ? `${name(e.o)} is now ${stl(e.s)}`
                 : e.type === 'attackFailed' ? `${name(e.o)} is ${stl(e.s)}: the attack fails!` : e.type === 'evolved' ? `${name(e.o)} evolves!` : e.type === 'switched' ? `${who(p)} switch${who(p) === 'You' ? '' : 'es'} the active unit`
                 : e.type === 'statusTick' ? `${name(e.o)} takes ${e.n} damage (${stl(e.s)})`

@@ -185,6 +185,12 @@ A game can define any number of statuses (`bp.statuses`). Each one is a set of r
 
 **Coin flips** (`flip`): flip N coins, with "if heads…" and "if tails…" effect lists. With several coins, heads needs all heads, or use "once per heads". Flips show on the battle screen.
 
+**Dice rolls** (`roll`): roll N dice with S sides (default one d6).
+- Result ranges ("on 1–2: …; on 3–6: …") each run their own effect list on the total.
+- A "then" list runs after every roll.
+- Any effect's amount can be "the last roll" (`fromRoll`), e.g. "roll 2d6, then deal X damage".
+- Each die and the total show on the battle screen.
+
 ## Active duels (Advanced)
 Options for the Active duel combat mode (Looboo, `packages/modules/looboo`, is built from them).
 - **Attacks:**

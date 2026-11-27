@@ -476,7 +476,7 @@ const EFF: [EffectKind, string, string[]][] = [
   ['lifeToHand', 'Top life card to hand', ['n']], ['handToLife', 'A card from hand to the top of life', []],
   ['inflict', 'Give a status', ['status', 'n', 'target']], ['cure', 'Cure a status', ['statusAll', 'target']], ['flip', 'Flip coins (heads / tails)', ['n', 'flip']],
   ['switch', 'Switch the active unit', ['side']], ['tutor', 'Search your deck (choose)', ['n', 'type', 'dest', 'dfilter']], ['attachFrom', 'Attach a resource card from a zone', ['src', 'target', 'dfilter']],
-  ['drawTo', 'Draw up to N in hand', ['n']], ['skipEvolve', 'Evolve two stages at once', []], ['fight', 'Fight (one of your units)', ['target']], ['surveil', 'Surveil (top cards to discard)', ['n']], ['raw', 'Custom script (JSON)', ['raw']],
+  ['drawTo', 'Draw up to N in hand', ['n']], ['skipEvolve', 'Evolve two stages at once', []], ['fight', 'Fight (one of your units)', ['target']], ['roll', 'Roll dice', ['n', 'roll']], ['surveil', 'Surveil (top cards to discard)', ['n']], ['raw', 'Custom script (JSON)', ['raw']],
 ];
 const TGT: [TargetKind, string][] = [['enemyUnit', 'an enemy unit (choose)'], ['anyUnit', 'any unit (choose)'], ['ownUnit', 'one of your units'], ['otherOwnUnit', 'another of your units'], ['enemyAny', 'enemy unit or opponent'],
   ['opponent', 'the opponent'], ['you', 'you'], ['self', 'this card'], ['randomEnemyUnit', 'a random enemy unit'], ['allEnemyUnits', 'all enemy units'], ['allUnits', 'all units'], ['allOwnUnits', 'all your units'],
@@ -484,7 +484,7 @@ const TGT: [TargetKind, string][] = [['enemyUnit', 'an enemy unit (choose)'], ['
 const SCOPE: [TargetKind, string][] = [['allOwnUnits', 'your units'], ['otherOwnUnit', 'your other units'], ['allEnemyUnits', 'enemy units'], ['allUnits', 'all units'], ['self', 'this card']];
 const zoneOpts = (bp: Blueprint): [string, string][] => [['banished', 'Banished pile'], ['grave', 'Discard pile'], ['hand', 'Hand'], ['deck', 'Deck (bottom)'], ...(bp.zones ?? []).map((z) => [z.id, z.name] as [string, string])];
 const RESTRICT: [string, string][] = [['noAttack', "can't attack"], ['noBlock', "can't block"], ['noBeAttacked', "can't be attacked"], ['unblockable', "can't be blocked"], ['entersExhausted', 'enters exhausted']];
-function effectRow(bp: Blueprint, A: any, ep: Path, e: Effect, onDel: () => void, kwId?: string, isStatic = false) {
+function effectRow(bp: Blueprint, A: any, ep: Path, e: Effect, onDel: () => void, kwId?: string, isStatic = false): HTMLElement {
   const def = EFF.find((x) => x[0] === e.k)!;
   const P = new Set(def[2]);
   const roleOf = new Map(bp.types.map((t) => [t.id, t.role]));
@@ -493,6 +493,7 @@ function effectRow(bp: Blueprint, A: any, ep: Path, e: Effect, onDel: () => void
     sel(bp, A, [...ep, 'k'], EFF.map(([k, l]) => [k, l]), { label: 'Do' }),
     P.has('n') && !e.kw && num(bp, A, [...ep, 'n'], { label: 'Amount', min: -100000, max: 100000 }),
     P.has('n') && kwId && chk(bp, A, [...ep, 'kw'], 'Amount = keyword N'),
+    P.has('n') && e.k !== 'roll' && chk(bp, A, [...ep, 'fromRoll'], 'Amount = the last roll'),
     P.has('counter') && sel(bp, A, [...ep, 'card'], (bp.counters ?? []).length ? bp.counters!.map((k) => [k.id, k.name] as [string, string]) : [['', '(make a counter first)']], { label: 'Counter' }),
     P.has('stat') && sel(bp, A, [...ep, 'stat'], bp.stats.map((s) => [s.id, s.name]), { label: 'Stat' }),
     P.has('target') && sel(bp, A, [...ep, 'target'], isStatic ? SCOPE : TGT, { label: isStatic ? 'Affects' : 'Target' }),
@@ -507,6 +508,16 @@ function effectRow(bp: Blueprint, A: any, ep: Path, e: Effect, onDel: () => void
     P.has('side') && sel(bp, A, [...ep, 'who'], [['me', 'yours'], ['opp', "the opponent's (you choose)"]], { label: 'Whose' }),
     P.has('dest') && sel(bp, A, [...ep, 'to'], [['hand', 'into your hand'], ['play', 'into play']], { label: 'Put' }),
     P.has('src') && sel(bp, A, [...ep, 'zone'], [['deck', 'deck'], ['grave', 'discard pile'], ['hand', 'hand']], { label: 'From your' }),
+    P.has('roll') && num(bp, A, [...ep, 'sides'], { label: 'Sides', min: 2, max: 100 }),
+    P.has('roll') && h('div', { class: 'mk-sub' }, h('strong', {}, 'Results'),
+      (e.ranges ?? []).map((r, ri) => h('div', { class: 'mk-sub' }, row(num(bp, A, [...ep, 'ranges', ri, 'min'], { label: 'From', min: 1, max: 600 }), num(bp, A, [...ep, 'ranges', ri, 'max'], { label: 'To', min: 1, max: 600 }),
+        h('button', { class: 'x', onclick: () => A.mkEdit((b: Blueprint) => { get(b, [...ep, 'ranges']).splice(ri, 1); }), 'aria-label': 'Remove result' }, '🗑')),
+        r.do.map((f, fi) => effectRow(bp, A, [...ep, 'ranges', ri, 'do', fi], f, () => A.mkEdit((b: Blueprint) => { get(b, [...ep, 'ranges', ri, 'do']).splice(fi, 1); }))),
+        h('button', { class: 'chip', onclick: () => A.mkEdit((b: Blueprint) => { get(b, [...ep, 'ranges', ri, 'do']).push({ k: 'draw', n: 1 }); }, 'cards') }, '+ effect'))),
+      h('button', { class: 'chip', onclick: () => A.mkEdit((b: Blueprint) => { const t = get(b, ep); const s = t.sides ?? 6; (t.ranges ??= []).push({ min: 1, max: s, do: [] }); }, 'cards') }, '+ result range'),
+      h('strong', {}, 'Then (every roll)'),
+      (e.then ?? []).map((f, fi) => effectRow(bp, A, [...ep, 'then', fi], f, () => A.mkEdit((b: Blueprint) => { get(b, [...ep, 'then']).splice(fi, 1); }))),
+      h('button', { class: 'chip', onclick: () => A.mkEdit((b: Blueprint) => { const t = get(b, ep); (t.then ??= []).push({ k: 'damage', fromRoll: true, target: 'enemyUnit' }); }, 'cards') }, '+ effect')),
     P.has('flip') && chk(bp, A, [...ep, 'perHeads'], 'Heads effects happen once per heads'),
     P.has('flip') && ['heads', 'tails'].map((side) => !(side === 'tails' && e.perHeads) && h('div', { class: 'mk-sub' }, h('strong', {}, side === 'heads' ? 'If heads' : 'If tails'),
       ((e as any)[side] ?? []).map((f: Effect, fi: number) => effectRow(bp, A, [...ep, side, fi], f, () => A.mkEdit((b: Blueprint) => { get(b, [...ep, side]).splice(fi, 1); }))),

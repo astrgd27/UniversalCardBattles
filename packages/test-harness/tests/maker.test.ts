@@ -254,3 +254,31 @@ test('maker zones: a shared Stadium replaces the one in play; banishing moves ca
   bad.cards[4].abilities[0].do[0] = { k: 'destroy', target: 'enemyUnit', filter: { zone: 'deck' } };
   assert.match(lint(bad).map((p) => p.text).join(' '), /hidden zone/);
 });
+
+test('dice rolls: result ranges, "then" effects and amounts equal to the roll', () => {
+  const bp0 = blank();
+  bp0.cards.push({ id: 'lucky-die', name: 'Lucky Die', type: 'spell', cost: 1, stats: {}, keywords: [], abilities: [{ when: 'play', do: [{ k: 'roll', n: 1, sides: 6,
+    ranges: [{ min: 1, max: 3, do: [{ k: 'draw', n: 1 }] }, { min: 4, max: 6, do: [{ k: 'damage', n: 2, target: 'opponent' }] }] }] }] });
+  bp0.cards.push({ id: 'boxcars', name: 'Boxcars', type: 'spell', cost: 1, stats: {}, keywords: [], abilities: [{ when: 'play', do: [{ k: 'roll', n: 2, sides: 6, then: [{ k: 'damage', fromRoll: true, target: 'opponent' }] }] }] });
+  bp0.decks[0].main = { squire: 4, scout: 4, knight: 4, giant: 4, 'lucky-die': 4, boxcars: 4 };
+  const { mod, problems } = build(bp0);
+  assert.ok(mod, problems.map((p) => p.text).join('; '));
+  assert.match(String(mod!.card.get('lucky-die')!.text), /Roll a 6-sided die: on 1–3, draw a card; on 4–6, deal 2 damage/);
+  assert.match(String(mod!.card.get('boxcars')!.text), /Roll 2 6-sided dice, then deal X damage to the opponent \(X = the roll\)/);
+  const totals: number[] = [], values: number[] = [];
+  for (let i = 0; i < 6; i++) {
+    const g = play(mod!, 60 + i, 'random');
+    for (let j = 0; j < g.s.events.length; j++) {
+      const e = g.s.events[j];
+      if (e.type === 'dice') values.push(e.value);
+      if (e.type === 'rolled' && e.dice === 2) {
+        totals.push(e.total);
+        const dmg = g.s.events.slice(j).find((d) => d.type === 'damage');
+        assert.equal(dmg?.amount, e.total, 'damage equals the roll');
+      }
+    }
+  }
+  assert.ok(values.length > 10 && values.every((v) => v >= 1 && v <= 6), 'd6 values stay in 1..6');
+  assert.ok(new Set(values).size >= 5, 'the die lands on many faces');
+  assert.ok(totals.length > 0 && totals.every((t) => t >= 2 && t <= 12));
+});

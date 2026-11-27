@@ -16,7 +16,7 @@ export type EffectKind =
   | 'addCounter' | 'removeCounter' | 'strike' | 'deploy'
   | 'restrict' | 'prevent' | 'costMod' | 'insteadDestroy' | 'moveTo' | 'scry'
   | 'dig' | 'putIntoPlay' | 'addRes' | 'readyRes' | 'giveRes' | 'lifeToHand' | 'handToLife'
-  | 'inflict' | 'cure' | 'flip' | 'switch' | 'tutor' | 'attachFrom' | 'drawTo' | 'skipEvolve' | 'fight' | 'surveil';
+  | 'inflict' | 'cure' | 'flip' | 'switch' | 'tutor' | 'attachFrom' | 'drawTo' | 'skipEvolve' | 'fight' | 'surveil' | 'roll';
 export type KeywordRule = 'none' | 'haste' | 'guard' | 'blocker' | 'flying' | 'vigilance' | 'lifesteal' | 'deadly' | 'shield' | 'double' | 'overflow' | 'ward'
   | 'firstStrike' | 'resist' | 'challenger' | 'saboteur' | 'goAgain' | 'trigger' | 'song'
   | 'noAttack' | 'noBlock' | 'noBeAttacked' | 'unblockable' | 'entersExhausted'
@@ -108,6 +108,8 @@ export interface Filter { type?: string; color?: string; keyword?: string; stat?
 export interface Effect { k: EffectKind; n?: number; kw?: string; target?: TargetKind; filter?: Filter; stat?: string; until?: 'turn' | 'forever' | 'battle'; who?: 'me' | 'opp' | 'each'; card?: string; type?: string; rule?: KeywordRule; to?: 'hand' | 'deck' | 'play'; zone?: string; raw?: unknown[];
   status?: string; // inflict / cure (cure: empty = every status)
   heads?: Effect[]; tails?: Effect[]; perHeads?: boolean; // flip: n coins; heads/tails effects (several coins: heads only if all are heads, or once per heads with perHeads)
+  sides?: number; ranges?: { min: number; max: number; do: Effect[] }[]; then?: Effect[]; // roll: n dice with this many sides; effects for the total's range; effects after every roll
+  fromRoll?: boolean; // the amount is the last roll's total
 }
 export interface Ability {
   when: When; if?: Cond; do: Effect[]; once?: boolean | 'game'; label?: string;

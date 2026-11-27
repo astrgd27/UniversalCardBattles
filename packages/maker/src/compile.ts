@@ -115,7 +115,7 @@ export function filterText(f: Filter | undefined, bp: Blueprint): string {
 }
 const zoneName = (bp: Blueprint, z: string) => bp.zones?.find((k) => k.id === z)?.name ?? bp.zoneNames[z] ?? ({ grave: 'the discard pile', hand: 'hand', deck: 'the deck', banished: 'the banished pile', resources: 'resources' } as Record<string, string>)[z] ?? z;
 export function effectText(e: Effect, bp: Blueprint): string {
-  const n = e.kw ? 'X' : String(e.n ?? 1);
+  const n = e.kw || e.fromRoll ? 'X' : String(e.n ?? 1);
   const ft = filterText(e.filter, bp);
   const t = TGT_TEXT[e.target ?? 'enemyUnit'] + (ft ? ` ${ft}` : '');
   const stat = nm(bp, 'stats', e.stat) || 'power';
@@ -123,7 +123,7 @@ export function effectText(e: Effect, bp: Blueprint): string {
   const card = bp.cards.find((k) => k.id === e.card)?.name ?? 'token';
   const type = bp.types.find((k) => k.id === e.type)?.name ?? 'card';
   const counter = nm(bp, 'counters', e.card) || 'counter';
-  const xs = e.kw ? ` (X = its ${nm(bp, 'keywords', e.kw)} value)` : '';
+  const xs = e.fromRoll ? ' (X = the roll)' : e.kw ? ` (X = its ${nm(bp, 'keywords', e.kw)} value)` : '';
   const body = ((): string => {
     switch (e.k) {
       case 'draw': return e.who === 'opp' ? `the opponent draws ${n}` : e.who === 'each' ? `each player draws ${n}` : `draw ${n === '1' ? 'a card' : `${n} cards`}`;
@@ -171,6 +171,12 @@ export function effectText(e: Effect, bp: Blueprint): string {
         const c = e.n ?? 1;
         return c === 1 ? `flip a coin${hs ? `: if heads, ${hs}` : ''}${ts ? `${hs ? ';' : ':'} if tails, ${ts}` : ''}`
           : e.perHeads ? `flip ${c} coins: for each heads, ${hs || 'nothing happens'}` : `flip ${c} coins${hs ? `: if all are heads, ${hs}` : ''}${ts ? `; otherwise ${ts}` : ''}`;
+      }
+      case 'roll': {
+        const dice = `${(e.n ?? 1) === 1 ? 'a' : e.n} ${e.sides ?? 6}-sided ${(e.n ?? 1) === 1 ? 'die' : 'dice'}`;
+        const rs = (e.ranges ?? []).map((r) => `on ${r.min === r.max ? r.min : `${r.min}–${r.max}`}, ${r.do.map((f) => effectText(f, bp)).join(', then ') || 'nothing happens'}`);
+        const th = (e.then ?? []).map((f) => effectText(f, bp)).join(', then ');
+        return `roll ${dice}${rs.length ? `: ${rs.join('; ')}` : ''}${th ? `${rs.length ? '; then' : ', then'} ${th}` : ''}`;
       }
       case 'switch': return e.who === 'opp' ? "switch one of your opponent's benched units with their active unit" : 'switch your active unit with one of your benched units';
       case 'tutor': return `search your deck for up to ${n} ${ft ? `${ft} ` : ''}${e.type ? type : 'card'}${n === '1' ? '' : 's'}, put ${n === '1' ? 'it' : 'them'} ${e.to === 'play' ? 'into play' : 'into your hand'}, then shuffle`;
@@ -285,7 +291,7 @@ function target(x: Ctx, kind: TargetKind | undefined, v: string, prompt: string,
   }
 }
 function effect(x: Ctx, e: Effect, i: number): X[] {
-  const n: X = e.kw ? def('$self', `kw_${x.kwKey(e.kw)}`) : e.n ?? 1;
+  const n: X = e.fromRoll ? g('game', 'roll') : e.kw ? def('$self', `kw_${x.kwKey(e.kw)}`) : e.n ?? 1;
   const p = e.who === 'opp' ? '$opp' : '$me';
   const per = (body: (who: X) => X[]) => (e.who === 'each' ? [EACH(['players'], '$pl', body('$pl'))] : body(p));
   const needsTarget = ['damage', 'heal', 'buff', 'destroy', 'bounce', 'exhaust', 'ready', 'addCounter', 'removeCounter', 'restrict', 'moveTo', 'giveRes', 'inflict', 'cure', 'attachFrom', 'fight'].includes(e.k);
@@ -344,6 +350,13 @@ function effect(x: Ctx, e: Effect, i: number): X[] {
     case 'strike': return x.battle ? [['openWindow', 'battle', { data: { attacker: '$self', target: '$opp', defender: '$opp', blockers: L([]), power: n, guard: 0 } }], SET('game', 'bat', 0)]
       : [C('hitN', '$opp', 1, n, '$self')];
     case 'deploy': return [IF(eq(g('$self', 'zone'), 'leader'), [['move', '$self', x.UZ[0], { as: `$dp${i}` }], SET(`$dp${i}`, 'newT', '$turn'), emit('deployed', { p: '$me' })])];
+    case 'roll': {
+      const nd = e.n ?? 1, sd = e.sides ?? 6, base = 300 + i * 20;
+      return [SET('game', 'roll', 0), EACH(range(nd), `$dr${i}`, [['random', { min: 1, max: sd, as: `$dv${i}` }], INC('game', 'roll', `$dv${i}`), emit('dice', { p: '$me', value: `$dv${i}`, sides: sd })]),
+        emit('rolled', { p: '$me', total: g('game', 'roll'), dice: nd, sides: sd }),
+        ...(e.ranges ?? []).map((r, ri) => IF(AND(ge(g('game', 'roll'), r.min), le(g('game', 'roll'), r.max)), effectsAt(x, r.do, base + ri * 2))),
+        ...effectsAt(x, e.then ?? [], base + 15)];
+    }
     case 'flip': {
       const nC = e.n ?? 1, base = 100 + i * 10;
       return [SET('game', 'hd', 0), EACH(range(nC), `$fc${i}`, [['random', { min: 0, max: 1, as: `$cf${i}` }], IF(eq(`$cf${i}`, 1), [INC('game', 'hd', 1)]), emit('coin', { p: '$me', heads: `$cf${i}` })]),
@@ -804,7 +817,7 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
     zones.push({ id: z, vis: 'public', abilities: true, ...(z.startsWith('lane') || arenas ? { showIf: L(true) } : {}) });
   }
   zones.push({ id: 'support', vis: 'public', abilities: true, hideEmpty: true });
-  const usesEff = (...ks: string[]) => { const walk = (l: Effect[] = []): boolean => l.some((e) => ks.includes(e.k) || walk(e.heads) || walk(e.tails));
+  const usesEff = (...ks: string[]) => { const walk = (l: Effect[] = []): boolean => l.some((e) => ks.includes(e.k) || walk(e.heads) || walk(e.tails) || walk(e.then) || (e.ranges ?? []).some((r) => walk(r.do)));
     return bp.cards.some((k) => k.abilities.some((a) => walk(a.do)) || (k.moves ?? []).some((m) => walk(m.do))) || bp.keywords.some((k) => (k.abilities ?? []).some((a) => walk(a.do))); };
   if (usesEff('dig', 'tutor')) zones.push({ id: 'look', vis: 'owner', hideEmpty: true });
   if (['cards', 'anycard', 'deck'].includes(r.mode)) zones.push({ id: 'resources', vis: 'public', compact: true });
@@ -1136,7 +1149,7 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
     players: { min: 2, max: 2 },
     playerVars: { life: bp.win.life, score: 0, cap: 0, turns: 0, ap: 0, pp: 0, ...(usesPlayed ? { plays: 0 } : {}), ...(bp.setup.mulliganBonus ? { mull: 0 } : {}), ...(bp.setup.london ? { kept: 0, mulls: 0 } : {}), ...Object.fromEntries(bp.types.filter((t) => t.perTurn).map((t) => [`tp_${t.id}`, 0])) },
     objectVars: { dmg: 0, ex: 0, newT: 0, pos: 0, shu: 0, att: 0, ...(conq ? { atk: 0, dfn: 0 } : {}), ...(r.give ? { don: 0 } : {}), ...(x.battle ? { bb: 0 } : {}), ...(c.mode === 'block' && c.mass ? { atk: 0, blkd: 0, dtd: 0 } : {}), ...(x.hasRole('walker') ? { loy: 0 } : {}), ...(bp.cards.some((k) => k.crew) ? { crewT: 0 } : {}), ...(bp.cards.some((k) => k.station) ? { chg: 0 } : {}), ...Object.fromEntries((bp.statuses ?? []).flatMap((s) => [[`st_${s.id}`, 0], [`sT_${s.id}`, 0]])), ...Object.fromEntries(counters.map((k) => [`c_${k.id}`, 0])) },
-    gameVars: { first: 0, started: 0, bat: 0, rem: 0, hd: 0, af: 0, wf: 0, kick: 0, ...Object.fromEntries(lanes.map((_, i) => [`c${i + 1}`, 0])), ...(conq ? Object.fromEntries(lanes.map((_, i) => [`s${i + 1}`, 0])) : {}) },
+    gameVars: { first: 0, started: 0, bat: 0, rem: 0, hd: 0, af: 0, wf: 0, kick: 0, roll: 0, ...Object.fromEntries(lanes.map((_, i) => [`c${i + 1}`, 0])), ...(conq ? Object.fromEntries(lanes.map((_, i) => [`s${i + 1}`, 0])) : {}) },
     zones,
     deckZone: 'deck', handZone: 'hand', graveZone: 'grave',
     format: {
@@ -1198,7 +1211,7 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
     tagline: bp.tagline,
     theme: { accent: bp.look.accent, accent2: bp.look.accent2, glyph: bp.look.glyph, tapVar: 'ex', labels,
       hideStats: ['role', 'res', 'trapOn', 'playTo', 'evolvesFrom', 'materials', 'retreat', 'hue', 'glyph', 'zone', 'family', 'hasEff', 'hasHit', 'hasConq', 'hasHold', 'traits', 'actsNow', 'evolvesFrom2', 'prizes', 'resist', 'pv', 'rainbow', 'perUnit', 'kicker', 'flashback', 'cycling', 'equipCost', 'equipment', 'anyUnit', 'crew', 'station', 'loyalty', 'onConquer', 'onHold', 'en', 'pw', 'color2', 'cmN', 'cmType', ...kwFields, ...(c.mode === 'duel' ? [] : ['weakness'])],
-      hideVars: ['ex', 'newT', 'pos', 'shu', 'att', 'bb', 'hd', 'af', 'mull', 'atkT', 'blk', 'blkd', 'dtd', 'crewT', 'wf', 'kick', 'kept', 'mulls', ...(bp.statuses ?? []).map((s) => `sT_${s.id}`), ...bp.types.map((t) => `tp_${t.id}`), 'cap', 'turns', 'first', 'started', 'bat', 'rem', 'atk', 'dfn', 'plays', ...lanes.map((_, i) => `s${i + 1}`), ...(x.points ? [] : ['score']), ...(x.life ? [] : ['life']), ...(ap ? [] : ['ap']), ...(r.mode === 'pitch' ? [] : ['pp'])],
+      hideVars: ['ex', 'newT', 'pos', 'shu', 'att', 'bb', 'hd', 'af', 'roll', 'mull', 'atkT', 'blk', 'blkd', 'dtd', 'crewT', 'wf', 'kick', 'kept', 'mulls', ...(bp.statuses ?? []).map((s) => `sT_${s.id}`), ...bp.types.map((t) => `tp_${t.id}`), 'cap', 'turns', 'first', 'started', 'bat', 'rem', 'atk', 'dfn', 'plays', ...lanes.map((_, i) => `s${i + 1}`), ...(x.points ? [] : ['score']), ...(x.life ? [] : ['life']), ...(ap ? [] : ['ap']), ...(r.mode === 'pitch' ? [] : ['pp'])],
       hideKeywords: ['token'] },
     presentation: { templates, byType },
   };

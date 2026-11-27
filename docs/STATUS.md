@@ -100,6 +100,7 @@
   - Also: coin-flip attacks, bench damage, energy-scaling attacks, gust/switch, deck search, Leap Candy (skip a stage).
   - Balance and content are deferred, per the user (mechanics and tests first).
   - Not yet: abilities usable from the bench with restrictions (they work as once-per-turn activations), Tera, Lost Zone, devolving.
+- **Dice rolls (Workshop block):** roll N dice with S sides, with result-range effects, "then" effects, and amounts equal to the roll (see `docs/MAKER.md`). No default game uses them yet.
 - **Crystal Circuit (fourth clone, playable; mechanics reference: Magic: The Gathering):** `packages/modules/crystal-circuit`.
   - Content:
     - 64 cards: five crystals (Quartz, Azure, Onyx, Ruby, Jade);

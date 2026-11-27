@@ -551,6 +551,8 @@ function friendly(e: Record<string, any>, c: C): string | null {
     case 'marched': return `${who(e.p)} move${s(e.p)} ${e.n} unit${e.n === 1 ? '' : 's'} into ${lbl(e.z)}`;
     case 'recalled': return `Attackers fall back from ${lbl(e.z)}`;
     case 'showdownFight': return `Fight at ${lbl(e.z)}: ${e.a} against ${e.b}`;
+    case 'dice': return `${who(e.p)} roll${s(e.p)} a d${e.sides}: ${e.value}`;
+    case 'rolled': return e.dice > 1 ? `Total: ${e.total}` : null;
     case 'coin': return `${who(e.p)} flip${s(e.p)} a coin: ${e.heads ? 'heads!' : 'tails'}`;
     case 'status': return `${c.label(e.o)} is now ${lbl(`st_${e.s}`)}`;
     case 'cured': return `${c.label(e.o)} recovers from ${lbl(`st_${e.s}`)}`;
