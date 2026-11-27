@@ -43,6 +43,29 @@ try {
   await page.click('[data-act=mk-publish]');
   await page.click('text=← Projects');
 
+  // Guided setup: pick a few answers, skip the rest, create the game; it builds and opens in the Workshop.
+  await page.click('[data-act=mk-new]');
+  await page.click('[data-blueprint=wizard]');
+  await page.fill('#wiz-name', 'Wizard Wars');
+  await page.selectOption('#wiz-colors', '3');
+  await page.click('[data-wopt=scifi]');
+  await page.click('[data-act=wiz-next]');
+  await page.click('[data-act=wiz-next]'); // starter set: default
+  await page.click('[data-wopt=lands]');
+  await page.click('[data-act=wiz-next]');
+  await page.click('[data-act=wiz-skip]'); // resource extras
+  await page.click('[data-wopt=block]');
+  await page.click('[data-act=wiz-next]');
+  await page.click('[data-wopt=mass]');
+  ok(await page.getAttribute('[data-wopt=mass]', 'aria-checked') === 'true', 'multi-pick toggles on');
+  await page.click('[data-act=wiz-finish]');
+  ok(await page.isVisible('.mk-wreview .chip.good'), `wizard review builds (${await page.textContent('.mk-wstats')})`);
+  ok((await page.textContent('.mk-wsums')).includes('Attack & block'), 'review shows the picked combat');
+  await page.click('[data-act=wiz-create]');
+  ok(await page.isVisible('.mk-bugs.good'), `wizard game builds in the Workshop (${await page.textContent('.mk-bugs')})`);
+  ok((await page.textContent('.mk-top h2')) === 'Wizard Wars', 'wizard game is named');
+  await page.click('text=← Projects');
+
   // Surprise games and stacked recipes all build; undo takes a recipe back.
   for (let i = 0; i < 3; i++) {
     await page.click('[data-act=mk-new]');

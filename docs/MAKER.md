@@ -53,6 +53,34 @@ Each one is an original, complete and playable game that shows off one family of
 | Ki Clash | Any card can become energy once a turn; leader with 8 life cards; awakening (an activated ability that needs 4 or less life, once per game); counter cards; Barrier; draw 2 a turn |
 | Blank Canvas | Growing energy, units and spells, life 20 |
 
+## Guided setup (the wizard)
+An optional alternative to the blueprints, listed first in the "New game" picker. It walks through every system a card
+game can have, one step at a time, with preset choices and a few numbers to tweak. Every step can be skipped: its first
+valid option (marked Default) is used. Options that don't fit earlier answers are hidden; for example, pitching cards
+from hand comes with attack cards and a life total, and battlefields come with points. The steps are:
+
+1. **Theme & colours:** a theme pack (Fantasy, Sci-fi, Critters, Plain) gives the palette, emblem, colour names and card names. Also the name, tagline and 0 or 2–5 colours.
+2. **Starter cards:** 6, 10 or 14 cards per colour (units on a cost curve plus damage, draw and team-buff spells), or only the example cards.
+3. **Paying for cards:** growing energy (max), lands, inkwell, any card as mana, a resource deck, attached energy, pitching, or free with one summon a turn.
+4. **Resource extras:** boosts, action points, level requirements.
+5. **Board & combat:** pick a target, attack and block, power duels, ATK/DEF positions, active and bench, battlefields, or attack cards.
+6. **Combat extras:** mass combat, a board grid, a counter step, questing, front line and reserve, twin arenas, showdowns and conquest.
+7. **Turns & timing:** simple turns, a stack, chains with speeds, or alternating actions.
+8. **Turn extras:** a separate combat phase; refill the hand to N.
+9. **How to win:** life total, life cards, shields, prizes or points, each with its number.
+10. **More ways to win or lose:** burn out, no deck-out loss, losing with no units.
+11. **Decks & hands:** 30/2, 40/3 or 60/4 decks; opening hand, hand limit, mulligan style (none, full, partial, London), first-player draw.
+12. **Leaders:** none, a leader, or a deployable leader.
+13. **Card types:** quick spells, items, gear, traps, tokens, evolutions, a fusion deck, tribute summons, songs.
+14. **Keywords:** 14 common keywords, spread over the starter units.
+15. **Optional systems:** +1/+1 counters, stun and sleep, can't-attack keywords, cost reducers, damage prevention, a banished pile, a shared stadium, coins and dice.
+16. **Review:** a summary, sample cards, a build check and **Create my game**.
+
+`wizardBuild(answers)` in `packages/maker/src/wizard.ts` does the build. It writes the starter set and decks first, then
+applies the chosen systems as Mechanics Shelf recipes so they adapt the starter cards (typed costs with lands, attack
+cards with pitching, levels with a level gate). Last it fits every deck to the chosen size, with lands of the deck's own
+colours making about 40% of it. `randomAnswers(seed)` makes random valid answers, and the wizard test builds and AI-plays 40 of them.
+
 ## The systems
 - **Resources:**
   - growing energy (`ramp`);

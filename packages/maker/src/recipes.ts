@@ -391,6 +391,7 @@ export function surpriseRecipes(seed: number): string[] {
   let x = (seed >>> 0) || 1;
   const rnd = (n: number) => { x ^= x << 13; x ^= x >>> 17; x ^= x << 5; return (x >>> 0) % n; };
   const out = RANDOM_PICKS.map((g) => g[rnd(g.length)]);
+  if (out[0] === 'pitch' && out[1] === 'lanes') out[1] = 'target'; // attack cards need a battle window, which battlefields don't have
   const extra = RANDOM_PICKS[4 + rnd(2)];
   out.push(extra[rnd(extra.length)]);
   return [...new Set(out)];

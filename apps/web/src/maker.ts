@@ -5,7 +5,7 @@ import type { Match } from '#engine';
 import { IllegalAction, commitAction, createMatch, determinize, listActions, observe, submitDecision } from '#engine';
 import { makeAgent } from '#ai';
 import { packFiles } from '#sdk';
-import { type Blueprint, type CardBP, type Problem, BLUEPRINTS, RECIPES, applyRecipe, build, surpriseRecipes, cardsFromCsv, cardsToCsv, compileBlueprint, fromBlueprint, normalize, rulebookMarkdown, slug } from '#maker';
+import { type Blueprint, type CardBP, type Problem, BLUEPRINTS, RECIPES, applyRecipe, build, surpriseRecipes, type WizAnswers, WIZARD, optionsFor, wizardBuild, cardsFromCsv, cardsToCsv, compileBlueprint, fromBlueprint, normalize, rulebookMarkdown, slug } from '#maker';
 import { MODULES, SOURCES } from './modules.ts';
 import { store } from './storage.ts';
 
@@ -18,6 +18,7 @@ export interface MakerUI {
   type: string | null;
   filter: string | null; // card type shown in the Cards station
   picker: boolean;
+  wiz: { step: number; a: WizAnswers } | null; // the guided-setup wizard, when open
   toast: { text: string; xp: number; at: number } | null;
   celebrate: number;
   sim: { done: number; total: number; lines: string[]; running: boolean; cards?: { id: string; name: string; games: number; wins: number }[] } | null;
@@ -25,7 +26,7 @@ export interface MakerUI {
   rawErr: Record<string, string>;
   test: { a: string; b: string; opp: 'heuristic' | 'random' | 'human' };
 }
-export const newMakerUI = (): MakerUI => ({ project: null, station: 'identity', card: null, deck: null, type: null, filter: null, picker: false, toast: null, celebrate: 0, sim: null, rawErr: {}, test: { a: '', b: '', opp: 'heuristic' }, undo: [], redo: [], lastEdit: 0 });
+export const newMakerUI = (): MakerUI => ({ project: null, station: 'identity', card: null, deck: null, type: null, filter: null, picker: false, wiz: null, toast: null, celebrate: 0, sim: null, rawErr: {}, test: { a: '', b: '', opp: 'heuristic' }, undo: [], redo: [], lastEdit: 0 });
 
 interface Project { bp: Blueprint; created: string; updated: string }
 interface Profile { xp: number; quests: string[] }
@@ -172,8 +173,16 @@ export function makerActions(ui: any, redraw: () => void, A: any) {
   }
   const firstDecks = (bp: Blueprint) => { const t = mk().test; const ids = bp.decks.map((d) => d.id); if (!ids.includes(t.a)) t.a = ids[0] ?? ''; if (!ids.includes(t.b)) t.b = ids[1] ?? ids[0] ?? ''; };
 
+  function createProject(bp: Blueprint) {
+    const id = `p${Date.now().toString(36)}${Math.floor(Math.random() * 1e4).toString(36)}`;
+    store.set(PKEY(id), { bp, created: new Date().toISOString(), updated: new Date().toISOString() });
+    Object.assign(mk(), { project: id, station: 'identity', picker: false, card: null, deck: null, type: bp.types[0]?.id ?? null });
+    firstDecks(bp);
+    award('start', 20, 'Quest complete: start your first game.');
+    redraw();
+  }
   const out = {
-    mkOpen() { mk().project = null; mk().picker = false; ui.mod = null; A.go('maker'); },
+    mkOpen() { mk().project = null; mk().picker = false; mk().wiz = null; ui.mod = null; A.go('maker'); },
     mkPicker(open: boolean) { mk().picker = open; redraw(); },
     mkNew(blueprintId: string) {
       const src = blueprintId.startsWith('mod:') ? SOURCES.get(blueprintId.slice(4)) : null;
@@ -181,11 +190,36 @@ export function makerActions(ui: any, redraw: () => void, A: any) {
       const taken = (s: string) => MODULES.has(s) || projects().some((x) => x.p.bp.id === s);
       bp.id = uniq(blueprintId === 'blank' ? 'my-card-game' : `my-${bp.id}`, taken);
       if (blueprintId !== 'blank') bp.name = `${bp.name} (my version)`;
-      const id = `p${Date.now().toString(36)}${Math.floor(Math.random() * 1e4).toString(36)}`;
-      store.set(PKEY(id), { bp, created: new Date().toISOString(), updated: new Date().toISOString() });
-      Object.assign(mk(), { project: id, station: 'identity', picker: false, card: null, deck: null, type: bp.types[0]?.id ?? null });
-      firstDecks(bp);
-      award('start', 20, 'Quest complete: start your first game.');
+      createProject(bp);
+    },
+    // ---- guided setup
+    mkWizard(open: boolean) { Object.assign(mk(), { wiz: open ? { step: 0, a: { picks: {}, vals: {} } } : null, picker: false }); redraw(); },
+    mkWizPick(step: string, opt: string) {
+      const w = mk().wiz; if (!w) return;
+      const st = WIZARD.find((x) => x.id === step)!;
+      const cur = w.a.picks[step] ?? [];
+      w.a.picks[step] = st.multi ? (cur.includes(opt) ? cur.filter((x) => x !== opt) : [...cur, opt]) : [opt];
+      redraw();
+    },
+    mkWizVal(id: string, v: string | number, draw = true) { const w = mk().wiz; if (!w) return; w.a.vals[id] = v; if (draw) redraw(); },
+    mkWizGo(delta: number, skip = false) {
+      const w = mk().wiz; if (!w) return;
+      if (skip) delete w.a.picks[WIZARD[w.step].id];
+      let n = w.step + delta;
+      const empty = (i: number) => { const st = WIZARD[i]; return st.id !== 'review' && !optionsFor(st, w.a).length && !(st.fields ?? []).some((f) => !f.when || f.when(w.a)); };
+      while (n > 0 && n < WIZARD.length - 1 && empty(n)) n += delta < 0 ? -1 : 1;
+      w.step = Math.max(0, Math.min(WIZARD.length - 1, n));
+      redraw();
+    },
+    mkWizJump(i: number) { const w = mk().wiz; if (w) { w.step = i; redraw(); } },
+    mkWizCreate() {
+      const w = mk().wiz; if (!w) return;
+      const bp = wizardBuild(w.a);
+      const taken = (s: string) => MODULES.has(s) || projects().some((x) => x.p.bp.id === s);
+      bp.id = uniq(bp.id, taken);
+      mk().wiz = null;
+      createProject(bp);
+      award('wizard', 30, 'Quest complete: build a game with the guided setup.');
       redraw();
     },
     mkSurprise() {

@@ -402,6 +402,12 @@ A survey of about 30 published TCG rulebooks (`docs/COVERAGE.md`, second table) 
   - `maker.test.ts`: every blueprint builds, plays to the end under the heuristic AI with its signature mechanics firing, replays identically, keeps hidden cards hidden and conserves cards; plus lint, text and the advanced patch;
   - e2e: every blueprint and station, the AI Lab, playtest and back, publish, phone width.
 
+## Done: guided setup (the Game Wizard)
+- An optional 16-step wizard in the New game picker covers theme, starter set, resources, combat, timing, winning, decks and hands, leaders, card types, keywords and optional systems, then shows a review with sample cards. See docs/MAKER.md.
+- `packages/maker/src/wizard.ts` (`WIZARD`, `wizardBuild`, `optionsFor`, `randomAnswers`). Tests in `tests/wizard.test.ts`: defaults, answer shaping, option gating, and 40 random answer sets that build, pass deck checks and play AI games (at least 90% reach a real win; a few odd combinations stall the heuristic AI).
+- Combination bugs the wizard sweep found and fixed in the compiler: grid boards no longer reference extra-zone/overlay zones they don't have; grids are ignored with arenas; level gates and deployable leaders count turns when there are no resource cards. Surprise me no longer pairs pitching with battlefields.
+- Follow-ups: the heuristic AI sometimes passes forever with lands + battlefields + chains, and with active duels + resource decks.
+
 ## Possible next steps
 - NIGHTFALL: the remaining art; human playtests to confirm the AI-tuned numbers.
 - Shadow Earth: card art prompts, a tutorial, human playtests of the 2.0 numbers.

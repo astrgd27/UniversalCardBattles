@@ -61,7 +61,7 @@ export function context(bp0: Blueprint) {
   const hasRole = (...roles: Role[]) => typesOf(...roles).length > 0;
   const lanes = c.mode === 'lanes' ? c.lanes.map((_, i) => `lane${i + 1}`) : [];
   const arenas = c.arenas?.length && !['duel', 'lanes'].includes(c.mode) ? c.arenas : null;
-  const grid = !!c.grid && (c.mode === 'block' || c.mode === 'target');
+  const grid = !!c.grid && (c.mode === 'block' || c.mode === 'target') && !arenas;
   const emz = grid && !!c.emz;
   const UZ = c.mode === 'duel' ? ['active', 'bench'] : c.mode === 'lanes' ? ['base', ...lanes] : arenas ? arenas.map((a) => a.id) : emz ? ['field', 'emz'] : ['field'];
   const atkZ = arenas && arenas.some((a) => a.attack) ? arenas.filter((a) => a.attack).map((a) => a.id) : UZ;
@@ -91,7 +91,8 @@ type Ctx = ReturnType<typeof context>;
 const units = (x: Ctx, p: X, zones: string[] = x.UZ) => cat(...zones.map((z) => cards(p, z)));
 const unitsOf = units;
 const allUnits = (x: Ctx) => units(x, '*');
-const resCount = (x: Ctx, p: X) => (x.r.mode === 'ramp' ? g(p, 'cap') : cnt(cards(p, 'resources')));
+// resources in play; games without resource cards count the player's turns instead
+const resCount = (x: Ctx, p: X) => (x.r.mode === 'ramp' ? g(p, 'cap') : ['cards', 'anycard', 'deck'].includes(x.r.mode) ? cnt(cards(p, 'resources')) : g(p, 'turns'));
 
 // ---------------------------------------------------------------- rules text
 const TGT_TEXT: Record<TargetKind, string> = {
@@ -716,8 +717,10 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
     fn('edDest', ['$p'], cat(C('freeEMZ', '$p'), flt(['freeSlots', '$p', 'field'], C('ptdSlot', '$p', '$it'))));
     fn('anyDest', ['$p'], cat(C('freeEMZ', '$p'), ['freeSlots', '$p', 'field']));
     // place $c (in hand / extra deck) at one of $opts, attaching $mats under it
+    const putMats = (pn: string): X[] => (bp.types.some((t) => t.method === 'xyz') ? [EACH('$mats', '$mt', [IF(eq(g('$mt', 'zone'), 'overlay'), [['link', '$mt', 'bearer', pn]], [['move', '$mt', 'overlay', { as: '$om' }], ['link', '$om', 'bearer', pn]])])] : []);
+    const putAt = (z: string): X[] => [['move', '$c', z, { slot: '$ps', as: '$pn' }], IF(isObj('$pn'), [SET('$pn', 'newT', '$turn'), ...putMats('$pn'), emit('placed', { o: '$pn', p: ctrl('$pn') })])];
     proc('place', ['$c', '$opts', '$mats'], [IF(gt(cnt('$opts'), 0), [choose({ from: '$opts', min: 1, max: 1, as: '$ps', prompt: 'Which zone?' }),
-      IF(inl('$ps', ['L', 'R']), [['move', '$c', 'emz', { slot: '$ps', as: '$pn' }], IF(isObj('$pn'), [SET('$pn', 'newT', '$turn'), EACH('$mats', '$mt', [IF(eq(g('$mt', 'zone'), 'overlay'), [['link', '$mt', 'bearer', '$pn']], [['move', '$mt', 'overlay', { as: '$om' }], ['link', '$om', 'bearer', '$pn']])]), emit('placed', { o: '$pn', p: ctrl('$pn') })])], [['move', '$c', 'field', { slot: '$ps', as: '$pn' }], IF(isObj('$pn'), [SET('$pn', 'newT', '$turn'), EACH('$mats', '$mt', [IF(eq(g('$mt', 'zone'), 'overlay'), [['link', '$mt', 'bearer', '$pn']], [['move', '$mt', 'overlay', { as: '$om' }], ['link', '$om', 'bearer', '$pn']])]), emit('placed', { o: '$pn', p: ctrl('$pn') })])])])]);
+      ...(x.emz ? [IF(inl('$ps', ['L', 'R']), putAt('emz'), putAt('field'))] : putAt('field'))])]);
   } else {
     fn('points', ['$l', '$u'], L(false));
   }

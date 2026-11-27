@@ -4,6 +4,7 @@ import type { Mod } from '#engine';
 import {
   type Ability, type Blueprint, type CardBP, type Effect, type EffectKind, type Phase, type Role, type TargetKind, type When,
   KEYWORD_RULES, RECIPES, ROLES, UNIT_ROLES, cardText, costLabel, effectText, rulebook, slug,
+  type WizAnswers, type WizStep, WIZARD, optionsFor, wizardBuild,
 } from '#maker';
 import { type MakerUI, type Station, BLUEPRINTS, RANKS, STATIONS, newMakerUI, previewMod, problems, profile, projects, published, rankOf } from '../maker.ts';
 import { store } from '../storage.ts';
@@ -95,20 +96,86 @@ function hub(ui: any, A: any, mk: MakerUI) {
       h('label', { class: 'tile tile-add' }, h('span', { class: 'tile-emblem' }, '⬆'), h('span', { class: 'tile-title' }, 'Import blueprint'), h('span', { class: 'tile-tag' }, 'Open a .maker.json file'),
         h('input', { type: 'file', accept: '.json,application/json', onchange: (e: Event) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) A.mkImportJson(f); } }))),
     h('section', { class: 'mk-ranks' }, h('h3', {}, 'Maker ranks'), h('div', { class: 'mk-rank-row' }, RANKS.map(([xp, n]) => h('span', { class: cls('chip', profile().xp >= xp && 'good') }, `${n} · ${xp} XP`)))),
-    mk.picker && picker(A));
+    mk.picker && picker(A), mk.wiz && wizard(A, mk.wiz));
 }
 function picker(A: any) {
   return h('div', { class: 'overlay', role: 'dialog', 'aria-label': 'Choose a blueprint', onclick: (e: Event) => { if (e.target === e.currentTarget) A.mkPicker(false); } },
     h('div', { class: 'mk-picker' },
       h('div', { class: 'mk-picker-head' }, h('h2', {}, 'Pick a blueprint'), h('button', { class: 'x', onclick: () => A.mkPicker(false), 'aria-label': 'Close' }, '×')),
       hint('Each blueprint is a complete, playable game built around one family of mechanics. Reshape anything once you are in the Workshop.'),
-      h('div', { class: 'mk-bps' }, h('button', { class: 'mk-bp mk-surprise', onclick: () => A.mkSurprise(), 'data-blueprint': 'surprise' }, h('span', { class: 'mk-bp-icon' }, '🎲'), h('strong', {}, 'Surprise me'),
+      h('div', { class: 'mk-bps' }, h('button', { class: 'mk-bp mk-guided', onclick: () => A.mkWizard(true), 'data-blueprint': 'wizard' }, h('span', { class: 'mk-bp-icon' }, '🧭'), h('strong', {}, 'Guided setup'),
+        h('span', {}, 'A step-by-step tour of every system a card game can have: theme, resources, combat, winning, decks, card types, keywords and extras. Pick presets, tweak a few numbers, skip anything.'),
+        h('span', { class: 'mk-bp-sys' }, h('span', { class: 'chip' }, `${WIZARD.length - 1} steps`), h('span', { class: 'chip' }, 'Everything optional'))),
+        h('button', { class: 'mk-bp mk-surprise', onclick: () => A.mkSurprise(), 'data-blueprint': 'surprise' }, h('span', { class: 'mk-bp-icon' }, '🎲'), h('strong', {}, 'Surprise me'),
         h('span', {}, 'A random, playable mash-up of mechanics from the shelf: a resource system, a combat style, a way to win, timing and special card types.'), h('span', { class: 'mk-bp-sys' }, h('span', { class: 'chip' }, 'Random recipes'))),
         BLUEPRINTS.map((b) => h('button', { class: 'mk-bp', onclick: () => A.mkNew(b.id), 'data-blueprint': b.id },
         h('span', { class: 'mk-bp-icon' }, b.icon), h('strong', {}, b.name), h('span', {}, b.pitch), h('span', { class: 'mk-bp-sys' }, b.systems.map((s) => h('span', { class: 'chip' }, s))))),
         [...SOURCES].map(([id, bp]) => h('button', { class: 'mk-bp', onclick: () => A.mkNew(`mod:${id}`), 'data-blueprint': `mod:${id}` },
           h('span', { class: 'mk-bp-icon' }, bp.look?.glyph ?? '✦'), h('strong', {}, `Remix ${bp.name}`), h('span', {}, bp.tagline ?? ''),
           h('span', { class: 'mk-bp-sys' }, h('span', { class: 'chip' }, 'Default game'), h('span', { class: 'chip' }, `${bp.cards?.length ?? 0} cards`)))))));
+}
+
+// ---------------------------------------------------------------- guided setup (wizard)
+function wizField(A: any, a: WizAnswers, f: NonNullable<WizStep['fields']>[number]) {
+  const v = a.vals[f.id] ?? f.def;
+  const id = `wiz-${f.id}`;
+  const inp = f.kind === 'select'
+    ? h('select', { id, 'data-wiz': f.id, onchange: (e: Event) => A.mkWizVal(f.id, (e.target as HTMLSelectElement).value) }, (f.choices ?? []).map(([k, n]) => h('option', { value: k, selected: String(v) === k }, n)))
+    : h('input', { id, 'data-wiz': f.id, 'data-keep': id, type: f.kind === 'num' ? 'number' : 'text', value: String(v), min: f.min, max: f.max,
+      oninput: (e: Event) => { const t = (e.target as HTMLInputElement).value; A.mkWizVal(f.id, f.kind === 'num' ? (t === '' ? '' : Number(t)) : t, false); } });
+  return h('label', { class: 'fld', for: id }, h('span', {}, f.label), inp);
+}
+function wizSummary(a: WizAnswers) {
+  return WIZARD.filter((st) => st.id !== 'review').map((st) => {
+    const ok = optionsFor(st, a);
+    const chosen = ok.filter((o) => (a.picks[st.id] ?? []).includes(o.id));
+    const shown = st.multi ? (chosen.length ? chosen.map((o) => o.name).join(', ') : 'None') : (chosen[0] ?? ok[0])?.name ?? '—';
+    const vals = (st.fields ?? []).filter((f) => !f.when || f.when(a)).map((f) => `${f.label}: ${f.kind === 'select' ? f.choices?.find(([k]) => k === String(a.vals[f.id] ?? f.def))?.[1] : a.vals[f.id] ?? f.def}`);
+    return h('div', { class: 'mk-wsum' }, h('span', { class: 'mk-wsum-k' }, `${st.icon} ${st.title}`), h('span', {}, shown, !st.multi && !chosen.length && h('em', { class: 'muted' }, ' (default)'), vals.length > 0 && h('span', { class: 'muted' }, ` · ${vals.join(' · ')}`)));
+  });
+}
+function wizard(A: any, w: { step: number; a: WizAnswers }) {
+  const st = WIZARD[w.step];
+  const a = w.a;
+  const ok = optionsFor(st, a);
+  const picked = a.picks[st.id] ?? [];
+  const isOn = (id: string) => picked.includes(id) || (!st.multi && !ok.some((o) => picked.includes(o.id)) && ok[0]?.id === id);
+  const fields = (st.fields ?? []).filter((f) => !f.when || f.when(a));
+  let body: Child;
+  if (st.id === 'review') {
+    const bp = wizardBuild(a);
+    const mod = previewMod(bp);
+    const probs = problems(bp).filter((p) => p.level === 'bug');
+    const roleOf = (c: CardBP) => bp.types.find((t) => t.id === c.type)?.role;
+    const samples = [...bp.colors.map((c) => bp.cards.find((k) => k.color === c.id && UNIT_ROLES.includes(roleOf(k) as Role) && (typeof k.cost !== 'number' || k.cost >= 3))), bp.cards.find((k) => roleOf(k) === 'spell')]
+      .filter((k): k is CardBP => !!k).slice(0, 4);
+    const deckSize = Object.values(bp.decks[0]?.main ?? {}).reduce((t, n) => t + n, 0);
+    body = h('div', { class: 'mk-wreview' },
+      h('div', { class: 'mk-wsums' }, h('h3', {}, bp.name), h('p', { class: 'muted' }, bp.tagline),
+        h('div', { class: 'mk-wstats' }, h('span', { class: 'chip' }, `${bp.cards.length} cards`), h('span', { class: 'chip' }, `${bp.decks.length} starter deck${bp.decks.length === 1 ? '' : 's'}`), h('span', { class: 'chip' }, `${deckSize}-card decks`),
+          h('span', { class: cls('chip', probs.length ? 'bad' : 'good') }, probs.length ? `🐞 ${probs.length} to fix` : '✓ Ready to play')),
+        wizSummary(a)),
+      h('div', { class: 'mk-preview' }, h('h4', {}, 'Sample cards'), mod ? samples.map((c) => mod.card.has(c.id) && cardFace(mod, c.id, { size: 'md' })) : hint('Preview unavailable.')));
+  } else {
+    body = h('div', {},
+      ok.length > 0 && h('div', { class: 'mk-wopts', role: st.multi ? 'group' : 'radiogroup', 'aria-label': st.title }, ok.map((o) => h('button', {
+        class: cls('mk-wopt', isOn(o.id) && 'on'), role: st.multi ? 'checkbox' : 'radio', 'aria-checked': isOn(o.id) ? 'true' : 'false', 'data-wopt': o.id, onclick: () => A.mkWizPick(st.id, o.id) },
+        h('span', { class: 'mk-wopt-icon' }, o.icon), h('strong', {}, o.name), h('span', {}, o.desc), !st.multi && !picked.length && ok[0].id === o.id && h('span', { class: 'chip' }, 'Default')))),
+      fields.length > 0 && h('div', { class: 'mk-wfields' }, fields.map((f) => wizField(A, a, f))));
+  }
+  const last = w.step === WIZARD.length - 1;
+  return h('div', { class: 'overlay', role: 'dialog', 'aria-label': 'Guided setup', onclick: (e: Event) => { if (e.target === e.currentTarget) A.mkWizard(false); } },
+    h('div', { class: 'mk-picker mk-wiz' },
+      h('div', { class: 'mk-picker-head' }, h('h2', {}, `🧭 Guided setup · ${st.icon} ${st.title}`), h('span', { class: 'muted' }, `Step ${w.step + 1} of ${WIZARD.length}`), h('button', { class: 'x', onclick: () => A.mkWizard(false), 'aria-label': 'Close' }, '×')),
+      h('nav', { class: 'mk-wsteps', 'aria-label': 'Wizard steps' }, WIZARD.map((x, i) => h('button', { class: cls('mk-wstep', i === w.step && 'on', i < w.step && 'done'), title: x.title, 'aria-label': x.title, onclick: () => A.mkWizJump(i) }, x.icon))),
+      hint(st.help + (st.multi ? ' Pick any number, or none.' : '')),
+      body,
+      h('div', { class: 'mk-wfoot' },
+        h('button', { class: 'ghost', onclick: () => A.mkWizGo(-1), disabled: w.step === 0, 'data-act': 'wiz-back' }, '← Back'),
+        !last && h('button', { class: 'ghost', onclick: () => A.mkWizGo(1, true), 'data-act': 'wiz-skip', title: 'Use the default for this step' }, 'Skip'),
+        !last && h('button', { class: 'cta', onclick: () => A.mkWizGo(1), 'data-act': 'wiz-next' }, 'Next →'),
+        !last && h('button', { class: 'ghost', onclick: () => A.mkWizJump(WIZARD.length - 1), 'data-act': 'wiz-finish' }, 'Skip to review'),
+        last && h('button', { class: 'cta', onclick: () => A.mkWizCreate(), 'data-act': 'wiz-create' }, '✓ Create my game'))));
 }
 
 // ---------------------------------------------------------------- workshop shell
