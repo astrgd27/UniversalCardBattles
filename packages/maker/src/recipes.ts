@@ -122,6 +122,16 @@ export const RECIPES: Recipe[] = [
       addCard(bp, { name: 'Measured Cut', type: 'attack', cost: 1, stats: { [bp.combat.power]: Math.round(s * 1.2), defense: 3, pitch: 3 },
         abilities: [{ when: 'hit', do: [{ k: 'draw', n: 1 }] }] }, 3);
     } },
+  { id: 'skillChecks', name: 'Skill checks', icon: '🎯', group: 'Resources', desc: 'No resources: play any card by passing a check. Turn over your top card; its Check value must reach the card\'s difficulty plus the cards you already played this turn. Foundations can be committed to make up the difference; a failed check ends your turn.',
+    apply: (bp) => {
+      Object.assign(bp.resource, { mode: 'check', name: 'Check', icon: '🎯', checkStat: 'check' });
+      ensureStat(bp, 'check', 'Check', '🎯');
+      for (const c of bp.cards) c.stats.check ??= Math.max(1, Math.min(6, 6 - costNum(c)));
+      const t = ensureType(bp, 'foundation', 'Foundation', 'permanent', '🧱');
+      t.foundation = true;
+      addCard(bp, { name: 'Steady Training', type: t.id, cost: 1, stats: { check: 5 } }, 3);
+      addCard(bp, { name: 'Focus Stone', type: t.id, cost: 2, stats: { check: 4 }, abilities: [{ when: 'activated', tap: true, do: [{ k: 'buff', n: 1, target: 'ownUnit' }], label: 'Commit: a unit of yours gets +1 power this turn' }] }, 3);
+    } },
   { id: 'actionPoints', name: 'Action points', icon: '⏱', group: 'Resources', desc: 'One action a turn: each non-quick card costs an action point; "Go again" gives it back.',
     apply: (bp) => {
       bp.resource.actions = 1;

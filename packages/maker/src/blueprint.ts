@@ -23,6 +23,7 @@ export type KeywordRule = 'none' | 'haste' | 'guard' | 'blocker' | 'flying' | 'v
   | 'tank' | 'bulwark' | 'accelerate' | 'ganking' | 'temporary' | 'banish' | 'rushUnits' | 'noKO'
   | 'reach' | 'doubleStrike' | 'menace' | 'indestructible' | 'flash' | 'wardTax' | 'legendary'
   | 'tuner' | 'directAttack' | 'extraAttack' | 'hidden' | 'deflect'
+  | 'ex' | 'powerful' | 'stun' | 'breaker' | 'flashAtk'
   | 'bodyguard' | 'support' | 'reckless' | 'adventurous' | 'vanish' | 'boost' | 'underdog' | 'singer' | 'singTogether';
 
 export interface StatDef { id: string; name: string; icon?: string }
@@ -48,7 +49,7 @@ export interface Arena { id: string; name: string; size: number; attack: boolean
 export interface StatSlot { stat: string; pos: Pos; icon?: string; label?: string }
 export interface FrameDef { base: string; cost: 'tl' | 'tr' | 'none'; stats: StatSlot[]; art: number; level?: string; text: boolean; layout?: 'portrait' | 'landscape' }
 export interface CardType { id: string; name: string; role: Role; frame: FrameDef; icon?: string; zone?: string; playTo?: string; perTurn?: number; notFirstTurn?: boolean; perUnit?: number; anyUnit?: boolean; equipment?: boolean;
-  method?: 'materials' | 'fusion' | 'synchro' | 'xyz' | 'link'; ritual?: boolean; showdown?: boolean; settable?: boolean; speed3?: boolean; continuous?: boolean }
+  method?: 'materials' | 'fusion' | 'synchro' | 'xyz' | 'link'; ritual?: boolean; foundation?: boolean; showdown?: boolean; settable?: boolean; speed3?: boolean; continuous?: boolean }
 // method (extra-deck types): how it is summoned; ritual: summoned only by a ritual effect; settable (quick spells): can be set and used from the next turn;
 // speed3 (traps): responds to anything; continuous (traps): stays face up after it is sprung
 // anyUnit (attachments): may go on any unit, yours or the opponent's (auras, curses); equipment: stays when its unit leaves and can be moved with equipCost
@@ -57,7 +58,7 @@ export interface Keyword { id: string; name: string; rule: KeywordRule; text: st
 export interface Phase { id: string; name: string; kind: PhaseKind; n?: number; raw?: unknown[]; each?: boolean; drawTo?: number; alternate?: boolean }
 
 export interface Resource {
-  mode: 'ramp' | 'cards' | 'anycard' | 'deck' | 'attach' | 'pitch' | 'none';
+  mode: 'ramp' | 'cards' | 'anycard' | 'deck' | 'attach' | 'pitch' | 'check' | 'none'; // check: play cards by passing a skill check (top card's check value vs difficulty + cards already played this turn); foundations help
   name: string; icon: string;
   start: number; perTurn: number; max: number; // ramp: capacity; deck: cards revealed per turn (start = first player's first turn)
   deckSize: number; // deck mode: size of the resource deck section
@@ -69,6 +70,7 @@ export interface Resource {
   levelGate?: string; // a card can be played only if its value of this stat <= the resources you have in play
   need?: { stat: string; gen: string } | null; // a card needs the sum of `gen` on your units >= its `stat` (not spent)
   actions?: number; // action points per turn (0 = off): non-quick cards cost 1, Go again gives it back
+  checkStat?: string; // check mode: the stat on every card used as its check value (default 'check')
   pitchStat?: string; // pitch mode: the stat a card is worth when pitched from hand
   recycle?: boolean; // deck mode: each resource gives 1 generic; colored costs are paid by recycling resources of that color to the bottom of the resource deck
   secondBonus?: number; // deck mode: extra resources the second player reveals on their first turn
@@ -95,6 +97,7 @@ export interface Combat {
   replaceFull?: boolean; // with a full board, playing a unit first trashes one of yours
   grid?: boolean; // units occupy numbered columns (the player picks one), support has 5 slots; enables adjacent/opposite filters
   emz?: boolean; // grid: two shared extra zones above the board (one per player); link and extra-deck pendulum summons go there or where your link arrows point
+  zones?: boolean; // cards mode: attacks have a zone (stat azone: 1 low, 2 mid, 3 high), speed and damage; defenders block from hand with a check (speed + the block card's bmod); same zone blocks it all, a neighbouring zone half; an enhance step comes first; attacks that hit become momentum
   mass?: boolean; // block mode: declare all attackers at once (at the player or a walker), assign blockers (several per attacker), first-strike and regular damage steps
   firstTurnEach?: boolean; // with firstTurnAttack off: neither player attacks on their own first turn (not just turn 1)
   finalPoint?: boolean;
@@ -103,7 +106,8 @@ export interface Combat {
 }
 export interface Win { life: number; lifeCards: number; prizes: number; points: number; deckOut: boolean; noUnits: boolean; lifeTriggers?: boolean; burnOut?: boolean; emptyEnd?: boolean } // emptyEnd: a player who ends their turn with an empty deck loses // burnOut: drawing from an empty deck gives the opponent a point and shuffles the discard pile back
 export interface Setup { hand: number; mulligan: boolean; handLimit: number; deckMin: number; deckMax: number; maxCopies: number; skipFirstDraw: boolean; leader: boolean; extraMax: number; turnLimit: number;
-  maxColors?: number; // a deck may use at most this many colors
+  maxColors?: number;
+  leaderLife?: string; leaderHand?: string; // the leader's stats that set your starting life and your hand size (draw-up-to) // a deck may use at most this many colors
   mulliganN?: number; // > 0: mulligan by setting aside up to N cards (to the bottom) and drawing that many
   champion?: boolean; // each deck names a champion unit that starts in a champion zone and can be played from there
   leaderColors?: boolean; // every card must match one of the leader's two colors
@@ -114,7 +118,7 @@ export interface Setup { hand: number; mulligan: boolean; handLimit: number; dec
   london?: boolean; // mulligan: shuffle and draw a full hand again, then put 1 card on the bottom per mulligan
 }
 
-export interface Cond { k: 'units' | 'life' | 'hand' | 'yourTurn' | 'res' | 'counter' | 'zone' | 'played' | 'attached' | 'oppTurn' | 'oppLife' | 'status' | 'kicked' | 'charged' | 'linked' | 'under' | 'here' | 'raw'; n?: number; counter?: string; zone?: string; status?: string; raw?: unknown }
+export interface Cond { k: 'units' | 'life' | 'hand' | 'yourTurn' | 'res' | 'counter' | 'zone' | 'played' | 'attached' | 'oppTurn' | 'oppLife' | 'status' | 'kicked' | 'charged' | 'linked' | 'under' | 'here' | 'attacking' | 'defending' | 'raw'; n?: number; counter?: string; zone?: string; status?: string; raw?: unknown }
 export interface Filter { type?: string; color?: string; keyword?: string; stat?: string; op?: 'le' | 'ge'; val?: number; exhausted?: boolean; zone?: string; name?: string; trait?: string; status?: string;
   adjacent?: boolean; opposite?: boolean; pointed?: boolean; here?: boolean } // here: at this location (locations' abilities) // grid boards: in a neighboring column of this; in the column facing this; pointed at by this card's link arrows
 export interface Effect { k: EffectKind; n?: number; kw?: string; target?: TargetKind; filter?: Filter; stat?: string; until?: 'turn' | 'forever' | 'battle'; who?: 'me' | 'opp' | 'each'; card?: string; type?: string; rule?: KeywordRule; to?: 'hand' | 'deck' | 'play'; zone?: string; raw?: unknown[];
@@ -143,6 +147,7 @@ export interface CardBP {
   kwv?: Record<string, number>; // numbers for valued keywords (Resist 2)
   family?: string; // a shared base name (evolution/shift onto any card of this family)
   text?: string; flavor?: string; art?: string;
+  combo?: string; // check mode: playable only right after a card with this trait (or type) in your card pool
   shift?: number; // Shift N: may be played for N on top of your unit with the same name (the part before " - "), keeping its state
   moves?: Move[]; evolvesFrom?: string; materials?: number; weakness?: string; retreat?: number;
   resist?: string; // takes less attack damage from this color (combat.resistance)
@@ -246,6 +251,11 @@ export const KEYWORD_RULES: Record<KeywordRule, { label: string; text: string; v
   tuner: { label: 'Tuner (synchro material)', text: 'Tuner: needed for synchro summons.' },
   directAttack: { label: 'Can attack directly', text: 'Can attack the opponent directly even while they have units.' },
   extraAttack: { label: 'Attacks twice', text: 'Can attack twice each turn.' },
+  ex: { label: 'EX N (momentum for speed)', text: 'Enhance: remove 1 momentum to give this attack +N speed.', valued: true },
+  powerful: { label: 'Powerful N (momentum for damage)', text: 'Enhance: remove 1 momentum to give this attack +N damage.', valued: true },
+  stun: { label: 'Stun N (rival commits foundations)', text: 'Enhance: your rival commits N of their ready foundations.', valued: true },
+  breaker: { label: 'Breaker N (block penalty)', text: "After you block with this, your rival's next check gets -N.", valued: true },
+  flashAtk: { label: 'Flash (no enhance step)', text: "This attack skips the enhance step." },
   bodyguard: { label: 'Bodyguard (may enter exhausted; must be attacked first)', text: 'May enter play exhausted. An enemy unit attacking one of your units must choose one with this if able.' },
   support: { label: 'Support (lends its power when it quests)', text: 'When this quests, you may give another of your units +power equal to this power this turn.' },
   reckless: { label: "Reckless (can't quest; must attack if able)", text: "Can't quest. You can't end your turn while it is able to attack." },

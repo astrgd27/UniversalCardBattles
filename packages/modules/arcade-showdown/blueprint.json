@@ -1,0 +1,2389 @@
+{
+ "v": 1,
+ "id": "arcade-showdown",
+ "name": "Arcade Showdown",
+ "blueprint": "blank",
+ "author": "Universal Card Battles",
+ "tagline": "Insert coin. Pick your fighter. Chain your combos, block high or low, and knock them out before the timer runs dry.",
+ "look": {
+  "accent": "#f43f5e",
+  "accent2": "#facc15",
+  "glyph": "🕹"
+ },
+ "colors": [
+  {
+   "id": "fury",
+   "name": "Fury",
+   "hex": "#ef4444",
+   "icon": "🔥"
+  },
+  {
+   "id": "flow",
+   "name": "Flow",
+   "hex": "#06b6d4",
+   "icon": "💧"
+  },
+  {
+   "id": "grit",
+   "name": "Grit",
+   "hex": "#ea580c",
+   "icon": "🪨"
+  },
+  {
+   "id": "spirit",
+   "name": "Spirit",
+   "hex": "#8b5cf6",
+   "icon": "👻"
+  },
+  {
+   "id": "chaos",
+   "name": "Chaos",
+   "hex": "#22c55e",
+   "icon": "🎲"
+  },
+  {
+   "id": "honor",
+   "name": "Honor",
+   "hex": "#eab308",
+   "icon": "⚔"
+  }
+ ],
+ "stats": [
+  {
+   "id": "damage",
+   "name": "Damage",
+   "icon": "💥"
+  },
+  {
+   "id": "speed",
+   "name": "Speed",
+   "icon": "⚡"
+  },
+  {
+   "id": "azone",
+   "name": "Attack zone",
+   "icon": "↕"
+  },
+  {
+   "id": "check",
+   "name": "Check",
+   "icon": "🎯"
+  },
+  {
+   "id": "bzone",
+   "name": "Block zone",
+   "icon": "🛡"
+  },
+  {
+   "id": "bmod",
+   "name": "Block modifier",
+   "icon": "±"
+  },
+  {
+   "id": "vitality",
+   "name": "Vitality",
+   "icon": "♥"
+  },
+  {
+   "id": "handsize",
+   "name": "Hand size",
+   "icon": "✋"
+  }
+ ],
+ "types": [
+  {
+   "id": "attack",
+   "name": "Attack",
+   "role": "attack",
+   "frame": {
+    "base": "classic",
+    "cost": "tl",
+    "stats": [
+     {
+      "stat": "damage",
+      "pos": "bl",
+      "icon": "💥"
+     },
+     {
+      "stat": "speed",
+      "pos": "br",
+      "icon": "⚡"
+     },
+     {
+      "stat": "check",
+      "pos": "tr",
+      "icon": "🎯"
+     }
+    ],
+    "art": 48,
+    "text": true
+   },
+   "icon": "👊"
+  },
+  {
+   "id": "foundation",
+   "name": "Foundation",
+   "role": "permanent",
+   "foundation": true,
+   "frame": {
+    "base": "spell",
+    "cost": "tl",
+    "stats": [
+     {
+      "stat": "check",
+      "pos": "tr",
+      "icon": "🎯"
+     }
+    ],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🧱"
+  },
+  {
+   "id": "asset",
+   "name": "Asset",
+   "role": "permanent",
+   "frame": {
+    "base": "spell",
+    "cost": "tl",
+    "stats": [
+     {
+      "stat": "check",
+      "pos": "tr",
+      "icon": "🎯"
+     }
+    ],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🎒"
+  },
+  {
+   "id": "action",
+   "name": "Action",
+   "role": "spell",
+   "frame": {
+    "base": "spell",
+    "cost": "tl",
+    "stats": [
+     {
+      "stat": "check",
+      "pos": "tr",
+      "icon": "🎯"
+     }
+    ],
+    "art": 48,
+    "text": true
+   },
+   "icon": "✦"
+  },
+  {
+   "id": "fighter",
+   "name": "Fighter",
+   "role": "leader",
+   "frame": {
+    "base": "leader",
+    "cost": "none",
+    "stats": [
+     {
+      "stat": "vitality",
+      "pos": "bl",
+      "icon": "♥"
+     },
+     {
+      "stat": "handsize",
+      "pos": "br",
+      "icon": "✋"
+     }
+    ],
+    "art": 54,
+    "text": true
+   },
+   "icon": "🕹"
+  }
+ ],
+ "keywords": [
+  {
+   "id": "ex",
+   "name": "EX",
+   "rule": "ex",
+   "valued": true,
+   "text": "EX N: Enhance — remove 1 momentum: this attack gets +N speed."
+  },
+  {
+   "id": "powerful",
+   "name": "Powerful",
+   "rule": "powerful",
+   "valued": true,
+   "text": "Powerful N: Enhance — remove 1 momentum: this attack gets +N damage."
+  },
+  {
+   "id": "stun",
+   "name": "Stun",
+   "rule": "stun",
+   "valued": true,
+   "text": "Stun N: Enhance — your rival commits N of their ready foundations."
+  },
+  {
+   "id": "breaker",
+   "name": "Breaker",
+   "rule": "breaker",
+   "valued": true,
+   "text": "Breaker N: after you block with this, your rival's next check gets -N."
+  },
+  {
+   "id": "flashAtk",
+   "name": "Flash",
+   "rule": "flashAtk",
+   "text": "Flash: this attack skips the enhance step."
+  }
+ ],
+ "turn": [
+  {
+   "id": "ready",
+   "name": "Ready",
+   "kind": "ready"
+  },
+  {
+   "id": "draw",
+   "name": "Draw",
+   "kind": "draw",
+   "drawTo": 7
+  },
+  {
+   "id": "combat",
+   "name": "Combat",
+   "kind": "main"
+  },
+  {
+   "id": "end",
+   "name": "End",
+   "kind": "end"
+  }
+ ],
+ "timing": "simple",
+ "resource": {
+  "mode": "check",
+  "name": "Check",
+  "icon": "🎯",
+  "checkStat": "check",
+  "start": 0,
+  "perTurn": 0,
+  "max": 0,
+  "deckSize": 0,
+  "boost": 0,
+  "summonsPerTurn": 0,
+  "tribute": []
+ },
+ "combat": {
+  "mode": "cards",
+  "zones": true,
+  "power": "damage",
+  "health": null,
+  "defense": null,
+  "blockStat": null,
+  "damage": "persist",
+  "sickness": false,
+  "firstTurnAttack": false,
+  "firstTurnEach": true,
+  "targetUnits": "none",
+  "directOnlyIfEmpty": false,
+  "leaderDefends": false,
+  "leaderAttacks": false,
+  "compare": {
+   "ties": "defender",
+   "loser": false,
+   "overflow": false
+  },
+  "positions": false,
+  "counterStep": false,
+  "fieldSize": 0,
+  "benchSize": 0,
+  "attackEndsTurn": false,
+  "weakness": 1,
+  "lanes": []
+ },
+ "win": {
+  "life": 25,
+  "lifeCards": 0,
+  "prizes": 0,
+  "points": 0,
+  "deckOut": true,
+  "noUnits": false
+ },
+ "setup": {
+  "hand": 7,
+  "mulligan": true,
+  "handLimit": 8,
+  "deckMin": 60,
+  "deckMax": 80,
+  "maxCopies": 4,
+  "skipFirstDraw": true,
+  "leader": true,
+  "leaderColors": true,
+  "leaderLife": "vitality",
+  "leaderHand": "handsize",
+  "extraMax": 0,
+  "turnLimit": 80
+ },
+ "zoneNames": {
+  "support": "Stage",
+  "grave": "Discard",
+  "pool": "Card pool",
+  "momentum": "Momentum",
+  "leader": "Fighter"
+ },
+ "cards": [
+  {
+   "id": "blazing-uppercut",
+   "name": "Blazing Uppercut",
+   "type": "attack",
+   "cost": 3,
+   "color": "fury",
+   "stats": {
+    "check": 3,
+    "azone": 3,
+    "speed": 4,
+    "damage": 5,
+    "bzone": 3,
+    "bmod": 3
+   },
+   "keywords": [
+    "powerful"
+   ],
+   "kwv": {
+    "powerful": 1
+   },
+   "traits": [
+    "Punch"
+   ],
+   "abilities": [],
+   "flavor": "Starts at the floor. Ends somewhere near the ceiling."
+  },
+  {
+   "id": "rage-rush",
+   "name": "Rage Rush",
+   "type": "attack",
+   "cost": 2,
+   "color": "fury",
+   "stats": {
+    "check": 4,
+    "azone": 2,
+    "speed": 5,
+    "damage": 3,
+    "bzone": 2,
+    "bmod": 2
+   },
+   "keywords": [
+    "ex"
+   ],
+   "kwv": {
+    "ex": 1
+   },
+   "traits": [
+    "Rush"
+   ],
+   "abilities": [],
+   "flavor": "No plan. Just forward."
+  },
+  {
+   "id": "molten-hammer",
+   "name": "Molten Hammer",
+   "type": "attack",
+   "cost": 5,
+   "color": "fury",
+   "stats": {
+    "check": 2,
+    "azone": 3,
+    "speed": 3,
+    "damage": 7,
+    "bzone": 3,
+    "bmod": 4
+   },
+   "keywords": [
+    "stun"
+   ],
+   "kwv": {
+    "stun": 2
+   },
+   "traits": [
+    "Slam"
+   ],
+   "abilities": [],
+   "flavor": "Two fists, one direction: down."
+  },
+  {
+   "id": "ember-jab",
+   "name": "Ember Jab",
+   "type": "attack",
+   "cost": 1,
+   "color": "fury",
+   "stats": {
+    "check": 5,
+    "azone": 2,
+    "speed": 4,
+    "damage": 2,
+    "bzone": 2,
+    "bmod": 1
+   },
+   "keywords": [
+    "flashAtk"
+   ],
+   "traits": [
+    "Punch"
+   ],
+   "abilities": [],
+   "flavor": "You did not see it. Neither did the referee."
+  },
+  {
+   "id": "inferno-finisher",
+   "name": "Inferno Finisher",
+   "type": "attack",
+   "cost": 6,
+   "color": "fury",
+   "stats": {
+    "check": 1,
+    "azone": 2,
+    "speed": 5,
+    "damage": 8,
+    "bzone": 2,
+    "bmod": 4
+   },
+   "keywords": [
+    "powerful"
+   ],
+   "kwv": {
+    "powerful": 2
+   },
+   "traits": [
+    "Super"
+   ],
+   "abilities": [],
+   "combo": "Punch",
+   "flavor": "The screen flashes. The announcer screams. Someone in the back drops their soda."
+  },
+  {
+   "id": "burning-ambition",
+   "name": "Burning Ambition",
+   "type": "foundation",
+   "cost": 1,
+   "color": "fury",
+   "stats": {
+    "check": 5,
+    "bzone": 1,
+    "bmod": 2
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "tap": true,
+     "if": {
+      "k": "attacking"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": 1,
+       "stat": "damage",
+       "target": "attacker"
+      }
+     ],
+     "label": "Enhance — commit: your attack gets +1 damage"
+    }
+   ],
+   "flavor": "Wants the belt. Wants the trophy. Wants a snack."
+  },
+  {
+   "id": "street-brawl-upbringing",
+   "name": "Street Brawl Upbringing",
+   "type": "foundation",
+   "cost": 2,
+   "color": "fury",
+   "stats": {
+    "check": 4,
+    "bzone": 2,
+    "bmod": 2
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "tap": true,
+     "if": {
+      "k": "attacking"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": 1,
+       "stat": "speed",
+       "target": "attacker"
+      }
+     ],
+     "label": "Enhance — commit: your attack gets +1 speed"
+    }
+   ],
+   "flavor": "Learned to fight behind the arcade. Learned to lose there too."
+  },
+  {
+   "id": "hot-headed",
+   "name": "Hot-Headed",
+   "type": "foundation",
+   "cost": 1,
+   "color": "fury",
+   "stats": {
+    "check": 5,
+    "bzone": 3,
+    "bmod": 2
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "tap": true,
+     "if": {
+      "k": "attacking"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": 1,
+       "stat": "damage",
+       "target": "attacker"
+      }
+     ],
+     "label": "Enhance — commit: your attack gets +1 damage"
+    }
+   ]
+  },
+  {
+   "id": "second-wind",
+   "name": "Second Wind",
+   "type": "action",
+   "cost": 2,
+   "color": "fury",
+   "stats": {
+    "check": 4,
+    "bzone": 2,
+    "bmod": 3
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "draw",
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "flavor": "Round two. Again."
+  },
+  {
+   "id": "training-dummy",
+   "name": "Training Dummy",
+   "type": "asset",
+   "cost": 2,
+   "color": "fury",
+   "stats": {
+    "check": 4,
+    "bzone": 1,
+    "bmod": 3
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "tap": true,
+     "if": {
+      "k": "attacking"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": 2,
+       "stat": "speed",
+       "target": "attacker"
+      }
+     ],
+     "label": "Enhance — commit: your attack gets +2 speed",
+     "once": true
+    }
+   ],
+   "flavor": "Has been punched 40,000 times. Still smiling."
+  },
+  {
+   "id": "quicksilver-kick",
+   "name": "Quicksilver Kick",
+   "type": "attack",
+   "cost": 2,
+   "color": "flow",
+   "stats": {
+    "check": 4,
+    "azone": 1,
+    "speed": 6,
+    "damage": 3,
+    "bzone": 1,
+    "bmod": 1
+   },
+   "keywords": [
+    "flashAtk"
+   ],
+   "traits": [
+    "Kick"
+   ],
+   "abilities": [],
+   "flavor": "Faster than the frame data says."
+  },
+  {
+   "id": "riptide-sweep",
+   "name": "Riptide Sweep",
+   "type": "attack",
+   "cost": 3,
+   "color": "flow",
+   "stats": {
+    "check": 3,
+    "azone": 1,
+    "speed": 5,
+    "damage": 4,
+    "bzone": 1,
+    "bmod": 2
+   },
+   "keywords": [
+    "ex"
+   ],
+   "kwv": {
+    "ex": 2
+   },
+   "traits": [
+    "Kick"
+   ],
+   "abilities": []
+  },
+  {
+   "id": "tidal-palm",
+   "name": "Tidal Palm",
+   "type": "attack",
+   "cost": 2,
+   "color": "flow",
+   "stats": {
+    "check": 4,
+    "azone": 2,
+    "speed": 5,
+    "damage": 3,
+    "bzone": 2,
+    "bmod": 2
+   },
+   "keywords": [],
+   "traits": [
+    "Punch"
+   ],
+   "abilities": [],
+   "flavor": "Soft as water. Exactly as soft as water hitting you at forty knots."
+  },
+  {
+   "id": "whirlpool-spin",
+   "name": "Whirlpool Spin",
+   "type": "attack",
+   "cost": 4,
+   "color": "flow",
+   "stats": {
+    "check": 3,
+    "azone": 3,
+    "speed": 5,
+    "damage": 5,
+    "bzone": 3,
+    "bmod": 3
+   },
+   "keywords": [],
+   "traits": [
+    "Kick"
+   ],
+   "abilities": [],
+   "combo": "Kick"
+  },
+  {
+   "id": "undertow-throw",
+   "name": "Undertow Throw",
+   "type": "attack",
+   "cost": 3,
+   "color": "flow",
+   "stats": {
+    "check": 3,
+    "azone": 2,
+    "speed": 4,
+    "damage": 4,
+    "bzone": 2,
+    "bmod": 2
+   },
+   "keywords": [
+    "stun"
+   ],
+   "kwv": {
+    "stun": 1
+   },
+   "traits": [
+    "Throw"
+   ],
+   "abilities": []
+  },
+  {
+   "id": "flowing-stance",
+   "name": "Flowing Stance",
+   "type": "foundation",
+   "cost": 1,
+   "color": "flow",
+   "stats": {
+    "check": 5,
+    "bzone": 2,
+    "bmod": 1
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "tap": true,
+     "if": {
+      "k": "attacking"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": 1,
+       "stat": "speed",
+       "target": "attacker"
+      }
+     ],
+     "label": "Enhance — commit: your attack gets +1 speed"
+    }
+   ],
+   "flavor": "Bend like the reed. Kick like the reed, if reeds kicked."
+  },
+  {
+   "id": "ocean-calm",
+   "name": "Ocean Calm",
+   "type": "foundation",
+   "cost": 2,
+   "color": "flow",
+   "stats": {
+    "check": 4,
+    "bzone": 1,
+    "bmod": 2
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "tap": true,
+     "if": {
+      "k": "defending"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": -1,
+       "stat": "speed",
+       "target": "attacker"
+      }
+     ],
+     "label": "Response — commit: the attack against you gets -1 speed"
+    }
+   ]
+  },
+  {
+   "id": "wave-rider",
+   "name": "Wave Rider",
+   "type": "foundation",
+   "cost": 1,
+   "color": "flow",
+   "stats": {
+    "check": 5,
+    "bzone": 3,
+    "bmod": 2
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "tap": true,
+     "if": {
+      "k": "attacking"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": 1,
+       "stat": "speed",
+       "target": "attacker"
+      }
+     ],
+     "label": "Enhance — commit: your attack gets +1 speed"
+    }
+   ]
+  },
+  {
+   "id": "slipstream",
+   "name": "Slipstream",
+   "type": "action",
+   "cost": 1,
+   "color": "flow",
+   "stats": {
+    "check": 5,
+    "bzone": 2,
+    "bmod": 3
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "scry",
+       "n": 2
+      },
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Read the current. Ride the current. Become the current."
+  },
+  {
+   "id": "lucky-surfboard",
+   "name": "Lucky Surfboard",
+   "type": "asset",
+   "cost": 2,
+   "color": "flow",
+   "stats": {
+    "check": 4,
+    "bzone": 1,
+    "bmod": 3
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "tap": true,
+     "if": {
+      "k": "attacking"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": 1,
+       "stat": "damage",
+       "target": "attacker"
+      }
+     ],
+     "label": "Enhance — commit: your attack gets +1 damage",
+     "once": true
+    }
+   ],
+   "flavor": "Signed by a legend. The legend was a seagull."
+  },
+  {
+   "id": "brick-wall-headbutt",
+   "name": "Brick Wall Headbutt",
+   "type": "attack",
+   "cost": 3,
+   "color": "grit",
+   "stats": {
+    "check": 3,
+    "azone": 3,
+    "speed": 3,
+    "damage": 5,
+    "bzone": 3,
+    "bmod": 1
+   },
+   "keywords": [
+    "breaker"
+   ],
+   "kwv": {
+    "breaker": 1
+   },
+   "traits": [
+    "Slam"
+   ],
+   "abilities": [],
+   "flavor": "The wall lost."
+  },
+  {
+   "id": "shoulder-charge",
+   "name": "Shoulder Charge",
+   "type": "attack",
+   "cost": 2,
+   "color": "grit",
+   "stats": {
+    "check": 4,
+    "azone": 2,
+    "speed": 4,
+    "damage": 4,
+    "bzone": 2,
+    "bmod": 1
+   },
+   "keywords": [
+    "breaker"
+   ],
+   "kwv": {
+    "breaker": 1
+   },
+   "traits": [
+    "Rush"
+   ],
+   "abilities": []
+  },
+  {
+   "id": "ground-pound",
+   "name": "Ground Pound",
+   "type": "attack",
+   "cost": 4,
+   "color": "grit",
+   "stats": {
+    "check": 2,
+    "azone": 1,
+    "speed": 3,
+    "damage": 6,
+    "bzone": 1,
+    "bmod": 2
+   },
+   "keywords": [
+    "stun"
+   ],
+   "kwv": {
+    "stun": 1
+   },
+   "traits": [
+    "Slam"
+   ],
+   "abilities": []
+  },
+  {
+   "id": "stubborn-jab",
+   "name": "Stubborn Jab",
+   "type": "attack",
+   "cost": 1,
+   "color": "grit",
+   "stats": {
+    "check": 5,
+    "azone": 2,
+    "speed": 3,
+    "damage": 2,
+    "bzone": 2,
+    "bmod": 0
+   },
+   "keywords": [
+    "breaker"
+   ],
+   "kwv": {
+    "breaker": 2
+   },
+   "traits": [
+    "Punch"
+   ],
+   "abilities": [],
+   "flavor": "Throws it. Keeps throwing it. Has never stopped throwing it."
+  },
+  {
+   "id": "bulldozer",
+   "name": "Bulldozer",
+   "type": "attack",
+   "cost": 5,
+   "color": "grit",
+   "stats": {
+    "check": 2,
+    "azone": 2,
+    "speed": 3,
+    "damage": 7,
+    "bzone": 2,
+    "bmod": 3
+   },
+   "keywords": [
+    "powerful"
+   ],
+   "kwv": {
+    "powerful": 1
+   },
+   "traits": [
+    "Rush"
+   ],
+   "abilities": []
+  },
+  {
+   "id": "iron-will",
+   "name": "Iron Will",
+   "type": "foundation",
+   "cost": 2,
+   "color": "grit",
+   "stats": {
+    "check": 4,
+    "bzone": 2,
+    "bmod": 0
+   },
+   "keywords": [
+    "breaker"
+   ],
+   "kwv": {
+    "breaker": 1
+   },
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "tap": true,
+     "if": {
+      "k": "defending"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": -1,
+       "stat": "damage",
+       "target": "attacker"
+      }
+     ],
+     "label": "Response — commit: the attack against you gets -1 damage"
+    }
+   ],
+   "flavor": "Pain is just a message. She does not read her messages."
+  },
+  {
+   "id": "calloused-knuckles",
+   "name": "Calloused Knuckles",
+   "type": "foundation",
+   "cost": 1,
+   "color": "grit",
+   "stats": {
+    "check": 5,
+    "bzone": 3,
+    "bmod": 1
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "tap": true,
+     "if": {
+      "k": "attacking"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": 1,
+       "stat": "damage",
+       "target": "attacker"
+      }
+     ],
+     "label": "Enhance — commit: your attack gets +1 damage"
+    }
+   ]
+  },
+  {
+   "id": "stand-your-ground",
+   "name": "Stand Your Ground",
+   "type": "foundation",
+   "cost": 2,
+   "color": "grit",
+   "stats": {
+    "check": 4,
+    "bzone": 1,
+    "bmod": 1
+   },
+   "keywords": [
+    "breaker"
+   ],
+   "kwv": {
+    "breaker": 1
+   },
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "tap": true,
+     "if": {
+      "k": "defending"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": -1,
+       "stat": "damage",
+       "target": "attacker"
+      }
+     ],
+     "label": "Response — commit: the attack against you gets -1 damage"
+    }
+   ]
+  },
+  {
+   "id": "shake-it-off",
+   "name": "Shake It Off",
+   "type": "action",
+   "cost": 2,
+   "color": "grit",
+   "stats": {
+    "check": 4,
+    "bzone": 2,
+    "bmod": 2
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "lifeGain",
+       "n": 3,
+       "who": "me"
+      }
+     ]
+    }
+   ],
+   "flavor": "Walk it off. Walk it all the way off."
+  },
+  {
+   "id": "weighted-vest",
+   "name": "Weighted Vest",
+   "type": "asset",
+   "cost": 3,
+   "color": "grit",
+   "stats": {
+    "check": 3,
+    "bzone": 2,
+    "bmod": 2
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "tap": true,
+     "if": {
+      "k": "defending"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": -2,
+       "stat": "damage",
+       "target": "attacker"
+      }
+     ],
+     "label": "Response — commit: the attack against you gets -2 damage",
+     "once": true
+    }
+   ],
+   "flavor": "Thirty kilos of pure stubbornness."
+  },
+  {
+   "id": "spirit-palm",
+   "name": "Spirit Palm",
+   "type": "attack",
+   "cost": 2,
+   "color": "spirit",
+   "stats": {
+    "check": 4,
+    "azone": 2,
+    "speed": 4,
+    "damage": 3,
+    "bzone": 2,
+    "bmod": 2
+   },
+   "keywords": [
+    "stun"
+   ],
+   "kwv": {
+    "stun": 1
+   },
+   "traits": [
+    "Punch"
+   ],
+   "abilities": [],
+   "flavor": "Hits the body. Hits the soul. Bills you for both."
+  },
+  {
+   "id": "phantom-step-kick",
+   "name": "Phantom Step Kick",
+   "type": "attack",
+   "cost": 3,
+   "color": "spirit",
+   "stats": {
+    "check": 4,
+    "azone": 3,
+    "speed": 5,
+    "damage": 3,
+    "bzone": 3,
+    "bmod": 2
+   },
+   "keywords": [
+    "stun"
+   ],
+   "kwv": {
+    "stun": 1
+   },
+   "traits": [
+    "Kick"
+   ],
+   "abilities": []
+  },
+  {
+   "id": "soul-lantern-strike",
+   "name": "Soul Lantern Strike",
+   "type": "attack",
+   "cost": 4,
+   "color": "spirit",
+   "stats": {
+    "check": 3,
+    "azone": 2,
+    "speed": 4,
+    "damage": 5,
+    "bzone": 2,
+    "bmod": 3
+   },
+   "keywords": [
+    "stun"
+   ],
+   "kwv": {
+    "stun": 2
+   },
+   "traits": [
+    "Slam"
+   ],
+   "abilities": []
+  },
+  {
+   "id": "mantra-burst",
+   "name": "Mantra Burst",
+   "type": "attack",
+   "cost": 5,
+   "color": "spirit",
+   "stats": {
+    "check": 2,
+    "azone": 3,
+    "speed": 4,
+    "damage": 6,
+    "bzone": 3,
+    "bmod": 3
+   },
+   "keywords": [
+    "stun"
+   ],
+   "kwv": {
+    "stun": 2
+   },
+   "traits": [
+    "Super"
+   ],
+   "abilities": [],
+   "combo": "Punch"
+  },
+  {
+   "id": "ghostly-jab",
+   "name": "Ghostly Jab",
+   "type": "attack",
+   "cost": 1,
+   "color": "spirit",
+   "stats": {
+    "check": 5,
+    "azone": 2,
+    "speed": 4,
+    "damage": 2,
+    "bzone": 2,
+    "bmod": 1
+   },
+   "keywords": [],
+   "traits": [
+    "Punch"
+   ],
+   "abilities": [],
+   "flavor": "Goes right through you. Somehow still hurts."
+  },
+  {
+   "id": "inner-peace",
+   "name": "Inner Peace",
+   "type": "foundation",
+   "cost": 1,
+   "color": "spirit",
+   "stats": {
+    "check": 5,
+    "bzone": 2,
+    "bmod": 1
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "tap": true,
+     "if": {
+      "k": "defending"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": -1,
+       "stat": "speed",
+       "target": "attacker"
+      }
+     ],
+     "label": "Response — commit: the attack against you gets -1 speed"
+    }
+   ]
+  },
+  {
+   "id": "ancestors-whisper",
+   "name": "Ancestor's Whisper",
+   "type": "foundation",
+   "cost": 2,
+   "color": "spirit",
+   "stats": {
+    "check": 4,
+    "bzone": 3,
+    "bmod": 2
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "tap": true,
+     "if": {
+      "k": "attacking"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": 1,
+       "stat": "speed",
+       "target": "attacker"
+      }
+     ],
+     "label": "Enhance — commit: your attack gets +1 speed"
+    }
+   ],
+   "flavor": "Grandfather says: duck."
+  },
+  {
+   "id": "meditation-bell",
+   "name": "Meditation Bell",
+   "type": "foundation",
+   "cost": 1,
+   "color": "spirit",
+   "stats": {
+    "check": 5,
+    "bzone": 1,
+    "bmod": 2
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "tap": true,
+     "if": {
+      "k": "defending"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": -1,
+       "stat": "damage",
+       "target": "attacker"
+      }
+     ],
+     "label": "Response — commit: the attack against you gets -1 damage"
+    }
+   ]
+  },
+  {
+   "id": "exorcise",
+   "name": "Exorcise",
+   "type": "action",
+   "cost": 3,
+   "color": "spirit",
+   "stats": {
+    "check": 3,
+    "bzone": 2,
+    "bmod": 3
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "discard",
+       "n": 1,
+       "who": "opp"
+      },
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Begone! (Please.)"
+  },
+  {
+   "id": "prayer-beads",
+   "name": "Prayer Beads",
+   "type": "asset",
+   "cost": 2,
+   "color": "spirit",
+   "stats": {
+    "check": 4,
+    "bzone": 1,
+    "bmod": 3
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "tap": true,
+     "if": {
+      "k": "defending"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": -1,
+       "stat": "speed",
+       "target": "attacker"
+      }
+     ],
+     "label": "Response — commit: the attack against you gets -1 speed",
+     "once": true
+    }
+   ],
+   "flavor": "108 beads. Sister Mercy has counted them. Twice."
+  },
+  {
+   "id": "banana-peel-slide",
+   "name": "Banana Peel Slide",
+   "type": "attack",
+   "cost": 1,
+   "color": "chaos",
+   "stats": {
+    "check": 5,
+    "azone": 1,
+    "speed": 5,
+    "damage": 2,
+    "bzone": 1,
+    "bmod": 1
+   },
+   "keywords": [
+    "flashAtk"
+   ],
+   "traits": [
+    "Kick"
+   ],
+   "abilities": [],
+   "flavor": "Technically a legal move. The rulebook has been amended."
+  },
+  {
+   "id": "pie-in-the-face",
+   "name": "Pie in the Face",
+   "type": "attack",
+   "cost": 2,
+   "color": "chaos",
+   "stats": {
+    "check": 4,
+    "azone": 3,
+    "speed": 5,
+    "damage": 3,
+    "bzone": 3,
+    "bmod": 2
+   },
+   "keywords": [
+    "ex"
+   ],
+   "kwv": {
+    "ex": 1
+   },
+   "traits": [
+    "Throw"
+   ],
+   "abilities": [],
+   "flavor": "Banana cream. A classic."
+  },
+  {
+   "id": "rubber-chicken-smack",
+   "name": "Rubber Chicken Smack",
+   "type": "attack",
+   "cost": 2,
+   "color": "chaos",
+   "stats": {
+    "check": 4,
+    "azone": 2,
+    "speed": 4,
+    "damage": 3,
+    "bzone": 2,
+    "bmod": 2
+   },
+   "keywords": [],
+   "traits": [
+    "Slam"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "roll",
+       "n": 1,
+       "sides": 6,
+       "ranges": [
+        {
+         "min": 4,
+         "max": 6,
+         "do": [
+          {
+           "k": "buff",
+           "n": 2,
+           "stat": "damage",
+           "target": "self"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "flavor": "Squeaks on impact. On a good roll, squeaks very hard."
+  },
+  {
+   "id": "chaos-cannonball",
+   "name": "Chaos Cannonball",
+   "type": "attack",
+   "cost": 5,
+   "color": "chaos",
+   "stats": {
+    "check": 2,
+    "azone": 2,
+    "speed": 4,
+    "damage": 7,
+    "bzone": 2,
+    "bmod": 3
+   },
+   "keywords": [
+    "powerful"
+   ],
+   "kwv": {
+    "powerful": 1
+   },
+   "traits": [
+    "Rush"
+   ],
+   "abilities": [],
+   "flavor": "He was fired out of an actual cannon. Nobody knows who brought the cannon."
+  },
+  {
+   "id": "dizzy-dropkick",
+   "name": "Dizzy Dropkick",
+   "type": "attack",
+   "cost": 3,
+   "color": "chaos",
+   "stats": {
+    "check": 3,
+    "azone": 1,
+    "speed": 4,
+    "damage": 4,
+    "bzone": 1,
+    "bmod": 2
+   },
+   "keywords": [
+    "stun"
+   ],
+   "kwv": {
+    "stun": 1
+   },
+   "traits": [
+    "Kick"
+   ],
+   "abilities": [],
+   "combo": "Throw"
+  },
+  {
+   "id": "lucky-socks",
+   "name": "Lucky Socks",
+   "type": "foundation",
+   "cost": 1,
+   "color": "chaos",
+   "stats": {
+    "check": 5,
+    "bzone": 2,
+    "bmod": 2
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "tap": true,
+     "if": {
+      "k": "attacking"
+     },
+     "do": [
+      {
+       "k": "flip",
+       "n": 1,
+       "heads": [
+        {
+         "k": "buff",
+         "n": 2,
+         "stat": "damage",
+         "target": "attacker"
+        }
+       ]
+      }
+     ],
+     "label": "Enhance — commit: flip a coin; heads, your attack gets +2 damage"
+    }
+   ],
+   "flavor": "Unwashed since the regional finals."
+  },
+  {
+   "id": "ridiculous-confidence",
+   "name": "Ridiculous Confidence",
+   "type": "foundation",
+   "cost": 1,
+   "color": "chaos",
+   "stats": {
+    "check": 5,
+    "bzone": 3,
+    "bmod": 2
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "tap": true,
+     "if": {
+      "k": "attacking"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": 1,
+       "stat": "speed",
+       "target": "attacker"
+      }
+     ],
+     "label": "Enhance — commit: your attack gets +1 speed"
+    }
+   ]
+  },
+  {
+   "id": "whoopee-cushion",
+   "name": "Whoopee Cushion",
+   "type": "foundation",
+   "cost": 2,
+   "color": "chaos",
+   "stats": {
+    "check": 4,
+    "bzone": 1,
+    "bmod": 1
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "tap": true,
+     "if": {
+      "k": "defending"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": -1,
+       "stat": "speed",
+       "target": "attacker"
+      }
+     ],
+     "label": "Response — commit: the attack against you gets -1 speed"
+    }
+   ],
+   "flavor": "Nobody can concentrate after that."
+  },
+  {
+   "id": "coin-op-jackpot",
+   "name": "Coin-Op Jackpot",
+   "type": "action",
+   "cost": 2,
+   "color": "chaos",
+   "stats": {
+    "check": 4,
+    "bzone": 2,
+    "bmod": 3
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "flip",
+       "n": 1,
+       "heads": [
+        {
+         "k": "draw",
+         "n": 3
+        }
+       ],
+       "tails": [
+        {
+         "k": "draw",
+         "n": 1
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "flavor": "Insert coin. Pull lever. Hope."
+  },
+  {
+   "id": "rubber-duck-mascot",
+   "name": "Rubber Duck Mascot",
+   "type": "asset",
+   "cost": 2,
+   "color": "chaos",
+   "stats": {
+    "check": 4,
+    "bzone": 1,
+    "bmod": 3
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "tap": true,
+     "if": {
+      "k": "attacking"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": 1,
+       "stat": "damage",
+       "target": "attacker"
+      }
+     ],
+     "label": "Enhance — commit: your attack gets +1 damage",
+     "once": true
+    }
+   ],
+   "flavor": "Squeak."
+  },
+  {
+   "id": "iaido-draw",
+   "name": "Iaido Draw",
+   "type": "attack",
+   "cost": 3,
+   "color": "honor",
+   "stats": {
+    "check": 3,
+    "azone": 3,
+    "speed": 6,
+    "damage": 4,
+    "bzone": 3,
+    "bmod": 2
+   },
+   "keywords": [
+    "flashAtk"
+   ],
+   "traits": [
+    "Slash"
+   ],
+   "abilities": [],
+   "flavor": "The sword is back in its sheath before you notice it left."
+  },
+  {
+   "id": "crescent-cut",
+   "name": "Crescent Cut",
+   "type": "attack",
+   "cost": 2,
+   "color": "honor",
+   "stats": {
+    "check": 4,
+    "azone": 2,
+    "speed": 4,
+    "damage": 4,
+    "bzone": 2,
+    "bmod": 2
+   },
+   "keywords": [],
+   "traits": [
+    "Slash"
+   ],
+   "abilities": []
+  },
+  {
+   "id": "low-sweep",
+   "name": "Low Sweep",
+   "type": "attack",
+   "cost": 1,
+   "color": "honor",
+   "stats": {
+    "check": 5,
+    "azone": 1,
+    "speed": 4,
+    "damage": 2,
+    "bzone": 1,
+    "bmod": 1
+   },
+   "keywords": [],
+   "traits": [
+    "Kick"
+   ],
+   "abilities": []
+  },
+  {
+   "id": "final-oath-strike",
+   "name": "Final Oath Strike",
+   "type": "attack",
+   "cost": 5,
+   "color": "honor",
+   "stats": {
+    "check": 2,
+    "azone": 3,
+    "speed": 5,
+    "damage": 6,
+    "bzone": 3,
+    "bmod": 3
+   },
+   "keywords": [
+    "ex"
+   ],
+   "kwv": {
+    "ex": 2
+   },
+   "traits": [
+    "Super"
+   ],
+   "abilities": [],
+   "combo": "Slash",
+   "flavor": "Sworn on his master's grave. His master is fine, actually. He just moved."
+  },
+  {
+   "id": "shield-bash",
+   "name": "Shield Bash",
+   "type": "attack",
+   "cost": 2,
+   "color": "honor",
+   "stats": {
+    "check": 4,
+    "azone": 2,
+    "speed": 3,
+    "damage": 3,
+    "bzone": 2,
+    "bmod": 1
+   },
+   "keywords": [
+    "breaker"
+   ],
+   "kwv": {
+    "breaker": 1
+   },
+   "traits": [
+    "Slam"
+   ],
+   "abilities": []
+  },
+  {
+   "id": "code-of-honor",
+   "name": "Code of Honor",
+   "type": "foundation",
+   "cost": 1,
+   "color": "honor",
+   "stats": {
+    "check": 5,
+    "bzone": 2,
+    "bmod": 1
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "tap": true,
+     "if": {
+      "k": "attacking"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": 1,
+       "stat": "speed",
+       "target": "attacker"
+      }
+     ],
+     "label": "Enhance — commit: your attack gets +1 speed"
+    }
+   ],
+   "flavor": "Never strike a fallen foe. Never skip leg day."
+  },
+  {
+   "id": "disciplined-footwork",
+   "name": "Disciplined Footwork",
+   "type": "foundation",
+   "cost": 2,
+   "color": "honor",
+   "stats": {
+    "check": 4,
+    "bzone": 1,
+    "bmod": 1
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "tap": true,
+     "if": {
+      "k": "defending"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": -1,
+       "stat": "speed",
+       "target": "attacker"
+      }
+     ],
+     "label": "Response — commit: the attack against you gets -1 speed"
+    }
+   ]
+  },
+  {
+   "id": "ancestral-blade",
+   "name": "Ancestral Blade",
+   "type": "foundation",
+   "cost": 2,
+   "color": "honor",
+   "stats": {
+    "check": 4,
+    "bzone": 3,
+    "bmod": 2
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "tap": true,
+     "if": {
+      "k": "attacking"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": 1,
+       "stat": "damage",
+       "target": "attacker"
+      }
+     ],
+     "label": "Enhance — commit: your attack gets +1 damage"
+    }
+   ]
+  },
+  {
+   "id": "bow-to-your-rival",
+   "name": "Bow to Your Rival",
+   "type": "action",
+   "cost": 1,
+   "color": "honor",
+   "stats": {
+    "check": 5,
+    "bzone": 2,
+    "bmod": 3
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      },
+      {
+       "k": "lifeGain",
+       "n": 1,
+       "who": "me"
+      }
+     ]
+    }
+   ],
+   "flavor": "Respect first. Then the beating."
+  },
+  {
+   "id": "dojo-banner",
+   "name": "Dojo Banner",
+   "type": "asset",
+   "cost": 3,
+   "color": "honor",
+   "stats": {
+    "check": 3,
+    "bzone": 2,
+    "bmod": 3
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "tap": true,
+     "if": {
+      "k": "attacking"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": 2,
+       "stat": "damage",
+       "target": "attacker"
+      }
+     ],
+     "label": "Enhance — commit: your attack gets +2 damage",
+     "once": true
+    }
+   ],
+   "flavor": "Hung crooked since 1987. Nobody is brave enough to fix it."
+  },
+  {
+   "id": "kaito-renji-the-last-ronin",
+   "name": "Kaito Renji, the Last Ronin",
+   "type": "fighter",
+   "cost": 0,
+   "color": "honor",
+   "color2": "fury",
+   "stats": {
+    "vitality": 24,
+    "handsize": 7
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "if": {
+      "k": "attacking"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": 1,
+       "stat": "speed",
+       "target": "attacker"
+      }
+     ],
+     "label": "Enhance (once a turn): your attack gets +1 speed",
+     "once": true,
+     "tap": false
+    }
+   ],
+   "flavor": "Disgraced, masterless, and absolutely not interested in your sympathy."
+  },
+  {
+   "id": "big-mama-gumbo",
+   "name": "Big Mama Gumbo",
+   "type": "fighter",
+   "cost": 0,
+   "color": "grit",
+   "color2": "chaos",
+   "stats": {
+    "vitality": 28,
+    "handsize": 6
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "if": {
+      "k": "defending"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": -1,
+       "stat": "damage",
+       "target": "attacker"
+      }
+     ],
+     "label": "Response (once a turn): the attack against you gets -1 damage",
+     "once": true,
+     "tap": false
+    }
+   ],
+   "flavor": "Fights with a cast-iron skillet. Feeds everyone afterward. Even you."
+  },
+  {
+   "id": "vend-o-3000",
+   "name": "VEND-O 3000",
+   "type": "fighter",
+   "cost": 0,
+   "color": "chaos",
+   "color2": "flow",
+   "stats": {
+    "vitality": 22,
+    "handsize": 7
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "if": {
+      "k": "attacking"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": 1,
+       "stat": "damage",
+       "target": "attacker"
+      }
+     ],
+     "label": "Enhance (once a turn): your attack gets +1 damage",
+     "once": true,
+     "tap": false
+    }
+   ],
+   "flavor": "A vending machine that achieved sentience and immediately chose violence. Exact change only."
+  },
+  {
+   "id": "sister-mercy-vale",
+   "name": "Sister Mercy Vale",
+   "type": "fighter",
+   "cost": 0,
+   "color": "spirit",
+   "color2": "honor",
+   "stats": {
+    "vitality": 25,
+    "handsize": 6
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "if": {
+      "k": "defending"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": -1,
+       "stat": "speed",
+       "target": "attacker"
+      }
+     ],
+     "label": "Response (once a turn): the attack against you gets -1 speed",
+     "once": true,
+     "tap": false
+    }
+   ],
+   "flavor": "Exorcist, nun, two-time undefeated champion of the Cathedral Underground."
+  },
+  {
+   "id": "captain-dynamo",
+   "name": "Captain Dynamo",
+   "type": "fighter",
+   "cost": 0,
+   "color": "fury",
+   "color2": "flow",
+   "stats": {
+    "vitality": 23,
+    "handsize": 7
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "if": {
+      "k": "attacking"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": 1,
+       "stat": "damage",
+       "target": "attacker"
+      }
+     ],
+     "label": "Enhance (once a turn): your attack gets +1 damage",
+     "once": true,
+     "tap": false
+    }
+   ],
+   "flavor": "Retired superhero. The cape still fits. Mostly."
+  },
+  {
+   "id": "grandmaster-pebble",
+   "name": "Grandmaster Pebble",
+   "type": "fighter",
+   "cost": 0,
+   "color": "grit",
+   "color2": "spirit",
+   "stats": {
+    "vitality": 27,
+    "handsize": 6
+   },
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "quick": true,
+     "if": {
+      "k": "defending"
+     },
+     "do": [
+      {
+       "k": "buff",
+       "n": -1,
+       "stat": "damage",
+       "target": "attacker"
+      }
+     ],
+     "label": "Response (once a turn): the attack against you gets -1 damage",
+     "once": true,
+     "tap": false
+    }
+   ],
+   "flavor": "A 300-year-old tortoise who invented four martial arts and forgot two of them."
+  }
+ ],
+ "decks": [
+  {
+   "id": "ronins-path",
+   "name": "The Ronin's Path",
+   "leader": "kaito-renji-the-last-ronin",
+   "main": {
+    "blazing-uppercut": 3,
+    "rage-rush": 3,
+    "molten-hammer": 3,
+    "ember-jab": 3,
+    "inferno-finisher": 3,
+    "burning-ambition": 3,
+    "street-brawl-upbringing": 3,
+    "hot-headed": 3,
+    "second-wind": 3,
+    "training-dummy": 3,
+    "iaido-draw": 3,
+    "crescent-cut": 3,
+    "low-sweep": 3,
+    "final-oath-strike": 3,
+    "shield-bash": 3,
+    "code-of-honor": 3,
+    "disciplined-footwork": 3,
+    "ancestral-blade": 3,
+    "bow-to-your-rival": 3,
+    "dojo-banner": 3
+   }
+  },
+  {
+   "id": "kitchen-brawl",
+   "name": "Kitchen Brawl",
+   "leader": "big-mama-gumbo",
+   "main": {
+    "brick-wall-headbutt": 3,
+    "shoulder-charge": 3,
+    "ground-pound": 3,
+    "stubborn-jab": 3,
+    "bulldozer": 3,
+    "iron-will": 3,
+    "calloused-knuckles": 3,
+    "stand-your-ground": 3,
+    "shake-it-off": 3,
+    "weighted-vest": 3,
+    "banana-peel-slide": 3,
+    "pie-in-the-face": 3,
+    "rubber-chicken-smack": 3,
+    "chaos-cannonball": 3,
+    "dizzy-dropkick": 3,
+    "lucky-socks": 3,
+    "ridiculous-confidence": 3,
+    "whoopee-cushion": 3,
+    "coin-op-jackpot": 3,
+    "rubber-duck-mascot": 3
+   }
+  },
+  {
+   "id": "exact-change",
+   "name": "Exact Change Only",
+   "leader": "vend-o-3000",
+   "main": {
+    "quicksilver-kick": 3,
+    "riptide-sweep": 3,
+    "tidal-palm": 3,
+    "whirlpool-spin": 3,
+    "undertow-throw": 3,
+    "flowing-stance": 3,
+    "ocean-calm": 3,
+    "wave-rider": 3,
+    "slipstream": 3,
+    "lucky-surfboard": 3,
+    "banana-peel-slide": 3,
+    "pie-in-the-face": 3,
+    "rubber-chicken-smack": 3,
+    "chaos-cannonball": 3,
+    "dizzy-dropkick": 3,
+    "lucky-socks": 3,
+    "ridiculous-confidence": 3,
+    "whoopee-cushion": 3,
+    "coin-op-jackpot": 3,
+    "rubber-duck-mascot": 3
+   }
+  },
+  {
+   "id": "holy-knuckles",
+   "name": "Holy Knuckles",
+   "leader": "sister-mercy-vale",
+   "main": {
+    "spirit-palm": 3,
+    "phantom-step-kick": 3,
+    "soul-lantern-strike": 3,
+    "mantra-burst": 3,
+    "ghostly-jab": 3,
+    "inner-peace": 3,
+    "ancestors-whisper": 3,
+    "meditation-bell": 3,
+    "exorcise": 3,
+    "prayer-beads": 3,
+    "iaido-draw": 3,
+    "crescent-cut": 3,
+    "low-sweep": 3,
+    "final-oath-strike": 3,
+    "shield-bash": 3,
+    "code-of-honor": 3,
+    "disciplined-footwork": 3,
+    "ancestral-blade": 3,
+    "bow-to-your-rival": 3,
+    "dojo-banner": 3
+   }
+  }
+ ]
+}

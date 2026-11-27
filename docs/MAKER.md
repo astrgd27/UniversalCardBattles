@@ -343,6 +343,22 @@ Built for Storyweavers (mechanics reference: Lorcana). They also work in other g
 - **Setup and winning:** `setup.maxColors` (a deck may use at most N colors); `win.emptyEnd` (ending your turn with an empty deck loses). The effect `score` with `who: 'opp'` takes points from the opponent.
 - **Shelf recipes:** "Places (locations)" and "Shift (upgraded versions)". The wizard offers both in Optional systems.
 
+## Skill checks and zone combat (Advanced)
+Built for Arcade Showdown (mechanics reference: UniVersus). They also work in other games.
+- **Skill checks** (`resource.mode: 'check'`, shelf recipe "Skill checks"): no resources. One **Play** action covers every card.
+  - The card goes to your **card pool** (zone `pool`), then you make a check: the top card of your deck is discarded and its check value (`resource.checkStat`, default `check`) must reach the card's cost (its difficulty) plus the number of cards already in your pool this turn (progressive difficulty).
+  - If the check is short, you may commit (exhaust) that many ready **foundations** (a permanent type with `foundation: true`, in your stage or pool) to pass.
+  - A failed check discards the card and ends your turn. Checking from an empty deck loses.
+  - At the end of every turn both pools are sorted: permanents are built onto the stage (`support`), attacks that dealt damage become **momentum** (zone combat), and everything else goes to the discard pile.
+  - `card.combo` (a trait or type): playable only right after such a card in your pool.
+- **Zone combat** (`combat.mode: 'cards'` with `combat.zones`): attack cards carry `azone` (1 low, 2 mid, 3 high), `speed` and their damage (the combat power stat).
+  - The battle runs declare → **enhance** (both players alternate quick abilities, attacker first) → block → damage.
+  - The defender may block with a card from hand whose `bzone` is the attack's zone or next to it (mid touches both), passing a check of speed + the card's `bmod` + their own pool size.
+  - The same zone stops all damage; a neighbouring zone halves it (rounded up). A failed or missing block takes it all.
+  - Conditions `attacking` / `defending` gate Enhance and Response abilities (target "attacker" changes the attack's speed or damage).
+- **Keyword rules:** `ex` N and `powerful` N (enhance: spend 1 momentum for +N speed or damage), `stun` N (enhance: the rival commits N ready foundations), `breaker` N (after you block with this, the attacker's next check gets -N), `flashAtk` (the attack skips the enhance step).
+- **Leaders:** `setup.leaderLife` and `setup.leaderHand` take starting life and the hand size (the draw-up-to number) from the leader's stats.
+
 ## Mechanics Shelf (mix and match)
 A station listing 40 recipes in seven groups:
 - Resources

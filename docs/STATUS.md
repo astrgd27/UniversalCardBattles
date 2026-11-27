@@ -16,7 +16,7 @@
   | Ringworld Rumble | One Piece | isekai pro wrestling |
   | Looboo | Pokémon TCG | cute alien creatures; nutrients as resources |
   | Storyweavers | Disney Lorcana | public-domain fables and fairy tales; nursery rhymes as songs |
-  | (planned) | Universus | an original fighting-game cast, serious to goofy |
+  | Arcade Showdown | UniVersus | an original fighting-game cast, serious to goofy |
   | (planned) | Android: Netrunner | evil lords and their dungeons against a party of adventurers |
 
 - **Order:**
@@ -116,6 +116,12 @@
   - Shift versions; places with move costs, lore at the start of the turn and "here" bonuses; items; saved Wonder (ink drops).
   - Tests: `tests/storyweavers.test.ts` (10 tests: AI games won on lore, and set pieces for each rule).
   - Not modeled yet: Universal and named-class Shift, "if an ink drop was spent" bonuses, and discard-choice effects.
+- **Arcade Showdown (seventh clone, playable; mechanics reference: UniVersus, rules reference 1.2.9):** `packages/modules/arcade-showdown`. An original arcade fighting-game cast, from a disgraced ronin and an exorcist nun to a sentient vending machine and a skillet-wielding grandma.
+  - 60 cards in six styles (Fury, Flow, Grit, Spirit, Chaos, Honor), six fighters (vitality and hand size; once-a-turn Enhance or Response) and four 60-card decks; cards must share a style with the fighter.
+  - Rules: skill checks with progressive difficulty; foundations committed to cover a shortfall; a failed check ends the turn; the card pool sorted at the end of the turn; attacks with zone, speed and damage; the enhance step; blocks from hand with a check (full or half); momentum from attacks that hit; draw up to hand size each turn; the first player skips the first draw and nobody attacks on their first turn.
+  - Keywords: EX, Powerful, Stun, Breaker, Flash, Combo.
+  - Tests: `tests/arcade-showdown.test.ts` (7 tests: knockouts in AI games, and set pieces for each rule).
+  - Not modeled yet: Multiple, Throw, Desperation, Reversal, Gauge, power tokens, transforms, and abilities that respond to specific card types.
 - **Taste Dimension (fifth clone, playable; mechanics reference: Yu-Gi-Oh!):** `packages/modules/taste-dimension`.
   - Content:
     - 46 cards (a content pass comes later): four kitchens (Dim Sum Dynasty, Inferno Noodle House, Patisserie Royale, Spice Market);

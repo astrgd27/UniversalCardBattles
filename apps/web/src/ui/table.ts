@@ -530,7 +530,14 @@ function friendly(e: Record<string, any>, c: C): string | null {
       if (e.to === 'banished') return `${cn(e.card)} is banished`;
       return null;
     case 'attack': return `${c.label(e.o ?? e.attacker)} attacks ${c.label(e.t ?? e.target)}`;
-    case 'blocked': return e.o ? `${c.label(e.o)} blocks${e.a ? ` ${c.label(e.a)}` : ''}` : null;
+    case 'blocked': return e.o ? `${c.label(e.o)} blocks${e.a ? ` ${c.label(e.a)}` : ''}${e.full === true ? ' completely' : e.full === false ? ' (half damage)' : ''}` : null;
+    case 'checked': return `${who(e.p)} check${s(e.p)}: ${cn(e.card)} shows ${e.v} (needs ${e.need}) — ${e.ok ? 'pass' : 'fail'}`;
+    case 'checkFail': return `${who(e.p)} fail${s(e.p)} a check: the card is discarded and the turn ends`;
+    case 'blockFailed': return `${who(e.p)} fail${s(e.p)} the block check`;
+    case 'breaker': return `Breaker: ${who(e.p) === 'You' ? 'your' : "the opponent's"} next check gets -${e.n}`;
+    case 'enhanced': return `${c.label(e.o)} gets +${e.n} ${e.what}`;
+    case 'stunned': return `${who(e.p)} ${who(e.p) === 'You' ? 'are' : 'is'} stunned: ${e.n} foundation${e.n === 1 ? '' : 's'} committed`;
+    case 'momentum': return `${who(e.p)} gain${s(e.p)} momentum`;
     case 'blockAsk': return `Blockers for ${c.label(e.a)}?`;
     case 'menace': return `${c.label(e.a)} has menace: one blocker isn't enough`;
     case 'walkerHit': return `${c.label(e.o)} loses ${e.n} loyalty`;
