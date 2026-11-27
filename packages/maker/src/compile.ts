@@ -169,7 +169,8 @@ const WHEN_TEXT: Record<string, string> = {
 const condText = (k: Cond | undefined, bp: Blueprint) => !k ? '' : k.k === 'units' ? `if you control ${k.n ?? 1} or more units, ` : k.k === 'life' ? `if you have ${k.n ?? 5} or less life, `
   : k.k === 'hand' ? `if you have ${k.n ?? 0} or fewer cards in hand, ` : k.k === 'yourTurn' ? 'during your turn, ' : k.k === 'res' ? `if you have ${k.n ?? 1} or more ${bp.resource.name}, `
     : k.k === 'counter' ? `if this has ${k.n ?? 1} or more ${nm(bp, 'counters', k.counter)} counters, ` : k.k === 'zone' ? `if you have ${k.n ?? 1} or more cards in ${zoneName(bp, k.zone ?? 'grave')}, `
-      : k.k === 'played' ? `if you played ${(k.n ?? 1) === 1 ? 'another card' : `${k.n} other cards`} this turn, ` : 'if the custom condition holds, ';
+      : k.k === 'played' ? `if you played ${(k.n ?? 1) === 1 ? 'another card' : `${k.n} other cards`} this turn, `
+        : k.k === 'attached' ? `if this has ${k.n ?? 1} or more ${bp.resource.name} given to it, ` : 'if the custom condition holds, ';
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 export function costText(a: Ability, bp: Blueprint): string {
   return [a.tap && 'Exhaust', a.cost && `pay ${a.cost}`, a.discard && `discard ${a.discard}`, a.sacrifice && 'sacrifice a unit', a.life && `pay ${a.life} life`,
@@ -302,6 +303,7 @@ function condExpr(x: Ctx, k: Cond | undefined): X | null {
     case 'counter': return ge(g('$self', `c_${k.counter ?? 'x'}`), k.n ?? 1);
     case 'zone': return ge(cnt(cards('$me', k.zone ?? 'grave')), k.n ?? 1);
     case 'played': return ge(g('$me', 'plays'), (k.n ?? 1) + 1);
+    case 'attached': return ge(g('$self', 'don'), k.n ?? 1);
     case 'raw': return k.raw ?? true;
   }
 }
@@ -464,7 +466,7 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
   const stopped = (o: X, what: 'attack' | 'block') => (bp.counters ?? []).filter((k) => k.stops?.includes(what)).map((k) => eq(g(o, `c_${k.id}`), 0));
   fn('canAtk', ['$o'], AND(eq(g('$o', 'ex'), 0), eq(g('$o', 'pos'), 0), NOT(g('$o', 'faceDown')), NOT(has('$o', 'noAttack')), ...stopped('$o', 'attack'),
     c.sickness ? OR(lt(g('$o', 'newT'), '$turn'), has('$o', 'haste'), atLeader('$o')) : L(true),
-    c.firstTurnAttack ? L(true) : ne('$turn', 1),
+    c.firstTurnAttack ? L(true) : c.firstTurnEach ? gt(g(ctrl('$o'), 'turns'), 1) : ne('$turn', 1),
     atkZ.length < UZ.length ? OR(atLeader('$o'), inl(g('$o', 'zone'), atkZ)) : L(true)));
   fn('energy', ['$u'], flt(['linked', '$u', 'bearer'], eq(g('$it', 'role'), 'resource')));
   const trib = [...r.tribute].sort((a, b) => b.level - a.level);
@@ -481,9 +483,12 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
     IF(eq(g('$tl', 'zone'), 'limbo'), [['move', '$tl', 'grave']])],
   [IF(AND(inl(g(card, 'role'), UNIT_ROLES), C('roomFor', card, pl)), [...UZ.map((z) => IF(eq(def(card, 'zone'), z), [['move', card, z, { as: '$tn' }], SET('$tn', 'newT', '$turn')]))])])];
   proc('hitN', ['$p', '$hits', '$amt', '$src'], [
-    ...(x.lifeCards ? [EACH(range('$hits'), '$i', [IF(eq(cnt(cards('$p', 'life')), 0), [['lose', '$p']], [LET('$lc', first(['top', '$p', 'life', 1])), ['move', '$lc', 'hand', { as: '$lh' }], emit('lifeLost', { p: '$p' }),
+    ...(x.lifeCards ? [EACH(range('$hits'), '$i', [IF(eq(cnt(cards('$p', 'life')), 0), [['lose', '$p']], [LET('$lc', first(['top', '$p', 'life', 1])), ...(x.hasRule('banish') ? [IF(AND(isObj('$src'), has('$src', 'banish')), [['move', '$lc', 'grave'], emit('lifeLost', { p: '$p', banished: 1 })], [
+      ['move', '$lc', 'hand', { as: '$lh' }], emit('lifeLost', { p: '$p' }),
       ...(bp.win.lifeTriggers ? [IF(has('$lh', 'trigger'), [choose({ who: '$p', from: L(['Use its trigger', 'Keep it in hand']), min: 1, max: 1, as: '$tu', prompt: 'A life card with a trigger! Use it for free?' }),
-        IF(eq('$tu', 'Use its trigger'), triggerPlay('$lh', '$p'))])] : [])])])]
+        IF(eq('$tu', 'Use its trigger'), triggerPlay('$lh', '$p'))])] : [])])] : [['move', '$lc', 'hand', { as: '$lh' }], emit('lifeLost', { p: '$p' }),
+      ...(bp.win.lifeTriggers ? [IF(has('$lh', 'trigger'), [choose({ who: '$p', from: L(['Use its trigger', 'Keep it in hand']), min: 1, max: 1, as: '$tu', prompt: 'A life card with a trigger! Use it for free?' }),
+        IF(eq('$tu', 'Use its trigger'), triggerPlay('$lh', '$p'))])] : [])])])])]
       : x.life ? [['damage', '$p', '$amt', '$src']] : [])]);
   proc('discardN', ['$p', '$n'], [LET('$k', mn('$n', cnt(cards('$p', 'hand')))), IF(gt('$k', 0), [
     choose({ who: '$p', from: cards('$p', 'hand'), min: '$k', max: '$k', as: '$ds', prompt: 'Discard' }), ['move', '$ds', 'grave']])]);
@@ -650,7 +655,7 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
   const phases: X[] = bp.turn.map((ph) => {
     switch (ph.kind) {
       case 'ready': return { id: ph.id, auto: true, do: [INC(ME, 'turns', 1), ...forPlayers(ph.each, (p) => [untapOf(p), ...(ap ? [SET(p, 'ap', r.actions)] : [])]),
-        ...(usesPlayed ? [EACH(['players'], '$pq', [SET('$pq', 'plays', 0)])] : []), ...temp, ...hold,
+        ...(usesPlayed ? [EACH(['players'], '$pq', [SET('$pq', 'plays', 0)])] : []), ...(r.give ? [EACH(cat(units(x, ME), ...(x.leader ? [cards(ME, 'leader')] : [])), '$dq', [SET('$dq', 'don', 0)])] : []), ...temp, ...hold,
         ...(hasResPhase ? [] : resourceStep), emit('turnStart', { p: ME })] };
       case 'draw': return { id: ph.id, auto: true, do: [IF(NOT(AND(eq('$turn', 1), L(bp.setup.skipFirstDraw))), forPlayers(ph.each, (p) =>
         [ph.drawTo ? ['draw', p, mx(0, sub(ph.drawTo, cnt(cards(p, 'hand'))))] : ['draw', p, ph.n ?? 1]]))] };
@@ -750,9 +755,9 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
     source: flt(cards('$me', 'hand'), AND(eq(g('$it', 'role'), 'resource'), gt(cnt(units(x, '$me')), 0))),
     targets: [{ as: '$b', from: units(x, '$me'), prompt: `Attach ${r.name} to which unit?` }],
     do: [['move', '$self', 'support', { as: '$en' }], ['link', '$en', 'bearer', '$b'], SET('$en', 'att', 1)] };
-  if (r.boost > 0 && x.pool) Aa.boost = { label: `Spend 1 ${r.name}: +${r.boost} ${nm(bp, 'stats', POW)}`, phases: x.fast, ...sp(2),
+  if (r.boost > 0 && x.pool) Aa.boost = { label: r.give ? `Give 1 ${r.name}: +${r.boost} ${nm(bp, 'stats', POW)}` : `Spend 1 ${r.name}: +${r.boost} ${nm(bp, 'stats', POW)}`, phases: r.give ? x.main : x.fast, ...sp(2),
     source: flt(cat(units(x, '$me'), ...(x.leader ? [cards('$me', 'leader')] : [])), ['canPay', '$me', 'mana', 1]),
-    cost: [['pay', '$me', 'mana', 1]], do: [['modify', '$self', { layer: 'add', mods: [{ op: 'add', stat: POW, value: r.boost }], until: 'turn' }]] };
+    cost: [['pay', '$me', 'mana', 1]], do: [['modify', '$self', { layer: 'add', mods: [{ op: 'add', stat: POW, value: r.boost }], until: 'turn' }], ...(r.give ? [INC('$self', 'don', 1), emit('given', { o: '$self', p: '$me' })] : [])] };
   if (c.counterStep && x.battle && bp.stats.some((s) => s.id === 'counter')) Aa.counterCard = { label: 'Counter', phases: ['respond'], ...sp(2),
     source: flt(cards('$me', 'hand'), AND(gt(def('$it', 'counter'), 0), eq('$win.defender', '$me'))),
     do: [['move', '$self', 'grave'], LET('$ct', Q(isP(T), x.leader ? first(cards('$me', 'leader')) : 0, T)),
@@ -850,7 +855,7 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
   const rules: Record<string, any> = {
     players: { min: 2, max: 2 },
     playerVars: { life: bp.win.life, score: 0, cap: 0, turns: 0, ap: 0, pp: 0, ...(usesPlayed ? { plays: 0 } : {}) },
-    objectVars: { dmg: 0, ex: 0, newT: 0, pos: 0, shu: 0, att: 0, ...(conq ? { atk: 0, dfn: 0 } : {}), ...Object.fromEntries(counters.map((k) => [`c_${k.id}`, 0])) },
+    objectVars: { dmg: 0, ex: 0, newT: 0, pos: 0, shu: 0, att: 0, ...(conq ? { atk: 0, dfn: 0 } : {}), ...(r.give ? { don: 0 } : {}), ...Object.fromEntries(counters.map((k) => [`c_${k.id}`, 0])) },
     gameVars: { first: 0, started: 0, bat: 0, rem: 0, ...Object.fromEntries(lanes.map((_, i) => [`c${i + 1}`, 0])), ...(conq ? Object.fromEntries(lanes.map((_, i) => [`s${i + 1}`, 0])) : {}) },
     zones,
     deckZone: 'deck', handZone: 'hand', graveZone: 'grave',
@@ -898,7 +903,7 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
     ...Object.fromEntries(bp.keywords.map((k) => [x.kwKey(k.id), k.name])), ...Object.fromEntries(counters.map((k) => [`c_${k.id}`, `${k.icon ?? ''}${k.name}`])),
     life: x.lifeCards && !x.life ? 'Life cards' : 'Life', score: 'Points', dmg: 'damage', field: 'Board', support: 'Support', resources: bp.resource.name, resdeck: `${bp.resource.name} deck`,
     leader: 'Leader', prizes: 'Prizes', banished: 'Banished', ...Object.fromEntries((bp.zones ?? []).map((z) => [z.id, z.name])), extra: 'Extra deck', active: 'Active', bench: 'Bench', base: 'Base', limbo: 'Resolving', grave: 'Discard', pitch: 'Pitched', ap: 'Actions', pp: bp.resource.name,
-    ...Object.fromEntries(lanes.map((z, i) => [z, c.lanes[i]])), ...(x.sites ? Object.fromEntries(lanes.map((z, i) => [`site${i + 1}`, `⚑ ${c.lanes[i]}`])) : {}), champion: 'Champion', sites: 'Battlefields in reserve', ...Object.fromEntries((arenas ?? []).map((a) => [a.id, a.name])),
+    ...Object.fromEntries(lanes.map((z, i) => [z, c.lanes[i]])), ...(x.sites ? Object.fromEntries(lanes.map((z, i) => [`site${i + 1}`, `⚑ ${c.lanes[i]}`])) : {}), champion: 'Champion', sites: 'Battlefields in reserve', don: `${bp.resource.name} given`, ...Object.fromEntries((arenas ?? []).map((a) => [a.id, a.name])),
     ...bp.zoneNames };
   for (const k of bp.colors) labels[`mana:${k.id}`] = k.name;
   labels['mana:c'] = x.recycle ? 'Energy' : bp.resource.name;

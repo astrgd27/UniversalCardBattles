@@ -19,7 +19,7 @@
 - **Order:**
   1. Clean slate (done).
   2. Battle-screen rebuild.
-  3. The games one at a time: Generation Wars (playable) → Ringworld Rumble → Looboo → Crystal Circuit → Taste Dimension.
+  3. The games one at a time: Generation Wars (playable) → Ringworld Rumble (playable) → Looboo → Crystal Circuit → Taste Dimension.
   4. Shop, campaign and multiplayer polish.
 - **Battle screen, part 1 (done):** a battle director (`apps/web/src/ui/director.ts`) turns the viewer's events into beats that play one at a time:
   - a caption for every opponent move;
@@ -56,6 +56,24 @@
     - choosing battlefields and damage assignment by hand (both are automatic);
     - burn-out on an empty deck (decking out loses).
   - Next: more cards per generation, a Hidden/Deflect pass, then Ringworld Rumble.
+- **Ringworld Rumble (second clone, playable; mechanics reference: One Piece Card Game):** `packages/modules/ringworld-rumble`.
+  - Built the same way as Generation Wars: a Workshop blueprint compiled by `npm run -s modules`, with a staleness test and "Edit in the Workshop".
+  - Content:
+    - 71 cards: 6 wrestling styles × 11 (High-Flyers, Grapplers, Showboats, Heels, Hardcore, Legends), 4 two-style Headliners, Hype!!;
+    - 4 decks (50 main + 10 Hype!!).
+  - Rules:
+    - Headliner in play, with life cards equal to its Life;
+    - Hype!! deck: 1 on the first player's first turn, then 2 a turn. Pay costs from it, or give it to the Headliner or a wrestler for +1000 this turn ("Hype ×N" conditions read what was given);
+    - nobody attacks on their own first turn; wrestlers need a turn unless they have Hot Tag (Rush);
+    - attack the Headliner or a rested wrestler; attackers win ties;
+    - Run-In (Blocker) redirect, then a counter step: discard Counter values from hand or play Reversals;
+    - life cards go to hand, with Comeback (Trigger) plays; Double Team takes 2 life, Pinfall trashes them; 5 wrestlers max.
+  - Balance: heuristic vs heuristic, 8–10 games per pairing, is about 25–75 after two tuning passes.
+  - Not yet emulated:
+    - "rest your DON" costs other than returning Hype!!;
+    - card types/attributes (traits) and searching by them;
+    - choosing which wrestler to trash when the ring is full;
+    - counters lasting "this battle" (they last the turn).
 - **Clean slate (done):**
   - Every module and its artwork was deleted (NIGHTFALL, Shadow Earth and the Workshop starter games; git history keeps them).
   - The eight small reference games survive only as engine test fixtures in `packages/test-harness/fixtures`.

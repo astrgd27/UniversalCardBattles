@@ -147,6 +147,14 @@ Options on the Battlefields combat mode, the resource deck and setup. Generation
   - the effect "look at the top card, may put it on the bottom" (`scry`);
   - the condition "if you played N other cards this turn" (`played`, i.e. Legion).
 
+## Leader battles with given resources (Advanced)
+Ringworld Rumble (`packages/modules/ringworld-rumble`) is built from these options on top of the leader, life-card, target-combat and counter systems.
+- **`resource.give`** (with `boost`): in your main phase, attach 1 unspent resource to your leader or a unit for +boost power this turn. Each unit counts what it was given (shown on the card), and it resets at your next turn.
+- **Condition "if this has N or more given to it"** (`attached`): the "×N" style of ability, e.g. "When this attacks, if it has 1 or more Hype!! given to it: …".
+- **Keyword rule `banish`:** life cards this attacker takes go to the discard pile with no trigger.
+- **`combat.firstTurnEach`** (with `firstTurnAttack` off): neither player attacks on their own first turn, not just on turn 1.
+- Counter events are quick spells that target "the unit being attacked" (`battleTarget`) or "the attacking unit" (`attacker`), played in the response step.
+
 ## Mechanics Shelf (mix and match)
 A station listing 40 recipes in seven groups:
 - Resources

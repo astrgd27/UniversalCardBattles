@@ -63,7 +63,7 @@ function effectsSince(ui: UI, v: View): Fx {
     else if (e.type === 'modified' && e.targets) for (const t of e.targets) fx.glow.add(t);
     else if (e.type === 'changed' && /^p\d+$/.test(e.ref)) { if (!fx.pulse.has(e.ref)) fx.pulse.set(e.ref, new Set()); fx.pulse.get(e.ref)!.add(e.name); }
     else if (announce[e.type] && from > 0) fx.banners.push(announce[e.type].replace(/\{(\w+)\}/g, (_: string, k: string) => (typeof e[k] === 'string' ? (/^p\d+$/.test(e[k]) ? who(e[k]) : m.m.card.get(e[k])?.name ?? e[k]) : String(e[k] ?? ''))));
-    else if (e.type === 'phase' && e.phase === first && from > 0) fx.banners.push(e.active === ui.viewer && ui.seats[+ui.viewer.slice(1)] === 'human' ? 'Your turn' : `${who(e.active)}'s turn`);
+    else if (e.type === 'phase' && e.phase === first && from > 0) fx.banners.push(who(e.active) === 'You' ? 'Your turn' : `${who(e.active)}'s turn`);
   }
   const counts: Record<string, number> = {};
   for (const [k, z] of Object.entries(v.zones)) {
@@ -495,7 +495,7 @@ function friendly(e: Record<string, any>, c: C): string | null {
     case 'action': {
       if (e.action === 'pass') return null;
       const [base, i] = String(e.action).split('#');
-      if (/^(attack|march|quest)$/.test(base)) return null;
+      if (/^(attack|march|quest)$/.test(base) || (base === 'boost' && /^Give/.test(mod.rules.actions[base]?.label ?? ''))) return null;
       const d = mod.rules.actions[base];
       const ab = i !== undefined && d?.activated && e.card ? (mod.card.get(e.card) as any)?.[d.activated]?.[+i]?.label : undefined;
       const verb = (ab ?? d?.label ?? base).toLowerCase();
@@ -528,6 +528,7 @@ function friendly(e: Record<string, any>, c: C): string | null {
     case 'marched': return `${who(e.p)} move${s(e.p)} ${e.n} unit${e.n === 1 ? '' : 's'} into ${lbl(e.z)}`;
     case 'recalled': return `Attackers fall back from ${lbl(e.z)}`;
     case 'showdownFight': return `Fight at ${lbl(e.z)}: ${e.a} against ${e.b}`;
+    case 'given': return `${who(e.p)} give${s(e.p)} ${lbl('resources')} to ${c.label(e.o)}`;
     case 'peek': return e.card ? `You look at the top card: ${cn(e.card)}` : null;
     case 'lost': return `${who(e.player)} ${who(e.player) === 'You' ? 'are' : 'is'} out`;
     case 'gameOver': return 'Game over';

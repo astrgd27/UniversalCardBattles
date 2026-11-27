@@ -1,0 +1,2062 @@
+{
+ "v": 1,
+ "id": "ringworld-rumble",
+ "name": "Ringworld Rumble",
+ "blueprint": "blank",
+ "author": "Universal Card Battles",
+ "tagline": "Reincarnated wrestlers. A ring-shaped world. Every title is on the line.",
+ "look": {
+  "accent": "#ef4444",
+  "accent2": "#facc15",
+  "glyph": "🤼"
+ },
+ "colors": [
+  {
+   "id": "flyer",
+   "name": "High-Flyers",
+   "hex": "#ef4444",
+   "icon": "☄"
+  },
+  {
+   "id": "grappler",
+   "name": "Grapplers",
+   "hex": "#22c55e",
+   "icon": "🌿"
+  },
+  {
+   "id": "showboat",
+   "name": "Showboats",
+   "hex": "#3b82f6",
+   "icon": "🎤"
+  },
+  {
+   "id": "heel",
+   "name": "Heels",
+   "hex": "#a855f7",
+   "icon": "🪑"
+  },
+  {
+   "id": "hardcore",
+   "name": "Hardcore",
+   "hex": "#52525b",
+   "icon": "⛓"
+  },
+  {
+   "id": "legend",
+   "name": "Legends",
+   "hex": "#eab308",
+   "icon": "🏆"
+  }
+ ],
+ "stats": [
+  {
+   "id": "power",
+   "name": "Power",
+   "icon": "⚔"
+  },
+  {
+   "id": "counter",
+   "name": "Counter",
+   "icon": "✋"
+  },
+  {
+   "id": "life",
+   "name": "Life",
+   "icon": "♥"
+  }
+ ],
+ "types": [
+  {
+   "id": "wrestler",
+   "name": "Wrestler",
+   "role": "unit",
+   "frame": {
+    "base": "skirmisher",
+    "cost": "tl",
+    "stats": [
+     {
+      "stat": "power",
+      "pos": "bl",
+      "icon": "⚔"
+     },
+     {
+      "stat": "counter",
+      "pos": "br",
+      "icon": "✋"
+     }
+    ],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🤼"
+  },
+  {
+   "id": "spot",
+   "name": "Spot",
+   "role": "spell",
+   "frame": {
+    "base": "spell",
+    "cost": "tl",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "✦"
+  },
+  {
+   "id": "reversal",
+   "name": "Reversal",
+   "role": "fast",
+   "frame": {
+    "base": "spell",
+    "cost": "tl",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "↺"
+  },
+  {
+   "id": "venue",
+   "name": "Venue",
+   "role": "permanent",
+   "frame": {
+    "base": "spell",
+    "cost": "tl",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🏟"
+  },
+  {
+   "id": "headliner",
+   "name": "Headliner",
+   "role": "leader",
+   "frame": {
+    "base": "leader",
+    "cost": "none",
+    "stats": [
+     {
+      "stat": "power",
+      "pos": "bl",
+      "icon": "⚔"
+     },
+     {
+      "stat": "life",
+      "pos": "br",
+      "icon": "♥"
+     }
+    ],
+    "art": 52,
+    "text": true
+   },
+   "icon": "👑"
+  },
+  {
+   "id": "hype",
+   "name": "Hype!!",
+   "role": "resource",
+   "frame": {
+    "base": "resource",
+    "cost": "none",
+    "stats": [],
+    "art": 70,
+    "text": false
+   },
+   "icon": "🔥"
+  }
+ ],
+ "keywords": [
+  {
+   "id": "rush",
+   "name": "Hot Tag",
+   "rule": "haste",
+   "text": "Hot Tag: can attack the turn it is played."
+  },
+  {
+   "id": "blocker",
+   "name": "Run-In",
+   "rule": "blocker",
+   "text": "Run-In: when an enemy attacks, you may rest this to take the attack instead."
+  },
+  {
+   "id": "double",
+   "name": "Double Team",
+   "rule": "double",
+   "text": "Double Team: hits to the Headliner take 2 life cards."
+  },
+  {
+   "id": "banish",
+   "name": "Pinfall",
+   "rule": "banish",
+   "text": "Pinfall: life cards it takes go to the trash, and their Comeback does not happen."
+  },
+  {
+   "id": "trigger",
+   "name": "Comeback",
+   "rule": "trigger",
+   "text": "Comeback: when this is taken from your life, you may play it for free."
+  },
+  {
+   "id": "vision",
+   "name": "Scouting Report",
+   "rule": "none",
+   "text": "Scouting Report: when played, look at the top card of your deck; you may put it on the bottom.",
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "scry",
+       "n": 1
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "turn": [
+  {
+   "id": "refresh",
+   "name": "Refresh",
+   "kind": "ready"
+  },
+  {
+   "id": "draw",
+   "name": "Draw",
+   "kind": "draw",
+   "n": 1
+  },
+  {
+   "id": "hype",
+   "name": "Hype!!",
+   "kind": "resource"
+  },
+  {
+   "id": "main",
+   "name": "Main",
+   "kind": "main"
+  },
+  {
+   "id": "end",
+   "name": "End",
+   "kind": "end"
+  }
+ ],
+ "timing": "simple",
+ "resource": {
+  "mode": "deck",
+  "name": "Hype!!",
+  "icon": "🔥",
+  "start": 1,
+  "perTurn": 2,
+  "max": 10,
+  "deckSize": 10,
+  "boost": 1000,
+  "give": true,
+  "summonsPerTurn": 0,
+  "tribute": []
+ },
+ "combat": {
+  "mode": "target",
+  "power": "power",
+  "health": null,
+  "defense": null,
+  "damage": "persist",
+  "sickness": true,
+  "firstTurnAttack": false,
+  "firstTurnEach": true,
+  "targetUnits": "exhausted",
+  "direct": "always",
+  "directOnlyIfEmpty": false,
+  "leaderDefends": true,
+  "leaderAttacks": true,
+  "compare": {
+   "ties": "defender",
+   "loser": false,
+   "overflow": false
+  },
+  "positions": false,
+  "counterStep": true,
+  "fieldSize": 5,
+  "benchSize": 0,
+  "attackEndsTurn": false,
+  "weakness": 1,
+  "lanes": []
+ },
+ "win": {
+  "life": 0,
+  "lifeCards": 0,
+  "prizes": 0,
+  "points": 0,
+  "deckOut": true,
+  "noUnits": false,
+  "lifeTriggers": true
+ },
+ "setup": {
+  "hand": 5,
+  "mulligan": true,
+  "handLimit": 30,
+  "deckMin": 50,
+  "deckMax": 50,
+  "maxCopies": 4,
+  "skipFirstDraw": true,
+  "leader": true,
+  "leaderColors": true,
+  "extraMax": 0,
+  "turnLimit": 60
+ },
+ "zoneNames": {
+  "field": "Ring",
+  "support": "Venue",
+  "grave": "Trash",
+  "resdeck": "Hype!! deck",
+  "resources": "Hype!!",
+  "leader": "Headliner",
+  "life": "Life"
+ },
+ "cards": [
+  {
+   "id": "rookie-rudo-hopper",
+   "name": "Rookie Rudo Hopper",
+   "type": "wrestler",
+   "cost": 1,
+   "stats": {
+    "power": 2000,
+    "counter": 1000
+   },
+   "color": "flyer",
+   "keywords": [
+    "rush"
+   ],
+   "abilities": [],
+   "flavor": "Fell through a portal mid-moonsault. Landed it."
+  },
+  {
+   "id": "little-comet",
+   "name": "Little Comet",
+   "type": "wrestler",
+   "cost": 1,
+   "stats": {
+    "power": 1000,
+    "counter": 2000
+   },
+   "color": "flyer",
+   "keywords": [],
+   "abilities": [],
+   "flavor": "Twelve years old, three feet tall, all elbow."
+  },
+  {
+   "id": "masked-sparrow",
+   "name": "Masked Sparrow",
+   "type": "wrestler",
+   "cost": 2,
+   "stats": {
+    "power": 3000,
+    "counter": 1000
+   },
+   "color": "flyer",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "attack",
+     "do": [
+      {
+       "k": "buff",
+       "n": 1000,
+       "target": "self"
+      }
+     ]
+    }
+   ],
+   "flavor": "Her mask was blessed by a sky goddess. Allegedly."
+  },
+  {
+   "id": "phoenix-splash-prodigy",
+   "name": "Phoenix Splash Prodigy",
+   "type": "wrestler",
+   "cost": 2,
+   "stats": {
+    "power": 3000,
+    "counter": 2000
+   },
+   "color": "flyer",
+   "keywords": [
+    "trigger"
+   ],
+   "abilities": [],
+   "flavor": "Dies on every dive. Rises before the three-count."
+  },
+  {
+   "id": "cometfall-luchador",
+   "name": "Cometfall Luchador",
+   "type": "wrestler",
+   "cost": 3,
+   "stats": {
+    "power": 4000,
+    "counter": 1000
+   },
+   "color": "flyer",
+   "keywords": [
+    "rush"
+   ],
+   "abilities": [],
+   "flavor": "Arrives from the top turnbuckle, the rafters, or orbit."
+  },
+  {
+   "id": "springboard-saint",
+   "name": "Springboard Saint",
+   "type": "wrestler",
+   "cost": 4,
+   "stats": {
+    "power": 5000,
+    "counter": 1000
+   },
+   "color": "flyer",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "buff",
+       "n": 2000,
+       "target": "ownUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Blesses the ropes before every match. The ropes appreciate it."
+  },
+  {
+   "id": "sky-kingdom-sentai",
+   "name": "Sky Kingdom Sentai",
+   "type": "wrestler",
+   "cost": 6,
+   "stats": {
+    "power": 7000
+   },
+   "color": "flyer",
+   "keywords": [
+    "rush",
+    "double"
+   ],
+   "abilities": [],
+   "flavor": "Five rangers. One giant cannonball."
+  },
+  {
+   "id": "top-rope-dive",
+   "name": "Top-Rope Dive",
+   "type": "spot",
+   "cost": 1,
+   "stats": {},
+   "color": "flyer",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "buff",
+       "n": 2000,
+       "target": "ownUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Ill-advised. Spectacular."
+  },
+  {
+   "id": "meteor-senton",
+   "name": "Meteor Senton",
+   "type": "spot",
+   "cost": 2,
+   "stats": {},
+   "color": "flyer",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "destroy",
+       "target": "enemyUnit",
+       "filter": {
+        "stat": "power",
+        "op": "le",
+        "val": 3000
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "The signature move of a masked legend, borrowed without asking."
+  },
+  {
+   "id": "second-wind",
+   "name": "Second Wind",
+   "type": "reversal",
+   "cost": 1,
+   "stats": {},
+   "color": "flyer",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "buff",
+       "n": 2000,
+       "target": "battleTarget"
+      }
+     ]
+    }
+   ],
+   "flavor": "The crowd chants. The knees remember."
+  },
+  {
+   "id": "ringworld-skydome",
+   "name": "Ringworld Skydome",
+   "type": "venue",
+   "cost": 2,
+   "stats": {},
+   "color": "flyer",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "static",
+     "do": [
+      {
+       "k": "aura",
+       "n": 1000,
+       "target": "allOwnUnits",
+       "filter": {
+        "keyword": "rush"
+       }
+      }
+     ],
+     "if": {
+      "k": "yourTurn"
+     }
+    }
+   ],
+   "flavor": "An arena built on a cloud. Bring a parachute."
+  },
+  {
+   "id": "mat-monk",
+   "name": "Mat Monk",
+   "type": "wrestler",
+   "cost": 1,
+   "stats": {
+    "power": 2000,
+    "counter": 1000
+   },
+   "color": "grappler",
+   "keywords": [
+    "blocker"
+   ],
+   "abilities": [],
+   "flavor": "Took a vow of silence. Breaks it only to say \"ask him.\""
+  },
+  {
+   "id": "gentle-giant-trainee",
+   "name": "Gentle Giant Trainee",
+   "type": "wrestler",
+   "cost": 1,
+   "stats": {
+    "power": 3000
+   },
+   "color": "grappler",
+   "keywords": [],
+   "abilities": [],
+   "flavor": "Apologizes after every slam."
+  },
+  {
+   "id": "armbar-acolyte",
+   "name": "Armbar Acolyte",
+   "type": "wrestler",
+   "cost": 2,
+   "stats": {
+    "power": 3000,
+    "counter": 1000
+   },
+   "color": "grappler",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "exhaust",
+       "target": "enemyUnit",
+       "filter": {
+        "stat": "cost",
+        "op": "le",
+        "val": 3
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "Holds you down while explaining the elf tax code."
+  },
+  {
+   "id": "kneebar-dryad",
+   "name": "Kneebar Dryad",
+   "type": "wrestler",
+   "cost": 2,
+   "stats": {
+    "power": 2000,
+    "counter": 2000
+   },
+   "color": "grappler",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "ready",
+       "target": "ownUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Wraps around you like ivy. Very patient ivy."
+  },
+  {
+   "id": "forest-troll-grappler",
+   "name": "Forest Troll Grappler",
+   "type": "wrestler",
+   "cost": 3,
+   "stats": {
+    "power": 5000
+   },
+   "color": "grappler",
+   "keywords": [
+    "blocker"
+   ],
+   "abilities": [],
+   "flavor": "Lives under the ring apron. Charges a toll to leave."
+  },
+  {
+   "id": "ankle-lock-ent",
+   "name": "Ankle Lock Ent",
+   "type": "wrestler",
+   "cost": 4,
+   "stats": {
+    "power": 5000,
+    "counter": 1000
+   },
+   "color": "grappler",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "attack",
+     "do": [
+      {
+       "k": "exhaust",
+       "target": "enemyUnit",
+       "filter": {
+        "stat": "power",
+        "op": "le",
+        "val": 4000
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "Takes four hundred years to apply. Never lets go."
+  },
+  {
+   "id": "submission-sage",
+   "name": "Submission Sage",
+   "type": "wrestler",
+   "cost": 5,
+   "stats": {
+    "power": 6000,
+    "counter": 1000
+   },
+   "color": "grappler",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "exhaust",
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Knows two thousand holds. Teaches none of them."
+  },
+  {
+   "id": "world-tree-powerbomber",
+   "name": "World-Tree Powerbomber",
+   "type": "wrestler",
+   "cost": 7,
+   "stats": {
+    "power": 9000
+   },
+   "color": "grappler",
+   "keywords": [
+    "blocker"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "exhaust",
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Its roots reach the underworld. So does its powerbomb."
+  },
+  {
+   "id": "chain-wrestling",
+   "name": "Chain Wrestling",
+   "type": "spot",
+   "cost": 1,
+   "stats": {},
+   "color": "grappler",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "ready",
+       "target": "ownUnit"
+      },
+      {
+       "k": "buff",
+       "n": 1000,
+       "target": "ownUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Hold, reverse, reverse the reverse. The crowd falls asleep. Then it erupts."
+  },
+  {
+   "id": "rope-break",
+   "name": "Rope Break",
+   "type": "reversal",
+   "cost": 2,
+   "stats": {},
+   "color": "grappler",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "buff",
+       "n": 4000,
+       "target": "battleTarget"
+      }
+     ]
+    }
+   ],
+   "flavor": "Rule one of the Ringworld: the ropes are sacred."
+  },
+  {
+   "id": "the-sacred-mat-grove",
+   "name": "The Sacred Mat Grove",
+   "type": "venue",
+   "cost": 1,
+   "stats": {},
+   "color": "grappler",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "static",
+     "do": [
+      {
+       "k": "aura",
+       "n": 1000,
+       "target": "allOwnUnits",
+       "filter": {
+        "keyword": "blocker"
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "Canvas woven from moss. Smells like victory and mildew."
+  },
+  {
+   "id": "mic-check-manager",
+   "name": "Mic-Check Manager",
+   "type": "wrestler",
+   "cost": 1,
+   "stats": {
+    "power": 1000,
+    "counter": 1000
+   },
+   "color": "showboat",
+   "keywords": [
+    "vision"
+   ],
+   "abilities": [],
+   "flavor": "\"Is this thing on? IS THIS THING ON?\""
+  },
+  {
+   "id": "catchphrase-knight",
+   "name": "Catchphrase Knight",
+   "type": "wrestler",
+   "cost": 2,
+   "stats": {
+    "power": 3000,
+    "counter": 1000
+   },
+   "color": "showboat",
+   "keywords": [
+    "blocker"
+   ],
+   "abilities": [],
+   "flavor": "Has trademarked four words. None in a row."
+  },
+  {
+   "id": "promo-bard",
+   "name": "Promo Bard",
+   "type": "wrestler",
+   "cost": 2,
+   "stats": {
+    "power": 2000,
+    "counter": 2000
+   },
+   "color": "showboat",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      },
+      {
+       "k": "discard",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Rhymes \"suplex\" with \"duplex\" every single night."
+  },
+  {
+   "id": "merch-table-merchant",
+   "name": "Merch Table Merchant",
+   "type": "wrestler",
+   "cost": 3,
+   "stats": {
+    "power": 3000,
+    "counter": 1000
+   },
+   "color": "showboat",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "T-shirts, foam fingers, cursed amulets."
+  },
+  {
+   "id": "spotlight-sorceress",
+   "name": "Spotlight Sorceress",
+   "type": "wrestler",
+   "cost": 3,
+   "stats": {
+    "power": 4000,
+    "counter": 1000
+   },
+   "color": "showboat",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "bounce",
+       "target": "enemyUnit",
+       "filter": {
+        "stat": "cost",
+        "op": "le",
+        "val": 2
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "Points a spotlight at you. You vanish. Applause."
+  },
+  {
+   "id": "commentary-golem",
+   "name": "Commentary Golem",
+   "type": "wrestler",
+   "cost": 4,
+   "stats": {
+    "power": 5000,
+    "counter": 1000
+   },
+   "color": "showboat",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "attack",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ],
+     "if": {
+      "k": "attached",
+      "n": 1
+     }
+    }
+   ],
+   "flavor": "\"OH MY GOODNESS. OH MY GOODNESS.\" Repeat until destroyed."
+  },
+  {
+   "id": "pay-per-view-paladin",
+   "name": "Pay-Per-View Paladin",
+   "type": "wrestler",
+   "cost": 5,
+   "stats": {
+    "power": 6000,
+    "counter": 1000
+   },
+   "color": "showboat",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "bounce",
+       "target": "enemyUnit",
+       "filter": {
+        "stat": "cost",
+        "op": "le",
+        "val": 4
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "Only appears for a fee. Worth it."
+  },
+  {
+   "id": "cut-a-promo",
+   "name": "Cut a Promo",
+   "type": "spot",
+   "cost": 2,
+   "stats": {},
+   "color": "showboat",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "draw",
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "flavor": "Five minutes of yelling. The crowd loves it."
+  },
+  {
+   "id": "distraction-finish",
+   "name": "Distraction Finish",
+   "type": "reversal",
+   "cost": 1,
+   "stats": {},
+   "color": "showboat",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "buff",
+       "n": 2000,
+       "target": "battleTarget"
+      }
+     ]
+    }
+   ],
+   "flavor": "Look! Behind you! A dragon!"
+  },
+  {
+   "id": "stall-for-time",
+   "name": "Stall for Time",
+   "type": "reversal",
+   "cost": 2,
+   "stats": {},
+   "color": "showboat",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "buff",
+       "n": 4000,
+       "target": "battleTarget"
+      }
+     ]
+    }
+   ],
+   "flavor": "Rolls out of the ring. Shakes hands with a goblin. Rolls back in."
+  },
+  {
+   "id": "ringworld-big-top",
+   "name": "Ringworld Big Top",
+   "type": "venue",
+   "cost": 2,
+   "stats": {},
+   "color": "showboat",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      },
+      {
+       "k": "discard",
+       "n": 1
+      }
+     ],
+     "tap": true,
+     "cost": 1,
+     "once": true
+    }
+   ],
+   "flavor": "Three rings, one champion, a lot of clowns."
+  },
+  {
+   "id": "chair-swinging-imp",
+   "name": "Chair-Swinging Imp",
+   "type": "wrestler",
+   "cost": 1,
+   "stats": {
+    "power": 2000,
+    "counter": 1000
+   },
+   "color": "heel",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "attack",
+     "do": [
+      {
+       "k": "buff",
+       "n": 2000,
+       "target": "self"
+      }
+     ],
+     "if": {
+      "k": "attached",
+      "n": 1
+     }
+    }
+   ],
+   "flavor": "Brought a folding chair to the end of the world."
+  },
+  {
+   "id": "brass-knuckle-goblin",
+   "name": "Brass Knuckle Goblin",
+   "type": "wrestler",
+   "cost": 2,
+   "stats": {
+    "power": 3000,
+    "counter": 1000
+   },
+   "color": "heel",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "attack",
+     "do": [
+      {
+       "k": "buff",
+       "n": 1000,
+       "target": "self"
+      }
+     ]
+    }
+   ],
+   "flavor": "The referee looked away. The referee always looks away."
+  },
+  {
+   "id": "manager-with-a-briefcase",
+   "name": "Manager with a Briefcase",
+   "type": "wrestler",
+   "cost": 2,
+   "stats": {
+    "power": 2000,
+    "counter": 2000
+   },
+   "color": "heel",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "gain",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "What is in the briefcase? Hype. Mostly hype."
+  },
+  {
+   "id": "interference-twins",
+   "name": "Interference Twins",
+   "type": "wrestler",
+   "cost": 2,
+   "stats": {
+    "power": 3000,
+    "counter": 2000
+   },
+   "color": "heel",
+   "keywords": [
+    "blocker"
+   ],
+   "abilities": [],
+   "flavor": "Nobody has ever seen both at once. Nobody has ever checked."
+  },
+  {
+   "id": "low-blow-lich",
+   "name": "Low-Blow Lich",
+   "type": "wrestler",
+   "cost": 3,
+   "stats": {
+    "power": 4000,
+    "counter": 1000
+   },
+   "color": "heel",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "discard",
+       "n": 1,
+       "who": "opp"
+      }
+     ]
+    }
+   ],
+   "flavor": "Undead. Unsporting. Unpinnable."
+  },
+  {
+   "id": "cheap-shot-specter",
+   "name": "Cheap Shot Specter",
+   "type": "wrestler",
+   "cost": 3,
+   "stats": {
+    "power": 4000,
+    "counter": 1000
+   },
+   "color": "heel",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "buff",
+       "n": -2000,
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Haunts the turnbuckle you are about to hit."
+  },
+  {
+   "id": "ref-bump-vampire",
+   "name": "Ref Bump Vampire",
+   "type": "wrestler",
+   "cost": 4,
+   "stats": {
+    "power": 5000,
+    "counter": 1000
+   },
+   "color": "heel",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "buff",
+       "n": 2000,
+       "target": "self"
+      }
+     ],
+     "returnRes": 1,
+     "once": true
+    }
+   ],
+   "flavor": "Knocks out the referee in round one. Every round is round one."
+  },
+  {
+   "id": "syndicate-boss-in-a-silk-mask",
+   "name": "Syndicate Boss in a Silk Mask",
+   "type": "wrestler",
+   "cost": 6,
+   "stats": {
+    "power": 7000
+   },
+   "color": "heel",
+   "keywords": [
+    "double"
+   ],
+   "abilities": [],
+   "flavor": "Runs every promotion on the Ringworld. Wrestles in only one."
+  },
+  {
+   "id": "foreign-object",
+   "name": "Foreign Object",
+   "type": "spot",
+   "cost": 1,
+   "stats": {},
+   "color": "heel",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "buff",
+       "n": 2000,
+       "target": "ownUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "A lead pipe. A cursed tome. A toaster."
+  },
+  {
+   "id": "contract-dispute",
+   "name": "Contract Dispute",
+   "type": "spot",
+   "cost": 3,
+   "stats": {},
+   "color": "heel",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "discard",
+       "n": 1,
+       "who": "opp"
+      },
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Section 9, paragraph 4: you lose."
+  },
+  {
+   "id": "rake-the-eyes",
+   "name": "Rake the Eyes",
+   "type": "reversal",
+   "cost": 1,
+   "stats": {},
+   "color": "heel",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "buff",
+       "n": -3000,
+       "target": "attacker"
+      }
+     ]
+    }
+   ],
+   "flavor": "Illegal in nine kingdoms. Legal in this one."
+  },
+  {
+   "id": "barbed-wire-ghoul",
+   "name": "Barbed-Wire Ghoul",
+   "type": "wrestler",
+   "cost": 1,
+   "stats": {
+    "power": 2000,
+    "counter": 1000
+   },
+   "color": "hardcore",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "leave",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Wrapped in wire. Says it is comfortable."
+  },
+  {
+   "id": "thumbtack-wraith",
+   "name": "Thumbtack Wraith",
+   "type": "wrestler",
+   "cost": 2,
+   "stats": {
+    "power": 3000,
+    "counter": 1000
+   },
+   "color": "hardcore",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "destroy",
+       "target": "enemyUnit",
+       "filter": {
+        "stat": "power",
+        "op": "le",
+        "val": 3000
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "Scatters tacks across the mat. Floats above them."
+  },
+  {
+   "id": "light-tube-banshee",
+   "name": "Light-Tube Banshee",
+   "type": "wrestler",
+   "cost": 2,
+   "stats": {
+    "power": 3000,
+    "counter": 2000
+   },
+   "color": "hardcore",
+   "keywords": [
+    "banish"
+   ],
+   "abilities": [],
+   "flavor": "Her scream shatters fluorescent tubes. And careers."
+  },
+  {
+   "id": "ladder-necromancer",
+   "name": "Ladder Necromancer",
+   "type": "wrestler",
+   "cost": 3,
+   "stats": {
+    "power": 4000,
+    "counter": 1000
+   },
+   "color": "hardcore",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "recover",
+       "type": "wrestler"
+      }
+     ]
+    }
+   ],
+   "flavor": "Climbs the ladder to the afterlife. Brings people back down."
+  },
+  {
+   "id": "bone-crusher-brute",
+   "name": "Bone-Crusher Brute",
+   "type": "wrestler",
+   "cost": 3,
+   "stats": {
+    "power": 5000,
+    "counter": 1000
+   },
+   "color": "hardcore",
+   "keywords": [
+    "banish"
+   ],
+   "abilities": [],
+   "flavor": "Three-count? He counts to one."
+  },
+  {
+   "id": "table-breaker-ogre",
+   "name": "Table-Breaker Ogre",
+   "type": "wrestler",
+   "cost": 4,
+   "stats": {
+    "power": 6000,
+    "counter": 1000
+   },
+   "color": "hardcore",
+   "keywords": [],
+   "abilities": [],
+   "flavor": "Has never once gone through a table. The tables go through him."
+  },
+  {
+   "id": "deathmatch-revenant",
+   "name": "Deathmatch Revenant",
+   "type": "wrestler",
+   "cost": 5,
+   "stats": {
+    "power": 6000,
+    "counter": 1000
+   },
+   "color": "hardcore",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "destroy",
+       "target": "enemyUnit",
+       "filter": {
+        "stat": "power",
+        "op": "le",
+        "val": 5000
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "Lost every deathmatch. Keeps coming back."
+  },
+  {
+   "id": "hardcore-lich-king",
+   "name": "Hardcore Lich King",
+   "type": "wrestler",
+   "cost": 7,
+   "stats": {
+    "power": 9000
+   },
+   "color": "hardcore",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "destroy",
+       "target": "enemyUnit",
+       "filter": {
+        "stat": "power",
+        "op": "le",
+        "val": 6000
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "Rules the Underring. No rules apply."
+  },
+  {
+   "id": "no-disqualification",
+   "name": "No Disqualification",
+   "type": "spot",
+   "cost": 2,
+   "stats": {},
+   "color": "hardcore",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "destroy",
+       "target": "enemyUnit",
+       "filter": {
+        "stat": "power",
+        "op": "le",
+        "val": 3000
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "Anything goes. Mostly furniture."
+  },
+  {
+   "id": "steel-cage",
+   "name": "Steel Cage",
+   "type": "spot",
+   "cost": 4,
+   "stats": {},
+   "color": "hardcore",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "destroy",
+       "target": "enemyUnit",
+       "filter": {
+        "stat": "power",
+        "op": "le",
+        "val": 5000
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "Twenty feet of steel. Zero exits."
+  },
+  {
+   "id": "kendo-stick-save",
+   "name": "Kendo Stick Save",
+   "type": "reversal",
+   "cost": 2,
+   "stats": {},
+   "color": "hardcore",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "buff",
+       "n": 4000,
+       "target": "battleTarget"
+      }
+     ]
+    }
+   ],
+   "flavor": "Bamboo: nature's apology."
+  },
+  {
+   "id": "old-school-jobber",
+   "name": "Old-School Jobber",
+   "type": "wrestler",
+   "cost": 1,
+   "stats": {
+    "power": 2000,
+    "counter": 1000
+   },
+   "color": "legend",
+   "keywords": [
+    "trigger"
+   ],
+   "abilities": [],
+   "flavor": "Has lost eleven thousand matches. Still shows up."
+  },
+  {
+   "id": "ringside-grandma",
+   "name": "Ringside Grandma",
+   "type": "wrestler",
+   "cost": 1,
+   "stats": {
+    "power": 1000,
+    "counter": 2000
+   },
+   "color": "legend",
+   "keywords": [
+    "trigger"
+   ],
+   "abilities": [
+    {
+     "when": "leave",
+     "do": [
+      {
+       "k": "addLife",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Hits harder with the purse than you do with the elbow."
+  },
+  {
+   "id": "sunset-flip-elder",
+   "name": "Sunset Flip Elder",
+   "type": "wrestler",
+   "cost": 2,
+   "stats": {
+    "power": 2000,
+    "counter": 2000
+   },
+   "color": "legend",
+   "keywords": [
+    "trigger"
+   ],
+   "abilities": [],
+   "flavor": "Older than the Ringworld. Flips like it is new."
+  },
+  {
+   "id": "veteran-ring-crier",
+   "name": "Veteran Ring Crier",
+   "type": "wrestler",
+   "cost": 2,
+   "stats": {
+    "power": 3000,
+    "counter": 1000
+   },
+   "color": "legend",
+   "keywords": [
+    "trigger"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ],
+     "if": {
+      "k": "life",
+      "n": 2
+     }
+    }
+   ],
+   "flavor": "Announces every match. Remembers every one."
+  },
+  {
+   "id": "legendary-comeback-kid",
+   "name": "Legendary Comeback Kid",
+   "type": "wrestler",
+   "cost": 3,
+   "stats": {
+    "power": 4000,
+    "counter": 1000
+   },
+   "color": "legend",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "draw",
+       "n": 2
+      }
+     ],
+     "if": {
+      "k": "life",
+      "n": 2
+     }
+    }
+   ],
+   "flavor": "Down to his last breath. Exactly where he likes it."
+  },
+  {
+   "id": "hall-of-fame-inductee",
+   "name": "Hall of Fame Inductee",
+   "type": "wrestler",
+   "cost": 4,
+   "stats": {
+    "power": 5000,
+    "counter": 1000
+   },
+   "color": "legend",
+   "keywords": [
+    "trigger"
+   ],
+   "abilities": [],
+   "flavor": "Retired nine times. Unretired ten."
+  },
+  {
+   "id": "golden-era-tag-team",
+   "name": "Golden Era Tag Team",
+   "type": "wrestler",
+   "cost": 5,
+   "stats": {
+    "power": 6000,
+    "counter": 1000
+   },
+   "color": "legend",
+   "keywords": [
+    "double"
+   ],
+   "abilities": [],
+   "flavor": "Matching jackets since the first age of the world."
+  },
+  {
+   "id": "thirty-year-champion",
+   "name": "Thirty-Year Champion",
+   "type": "wrestler",
+   "cost": 6,
+   "stats": {
+    "power": 8000
+   },
+   "color": "legend",
+   "keywords": [
+    "blocker",
+    "trigger"
+   ],
+   "abilities": [],
+   "flavor": "Held the belt so long it grew roots."
+  },
+  {
+   "id": "last-second-kickout",
+   "name": "Last-Second Kickout",
+   "type": "reversal",
+   "cost": 2,
+   "stats": {},
+   "color": "legend",
+   "keywords": [
+    "trigger"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "addLife",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Two and nine-tenths."
+  },
+  {
+   "id": "rope-a-dope",
+   "name": "Rope-a-Dope",
+   "type": "reversal",
+   "cost": 1,
+   "stats": {},
+   "color": "legend",
+   "keywords": [
+    "trigger"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "buff",
+       "n": 2000,
+       "target": "battleTarget"
+      }
+     ]
+    }
+   ],
+   "flavor": "Let them punch themselves out. Works on dragons too."
+  },
+  {
+   "id": "retirement-match",
+   "name": "Retirement Match",
+   "type": "spot",
+   "cost": 3,
+   "stats": {},
+   "color": "legend",
+   "keywords": [
+    "trigger"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "destroy",
+       "target": "enemyUnit",
+       "filter": {
+        "stat": "power",
+        "op": "le",
+        "val": 4000
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "Career on the line. Not yours."
+  },
+  {
+   "id": "the-meteor-mask",
+   "name": "The Meteor Mask",
+   "type": "headliner",
+   "stats": {
+    "power": 5000,
+    "life": 4
+   },
+   "color": "flyer",
+   "color2": "grappler",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "attack",
+     "do": [
+      {
+       "k": "buff",
+       "n": 1000,
+       "target": "ownUnit"
+      }
+     ],
+     "if": {
+      "k": "attached",
+      "n": 1
+     }
+    }
+   ],
+   "flavor": "Crashed into the Ringworld from a burning sky, mask first."
+  },
+  {
+   "id": "baron-backbreaker",
+   "name": "Baron Backbreaker",
+   "type": "headliner",
+   "stats": {
+    "power": 5000,
+    "life": 5
+   },
+   "color": "hardcore",
+   "color2": "heel",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "attack",
+     "do": [
+      {
+       "k": "destroy",
+       "target": "enemyUnit",
+       "filter": {
+        "stat": "power",
+        "op": "le",
+        "val": 3000
+       }
+      }
+     ],
+     "if": {
+      "k": "attached",
+      "n": 1
+     }
+    }
+   ],
+   "flavor": "Once the demon lord's bodyguard. Now the demon lord's problem."
+  },
+  {
+   "id": "princess-piledriver",
+   "name": "Princess Piledriver",
+   "type": "headliner",
+   "stats": {
+    "power": 5000,
+    "life": 5
+   },
+   "color": "showboat",
+   "color2": "legend",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ],
+     "returnRes": 1,
+     "once": true
+    }
+   ],
+   "flavor": "Summoned to save the kingdom. Chose the main event instead."
+  },
+  {
+   "id": "grandmaster-suplex",
+   "name": "Grandmaster Suplex",
+   "type": "headliner",
+   "stats": {
+    "power": 5000,
+    "life": 4
+   },
+   "color": "grappler",
+   "color2": "showboat",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "endTurn",
+     "do": [
+      {
+       "k": "ready",
+       "target": "ownUnit"
+      }
+     ],
+     "if": {
+      "k": "attached",
+      "n": 1
+     }
+    }
+   ],
+   "flavor": "Has suplexed a mountain. The mountain tapped out."
+  },
+  {
+   "id": "hype",
+   "name": "Hype!!",
+   "type": "hype",
+   "stats": {},
+   "keywords": [],
+   "abilities": [],
+   "flavor": "The crowd is the real power source of the Ringworld."
+  }
+ ],
+ "decks": [
+  {
+   "id": "high-risk",
+   "name": "High Risk, High Flight",
+   "leader": "the-meteor-mask",
+   "main": {
+    "rookie-rudo-hopper": 3,
+    "little-comet": 3,
+    "masked-sparrow": 3,
+    "phoenix-splash-prodigy": 3,
+    "cometfall-luchador": 3,
+    "springboard-saint": 2,
+    "sky-kingdom-sentai": 2,
+    "top-rope-dive": 2,
+    "meteor-senton": 2,
+    "second-wind": 2,
+    "ringworld-skydome": 2,
+    "mat-monk": 3,
+    "gentle-giant-trainee": 2,
+    "armbar-acolyte": 2,
+    "kneebar-dryad": 2,
+    "forest-troll-grappler": 2,
+    "ankle-lock-ent": 2,
+    "submission-sage": 2,
+    "world-tree-powerbomber": 2,
+    "chain-wrestling": 2,
+    "rope-break": 2,
+    "the-sacred-mat-grove": 2
+   },
+   "res": {
+    "hype": 10
+   }
+  },
+  {
+   "id": "heel-turn",
+   "name": "Heel Turn",
+   "leader": "baron-backbreaker",
+   "main": {
+    "barbed-wire-ghoul": 3,
+    "thumbtack-wraith": 3,
+    "light-tube-banshee": 3,
+    "ladder-necromancer": 3,
+    "bone-crusher-brute": 3,
+    "table-breaker-ogre": 2,
+    "deathmatch-revenant": 2,
+    "hardcore-lich-king": 2,
+    "no-disqualification": 2,
+    "steel-cage": 2,
+    "kendo-stick-save": 2,
+    "chair-swinging-imp": 3,
+    "brass-knuckle-goblin": 2,
+    "manager-with-a-briefcase": 2,
+    "interference-twins": 2,
+    "low-blow-lich": 2,
+    "cheap-shot-specter": 2,
+    "ref-bump-vampire": 2,
+    "syndicate-boss-in-a-silk-mask": 2,
+    "foreign-object": 2,
+    "contract-dispute": 2,
+    "rake-the-eyes": 2
+   },
+   "res": {
+    "hype": 10
+   }
+  },
+  {
+   "id": "royal-rumble",
+   "name": "Royal Entrance",
+   "leader": "princess-piledriver",
+   "main": {
+    "mic-check-manager": 3,
+    "catchphrase-knight": 3,
+    "promo-bard": 3,
+    "merch-table-merchant": 3,
+    "spotlight-sorceress": 3,
+    "commentary-golem": 2,
+    "pay-per-view-paladin": 2,
+    "cut-a-promo": 2,
+    "distraction-finish": 2,
+    "stall-for-time": 2,
+    "ringworld-big-top": 2,
+    "old-school-jobber": 3,
+    "ringside-grandma": 2,
+    "sunset-flip-elder": 2,
+    "veteran-ring-crier": 2,
+    "legendary-comeback-kid": 2,
+    "hall-of-fame-inductee": 2,
+    "golden-era-tag-team": 2,
+    "thirty-year-champion": 2,
+    "last-second-kickout": 2,
+    "rope-a-dope": 2,
+    "retirement-match": 2
+   },
+   "res": {
+    "hype": 10
+   }
+  },
+  {
+   "id": "mat-classic",
+   "name": "Mat Classic",
+   "leader": "grandmaster-suplex",
+   "main": {
+    "mat-monk": 3,
+    "gentle-giant-trainee": 3,
+    "armbar-acolyte": 3,
+    "kneebar-dryad": 3,
+    "forest-troll-grappler": 3,
+    "ankle-lock-ent": 2,
+    "submission-sage": 2,
+    "world-tree-powerbomber": 2,
+    "chain-wrestling": 2,
+    "rope-break": 2,
+    "the-sacred-mat-grove": 2,
+    "mic-check-manager": 3,
+    "catchphrase-knight": 2,
+    "promo-bard": 2,
+    "merch-table-merchant": 2,
+    "spotlight-sorceress": 2,
+    "commentary-golem": 2,
+    "pay-per-view-paladin": 2,
+    "cut-a-promo": 2,
+    "distraction-finish": 2,
+    "stall-for-time": 2,
+    "ringworld-big-top": 2
+   },
+   "res": {
+    "hype": 10
+   }
+  }
+ ]
+}

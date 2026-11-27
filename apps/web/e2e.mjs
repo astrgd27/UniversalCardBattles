@@ -88,6 +88,12 @@ try {
   await page.click('text=← Projects');
   await page.click('text=← Library');
 
+  // ---- Ringworld Rumble: in the library, its menu offers the Workshop
+  ok(await page.isVisible('[data-module=ringworld-rumble]'), 'Ringworld Rumble in the library');
+  await page.click('[data-module=ringworld-rumble]');
+  ok(await page.isVisible('[data-menu=remix]'), 'Ringworld Rumble can be edited in the Workshop');
+  await page.click('text=← Library');
+
   // ---- the published game, played like any module
   ok(await page.isVisible('[data-module=my-card-game]'), 'published game in the library');
   await page.click('[data-module=my-card-game]');
@@ -117,7 +123,11 @@ try {
   const passText = await page.textContent('[data-act=pass]').catch(() => '');
   ok(/Next:|End turn|Continue|No response|Keep|Mulligan/.test(passText ?? '') || await page.isVisible('.dock .opt'), `pass button says what it does (${passText})`);
   const card = await page.$('.hand.mine .card');
-  if (card) { await card.hover(); await page.waitForTimeout(150); ok(await page.isVisible('#hover-zoom'), 'hovering a card zooms it'); }
+  if (card) {
+    let zoom = false; // the table may redraw under the pointer (AI beats), so hover again until the zoom shows
+    for (let i = 0; i < 5 && !zoom; i++) { await page.mouse.move(0, 0); const c2 = await page.$('.hand.mine .card'); if (c2) await c2.hover().catch(() => {}); zoom = await page.waitForSelector('#hover-zoom', { timeout: 400 }).then(() => true, () => false); }
+    ok(zoom, 'hovering a card zooms it');
+  }
   await page.setViewportSize({ width: 834, height: 1194 });
   ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'table on a tablet: no sideways scroll');
   await browser.close();

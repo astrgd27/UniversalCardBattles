@@ -46,6 +46,7 @@ export function beatsOf(events: Ev[], mod: Mod, viewer: string, who: (p: string)
         const base = String(e.action).split('#')[0];
         const label = (mod.rules.actions[base]?.label ?? base).toLowerCase();
         if (/attack|move|march|quest/.test(base)) break; // their own beats follow
+        if (base === 'boost' && /^Give/.test(mod.rules.actions[base]?.label ?? '')) { if (!mine) out.push({ kind: 'play', mine, ms: 700, card: e.card, text: `${who(e.player)} power${who(e.player) === 'You' ? '' : 's'} up ${mod.card.get(e.card)?.name ?? 'a card'} with ${(mod.manifest.theme as any)?.labels?.resources ?? 'a resource'}` }); break; }
         if (!mine) out.push({ kind: 'play', mine, ms: 1100, card: e.card, text: `${who(e.player)} ${label === 'play' || label === 'summon' ? 'play' + (who(e.player) === 'You' ? '' : 's') : label.replace(/^(\w+)/, '$1' + (who(e.player) === 'You' ? '' : 's'))} ${mod.card.get(e.card)?.name ?? 'a card'}` });
         break;
       }

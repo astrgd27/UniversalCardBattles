@@ -18,7 +18,7 @@ export type EffectKind =
 export type KeywordRule = 'none' | 'haste' | 'guard' | 'blocker' | 'flying' | 'vigilance' | 'lifesteal' | 'deadly' | 'shield' | 'double' | 'overflow' | 'ward'
   | 'firstStrike' | 'resist' | 'challenger' | 'saboteur' | 'goAgain' | 'trigger' | 'song'
   | 'noAttack' | 'noBlock' | 'noBeAttacked' | 'unblockable' | 'entersExhausted'
-  | 'tank' | 'bulwark' | 'accelerate' | 'ganking' | 'temporary';
+  | 'tank' | 'bulwark' | 'accelerate' | 'ganking' | 'temporary' | 'banish';
 
 export interface StatDef { id: string; name: string; icon?: string }
 export interface Color { id: string; name: string; hex: string; icon?: string }
@@ -47,6 +47,7 @@ export interface Resource {
   pitchStat?: string; // pitch mode: the stat a card is worth when pitched from hand
   recycle?: boolean; // deck mode: each resource gives 1 generic; colored costs are paid by recycling resources of that color to the bottom of the resource deck
   secondBonus?: number; // deck mode: extra resources the second player reveals on their first turn
+  give?: boolean; // boost becomes "give": in your main phase, attach 1 unspent resource to your leader or a unit for +boost power this turn (counted for 'attached' conditions; returns at your next turn)
 }
 export interface Combat {
   mode: 'block' | 'target' | 'duel' | 'lanes' | 'cards' | 'none';
@@ -65,6 +66,7 @@ export interface Combat {
   maxBlockers?: number; // block mode: how many units may block one attacker
   blockStat?: string | null; // cards mode: the stat that blocks when a card is discarded from hand to defend
   conquest?: boolean; // lanes: units enter exhausted and move in groups; moving into an enemy battlefield opens a showdown (response window), then a fight (Tank first, lethal damage, survivors heal, attackers recalled on a tie)
+  firstTurnEach?: boolean; // with firstTurnAttack off: neither player attacks on their own first turn (not just turn 1)
   finalPoint?: boolean; // lanes: a conquest can't win the game unless you scored every battlefield this turn (draw a card instead)
 }
 export interface Win { life: number; lifeCards: number; prizes: number; points: number; deckOut: boolean; noUnits: boolean; lifeTriggers?: boolean }
@@ -75,7 +77,7 @@ export interface Setup { hand: number; mulligan: boolean; handLimit: number; dec
   sites?: number; // lanes: battlefield cards per deck; one is chosen at random for each player's battlefield
 }
 
-export interface Cond { k: 'units' | 'life' | 'hand' | 'yourTurn' | 'res' | 'counter' | 'zone' | 'played' | 'raw'; n?: number; counter?: string; zone?: string; raw?: unknown }
+export interface Cond { k: 'units' | 'life' | 'hand' | 'yourTurn' | 'res' | 'counter' | 'zone' | 'played' | 'attached' | 'raw'; n?: number; counter?: string; zone?: string; raw?: unknown }
 export interface Filter { type?: string; color?: string; keyword?: string; stat?: string; op?: 'le' | 'ge'; val?: number; exhausted?: boolean; zone?: string; name?: string }
 export interface Effect { k: EffectKind; n?: number; kw?: string; target?: TargetKind; filter?: Filter; stat?: string; until?: 'turn' | 'forever'; who?: 'me' | 'opp' | 'each'; card?: string; type?: string; rule?: KeywordRule; to?: 'hand' | 'deck'; zone?: string; raw?: unknown[] }
 export interface Ability {
@@ -167,6 +169,7 @@ export const KEYWORD_RULES: Record<KeywordRule, { label: string; text: string; v
   accelerate: { label: 'Pay extra to enter ready', text: 'As you play it, you may pay 1 more and 1 more of its color to have it enter ready.' },
   ganking: { label: 'Moves between battlefields', text: 'Can move from one battlefield straight to another.' },
   temporary: { label: 'Leaves at your next turn', text: 'At the start of your next turn, destroy it.' },
+  banish: { label: 'Its hits trash life cards', text: 'Life cards it takes go to the discard pile instead of the hand (no triggers).' },
 };
 
 export const ROLES: Record<Role, { label: string; hint: string }> = {
