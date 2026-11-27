@@ -15,7 +15,8 @@ export type EffectKind =
   | 'search' | 'recover' | 'counter' | 'lifeGain' | 'lifeLoss' | 'score' | 'addLife' | 'aura' | 'win' | 'raw'
   | 'addCounter' | 'removeCounter' | 'strike' | 'deploy'
   | 'restrict' | 'prevent' | 'costMod' | 'insteadDestroy' | 'moveTo' | 'scry'
-  | 'dig' | 'putIntoPlay' | 'addRes' | 'readyRes' | 'giveRes' | 'lifeToHand' | 'handToLife';
+  | 'dig' | 'putIntoPlay' | 'addRes' | 'readyRes' | 'giveRes' | 'lifeToHand' | 'handToLife'
+  | 'inflict' | 'cure' | 'flip' | 'switch' | 'tutor' | 'attachFrom' | 'drawTo' | 'skipEvolve';
 export type KeywordRule = 'none' | 'haste' | 'guard' | 'blocker' | 'flying' | 'vigilance' | 'lifesteal' | 'deadly' | 'shield' | 'double' | 'overflow' | 'ward'
   | 'firstStrike' | 'resist' | 'challenger' | 'saboteur' | 'goAgain' | 'trigger' | 'song'
   | 'noAttack' | 'noBlock' | 'noBeAttacked' | 'unblockable' | 'entersExhausted'
@@ -24,12 +25,27 @@ export type KeywordRule = 'none' | 'haste' | 'guard' | 'blocker' | 'flying' | 'v
 export interface StatDef { id: string; name: string; icon?: string }
 export interface Color { id: string; name: string; hex: string; icon?: string }
 export interface Counter { id: string; name: string; icon?: string; adds?: Record<string, number>; stops?: ('attack' | 'block')[]; expires?: boolean } // expires: removed at the end of its controller's turn // +1/+1: adds {power: 1, health: 1}; sleep: stops attack
+/** A status effect a game defines (asleep, poisoned, stunned, burning, frozen, inspired...). Stored on a unit as var st_<id> (its level). */
+export interface Status {
+  id: string; name: string; icon?: string;
+  group?: string; // statuses in the same group replace each other
+  activeOnly?: boolean; // active-duel games: only the active unit can have it, and moving to the bench clears it
+  stops?: ('attack' | 'block' | 'retreat' | 'abilities')[];
+  adds?: Record<string, number>; // stat change per level while it has it
+  stacks?: boolean; // inflicting it again raises its level (tick damage and stat changes scale)
+  tickWhen?: 'betweenTurns' | 'ownerStart' | 'ownerEnd'; // when it ticks (default: between turns)
+  tickDamage?: number; // damage to the unit each tick (times its level)
+  tickFlip?: boolean; // after the tick damage, flip a coin: heads cures it
+  lasts?: 'untilCured' | 'ownerNextTurnEnd' | 'endOfTurn';
+  attackFlip?: number; // when it attacks, flip a coin: tails = the attack fails and it takes this much damage
+}
 export interface CustomZone { id: string; name: string; vis: 'public' | 'owner' | 'hidden'; size: number; inPlay: boolean; global?: boolean } // size 0 = unlimited; global: a new card replaces the one in either player's zone
 export interface Arena { id: string; name: string; size: number; attack: boolean } // a board area units are played into; `attack`: units here can attack/block
 export interface StatSlot { stat: string; pos: Pos; icon?: string; label?: string }
 export interface FrameDef { base: string; cost: 'tl' | 'tr' | 'none'; stats: StatSlot[]; art: number; level?: string; text: boolean; layout?: 'portrait' | 'landscape' }
-export interface CardType { id: string; name: string; role: Role; frame: FrameDef; icon?: string; zone?: string; playTo?: string } // zone: the arena its units enter; playTo: a custom zone permanents go to
-export interface Keyword { id: string; name: string; rule: KeywordRule; text: string; valued?: boolean; abilities?: Ability[] }
+export interface CardType { id: string; name: string; role: Role; frame: FrameDef; icon?: string; zone?: string; playTo?: string; perTurn?: number; notFirstTurn?: boolean; perUnit?: number }
+// perTurn: at most N of this type per turn; notFirstTurn: not on the first turn of the game; perUnit (attachments): at most N on one unit // zone: the arena its units enter; playTo: a custom zone permanents go to
+export interface Keyword { id: string; name: string; rule: KeywordRule; text: string; valued?: boolean; abilities?: Ability[]; deckMax?: number } // deckMax: at most N cards with it per deck
 export interface Phase { id: string; name: string; kind: PhaseKind; n?: number; raw?: unknown[]; each?: boolean; drawTo?: number; alternate?: boolean }
 
 export interface Resource {
@@ -58,7 +74,7 @@ export interface Combat {
   targetUnits: 'any' | 'exhausted' | 'none'; directOnlyIfEmpty: boolean; leaderDefends: boolean; leaderAttacks: boolean;
   compare: { ties: 'defender' | 'both' | 'none'; loser: boolean; overflow: boolean };
   positions: boolean; counterStep: boolean;
-  fieldSize: number; benchSize: number; attackEndsTurn: boolean; weakness: number;
+  fieldSize: number; benchSize: number; attackEndsTurn: boolean; weakness: number; resistance?: number; counterSize?: number; // counterSize: damage per 'damage counter' (attack bonuses count counters)
   lanes: string[];
   arenas?: Arena[]; // replaces the single board with named areas (ground/space, front line/energy line)
   direct?: 'always' | 'ifEmpty' | 'never'; // may attackers hit the player/leader directly?
@@ -78,16 +94,26 @@ export interface Setup { hand: number; mulligan: boolean; handLimit: number; dec
   champion?: boolean; // each deck names a champion unit that starts in a champion zone and can be played from there
   leaderColors?: boolean; // every card must match one of the leader's two colors
   sites?: number; // lanes: battlefield cards per deck; one is chosen at random for each player's battlefield
+  benchSetup?: boolean; // active-duel: also put basic units on the bench during setup
+  mulliganBonus?: boolean; // mulligans happen only without a basic unit, and the opponent draws 1 per mulligan
+  noEvolveFirstTurn?: boolean; // nobody evolves on their own first turn
 }
 
-export interface Cond { k: 'units' | 'life' | 'hand' | 'yourTurn' | 'res' | 'counter' | 'zone' | 'played' | 'attached' | 'oppTurn' | 'oppLife' | 'raw'; n?: number; counter?: string; zone?: string; raw?: unknown }
-export interface Filter { type?: string; color?: string; keyword?: string; stat?: string; op?: 'le' | 'ge'; val?: number; exhausted?: boolean; zone?: string; name?: string; trait?: string }
-export interface Effect { k: EffectKind; n?: number; kw?: string; target?: TargetKind; filter?: Filter; stat?: string; until?: 'turn' | 'forever' | 'battle'; who?: 'me' | 'opp' | 'each'; card?: string; type?: string; rule?: KeywordRule; to?: 'hand' | 'deck'; zone?: string; raw?: unknown[] }
+export interface Cond { k: 'units' | 'life' | 'hand' | 'yourTurn' | 'res' | 'counter' | 'zone' | 'played' | 'attached' | 'oppTurn' | 'oppLife' | 'status' | 'raw'; n?: number; counter?: string; zone?: string; status?: string; raw?: unknown }
+export interface Filter { type?: string; color?: string; keyword?: string; stat?: string; op?: 'le' | 'ge'; val?: number; exhausted?: boolean; zone?: string; name?: string; trait?: string; status?: string }
+export interface Effect { k: EffectKind; n?: number; kw?: string; target?: TargetKind; filter?: Filter; stat?: string; until?: 'turn' | 'forever' | 'battle'; who?: 'me' | 'opp' | 'each'; card?: string; type?: string; rule?: KeywordRule; to?: 'hand' | 'deck' | 'play'; zone?: string; raw?: unknown[];
+  status?: string; // inflict / cure (cure: empty = every status)
+  heads?: Effect[]; tails?: Effect[]; perHeads?: boolean; // flip: n coins; heads/tails effects (several coins: heads only if all are heads, or once per heads with perHeads)
+}
 export interface Ability {
   when: When; if?: Cond; do: Effect[]; once?: boolean | 'game'; label?: string;
   cost?: number; tap?: boolean; discard?: number; sacrifice?: boolean; life?: number; uncount?: { id: string; n: number }; banish?: number; returnRes?: number; // activation costs
 }
-export interface Move { name: string; cost: Record<string, number>; damage: number; do?: Effect[] }
+export interface Move {
+  name: string; cost: Record<string, number>; damage: number; do?: Effect[];
+  plus?: { per: 'energy' | 'targetDamage' | 'benched' | 'oppBenched' | 'heads'; n: number; coins?: number }; // damage bonus (+n for each …)
+  discard?: number; // discard this many attached energy after attacking
+}
 export interface CardBP {
   id: string; name: string; type: string;
   cost?: number | Record<string, number>;
@@ -98,6 +124,9 @@ export interface CardBP {
   family?: string; // a shared base name (evolution/shift onto any card of this family)
   text?: string; flavor?: string; art?: string;
   moves?: Move[]; evolvesFrom?: string; materials?: number; weakness?: string; retreat?: number;
+  resist?: string; // takes less attack damage from this color (combat.resistance)
+  prizes?: number; // prize cards the opponent takes when it is destroyed (default 1)
+  provides?: number; rainbow?: boolean; // energy cards: counts as N energy; counts as every color
   bonus?: Record<string, number>; // attachments: stat bonus to the bearer
   raw?: Record<string, unknown>; // advanced: merged over the compiled card
 }
@@ -110,6 +139,7 @@ export interface Blueprint {
   colors: Color[];
   stats: StatDef[];
   counters?: Counter[];
+  statuses?: Status[];
   zones?: CustomZone[];
   types: CardType[];
   keywords: Keyword[];

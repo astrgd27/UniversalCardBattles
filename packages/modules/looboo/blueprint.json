@@ -1,0 +1,1724 @@
+{
+ "v": 1,
+ "id": "looboo",
+ "name": "Looboo",
+ "blueprint": "blank",
+ "author": "Universal Card Battles",
+ "tagline": "Raise, feed and evolve the cutest creatures in six galaxies.",
+ "look": {
+  "accent": "#22c55e",
+  "accent2": "#f472b6",
+  "glyph": "🫧"
+ },
+ "colors": [
+  {
+   "id": "spore",
+   "name": "Spore",
+   "hex": "#22c55e",
+   "icon": "🍄"
+  },
+  {
+   "id": "ember",
+   "name": "Ember",
+   "hex": "#f97316",
+   "icon": "🔥"
+  },
+  {
+   "id": "brine",
+   "name": "Brine",
+   "hex": "#0ea5e9",
+   "icon": "💧"
+  },
+  {
+   "id": "spark",
+   "name": "Spark",
+   "hex": "#eab308",
+   "icon": "⚡"
+  },
+  {
+   "id": "dream",
+   "name": "Dream",
+   "hex": "#a855f7",
+   "icon": "🌙"
+  },
+  {
+   "id": "crunch",
+   "name": "Crunch",
+   "hex": "#b45309",
+   "icon": "🪨"
+  }
+ ],
+ "stats": [
+  {
+   "id": "hp",
+   "name": "HP",
+   "icon": "♥"
+  }
+ ],
+ "statuses": [
+  {
+   "id": "queasy",
+   "name": "Queasy",
+   "icon": "🤢",
+   "activeOnly": true,
+   "tickDamage": 10
+  },
+  {
+   "id": "toasty",
+   "name": "Toasty",
+   "icon": "♨",
+   "activeOnly": true,
+   "tickDamage": 20,
+   "tickFlip": true
+  },
+  {
+   "id": "snoozy",
+   "name": "Snoozy",
+   "icon": "💤",
+   "activeOnly": true,
+   "group": "pose",
+   "stops": [
+    "attack",
+    "retreat"
+   ],
+   "tickFlip": true
+  },
+  {
+   "id": "stunned",
+   "name": "Stunned",
+   "icon": "⚡",
+   "activeOnly": true,
+   "group": "pose",
+   "stops": [
+    "attack",
+    "retreat"
+   ],
+   "lasts": "ownerNextTurnEnd"
+  },
+  {
+   "id": "dizzy",
+   "name": "Dizzy",
+   "icon": "💫",
+   "activeOnly": true,
+   "group": "pose",
+   "attackFlip": 30
+  }
+ ],
+ "types": [
+  {
+   "id": "basic",
+   "name": "Basic Looboo",
+   "role": "unit",
+   "frame": {
+    "base": "vital",
+    "cost": "none",
+    "stats": [
+     {
+      "stat": "hp",
+      "pos": "tr",
+      "icon": "♥"
+     }
+    ],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🫧"
+  },
+  {
+   "id": "stage1",
+   "name": "Stage 1",
+   "role": "evolution",
+   "frame": {
+    "base": "vital",
+    "cost": "none",
+    "stats": [
+     {
+      "stat": "hp",
+      "pos": "tr",
+      "icon": "♥"
+     }
+    ],
+    "art": 48,
+    "text": true
+   },
+   "icon": "✦"
+  },
+  {
+   "id": "stage2",
+   "name": "Stage 2",
+   "role": "evolution",
+   "frame": {
+    "base": "vital",
+    "cost": "none",
+    "stats": [
+     {
+      "stat": "hp",
+      "pos": "tr",
+      "icon": "♥"
+     }
+    ],
+    "art": 48,
+    "text": true
+   },
+   "icon": "✧"
+  },
+  {
+   "id": "gadget",
+   "name": "Gadget",
+   "role": "spell",
+   "frame": {
+    "base": "spell",
+    "cost": "none",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🔧"
+  },
+  {
+   "id": "helper",
+   "name": "Helper",
+   "role": "spell",
+   "frame": {
+    "base": "spell",
+    "cost": "none",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🧑‍🚀",
+   "perTurn": 1,
+   "notFirstTurn": true
+  },
+  {
+   "id": "habitat",
+   "name": "Habitat",
+   "role": "permanent",
+   "frame": {
+    "base": "spell",
+    "cost": "none",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🏞",
+   "playTo": "habitat"
+  },
+  {
+   "id": "gear",
+   "name": "Gear",
+   "role": "attachment",
+   "frame": {
+    "base": "spell",
+    "cost": "none",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🎒",
+   "perUnit": 1
+  },
+  {
+   "id": "nutrient",
+   "name": "Nutrient",
+   "role": "resource",
+   "frame": {
+    "base": "resource",
+    "cost": "none",
+    "stats": [],
+    "art": 70,
+    "text": false
+   },
+   "icon": "🍃"
+  }
+ ],
+ "zones": [
+  {
+   "id": "habitat",
+   "name": "Habitat",
+   "vis": "public",
+   "size": 1,
+   "inPlay": true,
+   "global": true
+  }
+ ],
+ "keywords": [
+  {
+   "id": "xl",
+   "name": "Looboo XL",
+   "rule": "none",
+   "text": "Looboo XL: when it is knocked out, your opponent takes 2 prize cards."
+  },
+  {
+   "id": "prime",
+   "name": "Looboo Prime",
+   "rule": "none",
+   "text": "Looboo Prime: when it is knocked out, your opponent takes 3 prize cards."
+  },
+  {
+   "id": "rarefind",
+   "name": "Rare Find",
+   "rule": "none",
+   "text": "Rare Find: only 1 Rare Find card per deck.",
+   "deckMax": 1
+  }
+ ],
+ "turn": [
+  {
+   "id": "ready",
+   "name": "Start",
+   "kind": "ready"
+  },
+  {
+   "id": "draw",
+   "name": "Draw",
+   "kind": "draw",
+   "n": 1
+  },
+  {
+   "id": "main",
+   "name": "Main",
+   "kind": "main"
+  },
+  {
+   "id": "end",
+   "name": "Checkup",
+   "kind": "end"
+  }
+ ],
+ "timing": "simple",
+ "resource": {
+  "mode": "attach",
+  "name": "Nutrients",
+  "icon": "🍃",
+  "start": 0,
+  "perTurn": 0,
+  "max": 0,
+  "deckSize": 0,
+  "boost": 0,
+  "summonsPerTurn": 0,
+  "tribute": []
+ },
+ "combat": {
+  "mode": "duel",
+  "power": "hp",
+  "health": "hp",
+  "defense": null,
+  "damage": "persist",
+  "sickness": false,
+  "firstTurnAttack": false,
+  "targetUnits": "any",
+  "directOnlyIfEmpty": false,
+  "leaderDefends": false,
+  "leaderAttacks": false,
+  "compare": {
+   "ties": "both",
+   "loser": true,
+   "overflow": false
+  },
+  "positions": false,
+  "counterStep": false,
+  "fieldSize": 6,
+  "benchSize": 5,
+  "attackEndsTurn": true,
+  "weakness": 2,
+  "resistance": 30,
+  "counterSize": 10,
+  "lanes": []
+ },
+ "win": {
+  "life": 0,
+  "lifeCards": 0,
+  "prizes": 6,
+  "points": 0,
+  "deckOut": true,
+  "noUnits": true
+ },
+ "setup": {
+  "hand": 7,
+  "mulligan": false,
+  "mulliganBonus": true,
+  "benchSetup": true,
+  "noEvolveFirstTurn": true,
+  "handLimit": 99,
+  "deckMin": 60,
+  "deckMax": 60,
+  "maxCopies": 4,
+  "skipFirstDraw": false,
+  "leader": false,
+  "extraMax": 0,
+  "turnLimit": 80
+ },
+ "zoneNames": {
+  "active": "Active",
+  "bench": "Bench",
+  "grave": "Discard",
+  "prizes": "Prizes",
+  "support": "Attached"
+ },
+ "cards": [
+  {
+   "id": "pufflump",
+   "name": "Pufflump",
+   "type": "basic",
+   "stats": {
+    "hp": 70
+   },
+   "color": "spore",
+   "keywords": [],
+   "abilities": [],
+   "moves": [
+    {
+     "name": "Nibble",
+     "cost": {
+      "any": 1
+     },
+     "damage": 10
+    },
+    {
+     "name": "Sleepy Spores",
+     "cost": {
+      "spore": 1,
+      "any": 1
+     },
+     "damage": 20,
+     "do": [
+      {
+       "k": "flip",
+       "n": 1,
+       "heads": [
+        {
+         "k": "inflict",
+         "status": "snoozy",
+         "target": "enemyUnit",
+         "filter": {
+          "zone": "active"
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "weakness": "ember",
+   "retreat": 1,
+   "flavor": "Inflates when happy. Floats away when very happy."
+  },
+  {
+   "id": "pufflumber",
+   "name": "Pufflumber",
+   "type": "stage1",
+   "stats": {
+    "hp": 100
+   },
+   "color": "spore",
+   "keywords": [],
+   "abilities": [],
+   "moves": [
+    {
+     "name": "Vine Slap",
+     "cost": {
+      "spore": 1,
+      "any": 1
+     },
+     "damage": 40
+    },
+    {
+     "name": "Leech Sip",
+     "cost": {
+      "spore": 1,
+      "any": 2
+     },
+     "damage": 50,
+     "do": [
+      {
+       "k": "heal",
+       "n": 20,
+       "target": "self"
+      }
+     ]
+    }
+   ],
+   "weakness": "ember",
+   "retreat": 2,
+   "evolvesFrom": "Pufflump"
+  },
+  {
+   "id": "pufflord-xl",
+   "name": "Pufflord XL",
+   "type": "stage2",
+   "stats": {
+    "hp": 280
+   },
+   "color": "spore",
+   "keywords": [
+    "xl"
+   ],
+   "abilities": [
+    {
+     "when": "activated",
+     "label": "Soothing Pollen",
+     "once": true,
+     "do": [
+      {
+       "k": "heal",
+       "n": 30,
+       "target": "ownUnit"
+      }
+     ]
+    }
+   ],
+   "moves": [
+    {
+     "name": "Bloom Burst",
+     "cost": {
+      "spore": 2,
+      "any": 1
+     },
+     "damage": 150
+    }
+   ],
+   "weakness": "ember",
+   "retreat": 3,
+   "evolvesFrom": "Pufflumber",
+   "prizes": 2,
+   "flavor": "Its pollen cures headaches across three moons."
+  },
+  {
+   "id": "mossmite",
+   "name": "Mossmite",
+   "type": "basic",
+   "stats": {
+    "hp": 60
+   },
+   "color": "spore",
+   "keywords": [],
+   "abilities": [],
+   "moves": [
+    {
+     "name": "Itchy Bite",
+     "cost": {
+      "spore": 1
+     },
+     "damage": 10,
+     "do": [
+      {
+       "k": "inflict",
+       "status": "queasy",
+       "target": "enemyUnit",
+       "filter": {
+        "zone": "active"
+       }
+      }
+     ]
+    }
+   ],
+   "weakness": "ember",
+   "retreat": 1
+  },
+  {
+   "id": "mossmonarch",
+   "name": "Mossmonarch",
+   "type": "stage1",
+   "stats": {
+    "hp": 110
+   },
+   "color": "spore",
+   "keywords": [],
+   "abilities": [],
+   "moves": [
+    {
+     "name": "Toxic Garden",
+     "cost": {
+      "spore": 1,
+      "any": 1
+     },
+     "damage": 30,
+     "do": [
+      {
+       "k": "inflict",
+       "status": "queasy",
+       "target": "enemyUnit",
+       "filter": {
+        "zone": "active"
+       }
+      }
+     ]
+    },
+    {
+     "name": "Thorn Whip",
+     "cost": {
+      "spore": 2,
+      "any": 1
+     },
+     "damage": 90
+    }
+   ],
+   "weakness": "ember",
+   "retreat": 2,
+   "evolvesFrom": "Mossmite"
+  },
+  {
+   "id": "zibbler",
+   "name": "Zibbler",
+   "type": "basic",
+   "stats": {
+    "hp": 70
+   },
+   "color": "ember",
+   "keywords": [],
+   "abilities": [],
+   "moves": [
+    {
+     "name": "Ember Lick",
+     "cost": {
+      "ember": 1
+     },
+     "damage": 20
+    },
+    {
+     "name": "Flare",
+     "cost": {
+      "ember": 1,
+      "any": 1
+     },
+     "damage": 30,
+     "do": [
+      {
+       "k": "flip",
+       "n": 1,
+       "heads": [
+        {
+         "k": "inflict",
+         "status": "toasty",
+         "target": "enemyUnit",
+         "filter": {
+          "zone": "active"
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "weakness": "brine",
+   "retreat": 1,
+   "flavor": "Eats spicy rocks. Burps sparks."
+  },
+  {
+   "id": "zibblaze",
+   "name": "Zibblaze",
+   "type": "stage1",
+   "stats": {
+    "hp": 110
+   },
+   "color": "ember",
+   "keywords": [],
+   "abilities": [],
+   "moves": [
+    {
+     "name": "Fire Fang",
+     "cost": {
+      "ember": 1,
+      "any": 1
+     },
+     "damage": 50,
+     "do": [
+      {
+       "k": "inflict",
+       "status": "toasty",
+       "target": "enemyUnit",
+       "filter": {
+        "zone": "active"
+       }
+      }
+     ]
+    }
+   ],
+   "weakness": "brine",
+   "retreat": 2,
+   "evolvesFrom": "Zibbler"
+  },
+  {
+   "id": "zibbernova",
+   "name": "Zibbernova",
+   "type": "stage2",
+   "stats": {
+    "hp": 170
+   },
+   "color": "ember",
+   "keywords": [],
+   "abilities": [],
+   "moves": [
+    {
+     "name": "Supernova",
+     "cost": {
+      "ember": 2,
+      "any": 1
+     },
+     "damage": 200,
+     "discard": 2
+    }
+   ],
+   "weakness": "brine",
+   "retreat": 2,
+   "evolvesFrom": "Zibblaze"
+  },
+  {
+   "id": "cindermoth-xl",
+   "name": "Cindermoth XL",
+   "type": "basic",
+   "stats": {
+    "hp": 200
+   },
+   "color": "ember",
+   "keywords": [
+    "xl"
+   ],
+   "abilities": [],
+   "moves": [
+    {
+     "name": "Scorch",
+     "cost": {
+      "ember": 1
+     },
+     "damage": 30,
+     "plus": {
+      "per": "energy",
+      "n": 20
+     }
+    },
+    {
+     "name": "Heat Wave",
+     "cost": {
+      "ember": 2,
+      "any": 1
+     },
+     "damage": 120,
+     "do": [
+      {
+       "k": "inflict",
+       "status": "toasty",
+       "target": "enemyUnit",
+       "filter": {
+        "zone": "active"
+       }
+      }
+     ]
+    }
+   ],
+   "weakness": "brine",
+   "retreat": 2,
+   "prizes": 2
+  },
+  {
+   "id": "splurgle",
+   "name": "Splurgle",
+   "type": "basic",
+   "stats": {
+    "hp": 60
+   },
+   "color": "brine",
+   "keywords": [],
+   "abilities": [],
+   "moves": [
+    {
+     "name": "Bubble",
+     "cost": {
+      "brine": 1
+     },
+     "damage": 10,
+     "do": [
+      {
+       "k": "flip",
+       "n": 1,
+       "heads": [
+        {
+         "k": "inflict",
+         "status": "stunned",
+         "target": "enemyUnit",
+         "filter": {
+          "zone": "active"
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "weakness": "spark",
+   "retreat": 1,
+   "flavor": "A puddle with opinions."
+  },
+  {
+   "id": "splurglemaw",
+   "name": "Splurglemaw",
+   "type": "stage1",
+   "stats": {
+    "hp": 120
+   },
+   "color": "brine",
+   "keywords": [],
+   "abilities": [],
+   "moves": [
+    {
+     "name": "Tidal Gulp",
+     "cost": {
+      "brine": 1,
+      "any": 1
+     },
+     "damage": 30,
+     "plus": {
+      "per": "heads",
+      "n": 30,
+      "coins": 2
+     }
+    }
+   ],
+   "weakness": "spark",
+   "retreat": 2,
+   "evolvesFrom": "Splurgle"
+  },
+  {
+   "id": "splurglemaw-prime",
+   "name": "Splurglemaw Prime",
+   "type": "stage2",
+   "stats": {
+    "hp": 340
+   },
+   "color": "brine",
+   "keywords": [
+    "prime"
+   ],
+   "abilities": [],
+   "moves": [
+    {
+     "name": "Undertow",
+     "cost": {
+      "brine": 1,
+      "any": 1
+     },
+     "damage": 60,
+     "do": [
+      {
+       "k": "switch",
+       "who": "opp"
+      }
+     ]
+    },
+    {
+     "name": "Abyssal Crush",
+     "cost": {
+      "brine": 2,
+      "any": 2
+     },
+     "damage": 240
+    }
+   ],
+   "weakness": "spark",
+   "retreat": 3,
+   "evolvesFrom": "Splurglemaw",
+   "prizes": 3,
+   "flavor": "Swallowed a lake. Still thirsty."
+  },
+  {
+   "id": "kelpkit",
+   "name": "Kelpkit",
+   "type": "basic",
+   "stats": {
+    "hp": 60
+   },
+   "color": "brine",
+   "keywords": [],
+   "abilities": [],
+   "moves": [
+    {
+     "name": "Splash",
+     "cost": {
+      "any": 1
+     },
+     "damage": 10
+    },
+    {
+     "name": "Wave Hop",
+     "cost": {
+      "brine": 1
+     },
+     "damage": 20,
+     "do": [
+      {
+       "k": "switch",
+       "who": "me"
+      }
+     ]
+    }
+   ],
+   "weakness": "spark",
+   "retreat": 1
+  },
+  {
+   "id": "zappip",
+   "name": "Zappip",
+   "type": "basic",
+   "stats": {
+    "hp": 60
+   },
+   "color": "spark",
+   "keywords": [],
+   "abilities": [],
+   "moves": [
+    {
+     "name": "Static",
+     "cost": {
+      "spark": 1
+     },
+     "damage": 10,
+     "do": [
+      {
+       "k": "flip",
+       "n": 1,
+       "heads": [
+        {
+         "k": "inflict",
+         "status": "stunned",
+         "target": "enemyUnit",
+         "filter": {
+          "zone": "active"
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "weakness": "crunch",
+   "retreat": 1,
+   "flavor": "Its fur stands up when it is excited. It is always excited."
+  },
+  {
+   "id": "zappounce",
+   "name": "Zappounce",
+   "type": "stage1",
+   "stats": {
+    "hp": 100
+   },
+   "color": "spark",
+   "keywords": [],
+   "abilities": [],
+   "moves": [
+    {
+     "name": "Volt Tackle",
+     "cost": {
+      "spark": 1,
+      "any": 1
+     },
+     "damage": 70,
+     "do": [
+      {
+       "k": "damage",
+       "n": 10,
+       "target": "self"
+      }
+     ]
+    }
+   ],
+   "weakness": "crunch",
+   "retreat": 1,
+   "evolvesFrom": "Zappip"
+  },
+  {
+   "id": "joltjelly-xl",
+   "name": "Joltjelly XL",
+   "type": "basic",
+   "stats": {
+    "hp": 190
+   },
+   "color": "spark",
+   "keywords": [
+    "xl"
+   ],
+   "abilities": [],
+   "moves": [
+    {
+     "name": "Chain Spark",
+     "cost": {
+      "spark": 2
+     },
+     "damage": 40,
+     "do": [
+      {
+       "k": "damage",
+       "n": 30,
+       "target": "enemyUnit",
+       "filter": {
+        "zone": "bench"
+       }
+      }
+     ]
+    },
+    {
+     "name": "Overload",
+     "cost": {
+      "spark": 2,
+      "any": 1
+     },
+     "damage": 140,
+     "discard": 1
+    }
+   ],
+   "weakness": "crunch",
+   "retreat": 2,
+   "prizes": 2
+  },
+  {
+   "id": "dozedoo",
+   "name": "Dozedoo",
+   "type": "basic",
+   "stats": {
+    "hp": 70
+   },
+   "color": "dream",
+   "keywords": [],
+   "abilities": [],
+   "moves": [
+    {
+     "name": "Lullaby",
+     "cost": {
+      "dream": 1
+     },
+     "damage": 0,
+     "do": [
+      {
+       "k": "inflict",
+       "status": "snoozy",
+       "target": "enemyUnit",
+       "filter": {
+        "zone": "active"
+       }
+      }
+     ]
+    },
+    {
+     "name": "Mind Poke",
+     "cost": {
+      "dream": 1,
+      "any": 1
+     },
+     "damage": 30
+    }
+   ],
+   "weakness": "dream",
+   "retreat": 1,
+   "flavor": "Hums the same three notes. Everyone yawns."
+  },
+  {
+   "id": "dozedream",
+   "name": "Dozedream",
+   "type": "stage1",
+   "stats": {
+    "hp": 110
+   },
+   "color": "dream",
+   "keywords": [],
+   "abilities": [],
+   "moves": [
+    {
+     "name": "Hypno Wave",
+     "cost": {
+      "dream": 1,
+      "any": 1
+     },
+     "damage": 30,
+     "do": [
+      {
+       "k": "inflict",
+       "status": "dizzy",
+       "target": "enemyUnit",
+       "filter": {
+        "zone": "active"
+       }
+      }
+     ]
+    },
+    {
+     "name": "Nightmare",
+     "cost": {
+      "dream": 2,
+      "any": 1
+     },
+     "damage": 40,
+     "plus": {
+      "per": "targetDamage",
+      "n": 10
+     }
+    }
+   ],
+   "weakness": "dream",
+   "retreat": 2,
+   "evolvesFrom": "Dozedoo"
+  },
+  {
+   "id": "mindflare",
+   "name": "Mindflare",
+   "type": "basic",
+   "stats": {
+    "hp": 90
+   },
+   "color": "dream",
+   "keywords": [],
+   "abilities": [],
+   "moves": [
+    {
+     "name": "Psy Bolt",
+     "cost": {
+      "dream": 1,
+      "any": 1
+     },
+     "damage": 20,
+     "plus": {
+      "per": "energy",
+      "n": 20
+     }
+    }
+   ],
+   "weakness": "dream",
+   "retreat": 2
+  },
+  {
+   "id": "rockrumble",
+   "name": "Rockrumble",
+   "type": "basic",
+   "stats": {
+    "hp": 80
+   },
+   "color": "crunch",
+   "keywords": [],
+   "abilities": [],
+   "moves": [
+    {
+     "name": "Headbutt",
+     "cost": {
+      "crunch": 1
+     },
+     "damage": 20
+    },
+    {
+     "name": "Rock Toss",
+     "cost": {
+      "crunch": 1,
+      "any": 1
+     },
+     "damage": 40
+    }
+   ],
+   "weakness": "spore",
+   "retreat": 2,
+   "resist": "spark",
+   "flavor": "Mistaken for a boulder. Takes it as a compliment."
+  },
+  {
+   "id": "boulderbash",
+   "name": "Boulderbash",
+   "type": "stage1",
+   "stats": {
+    "hp": 140
+   },
+   "color": "crunch",
+   "keywords": [],
+   "abilities": [],
+   "moves": [
+    {
+     "name": "Smash",
+     "cost": {
+      "crunch": 2,
+      "any": 1
+     },
+     "damage": 110
+    }
+   ],
+   "weakness": "spore",
+   "retreat": 3,
+   "evolvesFrom": "Rockrumble",
+   "resist": "spark"
+  },
+  {
+   "id": "grit-gremlin",
+   "name": "Grit Gremlin",
+   "type": "basic",
+   "stats": {
+    "hp": 70
+   },
+   "color": "crunch",
+   "keywords": [],
+   "abilities": [],
+   "moves": [
+    {
+     "name": "Gang Up",
+     "cost": {
+      "crunch": 1
+     },
+     "damage": 10,
+     "plus": {
+      "per": "benched",
+      "n": 20
+     }
+    }
+   ],
+   "weakness": "spore",
+   "retreat": 1
+  },
+  {
+   "id": "snackrat",
+   "name": "Snackrat",
+   "type": "basic",
+   "stats": {
+    "hp": 60
+   },
+   "keywords": [],
+   "abilities": [],
+   "moves": [
+    {
+     "name": "Scavenge",
+     "cost": {
+      "any": 1
+     },
+     "damage": 10,
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    },
+    {
+     "name": "Gnaw",
+     "cost": {
+      "any": 2
+     },
+     "damage": 30
+    }
+   ],
+   "weakness": "crunch",
+   "retreat": 1,
+   "flavor": "Lives in every pantry on every planet."
+  },
+  {
+   "id": "swap-snack",
+   "name": "Swap Snack",
+   "type": "gadget",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "switch",
+       "who": "me"
+      }
+     ]
+    }
+   ],
+   "flavor": "Tag out for a treat."
+  },
+  {
+   "id": "nest-pod",
+   "name": "Nest Pod",
+   "type": "gadget",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "tutor",
+       "n": 1,
+       "type": "basic",
+       "to": "play"
+      }
+     ]
+    }
+   ],
+   "flavor": "Comes with a free blanket."
+  },
+  {
+   "id": "nutrient-finder",
+   "name": "Nutrient Finder",
+   "type": "gadget",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "tutor",
+       "n": 1,
+       "type": "nutrient",
+       "to": "hand"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "leap-candy",
+   "name": "Leap Candy",
+   "type": "gadget",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "skipEvolve"
+      }
+     ]
+    }
+   ],
+   "flavor": "Skip the awkward teenage stage."
+  },
+  {
+   "id": "berry-potion",
+   "name": "Berry Potion",
+   "type": "gadget",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "heal",
+       "n": 30,
+       "target": "ownUnit"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "wake-up-spray",
+   "name": "Wake-Up Spray",
+   "type": "gadget",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "cure",
+       "target": "ownUnit",
+       "filter": {
+        "zone": "active"
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "Smells like coffee and regret."
+  },
+  {
+   "id": "hyper-pod",
+   "name": "Hyper Pod",
+   "type": "gadget",
+   "stats": {},
+   "keywords": [
+    "rarefind"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "tutor",
+       "n": 1,
+       "to": "hand"
+      }
+     ]
+    }
+   ],
+   "flavor": "Rare Find. Opens to whatever you need. Only one per galaxy."
+  },
+  {
+   "id": "sturdy-shell",
+   "name": "Sturdy Shell",
+   "type": "gear",
+   "stats": {},
+   "keywords": [],
+   "abilities": [],
+   "bonus": {
+    "hp": 30
+   },
+   "flavor": "Fits most Looboos. Fits all snails."
+  },
+  {
+   "id": "lucky-antenna",
+   "name": "Lucky Antenna",
+   "type": "gear",
+   "stats": {},
+   "keywords": [
+    "rarefind"
+   ],
+   "abilities": [],
+   "bonus": {
+    "hp": 50
+   },
+   "flavor": "Rare Find. Picks up good vibes from four moons away."
+  },
+  {
+   "id": "doc-nibbles",
+   "name": "Doc Nibbles",
+   "type": "helper",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "drawTo",
+       "n": 6
+      }
+     ]
+    }
+   ],
+   "flavor": "\"Have you tried eating more nutrients?\""
+  },
+  {
+   "id": "captain-snag",
+   "name": "Captain Snag",
+   "type": "helper",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "switch",
+       "who": "opp"
+      }
+     ]
+    }
+   ],
+   "flavor": "Hooks the Looboo you were hiding."
+  },
+  {
+   "id": "field-medic-mo",
+   "name": "Field Medic Mo",
+   "type": "helper",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "heal",
+       "n": 60,
+       "target": "ownUnit"
+      },
+      {
+       "k": "cure",
+       "target": "ownUnit",
+       "filter": {
+        "zone": "active"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "compost-keeper",
+   "name": "Compost Keeper",
+   "type": "helper",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "attachFrom",
+       "zone": "grave",
+       "target": "ownUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Nothing goes to waste on her farm."
+  },
+  {
+   "id": "big-sister-brina",
+   "name": "Big Sister Brina",
+   "type": "helper",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "tutor",
+       "n": 2,
+       "type": "basic",
+       "to": "play"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "mushroom-meadow",
+   "name": "Mushroom Meadow",
+   "type": "habitat",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "static",
+     "do": [
+      {
+       "k": "aura",
+       "n": 20,
+       "stat": "hp",
+       "target": "allUnits",
+       "filter": {
+        "color": "spore"
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "Spore Looboos grow extra sturdy here."
+  },
+  {
+   "id": "thunder-plateau",
+   "name": "Thunder Plateau",
+   "type": "habitat",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "static",
+     "do": [
+      {
+       "k": "aura",
+       "n": 20,
+       "stat": "hp",
+       "target": "allUnits",
+       "filter": {
+        "color": "spark"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "spore-nutrient",
+   "name": "Spore Nutrient",
+   "type": "nutrient",
+   "stats": {},
+   "color": "spore",
+   "keywords": [],
+   "abilities": []
+  },
+  {
+   "id": "ember-nutrient",
+   "name": "Ember Nutrient",
+   "type": "nutrient",
+   "stats": {},
+   "color": "ember",
+   "keywords": [],
+   "abilities": []
+  },
+  {
+   "id": "brine-nutrient",
+   "name": "Brine Nutrient",
+   "type": "nutrient",
+   "stats": {},
+   "color": "brine",
+   "keywords": [],
+   "abilities": []
+  },
+  {
+   "id": "spark-nutrient",
+   "name": "Spark Nutrient",
+   "type": "nutrient",
+   "stats": {},
+   "color": "spark",
+   "keywords": [],
+   "abilities": []
+  },
+  {
+   "id": "dream-nutrient",
+   "name": "Dream Nutrient",
+   "type": "nutrient",
+   "stats": {},
+   "color": "dream",
+   "keywords": [],
+   "abilities": []
+  },
+  {
+   "id": "crunch-nutrient",
+   "name": "Crunch Nutrient",
+   "type": "nutrient",
+   "stats": {},
+   "color": "crunch",
+   "keywords": [],
+   "abilities": []
+  },
+  {
+   "id": "double-gulp-nutrient",
+   "name": "Double Gulp Nutrient",
+   "type": "nutrient",
+   "stats": {},
+   "keywords": [],
+   "abilities": [],
+   "provides": 2,
+   "raw": {
+    "maxCopies": 4
+   },
+   "text": "Counts as 2 nutrients of any color for attack costs (colorless)."
+  },
+  {
+   "id": "rainbow-nectar",
+   "name": "Rainbow Nectar",
+   "type": "nutrient",
+   "stats": {},
+   "keywords": [],
+   "abilities": [],
+   "rainbow": true,
+   "raw": {
+    "maxCopies": 4
+   },
+   "text": "Counts as a nutrient of every color."
+  }
+ ],
+ "decks": [
+  {
+   "id": "sleepy-garden",
+   "name": "Sleepy Garden",
+   "main": {
+    "pufflump": 4,
+    "pufflumber": 3,
+    "pufflord-xl": 2,
+    "mossmite": 2,
+    "mossmonarch": 2,
+    "dozedoo": 2,
+    "dozedream": 1,
+    "snackrat": 1,
+    "swap-snack": 2,
+    "nest-pod": 4,
+    "nutrient-finder": 2,
+    "leap-candy": 2,
+    "berry-potion": 2,
+    "wake-up-spray": 1,
+    "hyper-pod": 1,
+    "sturdy-shell": 2,
+    "doc-nibbles": 4,
+    "captain-snag": 2,
+    "field-medic-mo": 1,
+    "compost-keeper": 2,
+    "big-sister-brina": 1,
+    "mushroom-meadow": 2,
+    "spore-nutrient": 11,
+    "dream-nutrient": 3,
+    "rainbow-nectar": 1
+   }
+  },
+  {
+   "id": "hot-rocks",
+   "name": "Hot Rocks",
+   "main": {
+    "zibbler": 4,
+    "zibblaze": 3,
+    "zibbernova": 2,
+    "cindermoth-xl": 2,
+    "rockrumble": 2,
+    "boulderbash": 2,
+    "grit-gremlin": 1,
+    "swap-snack": 2,
+    "nest-pod": 4,
+    "nutrient-finder": 2,
+    "leap-candy": 2,
+    "berry-potion": 2,
+    "wake-up-spray": 1,
+    "hyper-pod": 1,
+    "sturdy-shell": 2,
+    "doc-nibbles": 4,
+    "captain-snag": 2,
+    "field-medic-mo": 1,
+    "compost-keeper": 2,
+    "big-sister-brina": 1,
+    "ember-nutrient": 12,
+    "crunch-nutrient": 4,
+    "double-gulp-nutrient": 2
+   }
+  },
+  {
+   "id": "storm-tide",
+   "name": "Storm Tide",
+   "main": {
+    "splurgle": 4,
+    "splurglemaw": 3,
+    "splurglemaw-prime": 2,
+    "zappip": 2,
+    "zappounce": 2,
+    "joltjelly-xl": 2,
+    "kelpkit": 1,
+    "swap-snack": 2,
+    "nest-pod": 4,
+    "nutrient-finder": 2,
+    "leap-candy": 2,
+    "berry-potion": 2,
+    "wake-up-spray": 1,
+    "hyper-pod": 1,
+    "sturdy-shell": 2,
+    "doc-nibbles": 4,
+    "captain-snag": 2,
+    "field-medic-mo": 1,
+    "compost-keeper": 2,
+    "thunder-plateau": 1,
+    "brine-nutrient": 12,
+    "spark-nutrient": 5,
+    "rainbow-nectar": 1
+   }
+  },
+  {
+   "id": "fever-dream",
+   "name": "Fever Dream",
+   "main": {
+    "dozedoo": 4,
+    "dozedream": 3,
+    "mindflare": 2,
+    "zibbler": 3,
+    "zibblaze": 2,
+    "zibbernova": 1,
+    "snackrat": 2,
+    "swap-snack": 2,
+    "nest-pod": 4,
+    "nutrient-finder": 2,
+    "leap-candy": 1,
+    "berry-potion": 2,
+    "wake-up-spray": 1,
+    "hyper-pod": 1,
+    "sturdy-shell": 2,
+    "doc-nibbles": 4,
+    "captain-snag": 2,
+    "field-medic-mo": 1,
+    "compost-keeper": 1,
+    "big-sister-brina": 1,
+    "dream-nutrient": 14,
+    "ember-nutrient": 4,
+    "double-gulp-nutrient": 1
+   }
+  }
+ ]
+}

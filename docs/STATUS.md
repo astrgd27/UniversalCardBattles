@@ -19,7 +19,7 @@
 - **Order:**
   1. Clean slate (done).
   2. Battle-screen rebuild.
-  3. The games one at a time: Generation Wars (playable) → Ringworld Rumble (playable) → Looboo → Crystal Circuit → Taste Dimension.
+  3. The games one at a time: Generation Wars (playable) → Ringworld Rumble (playable) → Looboo (playable) → Looboo → Crystal Circuit → Taste Dimension.
   4. Shop, campaign and multiplayer polish.
 - **Battle screen, part 1 (done):** a battle director (`apps/web/src/ui/director.ts`) turns the viewer's events into beats that play one at a time:
   - a caption for every opponent move;
@@ -84,6 +84,22 @@
     - attributes (Slash/Strike/…; few effects use them);
     - "this card can't be rested" protections and power-setting effects;
     - [Opponent's Turn] activated abilities.
+- **Looboo (third clone, playable; mechanics reference: Pokémon TCG):** `packages/modules/looboo`, a Workshop blueprint like the others.
+  - Content:
+    - 47 cards (a content pass comes later): 6 nutrient types (Spore, Ember, Brine, Spark, Dream, Crunch), evolution lines (Basic → Stage 1 → Stage 2);
+    - Looboo XL (2 prizes) and Prime (3 prizes);
+    - Gadgets (Items), Helpers (Supporters: 1 per turn, not on turn 1), Habitats (Stadiums), Gear (Tools: 1 per Looboo), a Rare Find limit of 1 (ACE SPEC);
+    - basic and special Nutrients;
+    - 4 decks of 60.
+  - Rules:
+    - Active + 5 Bench; setup puts basics on the Active and Bench; mulligan only without a basic, with bonus draws for the opponent;
+    - prizes 6; the first player can't attack or use a Helper on turn 1; no evolving on your own first turn or on a Looboo played this turn;
+    - one Nutrient attachment per turn; retreat by discarding; weakness ×2, resistance −30;
+    - attacks end the turn; win by prizes, an empty board or deck-out.
+  - Statuses come from the generic status block (Pokémon configuration): Queasy (poison 10), Toasty (burn 20 + flip), Snoozy (sleep, flip to wake), Stunned (paralysis until the end of your next turn), Dizzy (confusion, flip or take 30). The checkup runs between turns.
+  - Also: coin-flip attacks, bench damage, energy-scaling attacks, gust/switch, deck search, Leap Candy (skip a stage).
+  - Balance and content are deferred, per the user (mechanics and tests first).
+  - Not yet: abilities usable from the bench with restrictions (they work as once-per-turn activations), Tera, Lost Zone, devolving.
 - **Clean slate (done):**
   - Every module and its artwork was deleted (NIGHTFALL, Shadow Earth and the Workshop starter games; git history keeps them).
   - The eight small reference games survive only as engine test fixtures in `packages/test-harness/fixtures`.

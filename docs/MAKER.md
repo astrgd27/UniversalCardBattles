@@ -166,6 +166,51 @@ Ringworld Rumble (`packages/modules/ringworld-rumble`) is built from these optio
 - **New keyword rules:** attacks units the turn it is played (`rushUnits`), can't be destroyed in battle (`noKO`). "Can't be blocked" is the existing `unblockable` rule.
 - **Targets:** your leader (`ownLeader`), and your leader or one of your units (`ownAny`).
 
+## Status effects (Keywords station)
+A game can define any number of statuses (`bp.statuses`). Each one is a set of rules, not a fixed list, so you can build asleep/poisoned, frozen/burning, inspired/exhausted and so on. A unit carries a status as the var `st_<id>` (its level), and the table shows it on the card.
+- **Stops:** can't attack, can't block, can't retreat, can't use abilities.
+- **Group:** statuses in the same group replace each other.
+- **Stacks:** inflicting it again raises its level; tick damage and stat changes scale with the level.
+- **Ticks:**
+  - when: between turns (every unit), or at the start or end of its controller's turn;
+  - damage each tick;
+  - optionally "then flip a coin: heads cures it".
+- **Lasts:** until cured, until the end of its controller's next turn (applied on the opponent's turn, it wears off after yours), or until end of turn.
+- **Stat change** per level, and **attack flip:** when it attacks, flip a coin; tails means the attack fails and it takes N damage.
+- **Active only** (active-duel games): only the Active unit can have it, and moving to the bench or evolving clears it. Otherwise statuses survive moves between play areas.
+- **Blocks:**
+  - effects: give a status (`inflict`), cure one or all (`cure`);
+  - the filter "units that are X";
+  - the condition "if this is X".
+
+**Coin flips** (`flip`): flip N coins, with "if heads…" and "if tails…" effect lists. With several coins, heads needs all heads, or use "once per heads". Flips show on the battle screen.
+
+## Active duels (Advanced)
+Options for the Active duel combat mode (Looboo, `packages/modules/looboo`, is built from them).
+- **Attacks:**
+  - a damage bonus: +N per attached energy, per damage counter on the target (`combat.counterSize` is the damage per counter), per benched unit (yours or the opponent's), or per heads;
+  - "discard N energy after attacking", and attack effects (any effect block, e.g. bench damage via a target filter "in the bench");
+  - resistance: `card.resist` names a color, and `combat.resistance` sets how much less damage it takes.
+- **Prizes:** `card.prizes` sets how many prize cards a knock-out gives (2 for XL, 3 for Prime).
+- **Card types:**
+  - `perTurn` (at most N of this type per turn, e.g. one Helper);
+  - `notFirstTurn` (not on turn 1);
+  - `perUnit` for attachments (one Gear per unit).
+- **Habitats:** a global custom zone (a new one replaces the old), and a card can't be played while one with the same name is there.
+- **Energy:** `provides` (counts as N) and `rainbow` (every color).
+- **Deck limits:** `keyword.deckMax` (e.g. one Rare Find per deck).
+- **Setup:**
+  - `benchSetup`: basics go to the bench too;
+  - `mulliganBonus`: redraw only without a basic, and the opponent draws 1 per mulligan;
+  - `noEvolveFirstTurn`.
+- **Effects:**
+  - switch your Active, or bring in an opponent's benched unit (`switch`);
+  - search your deck and choose (`tutor`, into hand or play);
+  - attach a resource card from a zone (`attachFrom`);
+  - draw until N in hand (`drawTo`);
+  - evolve two stages at once (`skipEvolve`).
+- **Table:** attachments (energy, gear, auras) are drawn small under the unit they are attached to.
+
 ## Mechanics Shelf (mix and match)
 A station listing 40 recipes in seven groups:
 - Resources

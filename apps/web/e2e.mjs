@@ -88,6 +88,16 @@ try {
   await page.click('text=← Projects');
   await page.click('text=← Library');
 
+  // ---- Looboo: in the library, and its remix builds in the Workshop
+  ok(await page.isVisible('[data-module=looboo]'), 'Looboo in the library');
+  await page.click('[data-module=looboo]');
+  await page.click('[data-menu=remix]');
+  ok(await page.isVisible('.mk-bugs.good'), `Looboo remix builds in the Workshop (${await page.textContent('.mk-bugs').catch(() => '')})`);
+  await page.click('[data-station=keywords]');
+  ok(await page.isVisible('text=Status effects'), 'status effects panel');
+  await page.click('text=← Projects');
+  await page.click('text=← Library');
+
   // ---- Ringworld Rumble: in the library, its menu offers the Workshop
   ok(await page.isVisible('[data-module=ringworld-rumble]'), 'Ringworld Rumble in the library');
   await page.click('[data-module=ringworld-rumble]');

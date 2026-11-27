@@ -236,7 +236,7 @@ function seat(c: C, p: string, me: boolean) {
 
 function pile(c: C, key: string, z: ZoneDef) {
   const zv = c.v.zones[key];
-  if (!zv) return null;
+  if (!zv || (z.hideEmpty && !zv.count && !zv.show)) return null;
   const hot = (zv.cards ?? []).some((o) => c.sources.has(o.id) || c.targets.has(o.id));
   return h('button', {
     class: cls('pile', hot && 'hot', !zv.cards && 'hidden', c.fx.bump.has(key) && 'fx-bump'), disabled: !zv.cards,
@@ -260,15 +260,28 @@ function slotted(c: C, key: string, z: ZoneDef, cards: ObjView[]) {
     }))));
 }
 
+/** Cards attached to an object (relationship "bearer"): drawn small under it instead of in their own zone. */
+function attsOf(c: C, id: string): ObjView[] {
+  const out: ObjView[] = [];
+  for (const z of Object.values(c.v.zones)) for (const o of z.cards ?? []) if (o.rel?.bearer === id) out.push(o);
+  return out;
+}
+function withAtts(c: C, o: ObjView) {
+  const atts = attsOf(c, o.id);
+  if (!atts.length) return obj(c, o, 'sm');
+  return h('div', { class: 'unit-stack' }, obj(c, o, 'sm'), h('div', { class: 'atts', 'aria-label': `${atts.length} attached` }, atts.map((a) => obj(c, a, 'sm'))));
+}
 function zoneBlock(c: C, key: string, z: ZoneDef) {
   const zv = c.v.zones[key];
   if (!zv) return null;
+  if (z.hideEmpty && !zv.count && !zv.show) return null;
   if (!zv.cards) return pile(c, key, z);
-  if (z.hideEmpty && !zv.cards.length && !zv.show) return null;
+  const shown = zv.cards.filter((o) => !(o.rel?.bearer && Object.values(c.v.zones).some((q) => q.cards?.some((x) => x.id === o.rel!.bearer))));
+  if (z.hideEmpty && !shown.length && !zv.show) return null;
   if (z.slots?.length) return slotted(c, key, z, zv.cards);
-  if (!zv.cards.length && !z.abilities) return null;
+  if (!shown.length && !z.abilities) return null;
   return h('div', { class: cls('zone', z.compact && 'compact') }, h('span', { class: 'zone-l' }, c.mod.manifest.theme?.labels?.[z.id] ?? title(z.id)),
-    h('div', { class: 'row' }, zv.cards.length ? zv.cards.map((o) => obj(c, o, 'sm')) : h('span', { class: 'empty-slot' }, 'empty')));
+    h('div', { class: 'row' }, shown.length ? shown.map((o) => withAtts(c, o)) : h('span', { class: 'empty-slot' }, 'empty')));
 }
 
 function handRow(c: C, key: string, me: boolean) {
@@ -519,7 +532,7 @@ function friendly(e: Record<string, any>, c: C): string | null {
     case 'countered': return `${cn(e.card)} is cancelled`;
     case 'flipped': return e.card ? `${cn(e.card)} is revealed` : null;
     case 'lifeLost': return `${who(e.p)} lose${s(e.p)} a life card`;
-    case 'prize': return `${who(e.p)} take${s(e.p)} a prize card`;
+    case 'prize': return `${who(e.p)} take${s(e.p)} ${(e.n ?? 1) > 1 ? `${e.n} prize cards` : 'a prize card'}`;
     case 'quest': return `${c.label(e.o)} quests for ${e.n}`;
     case 'conquer': return `${who(e.p)} conquer${s(e.p)} ${lbl(e.z)} (+1 point)`;
     case 'hold': return `${who(e.p)} hold${s(e.p)} ${lbl(e.z)} (+1 point)`;
@@ -528,6 +541,15 @@ function friendly(e: Record<string, any>, c: C): string | null {
     case 'marched': return `${who(e.p)} move${s(e.p)} ${e.n} unit${e.n === 1 ? '' : 's'} into ${lbl(e.z)}`;
     case 'recalled': return `Attackers fall back from ${lbl(e.z)}`;
     case 'showdownFight': return `Fight at ${lbl(e.z)}: ${e.a} against ${e.b}`;
+    case 'coin': return `${who(e.p)} flip${s(e.p)} a coin: ${e.heads ? 'heads!' : 'tails'}`;
+    case 'status': return `${c.label(e.o)} is now ${lbl(`st_${e.s}`)}`;
+    case 'cured': return `${c.label(e.o)} recovers from ${lbl(`st_${e.s}`)}`;
+    case 'statusTick': return `${c.label(e.o)} takes ${e.n} damage from ${lbl(`st_${e.s}`)}`;
+    case 'attackFailed': return `${c.label(e.o)} is ${lbl(`st_${e.s}`)}: the attack fails`;
+    case 'switched': return `${who(e.p)} switch${who(e.p) === 'You' ? '' : 'es'} the active unit`;
+    case 'evolved': return `${c.label(e.o)} evolves!`;
+    case 'mulligan': return `${who(e.p)} had no basic unit and redraw${s(e.p)}`;
+    case 'mulliganBonus': return `${who(e.p)} draw${s(e.p)} ${e.n} extra for the opponent's mulligans`;
     case 'given': return `${who(e.p)} give${s(e.p)} ${lbl('resources')} to ${c.label(e.o)}`;
     case 'peek': return e.card ? `You look at the top card: ${cn(e.card)}` : null;
     case 'lost': return `${who(e.player)} ${who(e.player) === 'You' ? 'are' : 'is'} out`;

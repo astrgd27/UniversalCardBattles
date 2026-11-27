@@ -188,6 +188,11 @@ h1, h2, h3 { margin: 0; letter-spacing: .02em; }
 .zone-l { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
 .row { display: flex; flex-wrap: wrap; gap: 8px; min-height: 40px; align-items: center; }
 .zone.compact .row { flex-wrap: nowrap; gap: 0; }
+.unit-stack { display: flex; flex-direction: column; align-items: center; }
+.unit-stack .atts { display: flex; margin-top: calc(var(--card-sm) * -.18); z-index: 1; }
+.unit-stack .atts .card { --w: calc(var(--card-sm) * .4); }
+.unit-stack .atts > * + * { margin-left: calc(var(--card-sm) * -.22); }
+@media (hover: hover) { .unit-stack .atts .card:hover { z-index: 2; transform: translateY(-4px) scale(1.6); } }
 .zone.compact .card { --w: calc(var(--card-sm) * .6); }
 .zone.compact .row > * + * { margin-left: calc(var(--card-sm) * -.36); }
 @media (hover: hover) { .zone.compact .card:hover { z-index: 2; transform: translateY(-6px); } }
