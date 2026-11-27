@@ -51,12 +51,6 @@ const listFor = (g: Match, p: string) => listActions(g, p);
 const ev = (g: Match, ty: string) => g.s.events.some((e) => e.type === ty);
 /** What each lesson must actually achieve, not just reach its last line. */
 const OUTCOME: Record<string, (g: Match) => boolean> = {
-  'nightfall/basics': (g) => ev(g, 'intercept') && g.s.players[0].vars.claims === 1,
-  'nightfall/cabal': (g) => ev(g, 'dominated') && ev(g, 'cancelled'),
-  'nightfall/harvest': (g) => ev(g, 'awakened') && g.s.players[0].vars.claims === 1,
-  'nightfall/zombie': (g) => ev(g, 'overrun'),
-  'nightfall/slasher': (g) => ev(g, 'sprung') && ev(g, 'finalAct') && g.s.players[0].vars.finalAct === 1,
-  'nightfall/devil': (g) => ev(g, 'nativity') && g.s.result?.winners[0] === 'p0',
 };
 
 for (const id of GAME_IDS) {
@@ -73,17 +67,19 @@ for (const id of GAME_IDS) {
 }
 
 test('tutorial rewards are paid once', () => {
-  const m = loadRef('nightfall');
-  const c = campaignOf(m)!;
+  const m = loadRef('spark-duel');
+  const base = campaignOf(m)!;
+  const deck = Object.keys(m.decks!)[0];
+  const c = { ...base, tutorials: ['basics', 'advanced'].map((id) => ({ id, name: id, deck, opponentDeck: deck, steps: [], rewards: { currency: 10 } })) } as any;
   let p = newProfile(m, c, 5);
-  assert.equal(c.tutorials!.length, 6);
+  const start = p.currency;
   const a = finishTutorial(c, p, 'basics');
-  assert.equal(a.profile.currency, 10);
+  assert.equal(a.profile.currency, start + 10);
   assert.ok(tutorialDone(a.profile, 'basics'));
   const b = finishTutorial(c, a.profile, 'basics');
   assert.equal(b.granted, null);
-  assert.equal(b.profile.currency, 10);
+  assert.equal(b.profile.currency, start + 10);
   p = b.profile;
-  for (const t of c.tutorials!) p = finishTutorial(c, p, t.id).profile;
-  assert.equal(p.currency, 60, '10 Marks for each of the six tutorials');
+  for (const t of c.tutorials) p = finishTutorial(c, p, t.id).profile;
+  assert.equal(p.currency, start + 20, '10 for each tutorial, once');
 });

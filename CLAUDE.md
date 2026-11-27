@@ -1,6 +1,8 @@
 # Universal Card Battles
 
-A universal, fully automated TCG simulator. The headless deterministic TypeScript rules engine runs any card game defined as a data module. The browser UI is in `apps/web`.
+A product for **making trading card games**. The Game Maker (Workshop) is the main product; games made there are played in a robust play mode (AI battles, shop, scenarios and campaigns, later multiplayer). A headless deterministic TypeScript rules engine runs any game defined as a data module. The browser UI is in `apps/web`.
+
+Benchmark: five default modules are mechanics-faithful, differently themed clones of real TCGs (see `docs/STATUS.md`). Workshop Basic/Advanced features should reach ~80% of each source game and scripting ~95%.
 
 - Spec: `docs/SPEC.md` (a condensed form of the design PDF; never re-read the PDF).
 - Rules DSL reference: `docs/DSL.md`. Author guide: `docs/AUTHORING.md`.
@@ -22,7 +24,9 @@ A universal, fully automated TCG simulator. The headless deterministic TypeScrip
 - `packages/ai/src`: agents that see only `observe()` views and `listActions()`.
 - `packages/module-sdk/src`: ZIP/JSON/package loading (browser-safe), plus `node.ts` (disk) and `cli.ts`.
 - `packages/campaign/src`: campaign runtime (profiles, encounters, rewards ledger, boosters, shop). It sits outside the match engine.
-- `packages/reference-games/<id>/`: `manifest.json`, `rules.json`, `cards.json`, `decks.json`.
+- `packages/modules/<id>/`: the default modules the app ships (`manifest.json`, `rules.json`, `cards.json`, `decks.json`).
+- `packages/maker/src`: the Workshop's blueprint format, compiler, recipes, rulebook and CSV tools (browser-safe).
+- `packages/test-harness/fixtures/<id>/`: small engine test fixtures, never loaded by the app.
 - `packages/test-harness`: the node module loader, match runner, sim CLI, and tests (`tests/*.test.ts`).
 - `apps/web`: the browser UI (`main.ts` controller, `ui/` screens rendered only from player views, `modules.ts`, `e2e.mjs`). `npm run dev` / `build` / `e2e`.
 - Imports go through `#engine`, `#ai`, `#campaign`, `#sdk`, `#sdk/node` and `#harness` (package.json `imports`).
@@ -33,4 +37,4 @@ A universal, fully automated TCG simulator. The headless deterministic TypeScrip
 - Nothing game-specific goes in the engine. If a module needs a new capability, add a generic primitive and document it in `docs/DSL.md`.
 - Hidden information never leaks through views, legal actions, logs or errors. AI sees only views.
 - Determinism: the same module, seed and command log must give an identical event hash.
-- All content is original. Never recreate or name real commercial TCGs, their cards or their art.
+- All content is original: never copy names, characters, card text, art or setting from real TCGs. Mechanics may be emulated. Real games may be named only in internal design docs and tests as mechanics references, never in the app, cards or modules.

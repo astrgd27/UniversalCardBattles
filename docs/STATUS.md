@@ -1,5 +1,32 @@
 # Status
 
+## Direction (2026-11): a product for making TCGs
+- **The Workshop (Game Maker) is the main product.** Its design philosophy has three depths:
+  - **Basic:** mix and match elements, make simple cards, get a working TCG quickly.
+  - **Advanced:** sub-menus with detailed options.
+  - **Script:** rules and logic in the engine DSL.
+- **Play mode:** a robust client for any module, with AI battles, a shop (boosters and decks), scenarios and campaigns, and multiplayer later. The battle screen is being rebuilt for ease of use: attack arrows, battle readouts, opponent moves shown step by step, an optional log, and animations for every card interaction.
+- **Benchmark:** five default modules, each a mechanics-faithful clone with an original theme. Basic and Advanced should reach ~80% of each source, and scripting ~95%.
+
+  | Module | Mechanics source | Theme |
+  |---|---|---|
+  | Crystal Circuit | Magic: The Gathering | sci-fi bionic warriors, five crystal energies |
+  | Taste Dimension | Yu-Gi-Oh! | rival chefs summoning monstrous dishes |
+  | Generation Wars | Riftbound | satire: five generations fight over cultural battlefields |
+  | Ringworld Rumble | One Piece | isekai pro wrestling |
+  | Looboo | Pokémon TCG | cute alien creatures; nutrients as resources |
+
+- **Order:**
+  1. Clean slate (done).
+  2. Battle-screen rebuild.
+  3. The games one at a time: Generation Wars → Ringworld Rumble → Looboo → Crystal Circuit → Taste Dimension.
+  4. Shop, campaign and multiplayer polish.
+- **Clean slate (done):**
+  - Every module and its artwork was deleted (NIGHTFALL, Shadow Earth and the Workshop starter games; git history keeps them).
+  - The eight small reference games survive only as engine test fixtures in `packages/test-harness/fixtures`.
+  - The app ships no modules until the five clones land in `packages/modules`.
+
+
 ## Done: M1, rules kernel
 - Deterministic state, events, sfc32 RNG, command log, replay, event hash, serialize/restore.
 - S-expression DSL (expressions and effects), resumable effect frames, decisions (`choose`).
@@ -223,45 +250,10 @@ A survey of about 30 published TCG rulebooks (`docs/COVERAGE.md`, second table) 
 - **Sync file** (Chrome/Edge, File System Access API): link a file in a Dropbox, OneDrive, iCloud or Google Drive folder and every change is written to it (debounced). On a new device, link the same file and choose to load its saves. Permission is re-requested with a "Reconnect" button after a restart. Other browsers keep export/import.
 - Backups include slots; e2e covers slots, autosave, IndexedDB and survival across reloads.
 
-## Done: NIGHTFALL, the first official module
-- @Astral's NIGHTFALL (GDD v0.1) is fully playable. See `docs/NIGHTFALL.md` for what is in and where the digital version interprets the document.
-- The module is generated from `tools/nightfall/build.py`.
-- Engine: `timing.who` (a step only some players take part in, e.g. only the defender responds). Presentation: zone `hideEmpty`, theme `hideVars`/`labels`/`tapVar` (exhausted cards turn sideways), manifest `official` (listed first with a badge).
-- 12 focused tests plus the integrity suite; all 10 faction pairings run clean under random play; the strategic AI beats random.
-
-## Done: NIGHTFALL rules completed, store, art pipeline, iPad
-- **Rules:** every interpreted rule is now implemented as written except Fast "at any time" (own turn plus response steps). That covers the random first player (engine `firstPlayer`), the forced Frenzy Hunt, Guard until Clashed, the Revolver's silver wounds, the Deep Tunnels once per turn and the advanced District draft.
-- **Campaign runtime:** shop `deck` items, exclusive `group`s, `loss` rewards, an optional starter deck list, `itemBlocked`.
-- **NIGHTFALL campaign "The Long Night":**
-  - one free promo starter (choose one of four);
-  - ten replayable AI rivals paying Marks win or lose;
-  - Blood Dawn boosters (6C/3U/1R-or-L).
-- **Art pipeline:** bundled modules ship `assets/` (cards, full-card images, back, packs, decks). `tools/art/import.py` matches and converts images.
-- **iPad and touch:**
-  - hover only on hover devices; 44pt targets; safe areas; no double-tap zoom or callouts;
-  - long-press (or right-click) shows a card up close, or opens a table card's details;
-  - "Add to Home Screen" runs full screen (web manifest and icons).
-  - e2e plays NIGHTFALL on an emulated iPad Pro by touch.
-
 ## Done: scripted tutorials (reusable by any module)
 - **Campaign `tutorials`:** a set-piece scenario, coached steps that each expect one move, pass or decision (or pause for reading), and a scripted opponent. See DSL.md. The runtime is `packages/campaign/src/tutorial.ts`: `allowedTemplates`, `allowedOptions`, `isExpected`, `readShowing`, `tutorialAgent`, `finishTutorial`.
 - **App:** a Tutorials menu per module, a coach panel above the dock, only the expected move playable, a completion screen with the reward and "Keep playing".
 - **NIGHTFALL:** Basics plus one tutorial per faction, 10 Marks each on first completion. `tests/tutorials.test.ts` plays each one through and checks its outcome.
-
-## Done: NIGHTFALL balance v1.1 and table UI
-- **Playtests:** `tools/nightfall/playtest.ts` plays AI vs AI across every pairing and prints how games end, win rates and economy stats.
-  - Every tuning number is a `LEVERS` entry in `build.py`, overridable with `NF_<LEVER>`. `NF_OUT` builds a variant elsewhere.
-  - Win rates moved from 100/88/44/38/6 to 53/59/38/47/53 (Zombie/Cabal/Harvest/Slasher/Devil, 80 games). The changes are in NIGHTFALL.md, "Balance".
-- **Design document:** `tools/nightfall/gdd_update.py` writes `docs/NIGHTFALL_GDD.docx` (v1.1) from the original GDD and the live levers, including a revision table.
-- **Slashers:** the Final Act at 11 Victims replaces the Body Count win. Devil Gestation runs 0 to 9 again, +3 at each Rise with a Vessel.
-- **Engine/UI:** theme `announce` shows a banner for chosen events (the Final Act, the Nativity, the Old One, a District falling). Banners queue and survive redraws.
-- **AI:** `ai.horizon: "pass"` fixes the scoring bias that made agents prefer any neutral move to passing.
-- **Engine:** zone `showIf` draws a player's empty zone while true (faction play areas from turn 1). Views carry it as `zones[key].show`.
-- **UI:**
-  - Cards scale with the screen, with a Card size setting (Compact / Large / Huge, default Large). Table cards show their rules text from about 105px wide.
-  - Board cells hug their cards, player zones flow side by side, and zones use theme labels.
-  - Tall popups scroll.
-  - Tap/untap uses the CSS `rotate`/`scale` properties with event-log animation. This fixes the card showing untapped while hovered and then snapping to tapped.
 
 ## Done: Game Maker v2 (mix-and-match building blocks)
 - **Blocks:** board areas, counters, keywords with numbers and their own ability bundles, target filters, activation cost blocks, new keyword rules, combat options (direct, questing, multiple blockers, attack cards), resource options (face-down/keyword-only, pitch, level and energy requirements, action points), phase options (both players, draw up to, alternating actions), life-card triggers and leader deploy.
@@ -291,34 +283,6 @@ A survey of about 30 published TCG rulebooks (`docs/COVERAGE.md`, second table) 
 - **Tests:**
   - `maker.test.ts`: every blueprint builds, plays to the end under the heuristic AI with its signature mechanics firing, replays identically, keeps hidden cards hidden and conserves cards; plus lint, text and the advanced patch;
   - e2e: every blueprint and station, the AI Lab, playtest and back, publish, phone width.
-
-## Done: Shadow Earth 2.1 (distinct factions)
-- Each Headquarters has a Doctrine:
-  - PsyList: Will Wetwork that plants Control counters.
-  - Prendick: Harvest (enemy kills become Specimen tokens).
-  - Dawn Star: Blood Rite (sacrifice for +3, and sacrifices advance the Master Plan).
-  - Illuminati: Bribery (2 Influence buys +1), with Tradecraft Blackmail.
-  - Children: Congregation (5-operative missions; dead Cultists give Revelation).
-- Agendas are dual-attribute, and the team's better attribute is used.
-- Six new signature cards, 133 in total.
-- Win rates are 44–62%, and the loser averages about 4.6 of 7 Dominance.
-- `tools/shadowearth/fingerprint.ts` measures each faction's play pattern.
-
-## Done: Shadow Earth 2.0 (second official module, full redesign)
-- **Why:** Core 1.7 (325 cards, 20 Dominance) ran about 60 turns, 4 in 10 games decked out, only 12% of defended missions succeeded, and about 1.4 Agendas were completed per game. It is archived in `tools/shadowearth/legacy/`.
-- **Rules (`tools/shadowearth/build.py`, levers at the top):**
-  - Win at 7 Dominance.
-  - Three public Conspiracy Agendas are always in the row, and a new one is revealed as soon as one is scored.
-  - Each faction has a Master Plan that needs 4 progress and is worth 3 Dominance. Scoring an Agenda adds 1 Plan progress, and the opponent can sabotage your Plan.
-  - Missions are free (1–3 operatives). Defended missions end in Bloodshed: each side deals its highest Force.
-  - Catch-up: a player behind gains +1 temporary Influence, and one 2 or more behind draws an extra card.
-  - Defenders don't exhaust.
-- **Cards (`tools/shadowearth/cards2.py`):** 127 cards with rules text and flavour (12 Agendas, 5 Headquarters, 5 Plans, about 17 per faction, 18 Neutral, 6 tokens) and five 40-card starters. See `docs/SHADOW_EARTH.md`.
-- **Engine and AI:**
-  - `emit {to}` for private events.
-  - AI `settleOut` passes through open timing windows.
-  - The AI board eval values ready defenders.
-- **Tests and tools:** `shadow-earth.test.ts` (6 rules tests), the integrity suite, goldens, and `tools/shadowearth/playtest.ts` plus `merge_playtest.py` (copy it to `tests/_sept.ts`; `SE_<LEVER>` env vars build variants).
 
 ## Possible next steps
 - NIGHTFALL: the remaining art; human playtests to confirm the AI-tuned numbers.

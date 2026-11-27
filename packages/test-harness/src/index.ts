@@ -7,7 +7,8 @@ import { IllegalAction, commitAction, compileModule, deckSections, determinize, 
 import type { AgentInfo } from '#ai';
 import type { Agent } from '#ai';
 
-export const REF_DIR = join(dirname(fileURLToPath(import.meta.url)), '../../reference-games');
+/** Engine test fixtures: small rules modules used only by tests (the app never loads them). */
+export const REF_DIR = join(dirname(fileURLToPath(import.meta.url)), '../fixtures');
 
 export function readModuleDir(dir: string): ModuleDef {
   const j = (f: string) => JSON.parse(readFileSync(join(dir, f), 'utf8'));

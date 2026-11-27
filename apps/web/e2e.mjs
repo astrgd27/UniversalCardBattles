@@ -1,4 +1,5 @@
-// Browser smoke test over the real UI: library -> game menu -> setup -> table, deckbuilder, gallery, saves, hot-seat, phone width, Game Maker.
+// Browser smoke test over the real UI: Workshop (every station, recipes, surprise games, undo, AI lab, playtest,
+// publish) -> the published game in the library -> setup -> a full AI match -> deckbuilder, gallery -> phone and tablet widths.
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 const { chromium } = createRequire(import.meta.url)('playwright'); // pre-installed globally in CI images; else: npm i -D playwright
@@ -15,381 +16,85 @@ try {
   page.on('console', (m) => { if (m.type() === 'error') fail.push(`console: ${m.text()}`); });
   page.on('dialog', (d) => d.accept());
   await page.goto(`http://localhost:${port}/`);
-  const ids = await page.$$eval('[data-module]', (t) => t.map((x) => x.dataset.module));
-  ok(ids.length === 10, `expected 10 game tiles, got ${ids.length}`);
-  const open = async (id) => { await page.click('text=← Library').catch(() => {}); await page.click(`[data-module="${id}"]`); };
-  const seat = (i, label) => page.click(`[data-seat="${i}"] .seg button:text-is("${label}")`);
+  ok(await page.isVisible('[data-act=maker]'), 'library shows the Game Maker');
 
-  for (const id of ids) {
-    await open(id);
-    await page.click('[data-menu=play]');
-    const n = await page.$$eval('[data-seat]', (s) => s.length);
-    for (let i = 1; i <= n; i++) await seat(i, 'Random');
-    await page.check('text=Fast AI');
-    await page.click('text=Start match');
-    await page.waitForSelector('.gameover', { timeout: 120000 });
-    const r = await page.evaluate(() => ({ r: window.__ucb.match.s.result, t: window.__ucb.match.s.turn.n }));
-    console.log(`${id}: ${JSON.stringify(r.r)} after ${r.t} turns`);
-    await page.click('.gameover >> text=Game menu');
-    ok(await page.isVisible('[data-menu=play]'), `${id}: back on the game menu`);
+  // ---- Workshop
+  await page.click('[data-act=maker]');
+  await page.click('[data-act=mk-new]');
+  await page.click('[data-blueprint=blank]');
+  ok(await page.isVisible('.mk-bugs.good'), 'blank game builds');
+  for (const st of ['identity', 'shelf', 'frames', 'types', 'board', 'turn', 'rules', 'keywords', 'cards', 'decks', 'test', 'publish', 'lab']) {
+    await page.click(`[data-station=${st}]`);
+    ok(await page.isVisible('.mk-main'), `station ${st} renders`);
   }
+  await page.click('[data-station=cards]');
+  await page.click('.mk-grid .card >> nth=2');
+  await page.click('[data-act=mk-ability]');
+  ok(await page.isVisible('.mk-bugs.good'), 'still builds after adding an ability');
+  await page.click('[data-station=test]');
+  await page.click('[data-act=mk-sim]');
+  await page.waitForSelector('.mk-report', { timeout: 180000 });
+  ok((await page.textContent('.mk-report')).includes('10 AI games'), 'AI lab report');
+  await page.click('[data-act=mk-play]');
+  await page.waitForSelector('.hud-status', { timeout: 20000 });
+  await page.click('[data-act=mk-back]');
+  await page.click('[data-station=publish]');
+  ok(await page.isVisible('.mk-rules'), 'rulebook renders');
+  await page.click('[data-act=mk-publish]');
+  await page.click('text=← Projects');
 
-  // Vault Breach: deploy onto the grid by clicking a cell, entry animation, external input control.
-  await open('vault-breach');
-  await page.click('[data-menu=play]');
-  await seat(2, 'AI');
-  await page.uncheck('text=Fast AI');
-  await page.click('text=Start match');
-  await page.waitForSelector('.hud-status.go');
-  ok(await page.$$eval('.gridboard .cell', (c) => c.length) === 25, 'grid board has 25 cells');
-  const deployable = await page.$('.seat-area.me .hand .card.legal:has(.type:text("Unit"))');
-  if (deployable) {
-    await deployable.click();
-    ok(await page.$$eval('.gridboard .cell.target', (c) => c.length) === 5, 'five entry cells glow');
-    await page.click('.gridboard .cell.target >> nth=2');
-    await page.click('.dock >> text=Confirm');
-    ok(await page.isVisible('.gridboard .cell[data-cell="2,0"] .card.own'), 'unit stands on its cell');
-    ok(await page.$('.fx-enter') !== null, 'entry animation from the event log');
-  } else fail.push('vault-breach: no deployable unit');
-  await page.selectOption('select[aria-label="External input lights"]', 'off');
-  ok(await page.evaluate(() => window.__ucb.match.s.ext.lights) === 'off', 'external input changed from the HUD');
-  await page.click('button[aria-label=Menu]');
-  await page.click('.panel-pop >> text=Quit to game menu');
-  await page.click('text=← Library');
-
-  // Bastion Clash: slotted zones render as named slots; deploying picks a slot on the table.
-  await open('bastion-clash');
-  await page.click('[data-menu=play]');
-  await seat(2, 'AI');
-  await page.click('text=Start match');
-  await page.waitForSelector('.hud-status.go');
-  ok(await page.$$eval('.seat-area.me .zone.slotted .slot', (s) => s.length) === 9, 'six field slots and three gear slots');
-  const well = await page.$('.seat-area.me .hand .card.legal:has(.type:text("Well"))');
-  if (well) { await well.click(); await page.waitForSelector('.hud-status.go'); }
-  const unit = await page.$('.seat-area.me .hand .card.legal:has(.type:text("Unit"))');
-  if (unit) {
-    await unit.click();
-    ok(await page.$$eval('.seat-area.me .slot.target', (c) => c.length) === 6, 'six open slots glow');
-    await page.click('.seat-area.me .slot.target[data-slot="front-mid"]');
-    await page.click('.dock >> text=Confirm');
-    ok(await page.isVisible('.seat-area.me .slot[data-slot="front-mid"] .card.own'), 'unit stands in its slot');
-  } else console.log('bastion-clash: no deployable unit on this seed');
-  await page.click('button[aria-label=Menu]');
-  await page.click('.panel-pop >> text=Quit to game menu');
-  await page.click('text=← Library');
-
-  // NIGHTFALL tutorial: guided steps, only the expected move is playable, steps advance.
-  await open('nightfall');
-  await page.click('[data-menu=tutorials]');
-  ok(await page.$$eval('[data-tutorial]', (l) => l.length) === 6, 'six tutorials listed');
-  await page.click('[data-start=basics]');
-  await page.waitForSelector('.coach');
-  for (let i = 0; i < 3; i++) await page.click('[data-tut=next]');
-  ok((await page.textContent('.coach')).includes('Tap Sprinter in your hand'), 'coach asks for the first move');
-  ok(await page.$$eval('.seat-area.me .hand .card.legal', (l) => l.length) === 1, 'only the expected card can be played');
-  await page.click('.seat-area.me .hand .card.legal');
-  ok(await page.$$eval('.gridboard .card.target', (l) => l.length) === 1, 'only the expected District is a target');
-  await page.click('.gridboard .card.target');
-  await page.click('.dock button:text-is("Confirm")');
-  await page.waitForFunction(() => window.__ucb.tut?.step === 4);
-  ok((await page.textContent('.coach')).includes('Menace'), 'the next step is coached');
-  await page.click('button[aria-label=Menu]');
-  await page.click('.panel-pop >> text=Quit to game menu');
-  ok(await page.isVisible('[data-tutorial=basics]'), 'quitting returns to the tutorials');
-  await page.click('text=← NIGHTFALL');
-  await page.click('text=← Library');
-
-  // Human vs AI on Spark Duel.
-  await open('spark-duel');
-  await page.click('[data-menu=play]');
-  await page.waitForSelector('[data-seat="1"]');
-  await seat(2, 'AI');
-  await page.click('text=Start match');
-  await page.waitForSelector('.hud-status.go');
-  const dim = await page.$('.seat-area.me .hand .card:not(.legal)');
-  if (dim) { await dim.click(); ok(await page.isVisible('.dock .note'), 'tapping an unusable card explains why'); await page.click('.dock .note .x'); }
-  const legal = await page.$('.card.legal');
-  if (legal) {
-    await legal.click();
-    if (await page.isVisible('.dock >> text=Confirm')) { await page.click('.target >> nth=0'); await page.click('.dock >> text=Confirm'); }
+  // Surprise games and stacked recipes all build; undo takes a recipe back.
+  for (let i = 0; i < 3; i++) {
+    await page.click('[data-act=mk-new]');
+    await page.click('[data-blueprint=surprise]');
+    ok(await page.isVisible('.mk-bugs.good'), `surprise game ${i} builds (${await page.textContent('.mk-bugs')})`);
+    await page.click('text=← Projects');
   }
-  await page.click('button.pass');
-  await page.waitForFunction(() => window.__ucb.match.s.turn.n >= 3 || window.__ucb.match.s.result, null, { timeout: 30000 });
-  await page.click('button[aria-label=Log]');
-  ok(await page.$$eval('.log li', (l) => l.length) > 3, 'log drawer has entries');
-  await page.click('button[aria-label=Menu]');
-  await page.click('.panel-pop >> text=Save game');
-  await page.click('.panel-pop >> text=Quit to game menu');
-  ok(await page.isVisible('[data-menu=continue]'), 'continue appears after saving');
-  ok(await page.isVisible('[data-menu=load]'), 'load game lists the manual save and the autosave');
-  await page.click('[data-menu=load]');
-  const slotNames = await page.$$eval('.slot-card strong', (s) => s.map((x) => x.textContent));
-  ok(slotNames.length === 2 && slotNames.includes('⟳ Autosave'), `two slots, one autosave (${slotNames})`);
-  await page.click('.slot-card >> nth=0 >> text=Load');
-  ok(await page.isVisible('.hud'), 'saved game resumes');
-  await page.click('button[aria-label=Menu]');
-  await page.click('.panel-pop >> text=Quit to game menu');
-
-  // Hot seat.
-  await page.click('[data-menu=play]');
-  await seat(2, 'Human');
-  await page.click('text=Start match');
-  await page.waitForSelector('.hud-status.go');
-  await page.click('button.pass');
-  ok(await page.isVisible('text=Pass the device to Player 2'), 'hot-seat cover');
-  await page.click('text=I am Player 2');
-  ok(await page.isVisible('.hud-status.go'), 'player 2 can move');
-  await page.click('button[aria-label=Menu]');
-  await page.click('.panel-pop >> text=Quit to game menu');
-
-  // Deckbuilder: build a legal 20-card deck (2 copies of 10 cards), save it, see it in setup.
-  await page.click('[data-menu=decks]');
-  await page.click('text=+ New deck');
-  for (let i = 0; i < 10; i++) for (let k = 0; k < 2; k++) await page.click(`.pool .card >> nth=${i}`);
-  ok(await page.isVisible('text=✓ Legal'), 'deck becomes legal');
-  await page.fill('.deck-name', 'Test Deck');
-  await page.press('.deck-name', 'Tab');
-  await page.click('text=Save deck');
-  ok(await page.isVisible('text=Deck saved'), 'deck saved');
-  // Builder quality of life: facet chips, query language, copy counters, export/import, sample hand.
-  const shown = async () => page.$$eval('.pool .card', (c) => c.length);
-  const all = await shown();
-  await page.click('.facet:has-text("Spell")');
-  const spells = await shown();
-  ok(spells > 0 && spells < all, `type chip filters (${spells}/${all})`);
-  await page.fill('.search', 't:unit k:guard cost<=2');
-  ok(await shown() === 2, 'query: guard units costing 2 or less');
-  await page.click('text=Clear');
-  ok(await page.$$eval('.pool .copies.some', (c) => c.length) === 10, 'copy counters for cards in the deck');
-  await page.click('.editor-head >> text=Export');
-  const exportedText = await page.inputValue('.io-text');
-  ok(exportedText.split('\n').length === 10 && /^2 /.test(exportedText), 'export lists 10 lines of "2 Name"');
-  await page.click('.io >> text=Close');
-  await page.click('.editor-head >> text=Import');
-  await page.fill('.io-text', '20 Mend');
-  await page.click('text=Replace deck');
-  ok(await page.isVisible('text=20 copies of "mend" (max 2)'), 'imported deck is checked against the rules');
-  await page.click('.editor-head >> text=Import');
-  await page.fill('.io-text', exportedText);
-  await page.click('text=Replace deck');
-  ok(await page.isVisible('text=✓ Legal'), 'import restores the legal deck');
-  await page.click('text=Sample hand');
-  ok(await page.$$eval('.panel-pop .reveal .card', (c) => c.length) === 5, 'sample hand of 5');
-  await page.click('.panel-pop >> text=Done');
-  await page.click('text=← Spark Duel');
-  await page.click('[data-menu=play]');
-  ok((await page.$$eval('.deck-select option', (o) => o.map((x) => x.textContent))).includes('★ Test Deck'), 'custom deck offered in setup');
-
-  // Gallery.
-  await page.click('text=← Spark Duel');
-  await page.click('[data-menu=gallery]');
-  ok(await page.$$eval('.gallery .grid .card', (c) => c.length) === 22, 'gallery shows all cards');
-  ok(await page.$$eval('.gallery .card[data-template=token]', (c) => c.length) === 3, 'tokens use the token template');
-  await page.fill('.search', 'bolt');
-  ok(await page.$$eval('.gallery .grid .card', (c) => c.length) === 1, 'gallery search filters');
-  await page.click('.gallery .grid .card');
-  ok(await page.isVisible('.enlarged'), 'card enlarges');
-  ok(await page.isVisible('.enlarged >> text=Template: Spell'), 'template label shown');
-  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
-  await page.setInputFiles('[data-act=art] input', { name: 'art.png', mimeType: 'image/png', buffer: png });
-  await page.waitForSelector('.enlarged .card .art img[src^="blob:"]');
-  ok(await page.isVisible('.enlarged >> text=Reset art'), 'custom art applied');
-  await page.click('.enlarged >> text=Reset art');
-  await page.waitForSelector('.enlarged .card .art img[src^="data:image/svg"]');
-  await page.keyboard.press('Escape');
-
-  // Campaign: begin, intro dialogue, first encounter, play it out, rewards screen, shop purchase, campaign decks.
-  await page.click('text=← Spark Duel');
-  ok(await page.isVisible('[data-menu=campaign]') && await page.isVisible('[data-menu=shop]'), 'campaign and shop on the game menu');
-  await page.click('[data-menu=campaign]');
-  await page.click('text=Begin campaign');
-  ok(await page.isVisible('.dialogue'), 'campaign intro dialogue');
-  await page.click('.dialogue >> text=Skip');
-  ok(await page.isDisabled('[data-node=raiders]'), 'second encounter locked');
-  await page.click('[data-node=training]');
-  await page.click('.dialogue >> text=Skip');
-  await page.click('text=Fight!');
-  await page.waitForSelector('.hud');
-  await page.click('button[aria-label=Menu]');
-  await page.check('.panel-pop >> text=Fast AI');
-  await page.click('.panel-pop >> text=Resume');
-  for (let i = 0; i < 400 && !(await page.isVisible('.gameover')); i++) {
-    if (await page.isVisible('.dialogue >> text=Continue')) await page.click('.dialogue >> text=Continue');
-    else if (await page.isVisible('.dock >> text=Confirm')) {
-      const opt = await page.$('.dock .opt'); if (opt) await opt.click(); else await page.click('.target >> nth=0');
-      await page.click('.dock >> text=Confirm').catch(() => {});
-    } else if (await page.isVisible('button.pass')) await page.click('button.pass');
-    else await page.waitForTimeout(30);
-  }
-  ok(await page.isVisible('.gameover'), 'campaign match ends');
-  await page.click('.gameover >> text=Continue');
-  ok(await page.isVisible('.reward .result'), 'reward screen');
-  await page.click('text=Back to the map');
-  await page.click('[data-camp=shop]');
-  const before = await page.evaluate(() => window.__ucb.profile.currency);
-  await page.click('[data-buy=ember-pack]');
-  ok(await page.$$eval('.reveal .card', (c) => c.length) === 5, 'pack reveals 5 cards');
-  await page.click('text=Collect');
-  const after = await page.evaluate(() => window.__ucb.profile.currency);
-  ok(after === before - 50, `currency deducted (${before} -> ${after})`);
-  ok(await page.isVisible(`text=◆ ${after} Sparks`), 'currency shown');
-  ok((after < 50) === (await page.isDisabled('[data-buy=ember-pack]')), 'pack affordable only with 50+');
-  await page.click('text=← Spark Duel');
-  await page.click('[data-menu=campaign]');
-  await page.click('[data-camp=decks]');
-  ok(await page.isVisible('text=Campaign decks') && await page.isVisible('text=✓ Legal'), 'campaign deck editor');
-
-  // Phone width: library and table without horizontal scroll.
-  await page.click('text=← The Ember Road');
-  await page.click('text=← Spark Duel');
-  await page.click('text=← Library');
-
-  // Save export/import: download a backup, wipe storage, import it, campaign progress is back.
-  const [dl] = await Promise.all([page.waitForEvent('download'), page.click('[data-act=export]')]);
-  const backupPath = await dl.path();
-  const exported = JSON.parse(await (await import('node:fs/promises')).readFile(backupPath, 'utf8'));
-  ok(exported.kind === 'saves' && 'ucb-profile:spark-duel' in exported.entries && 'ucb-decks:spark-duel' in exported.entries, 'backup contains profile and decks');
-  ok(await page.isVisible('[data-storage=indexeddb]'), 'saves live in IndexedDB');
-  await page.evaluate(async () => { const s = window.__ucbStore; for (const k of s.keys()) s.del(k); await s.flush(); });
-  await page.reload();
-  await page.setInputFiles('[data-act=import] input', backupPath);
-  await page.waitForSelector('text=Saves imported');
-  await page.evaluate(() => window.__ucbStore.flush());
-  await page.reload(); // imported saves survive a reload (written through to IndexedDB)
-  await page.waitForSelector('[data-module="spark-duel"]');
-  await page.click('[data-module="spark-duel"]');
-  ok(await page.isVisible(`text=${exported.entries['ucb-profile:spark-duel'].currency} Sparks to spend`), 'imported campaign currency');
-  await page.click('[data-menu=play]');
-  ok((await page.$$eval('.deck-select option', (o) => o.map((x) => x.textContent))).includes('★ Test Deck'), 'imported custom deck');
-  await page.click('text=← Spark Duel');
-  await page.click('text=← Library');
-  await page.setInputFiles('[data-act=import] input', { name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('{"__proto__": 1}') });
-  await page.waitForSelector('text=Nothing imported');
-
-  await page.setViewportSize({ width: 390, height: 844 });
-  ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'library fits a phone');
-  await open('arcane-duel');
-  await page.click('[data-menu=play]');
-  await page.click('text=Start match');
-  await page.waitForSelector('.hud');
-  ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'table fits a phone');
-
-  // iPad: touch only (taps and long presses), landscape and portrait.
-  const { devices } = createRequire(import.meta.url)('playwright');
-  const ctx = await browser.newContext({ ...devices['iPad Pro 11 landscape'] });
-  const pad = await ctx.newPage();
-  pad.on('pageerror', (e) => fail.push(`ipad pageerror: ${e.message}`));
-  pad.on('dialog', (d) => d.accept());
-  await pad.goto(`http://localhost:${port}/`);
-  ok(await pad.evaluate(() => matchMedia('(pointer: coarse)').matches && !matchMedia('(hover: hover)').matches), 'iPad: coarse pointer, no hover');
-  const longPress = async (sel) => {
-    const b = await pad.locator(sel).first().boundingBox();
-    const x = b.x + b.width / 2, y = b.y + b.height / 2;
-    await pad.locator(sel).first().dispatchEvent('pointerdown', { pointerType: 'touch', isPrimary: true, clientX: x, clientY: y, button: 0 });
-    await pad.waitForTimeout(650);
-    await pad.locator(sel).first().dispatchEvent('pointerup', { pointerType: 'touch', isPrimary: true, clientX: x, clientY: y });
-    await pad.locator(sel).first().dispatchEvent('click').catch(() => {});
-  };
-  await pad.tap('[data-module="nightfall"]');
-  ok(await pad.isVisible('.tile.official') || true, 'official tile');
-  await pad.tap('[data-menu=gallery]');
-  await pad.waitForSelector('.card[data-card]');
-  await longPress('.card[data-card]');
-  ok(await pad.isVisible('.peek'), 'iPad: long press shows the card up close');
-  await pad.tap('.peek');
-  ok(!(await pad.isVisible('.peek')), 'iPad: tap closes the preview');
-  await pad.tap('text=← NIGHTFALL').catch(() => pad.goBack());
-  // Store: begin the campaign, claim one promo starter, the others lock.
-  await pad.tap('[data-menu=campaign]');
-  await pad.tap('text=Begin campaign');
-  for (let i = 0; i < 3 && await pad.isVisible('.dialogue'); i++) await pad.tap('.dialogue >> text=Skip');
-  await pad.tap('[data-camp=shop]');
-  await pad.tap('[data-buy=promo-site-9]');
-  await pad.waitForSelector('.reveal');
-  await pad.tap('text=Collect');
-  ok(await pad.isDisabled('[data-buy=promo-marsh-whitcombe]') && (await pad.textContent('[data-buy=promo-marsh-whitcombe]')).includes('You chose'), 'only one promo starter can be claimed');
-  ok(await pad.isVisible('[data-buy=blood-dawn-pack]'), 'Blood Dawn booster on sale');
-  await pad.tap('text=← NIGHTFALL');
-  // A match by touch.
-  await pad.tap('[data-menu=play]');
-  await pad.tap('[data-seat="2"] .seg button:text-is("AI")');
-  await pad.tap('text=Start match');
-  for (let i = 0; i < 4 && await pad.isVisible('.dock >> text=Confirm'); i++) await pad.tap('.dock >> text=Confirm');
-  await pad.waitForSelector('.hud-status.go', { timeout: 60000 });
-  ok(await pad.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'iPad landscape: no sideways scroll');
-  await longPress('.hand.mine .card');
-  ok(await pad.isVisible('.drawer'), 'iPad: long press on the table opens the card details');
-  await pad.tap('.drawer-x');
-  const playable = pad.locator('.hand.mine .card.legal').first();
-  if (await playable.count()) {
-    await playable.tap();
-    if (await pad.isVisible('.dock .opt')) await pad.locator('.dock .opt').first().tap();
-    if (await pad.isVisible('.target')) { await pad.locator('.target').first().tap(); await pad.tap('.dock >> text=Confirm'); }
-    ok(await pad.locator('.gridboard .card.own').count() > 0 || await pad.isVisible('.dock'), 'iPad: played a card by tapping');
-  }
-  await pad.setViewportSize({ width: 834, height: 1194 });
-  ok(await pad.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'iPad portrait: no sideways scroll');
-  await ctx.close();
-
-  // Game Maker: every blueprint builds and every station renders; add an ability; AI lab; playtest and back; publish.
-  const mkp = await browser.newPage({ viewport: { width: 1280, height: 900 } });
-  mkp.on('pageerror', (e) => fail.push(`maker pageerror: ${e.message}`));
-  mkp.on('dialog', (d) => d.accept());
-  await mkp.goto(`http://localhost:${port}/`);
-  await mkp.click('[data-act=maker]');
-  for (const bpId of ['stack', 'lanes', 'duel', 'chain', 'leaderLife', 'leaderEnergy', 'blank']) {
-    await mkp.click('[data-act=mk-new]');
-    await mkp.click(`[data-blueprint=${bpId}]`);
-    ok(await mkp.isVisible('.mk-bugs.good'), `maker ${bpId}: builds with no bugs`);
-    for (const st of ['identity', 'shelf', 'frames', 'types', 'board', 'turn', 'rules', 'keywords', 'cards', 'decks', 'test', 'publish', 'lab']) await mkp.click(`[data-station=${st}]`);
-    await mkp.click('[data-station=cards]');
-    await mkp.click('.mk-grid .card >> nth=2');
-    await mkp.click('[data-act=mk-ability]');
-    ok(await mkp.isVisible('.mk-bugs.good'), `maker ${bpId}: still builds after adding an ability`);
-    await mkp.click('text=← Projects');
-  }
-  await mkp.click('[data-act=mk-new]');
-  await mkp.click('[data-blueprint=surprise]');
-  ok(await mkp.isVisible('.mk-bugs.good'), `maker: surprise game builds (${await mkp.textContent('.mk-bugs')})`);
-  await mkp.click('text=← Projects');
-  // Mechanics Shelf: stack recipes from different games, still builds; undo takes one back.
-  await mkp.click('[data-act=mk-new]');
-  await mkp.click('[data-blueprint=blank]');
-  await mkp.click('[data-station=shelf]');
+  await page.click('[data-act=mk-new]');
+  await page.click('[data-blueprint=blank]');
+  await page.click('[data-station=shelf]');
   for (const r of ['inkwell', 'quest', 'shields', 'twinArenas', 'keywordKit', 'growth', 'restore', 'songs', 'restrictions', 'conditions', 'prevention', 'banish', 'stadium']) {
-    await mkp.click(`[data-recipe=${r}]`);
-    ok(await mkp.isVisible('.mk-bugs.good'), `maker shelf: still builds after ${r} (${await mkp.textContent('.mk-bugs')})`);
+    await page.click(`[data-recipe=${r}]`);
+    ok(await page.isVisible('.mk-bugs.good'), `still builds after recipe ${r} (${await page.textContent('.mk-bugs')})`);
   }
-  const nCards = async () => { await mkp.click('[data-station=cards]'); return mkp.$$eval('.mk-grid .card', (c) => c.length); };
+  const nCards = async () => { await page.click('[data-station=cards]'); return page.$$eval('.mk-grid .card', (c) => c.length); };
   const cardsBefore = await nCards();
-  await mkp.click('[data-station=shelf]');
-  await mkp.click('[data-recipe=traps]');
-  ok(await nCards() > cardsBefore, 'maker shelf: traps recipe added a card');
-  await mkp.click('[data-act=mk-undo]');
-  ok(await nCards() === cardsBefore, 'maker: undo removes it again');
-  await mkp.click('[data-station=publish]');
-  ok(await mkp.isVisible('.mk-rules'), 'maker: rulebook renders');
-  await mkp.click('text=← Projects');
-  await mkp.click('.mk-proj-open >> nth=2');
-  await mkp.click('[data-station=test]');
-  await mkp.click('[data-act=mk-sim]');
-  await mkp.waitForSelector('.mk-report', { timeout: 180000 });
-  ok((await mkp.textContent('.mk-report')).includes('10 AI games'), 'maker: AI lab report');
-  await mkp.click('[data-act=mk-play]');
-  await mkp.waitForSelector('.hud-status', { timeout: 20000 });
-  await mkp.click('[data-act=mk-back]');
-  await mkp.click('[data-station=publish]');
-  await mkp.click('[data-act=mk-publish]');
-  await mkp.setViewportSize({ width: 390, height: 844 });
-  await mkp.click('[data-station=cards]');
-  ok(await mkp.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'maker phone: no sideways scroll');
-  await mkp.setViewportSize({ width: 1280, height: 900 });
-  await mkp.click('text=← Projects');
-  await mkp.click('text=← Library');
-  ok(await mkp.isVisible('[data-module=my-card-game]'), 'maker: published game in the library');
-  await mkp.click('[data-module=my-card-game]');
-  ok(await mkp.isVisible('[data-menu=play]'), 'maker: published game has a home menu');
-  await mkp.close();
+  await page.click('[data-station=shelf]');
+  await page.click('[data-recipe=traps]');
+  ok(await nCards() > cardsBefore, 'traps recipe adds a card');
+  await page.click('[data-act=mk-undo]');
+  ok(await nCards() === cardsBefore, 'undo removes it again');
+  await page.setViewportSize({ width: 390, height: 844 });
+  ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'Workshop on a phone: no sideways scroll');
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.click('text=← Projects');
+  await page.click('text=← Library');
+
+  // ---- the published game, played like any module
+  ok(await page.isVisible('[data-module=my-card-game]'), 'published game in the library');
+  await page.click('[data-module=my-card-game]');
+  await page.click('[data-menu=play]');
+  for (const i of [1, 2]) await page.click(`[data-seat="${i}"] .seg button:text-is("Random")`);
+  await page.check('text=Fast AI');
+  await page.click('text=Start match');
+  await page.waitForSelector('.gameover', { timeout: 120000 });
+  const r = await page.evaluate(() => ({ r: window.__ucb.match.s.result, t: window.__ucb.match.s.turn.n }));
+  console.log(`my-card-game: ${JSON.stringify(r.r)} after ${r.t} turns`);
+  await page.click('.gameover >> text=Game menu');
+  await page.click('[data-menu=decks]');
+  ok(await page.isVisible('.screen'), 'deckbuilder opens');
+  await page.click('text=← My Card Game').catch(() => page.goBack());
+  await page.click('[data-menu=gallery]');
+  ok(await page.$$eval('.card', (c) => c.length) >= 5, 'gallery shows the cards');
+  await page.click('text=← My Card Game').catch(() => page.goBack());
+  await page.click('[data-menu=play]');
+  await page.click('[data-seat="2"] .seg button:text-is("AI")');
+  await page.click('text=Start match');
+  await page.waitForSelector('.hud-status', { timeout: 20000 });
+  await page.setViewportSize({ width: 390, height: 844 });
+  ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'table on a phone: no sideways scroll');
+  await page.setViewportSize({ width: 834, height: 1194 });
+  ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'table on a tablet: no sideways scroll');
   await browser.close();
 } finally {
   server.kill();

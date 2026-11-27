@@ -6,8 +6,8 @@ import { createMatch, eventHash } from '#engine';
 import { REF_DIR, deckOpts, defaultDecks, loadRef, playMatch } from '#harness';
 
 export const GOLDEN_SEEDS = [1, 2, 3];
-export const GAME_IDS = ['spark-duel', 'arcane-duel', 'tri-lane', 'relic-chain', 'tidewardens', 'ember-council', 'vault-breach', 'bastion-clash', 'nightfall', 'shadow-earth'];
-export const goldenPath = join(REF_DIR, '../test-harness/tests/golden.json');
+export const GAME_IDS = ['spark-duel', 'arcane-duel', 'tri-lane', 'relic-chain', 'tidewardens', 'ember-council', 'vault-breach', 'bastion-clash'];
+export const goldenPath = join(REF_DIR, '../tests/golden.json');
 
 export function goldenHashes(): Record<string, string[]> {
   const out: Record<string, string[]> = {};

@@ -13,7 +13,7 @@ Unmatched files are listed and left alone. Re-running replaces earlier imports.
 import json, os, re, sys
 from PIL import Image, ImageOps
 
-ROOT = os.path.join(os.path.dirname(__file__), '..', '..', 'packages', 'reference-games')
+ROOT = os.path.join(os.path.dirname(__file__), '..', '..', 'packages', 'modules')
 EXT = ('.png', '.jpg', '.jpeg', '.webp', '.avif', '.gif', '.bmp', '.tif', '.tiff')
 slug = lambda s: re.sub(r'[^a-z0-9]+', '-', s.lower()).strip('-')
 

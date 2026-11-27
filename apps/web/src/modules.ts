@@ -1,16 +1,16 @@
-// Reference modules bundled at build time; more can be loaded from .zip packages at runtime.
+// Default modules (packages/modules) bundled at build time; more can be loaded from .zip packages at runtime.
 import type { Mod } from '#engine';
 import { compileModule } from '#engine';
 import { loadPackage, readZip } from '#sdk';
 
-const files = import.meta.glob(['../../../packages/reference-games/*/*.json', '../../../packages/reference-games/*/ai/ai.json', '../../../packages/reference-games/*/campaign/campaign.json'], { eager: true, import: 'default' }) as Record<string, any>;
-// Images bundled with the built-in modules (packages/reference-games/<id>/assets/**), served as hashed files.
-const images = import.meta.glob('../../../packages/reference-games/*/assets/**/*.{png,jpg,jpeg,webp,avif}', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+const files = import.meta.glob(['../../../packages/modules/*/*.json', '../../../packages/modules/*/ai/ai.json', '../../../packages/modules/*/campaign/campaign.json'], { eager: true, import: 'default' }) as Record<string, any>;
+// Images bundled with the built-in modules (packages/modules/<id>/assets/**), served as hashed files.
+const images = import.meta.glob('../../../packages/modules/*/assets/**/*.{png,jpg,jpeg,webp,avif}', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 export const MODULES = new Map<string, Mod>();
 /** Asset URLs by module: moduleId -> package path ("assets/...") -> url. Bundled modules and loaded packages alike. */
 export const ASSETS = new Map<string, Map<string, string>>();
 for (const [path, url] of Object.entries(images)) {
-  const m = path.match(/reference-games\/([^/]+)\/(assets\/.+)$/);
+  const m = path.match(/modules\/([^/]+)\/(assets\/.+)$/);
   if (m) { if (!ASSETS.has(m[1])) ASSETS.set(m[1], new Map()); ASSETS.get(m[1])!.set(m[2], url); }
 }
 const IMG = ['webp', 'png', 'jpg', 'jpeg', 'avif'];
@@ -24,7 +24,7 @@ export function assetUrl(moduleId: string, path: string | undefined, conventiona
 }
 const byId: Record<string, Record<string, any>> = {};
 for (const [path, data] of Object.entries(files)) {
-  const m = path.match(/reference-games\/([^/]+)\/(?:ai\/|campaign\/)?([a-z]+)\.json$/);
+  const m = path.match(/modules\/([^/]+)\/(?:ai\/|campaign\/)?([a-z]+)\.json$/);
   if (m) (byId[m[1]] ??= {})[m[2]] = data;
 }
 for (const [id, d] of Object.entries(byId)) {

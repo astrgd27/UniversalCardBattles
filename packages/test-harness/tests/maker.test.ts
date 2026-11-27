@@ -108,8 +108,8 @@ const COMBOS: [string, string[]][] = [
   ['blank', ['hiddenResources', 'twinArenas', 'deployLeader', 'alternate', 'restore']],
   ['blank', ['pitch', 'actionPoints', 'drawTo', 'items']],
   ['blank', ['ramp', 'lines', 'energyNeed', 'lifeCards', 'lifeTriggers']],
-  ['chain', ['traps', 'positions', 'tribute', 'extraDeck']],
-  ['leaderLife', ['counterStep', 'boost']],
+  ['blank', ['traps', 'positions', 'tribute', 'extraDeck']],
+  ['blank', ['counterStep', 'boost']],
 ];
 const withRecipes = (base: string, ids: string[]) => { const bp = fromBlueprint(base); for (const r of ids) applyRecipe(bp, r); return bp; };
 
@@ -153,7 +153,7 @@ test('maker recipes: signature mechanics fire (questing, pitching, arenas, inkwe
   assert.ok(lines.has('action:advance'), 'front line & reserve');
   const sh = seen('blank', ['shields']);
   assert.ok(sh.has('lifeLost'), 'shields break');
-  const bl = seen('stack', ['block']);
+  const bl = seen('blank', ['block']);
   assert.ok(bl.has('blocked'), 'blocking with up to two units');
 });
 

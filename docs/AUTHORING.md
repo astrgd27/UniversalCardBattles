@@ -15,7 +15,7 @@ my-game/
   campaign/campaign.json   optional single-player campaign
   assets/            optional art (png/jpg/webp/gif); refer to it with "art": "assets/x.png" on a card
 ```
-Start by copying `packages/reference-games/spark-duel`. It is the smallest complete game.
+Start by copying `packages/test-harness/fixtures/spark-duel`. It is the smallest complete game.
 Card looks: set `presentation.byType` in the manifest, e.g. `{"unit": "skirmisher", "spell": "spell"}`. You can also define your own templates (see `DSL.md`, Presentation).
 
 ## 2. Think in four parts
@@ -28,11 +28,11 @@ Everything is an S-expression, e.g. `["damage", "$t", ["get", "$self", "power"],
 
 ## 3. Check, play, balance
 ```
-npm run -s validate packages/reference-games/my-game      # file:line:col errors
+npm run -s validate packages/modules/my-game      # file:line:col errors
 npm run -s sim my-game -- --games=200                     # random games: crashes, stuck games, length
 npm run -s tourney my-game -- --agents=heuristic,heuristic --decks=a,b   # deck balance with the AI
 npm run -s events my-game action destroyed                # does that mechanic actually happen?
-npm run -s pack packages/reference-games/my-game out.zip  # signed package for the browser's "Load a game"
+npm run -s pack packages/modules/my-game out.zip  # signed package for the browser's "Load a game"
 ```
 Rules of thumb:
 - The validator catches typos in ops, zones, cards, layers and script arity.

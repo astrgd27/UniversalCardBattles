@@ -1,6 +1,6 @@
 # Rules DSL (engine API 0.3.1)
 
-A module is a folder or ZIP package (see **Packages** below). All logic is JSON S-expressions: `["op", arg, ...]`. The reference module is `packages/reference-games/spark-duel`.
+A module is a folder or ZIP package (see **Packages** below). All logic is JSON S-expressions: `["op", arg, ...]`. The reference module is `packages/test-harness/fixtures/spark-duel`.
 
 ## Values and variables
 - Strings that start with `$` are variables. Other strings are literals.
