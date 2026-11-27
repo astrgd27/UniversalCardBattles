@@ -22,11 +22,11 @@ export type KeywordRule = 'none' | 'haste' | 'guard' | 'blocker' | 'flying' | 'v
   | 'noAttack' | 'noBlock' | 'noBeAttacked' | 'unblockable' | 'entersExhausted'
   | 'tank' | 'bulwark' | 'accelerate' | 'ganking' | 'temporary' | 'banish' | 'rushUnits' | 'noKO'
   | 'reach' | 'doubleStrike' | 'menace' | 'indestructible' | 'flash' | 'wardTax' | 'legendary'
-  | 'tuner' | 'directAttack' | 'extraAttack';
+  | 'tuner' | 'directAttack' | 'extraAttack' | 'hidden' | 'deflect';
 
 export interface StatDef { id: string; name: string; icon?: string }
 export interface Color { id: string; name: string; hex: string; icon?: string }
-export interface Counter { id: string; name: string; icon?: string; adds?: Record<string, number>; stops?: ('attack' | 'block')[]; expires?: boolean } // expires: removed at the end of its controller's turn // +1/+1: adds {power: 1, health: 1}; sleep: stops attack
+export interface Counter { id: string; name: string; icon?: string; adds?: Record<string, number>; stops?: ('attack' | 'block')[]; expires?: boolean; max?: number } // expires: removed at the end of its controller's turn // +1/+1: adds {power: 1, health: 1}; sleep: stops attack
 /** A status effect a game defines (asleep, poisoned, stunned, burning, frozen, inspired...). Stored on a unit as var st_<id> (its level). */
 export interface Status {
   id: string; name: string; icon?: string;
@@ -40,13 +40,14 @@ export interface Status {
   tickFlip?: boolean; // after the tick damage, flip a coin: heads cures it
   lasts?: 'untilCured' | 'ownerNextTurnEnd' | 'endOfTurn';
   attackFlip?: number; // when it attacks, flip a coin: tails = the attack fails and it takes this much damage
+  noDamage?: boolean; // deals no damage in fights (battlefield fights and mass combat)
 }
 export interface CustomZone { id: string; name: string; vis: 'public' | 'owner' | 'hidden'; size: number; inPlay: boolean; global?: boolean } // size 0 = unlimited; global: a new card replaces the one in either player's zone
 export interface Arena { id: string; name: string; size: number; attack: boolean } // a board area units are played into; `attack`: units here can attack/block
 export interface StatSlot { stat: string; pos: Pos; icon?: string; label?: string }
 export interface FrameDef { base: string; cost: 'tl' | 'tr' | 'none'; stats: StatSlot[]; art: number; level?: string; text: boolean; layout?: 'portrait' | 'landscape' }
 export interface CardType { id: string; name: string; role: Role; frame: FrameDef; icon?: string; zone?: string; playTo?: string; perTurn?: number; notFirstTurn?: boolean; perUnit?: number; anyUnit?: boolean; equipment?: boolean;
-  method?: 'materials' | 'fusion' | 'synchro' | 'xyz' | 'link'; ritual?: boolean; settable?: boolean; speed3?: boolean; continuous?: boolean }
+  method?: 'materials' | 'fusion' | 'synchro' | 'xyz' | 'link'; ritual?: boolean; showdown?: boolean; settable?: boolean; speed3?: boolean; continuous?: boolean }
 // method (extra-deck types): how it is summoned; ritual: summoned only by a ritual effect; settable (quick spells): can be set and used from the next turn;
 // speed3 (traps): responds to anything; continuous (traps): stays face up after it is sprung
 // anyUnit (attachments): may go on any unit, yours or the opponent's (auras, curses); equipment: stays when its unit leaves and can be moved with equipCost
@@ -95,9 +96,11 @@ export interface Combat {
   emz?: boolean; // grid: two shared extra zones above the board (one per player); link and extra-deck pendulum summons go there or where your link arrows point
   mass?: boolean; // block mode: declare all attackers at once (at the player or a walker), assign blockers (several per attacker), first-strike and regular damage steps
   firstTurnEach?: boolean; // with firstTurnAttack off: neither player attacks on their own first turn (not just turn 1)
-  finalPoint?: boolean; // lanes: a conquest can't win the game unless you scored every battlefield this turn (draw a card instead)
+  finalPoint?: boolean;
+  playToControlled?: boolean; // conquest: units may be played straight to a battlefield you control
+  assignDamage?: boolean; // conquest: each side chooses which enemy gets lethal damage next (Tank first) // lanes: a conquest can't win the game unless you scored every battlefield this turn (draw a card instead)
 }
-export interface Win { life: number; lifeCards: number; prizes: number; points: number; deckOut: boolean; noUnits: boolean; lifeTriggers?: boolean }
+export interface Win { life: number; lifeCards: number; prizes: number; points: number; deckOut: boolean; noUnits: boolean; lifeTriggers?: boolean; burnOut?: boolean } // burnOut: drawing from an empty deck gives the opponent a point and shuffles the discard pile back
 export interface Setup { hand: number; mulligan: boolean; handLimit: number; deckMin: number; deckMax: number; maxCopies: number; skipFirstDraw: boolean; leader: boolean; extraMax: number; turnLimit: number;
   mulliganN?: number; // > 0: mulligan by setting aside up to N cards (to the bottom) and drawing that many
   champion?: boolean; // each deck names a champion unit that starts in a champion zone and can be played from there
@@ -235,6 +238,8 @@ export const KEYWORD_RULES: Record<KeywordRule, { label: string; text: string; v
   indestructible: { label: "Can't be destroyed", text: "Damage and destroy effects don't destroy it." },
   flash: { label: 'Play any time (instant speed)', text: 'You may play it whenever you could play a quick spell.' },
   wardTax: { label: 'Ward N (opponents pay N to target it)', text: "When an opponent's effect targets it, that effect does nothing to it unless they pay N.", valued: true },
+  hidden: { label: 'Hidden (set at a battlefield, play free later)', text: 'Hidden: pay 1 power to place it face down at a battlefield you control; from your next turn you may play it there for free at reaction speed.' },
+  deflect: { label: 'Deflect N (opponents pay N more to target it)', text: "Opponents' effects that target it cost N more power.", valued: true },
   tuner: { label: 'Tuner (synchro material)', text: 'Tuner: needed for synchro summons.' },
   directAttack: { label: 'Can attack directly', text: 'Can attack the opponent directly even while they have units.' },
   extraAttack: { label: 'Attacks twice', text: 'Can attack twice each turn.' },

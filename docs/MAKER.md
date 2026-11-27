@@ -139,6 +139,14 @@ Options on the Battlefields combat mode, the resource deck and setup. Generation
   - in a fight each side deals its total power. Damage goes to Tank units first, then lethal damage to the weakest. Survivors heal. If both sides survive, the attackers are recalled to base;
   - the sole occupant takes control: **conquer** scores 1 point the first time a battlefield is scored each turn, and **hold** scores 1 point per controlled battlefield (with units) at the start of your turn.
 - **`combat.finalPoint`:** a conquest can't score the winning point unless you scored every battlefield this turn; you draw a card instead.
+- **Fidelity options:**
+  - the showdown gives the mover focus first; with chain timing, Reactions (quick spells) answer chains, and Action spells (`type.showdown`) are also castable in showdowns on your focus;
+  - `combat.playToControlled`: units may be played straight to a battlefield you control;
+  - `combat.assignDamage`: each side picks which enemy receives lethal damage next (Tank first), and damage lands after both assign;
+  - keyword rules Hidden (pay 1 power to hide it face down at a battlefield you control; from your next turn play it there free at reaction speed; it is trashed if you lose the battlefield) and Deflect N (opponents pay N more power to target it);
+  - `win.burnOut`: an empty-deck draw gives the opponent a point and reshuffles your discard pile;
+  - counters can have a max per card (Buff: +1 might, max 1);
+  - statuses can deal no fight damage (Stun).
 - **Battlefield cards** (role `battlefield`, `setup.sites` per deck): one is picked at random for each player's battlefield. Its "When you conquer here" and "When you hold here" abilities go to whoever takes it, and units can have "When this conquers a battlefield" and "When you hold its battlefield".
 - **`resource.recycle`** (resource deck): each resource gives 1 energy per turn, and colored costs (`{any: 3, boomer: 1}`) are paid by recycling resources of that color to the bottom of the resource deck. **`resource.secondBonus`:** extra resources on the second player's first turn.
 - **Setup:** `champion` (each deck names a unit that waits in a champion zone and can be played from there), `leaderColors` (every card matches one of the leader's two colors, `color` and `color2`), `mulliganN` (set aside up to N cards, then redraw that many).

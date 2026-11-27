@@ -55,7 +55,13 @@
     - Reaction-speed chains inside showdowns (the showdown is an alternating response window);
     - choosing battlefields and damage assignment by hand (both are automatic);
     - burn-out on an empty deck (decking out loses).
-  - Next: more cards per generation, a Hidden/Deflect pass, then Ringworld Rumble.
+  - Fidelity pass (researched against the current Core Rules):
+    - focus goes to the mover; Action spells in showdowns; Reactions on the chain (chain timing);
+    - units can be played to a battlefield you control; Hidden; damage assigned by players with Tank first; burn out;
+    - Deflect, Buff (max 1), Stun (no fight damage this turn), Equipment gear (equip costs);
+    - 88 cards.
+    - Battlefields stay random: the Core Rules say each player randomly selects one of their three.
+  - Still not emulated: Spiritforged extras (Quick-Draw, Repeat, Weaponmaster, Unique), and Hidden targeting limits (spells played from hiding must target at that battlefield).
 - **Ringworld Rumble (second clone, playable; mechanics reference: One Piece Card Game):** `packages/modules/ringworld-rumble`.
   - Built the same way as Generation Wars: a Workshop blueprint compiled by `npm run -s modules`, with a staleness test and "Edit in the Workshop".
   - Content:

@@ -71,8 +71,9 @@
   },
   {
    "id": "spell",
-   "name": "Spell",
+   "name": "Action",
    "role": "spell",
+   "showdown": true,
    "frame": {
     "base": "spell",
     "cost": "tl",
@@ -99,6 +100,7 @@
    "id": "gear",
    "name": "Gear",
    "role": "attachment",
+   "equipment": true,
    "frame": {
     "base": "spell",
     "cost": "tl",
@@ -220,6 +222,19 @@
    "text": "Legion: a bonus if you played another card this turn."
   },
   {
+   "id": "hidden",
+   "name": "Hidden",
+   "rule": "hidden",
+   "text": "Hidden: pay 1 power to place it face down at a battlefield you control; from your next turn, play it there for free at Reaction speed."
+  },
+  {
+   "id": "deflect",
+   "name": "Deflect",
+   "rule": "deflect",
+   "valued": true,
+   "text": "Deflect N: opponents' spells and abilities that target it cost N more power."
+  },
+  {
    "id": "vision",
    "name": "Vision",
    "rule": "none",
@@ -265,7 +280,27 @@
    "kind": "end"
   }
  ],
- "timing": "simple",
+ "timing": "chain",
+ "counters": [
+  {
+   "id": "buff",
+   "name": "Buff",
+   "icon": "⬆",
+   "adds": {
+    "might": 1
+   },
+   "max": 1
+  }
+ ],
+ "statuses": [
+  {
+   "id": "stun",
+   "name": "Stunned",
+   "icon": "💫",
+   "noDamage": true,
+   "lasts": "endOfTurn"
+  }
+ ],
  "resource": {
   "mode": "deck",
   "name": "Runes",
@@ -308,14 +343,17 @@
    "South Front"
   ],
   "conquest": true,
-  "finalPoint": true
+  "finalPoint": true,
+  "playToControlled": true,
+  "assignDamage": true
  },
  "win": {
   "life": 0,
   "lifeCards": 0,
   "prizes": 0,
   "points": 8,
-  "deckOut": true,
+  "deckOut": false,
+  "burnOut": true,
   "noUnits": false
  },
  "setup": {
@@ -431,10 +469,12 @@
    "color": "silent",
    "keywords": [
     "tank",
-    "shield"
+    "shield",
+    "deflect"
    ],
    "kwv": {
-    "shield": 1
+    "shield": 1,
+    "deflect": 1
    },
    "abilities": [],
    "flavor": "Survived three wars and a polio ward. Your battlefield is a light breeze."
@@ -602,6 +642,7 @@
    "bonus": {
     "might": 1
    },
+   "equipCost": 1,
    "flavor": "Orthopedic. Indestructible. Beige."
   },
   {
@@ -863,6 +904,7 @@
    "bonus": {
     "might": 2
    },
+   "equipCost": 1,
    "flavor": "Forty years, one employer, one watch."
   },
   {
@@ -924,7 +966,9 @@
     "might": 2
    },
    "color": "genx",
-   "keywords": [],
+   "keywords": [
+    "hidden"
+   ],
    "kwv": {},
    "abilities": [
     {
@@ -1037,7 +1081,9 @@
    },
    "stats": {},
    "color": "genx",
-   "keywords": [],
+   "keywords": [
+    "hidden"
+   ],
    "abilities": [
     {
      "when": "play",
@@ -1110,6 +1156,7 @@
    "bonus": {
     "might": 1
    },
+   "equipCost": 1,
    "flavor": "Thrifted. Unwashed. Iconic."
   },
   {
@@ -1687,6 +1734,225 @@
    "flavor": "Screenshots are forever."
   },
   {
+   "id": "bomb-shelter-engineer",
+   "name": "Bomb Shelter Engineer",
+   "type": "unit",
+   "cost": 2,
+   "stats": {
+    "might": 2
+   },
+   "color": "silent",
+   "keywords": [],
+   "kwv": {},
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "addCounter",
+       "card": "buff",
+       "n": 1,
+       "target": "ownUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Built it in 1962. Still stocked. Still waiting."
+  },
+  {
+   "id": "neighborhood-watch-captain",
+   "name": "Neighborhood Watch Captain",
+   "type": "unit",
+   "cost": 3,
+   "stats": {
+    "might": 3
+   },
+   "color": "boomer",
+   "keywords": [
+    "deflect"
+   ],
+   "kwv": {
+    "deflect": 1
+   },
+   "abilities": [],
+   "flavor": "Has your license plate memorized. And your mother's."
+  },
+  {
+   "id": "gold-plated-golf-club",
+   "name": "Gold-Plated Golf Club",
+   "type": "gear",
+   "cost": 2,
+   "stats": {},
+   "color": "boomer",
+   "keywords": [],
+   "abilities": [],
+   "bonus": {
+    "might": 2
+   },
+   "equipCost": 1,
+   "flavor": "Never swung at a ball. Swung at plenty else."
+  },
+  {
+   "id": "dial-up-disruption",
+   "name": "Dial-Up Disruption",
+   "type": "reaction",
+   "cost": 1,
+   "stats": {},
+   "color": "genx",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "inflict",
+       "status": "stun",
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Beeeeep. Skreeeee. Your unit stops to listen."
+  },
+  {
+   "id": "basement-hacker",
+   "name": "Basement Hacker",
+   "type": "unit",
+   "cost": 2,
+   "stats": {
+    "might": 2
+   },
+   "color": "genx",
+   "keywords": [
+    "hidden"
+   ],
+   "kwv": {},
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "inflict",
+       "status": "stun",
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Was in your network the whole time."
+  },
+  {
+   "id": "brunch-reservation",
+   "name": "Brunch Reservation",
+   "type": "spell",
+   "cost": 2,
+   "stats": {},
+   "color": "millennial",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "addCounter",
+       "card": "buff",
+       "n": 1,
+       "target": "allOwnUnits"
+      }
+     ]
+    }
+   ],
+   "flavor": "Table for everyone. Bottomless mimosas. Bottomless debt."
+  },
+  {
+   "id": "participation-medal",
+   "name": "Participation Medal",
+   "type": "gear",
+   "cost": 1,
+   "stats": {},
+   "color": "millennial",
+   "keywords": [],
+   "abilities": [],
+   "bonus": {
+    "might": 1
+   },
+   "equipCost": 1,
+   "flavor": "Everyone gets one. Everyone wears it."
+  },
+  {
+   "id": "ring-light-streamer",
+   "name": "Ring Light Streamer",
+   "type": "unit",
+   "cost": 2,
+   "stats": {
+    "might": 1
+   },
+   "color": "genz",
+   "keywords": [
+    "deflect"
+   ],
+   "kwv": {
+    "deflect": 2
+   },
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "addCounter",
+       "card": "buff",
+       "n": 1,
+       "target": "self"
+      }
+     ]
+    }
+   ],
+   "flavor": "Always lit. Always live. Always watching."
+  },
+  {
+   "id": "left-on-read",
+   "name": "Left on Read",
+   "type": "reaction",
+   "cost": 1,
+   "stats": {},
+   "color": "genz",
+   "keywords": [
+    "hidden"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "inflict",
+       "status": "stun",
+       "target": "enemyUnit"
+      },
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Seen. 3:12 p.m."
+  },
+  {
+   "id": "noise-cancelling-headphones",
+   "name": "Noise-Cancelling Headphones",
+   "type": "gear",
+   "cost": 2,
+   "stats": {},
+   "color": "genz",
+   "keywords": [],
+   "abilities": [],
+   "bonus": {
+    "might": 1
+   },
+   "equipCost": 1,
+   "flavor": "Cannot hear you. Do not want to."
+  },
+  {
    "id": "the-mortgage-paladin",
    "name": "The Mortgage Paladin",
    "type": "legend",
@@ -2005,9 +2271,10 @@
     "duty-calls": 2,
     "the-long-wait": 2,
     "sensible-shoes": 2,
-    "lawn-inspector": 2,
-    "golf-cart-cavalry": 2,
-    "timeshare-salesman": 2,
+    "bomb-shelter-engineer": 1,
+    "lawn-inspector": 1,
+    "golf-cart-cavalry": 1,
+    "timeshare-salesman": 1,
     "hoa-enforcer": 1,
     "retiree-snowbird": 1,
     "classic-car-collector": 1,
@@ -2016,7 +2283,9 @@
     "compound-interest": 1,
     "back-in-my-day": 1,
     "pull-up-the-ladder": 1,
-    "gold-retirement-watch": 1
+    "gold-retirement-watch": 1,
+    "neighborhood-watch-captain": 1,
+    "gold-plated-golf-club": 1
    },
    "res": {
     "rune-of-thrift": 6,
@@ -2045,10 +2314,12 @@
     "compound-interest": 2,
     "back-in-my-day": 2,
     "pull-up-the-ladder": 2,
-    "gold-retirement-watch": 2,
-    "latchkey-kid": 2,
-    "mixtape-courier": 2,
-    "skate-park-nihilist": 2,
+    "gold-retirement-watch": 1,
+    "neighborhood-watch-captain": 1,
+    "gold-plated-golf-club": 1,
+    "latchkey-kid": 1,
+    "mixtape-courier": 1,
+    "skate-park-nihilist": 1,
     "cubicle-saboteur": 1,
     "grunge-bassist": 1,
     "weekend-dad": 1,
@@ -2057,7 +2328,9 @@
     "whatever": 1,
     "unsupervised-afternoon": 1,
     "sarcasm": 1,
-    "flannel-armor": 1
+    "flannel-armor": 1,
+    "dial-up-disruption": 1,
+    "basement-hacker": 1
    },
    "res": {
     "rune-of-equity": 6,
@@ -2086,10 +2359,12 @@
     "whatever": 2,
     "unsupervised-afternoon": 2,
     "sarcasm": 2,
-    "flannel-armor": 2,
-    "barista-with-a-degree": 2,
-    "participation-trophy-squire": 2,
-    "side-hustler": 2,
+    "flannel-armor": 1,
+    "dial-up-disruption": 1,
+    "basement-hacker": 1,
+    "barista-with-a-degree": 1,
+    "participation-trophy-squire": 1,
+    "side-hustler": 1,
     "avocado-toast-knight": 1,
     "podcast-host": 1,
     "burnout-paladin": 1,
@@ -2098,7 +2373,9 @@
     "group-project": 1,
     "quarter-life-crisis": 1,
     "unpaid-internship": 1,
-    "self-care-day": 1
+    "self-care-day": 1,
+    "brunch-reservation": 1,
+    "participation-medal": 1
    },
    "res": {
     "rune-of-irony": 6,
@@ -2126,11 +2403,13 @@
     "the-brunch-oracle": 2,
     "group-project": 2,
     "quarter-life-crisis": 2,
-    "unpaid-internship": 2,
-    "self-care-day": 2,
-    "viral-dancer": 2,
-    "doomscroller": 2,
-    "e-sports-prodigy": 2,
+    "unpaid-internship": 1,
+    "self-care-day": 1,
+    "brunch-reservation": 1,
+    "participation-medal": 1,
+    "viral-dancer": 1,
+    "doomscroller": 1,
+    "e-sports-prodigy": 1,
     "fit-check-influencer": 1,
     "meme-lord": 1,
     "climate-striker": 1,
@@ -2139,7 +2418,10 @@
     "no-cap": 1,
     "ratioed": 1,
     "ghosted": 1,
-    "group-chat-leak": 1
+    "group-chat-leak": 1,
+    "ring-light-streamer": 1,
+    "left-on-read": 1,
+    "noise-cancelling-headphones": 1
    },
    "res": {
     "rune-of-hustle": 6,
@@ -2168,10 +2450,13 @@
     "no-cap": 2,
     "ratioed": 2,
     "ghosted": 2,
-    "group-chat-leak": 2,
-    "victory-gardener": 2,
-    "ration-clerk": 2,
-    "telegraph-operator": 2,
+    "group-chat-leak": 1,
+    "ring-light-streamer": 1,
+    "left-on-read": 1,
+    "noise-cancelling-headphones": 1,
+    "victory-gardener": 1,
+    "ration-clerk": 1,
+    "telegraph-operator": 1,
     "porch-sitter": 1,
     "iron-lung-veteran": 1,
     "darning-needle-duchess": 1,
@@ -2180,7 +2465,8 @@
     "stiff-upper-lip": 1,
     "duty-calls": 1,
     "the-long-wait": 1,
-    "sensible-shoes": 1
+    "sensible-shoes": 1,
+    "bomb-shelter-engineer": 1
    },
    "res": {
     "rune-of-vibes": 6,

@@ -553,6 +553,9 @@ function friendly(e: Record<string, any>, c: C): string | null {
     case 'marched': return `${who(e.p)} move${s(e.p)} ${e.n} unit${e.n === 1 ? '' : 's'} into ${lbl(e.z)}`;
     case 'recalled': return `Attackers fall back from ${lbl(e.z)}`;
     case 'showdownFight': return `Fight at ${lbl(e.z)}: ${e.a} against ${e.b}`;
+    case 'hidden': return `${who(e.p)} hide${s(e.p)} a card at ${lbl(e.z)}`;
+    case 'hiddenLost': return `${who(e.p)} lose${s(e.p)} a hidden card`;
+    case 'burnOut': return `${who(e.p)} burn${s(e.p)} out: the opponent scores 1 and the trash is reshuffled`;
     case 'synchro': return `${who(e.p)} synchro summon${s(e.p)}!`;
     case 'xyz': return `${who(e.p)} xyz summon${s(e.p)}!`;
     case 'linkSummon': return `${who(e.p)} link summon${s(e.p)}!`;
