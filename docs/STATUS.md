@@ -21,6 +21,22 @@
   2. Battle-screen rebuild.
   3. The games one at a time: Generation Wars → Ringworld Rumble → Looboo → Crystal Circuit → Taste Dimension.
   4. Shop, campaign and multiplayer polish.
+- **Battle screen, part 1 (done):** a battle director (`apps/web/src/ui/director.ts`) turns the viewer's events into beats that play one at a time:
+  - a caption for every opponent move;
+  - a spotlight on the card being played;
+  - an attack arrow with the attacker lunging and the target shaking;
+  - block callouts, and a battle readout (both cards, damage taken, DESTROYED stamps);
+  - damage, life-card and prize callouts.
+
+  The AI waits for its beats to finish before moving again (Fast AI shortens them). Also new: a phase strip in the HUD, players named "You" and "Opponent", a glow when counters or stats change, and the playtest Workshop button moved bottom-left.
+
+  Next for the battle screen:
+  - a persistent side log;
+  - hover and long-press card zoom;
+  - clearer targeting (drag or tap an arrow from source to target);
+  - "Next: Combat / End turn" buttons;
+  - hand fan and draw animations;
+  - mobile layout polish.
 - **Clean slate (done):**
   - Every module and its artwork was deleted (NIGHTFALL, Shadow Earth and the Workshop starter games; git history keeps them).
   - The eight small reference games survive only as engine test fixtures in `packages/test-harness/fixtures`.

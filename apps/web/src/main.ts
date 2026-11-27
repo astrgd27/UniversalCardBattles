@@ -62,6 +62,7 @@ export interface UI {
   banners?: { text: string; at: number }[]; // queued announcements (start times in ms), kept across redraws
   counts: Record<string, number>; // zone sizes at the last render (pile bumps)
   mk?: MakerUI; // Game Maker screen state
+  beats?: (import('./ui/director.ts').Beat & { at: number })[]; // the battle director's queue
   makerReturn?: string | null; // playtesting a Game Maker project: its id
 }
 
@@ -130,7 +131,16 @@ export const ui: UI = {
 
 let timer: ReturnType<typeof setTimeout> | undefined;
 const seatOf = (p: string) => ui.seats[+p.slice(1)];
-export const redraw = () => { decisionStart(); autosave(); render(ui, actions); };
+let beatTimer: ReturnType<typeof setTimeout> | undefined;
+export const redraw = () => {
+  decisionStart(); autosave(); render(ui, actions);
+  // redraw at the next beat boundary so beats play one after another
+  clearTimeout(beatTimer);
+  const now = Date.now();
+  const next = (ui.beats ?? []).flatMap((b) => [b.at, b.at + b.ms]).filter((t) => t > now).sort((a, b) => a - b)[0];
+  if (ui.screen === 'game' && next) beatTimer = setTimeout(redraw, next - now + 20);
+};
+const beatsDone = () => Math.max(0, ...(ui.beats ?? []).map((b) => b.at + b.ms - Date.now()));
 
 // ---------- tutorials ----------
 export const tutorial = (): Tutorial | null => (ui.tut ? campaign()?.tutorials?.find((t) => t.id === ui.tut!.id) ?? null : null);
@@ -175,7 +185,7 @@ function advance() {
   if (!p || pendingDialogue()) return redraw();
   if (seatOf(p) !== 'human') {
     redraw();
-    timer = setTimeout(aiStep, ui.fast ? 0 : 500);
+    timer = setTimeout(aiStep, ui.fast ? Math.min(beatsDone(), 400) : Math.max(500, beatsDone() + 250));
     return;
   }
   if (p !== ui.viewer) {

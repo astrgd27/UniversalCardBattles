@@ -3,6 +3,7 @@ import type { GEvent, Mod, ObjView, Template, View, ZoneDef } from '#engine';
 import { eventsFor, listActions, observe } from '#engine';
 import { actor, current, pendingDialogue, playable, tutCoach, tutorial, type UI } from '../main.ts';
 import { cardBack, cardFace, cls, emblem, h, noteEl, pname, segmented, select, themeStyle, title } from './kit.ts';
+import { type Beat, beatIcon, beatsOf, drawArrows } from './director.ts';
 
 interface Fx {
   entered: Set<string>; // objects that just arrived in a visible zone
@@ -11,6 +12,7 @@ interface Fx {
   tapped: Map<string, boolean>; // object -> just tapped (true) or untapped (false), from the theme's tapVar
   pulse: Map<string, Set<string>>; // player -> vars that just changed
   bump: Set<string>; // zone keys whose size just grew
+  glow: Set<string>; // objects whose counters or stats just changed
   banners: string[]; // announcements in order: module events (theme.announce), then a new turn
 }
 interface C {
@@ -21,22 +23,47 @@ interface C {
 }
 
 const BANNER_MS = 1400, BANNER_GAP = 1250;
+/** Names players from the viewer's seat: "You" and, in a two-player game against the AI, "Opponent". */
+export function whoOf(ui: UI) {
+  const humans = ui.seats.filter((s) => s === 'human').length;
+  return (p: string) => (p === ui.viewer && humans < 2 ? 'You' : ui.seats.length === 2 && humans < 2 ? 'Opponent' : pname(p));
+}
+/** The beat playing right now, if any. */
+export function currentBeat(ui: UI): (Beat & { at: number }) | null {
+  const now = Date.now();
+  return (ui.beats ?? []).find((b) => now >= b.at && now < b.at + b.ms) ?? null;
+}
+function beatView(c: C, b: Beat & { at: number }) {
+  const face = (card?: string, extra?: string) => card && c.mod.card.has(card) ? cardFace(c.mod, card, { size: 'md', state: extra }) : null;
+  const side = (s?: { card: string; dealt: number; took: number; dead: boolean }) => s && h('div', { class: cls('clash-side', s.dead && 'dead') },
+    face(s.card), h('div', { class: 'clash-nums' }, s.took ? h('span', { class: 'took' }, `-${s.took}`) : null, s.dead ? h('span', { class: 'stamp' }, 'DESTROYED') : null));
+  return h('div', { class: cls('beat', `beat-${b.kind}`, b.mine ? 'mine' : 'theirs'), role: 'status', 'aria-live': 'polite', style: `--ms:${b.ms}ms;animation-delay:${(b.at - Date.now()) / 1000}s` },
+    h('div', { class: 'beat-cap' }, h('span', { class: 'beat-icon' }, beatIcon(b.kind)), b.text),
+    (b.kind === 'play' || b.kind === 'stack' || b.kind === 'destroy') && b.card && h('div', { class: 'beat-spot' }, face(b.card, b.kind === 'destroy' ? 'gone' : '')),
+    b.kind === 'clash' && b.clash && h('div', { class: 'beat-clash' }, side(b.clash.a), h('span', { class: 'vs' }, 'VS'),
+      b.clash.b ? side(b.clash.b) : h('div', { class: 'clash-side player' }, h('div', { class: 'clash-avatar' }, '♥'), h('span', { class: 'took' }, `-${b.clash.playerTook ?? 0}`))));
+}
 /** Animations come only from the viewer's redacted event log since the previous render. */
 function effectsSince(ui: UI, v: View): Fx {
   const m = ui.match!;
-  const fx: Fx = { entered: new Set(), hit: new Map(), flipped: new Set(), tapped: new Map(), pulse: new Map(), bump: new Set(), banners: [] };
+  const fx: Fx = { entered: new Set(), hit: new Map(), flipped: new Set(), tapped: new Map(), pulse: new Map(), bump: new Set(), glow: new Set(), banners: [] };
+
   const tapVar = m.m.manifest.theme?.tapVar;
   const announce = m.m.manifest.theme?.announce ?? {};
   const from = Math.min(ui.fxFrom, m.s.events.length);
   const first = m.m.rules.phases[0].id;
-  for (const e of eventsFor(m, ui.viewer, from)) {
+  const who = whoOf(ui);
+  const evs = eventsFor(m, ui.viewer, from);
+  for (const e of evs) {
     if ((e.type === 'moved' || e.type === 'created') && e.newObj) fx.entered.add(e.newObj);
     else if (e.type === 'damage' && e.target) fx.hit.set(e.target, (fx.hit.get(e.target) ?? 0) + e.amount);
     else if (e.type === 'flipped') fx.flipped.add(e.obj);
     else if (e.type === 'changed' && tapVar && e.name === tapVar && e.ref && !/^p\d+$/.test(e.ref)) fx.tapped.set(e.ref, (e.to ?? 0) > 0);
+    else if (e.type === 'changed' && e.ref && !/^p\d+$/.test(e.ref) && e.name !== 'newT') fx.glow.add(e.ref);
+    else if (e.type === 'modified' && e.targets) for (const t of e.targets) fx.glow.add(t);
     else if (e.type === 'changed' && /^p\d+$/.test(e.ref)) { if (!fx.pulse.has(e.ref)) fx.pulse.set(e.ref, new Set()); fx.pulse.get(e.ref)!.add(e.name); }
-    else if (announce[e.type] && from > 0) fx.banners.push(announce[e.type].replace(/\{(\w+)\}/g, (_: string, k: string) => (typeof e[k] === 'string' ? (/^p\d+$/.test(e[k]) ? pname(e[k]) : m.m.card.get(e[k])?.name ?? e[k]) : String(e[k] ?? ''))));
-    else if (e.type === 'phase' && e.phase === first && from > 0) fx.banners.push(e.active === ui.viewer && ui.seats[+ui.viewer.slice(1)] === 'human' ? 'Your turn' : `${pname(e.active)}'s turn`);
+    else if (announce[e.type] && from > 0) fx.banners.push(announce[e.type].replace(/\{(\w+)\}/g, (_: string, k: string) => (typeof e[k] === 'string' ? (/^p\d+$/.test(e[k]) ? who(e[k]) : m.m.card.get(e[k])?.name ?? e[k]) : String(e[k] ?? ''))));
+    else if (e.type === 'phase' && e.phase === first && from > 0) fx.banners.push(e.active === ui.viewer && ui.seats[+ui.viewer.slice(1)] === 'human' ? 'Your turn' : `${who(e.active)}'s turn`);
   }
   const counts: Record<string, number> = {};
   for (const [k, z] of Object.entries(v.zones)) {
@@ -50,6 +77,20 @@ function effectsSince(ui: UI, v: View): Fx {
   const q = (ui.banners ?? []).filter((b) => now < b.at + BANNER_MS);
   for (const text of fx.banners) q.push({ text, at: Math.max(now, (q[q.length - 1]?.at ?? 0) + BANNER_GAP) });
   ui.banners = q.slice(-4);
+  // the director: opponent moves (and battles) as beats, played one after another
+  if (from > 0) {
+    const cardOf = new Map<string, string>();
+    for (const z of Object.values(v.zones)) for (const o of z.cards ?? []) if (o.card) cardOf.set(o.id, o.card);
+    const speed = ui.fast ? 0.35 : 1;
+    const beats = (ui.beats ?? []).filter((b) => now < b.at + b.ms);
+    let t = Math.max(now, ...beats.map((b) => b.at + b.ms));
+    for (const b of beatsOf(evs as any[], m.m, ui.viewer, who, (id) => cardOf.get(id))) {
+      const ms = Math.round(b.ms * speed);
+      beats.push({ ...b, ms, at: t });
+      t += ms;
+    }
+    ui.beats = beats.slice(-12);
+  }
   return fx;
 }
 
@@ -68,7 +109,7 @@ export function table(ui: UI, A: any) {
     sources: new Set(tpls.map((t) => t.source).filter(Boolean) as string[]),
     targets: new Set(step?.options ?? []),
     picked: new Set(step ? ui.sel!.picks[step.key] ?? [] : []),
-    label: (x) => (/^p\d+$/.test(x) ? pname(x) : names.get(x) ?? (/^[a-z][a-z-]*$/.test(x) ? title(x) : x)),
+    label: (x) => (/^p\d+$/.test(x) ? whoOf(ui)(x) : names.get(x) ?? (/^[a-z][a-z-]*$/.test(x) ? title(x) : x)),
     fx: effectsSince(ui, v),
   };
   const onGrid = new Set(mod.rules.grid?.zones ?? []);
@@ -83,6 +124,7 @@ export function table(ui: UI, A: any) {
         v.stack.length > 0 && stack(c)),
       seat(c, ui.viewer, true)),
     dock(c, mine, tpls, step),
+    (() => { const b = currentBeat(ui); requestAnimationFrame(() => drawArrows(document.body, b)); return b && beatView(c, b); })(),
     (c.ui.banners ?? []).map((b) => h('div', { class: 'turn-banner', style: `animation-delay:${(b.at - Date.now()) / 1000}s`, 'aria-hidden': 'true' }, b.text)),
     ui.drawer && drawer(c),
     ui.paused && pause(c),
@@ -100,9 +142,12 @@ function hud(c: C, mine: boolean) {
   return h('header', { class: 'hud' },
     h('button', { class: 'icon', 'aria-label': 'Menu', onclick: () => A.pause(true) }, '☰'),
     h('span', { class: 'hud-game' }, h('span', { class: 'hud-emblem' }, emblem(mod)), mod.manifest.displayName),
-    h('span', { class: cls('pill', v.window && 'window') }, `Turn ${v.turn} · ${v.window ? `${title(v.window.id)}: ${title(v.window.step)}` : title(v.phase)}`),
+    h('span', { class: 'pill' }, `Turn ${v.turn}`),
+    h('ol', { class: 'phase-strip', 'aria-label': 'Turn phases' }, mod.rules.phases.filter((ph) => !ph.auto || ph.id === v.phase).map((ph) => h('li', { class: cls(ph.id === v.phase && 'on') },
+      mod.manifest.theme?.labels?.[ph.id] ?? title(ph.id))),
+      v.window && h('li', { class: 'on window' }, `${title(v.window.step)}`)),
     h('span', { class: cls('hud-status', mine && 'go'), role: 'status' },
-      v.result ? 'Game over' : mine ? (v.pending ? 'Your decision' : 'Your move') : `${who ? pname(who) : '…'} is thinking…`),
+      v.result ? 'Game over' : mine ? (v.pending ? 'Your decision' : 'Your move') : `${who ? whoOf(ui)(who) : '…'} ${who && whoOf(ui)(who) === 'You' ? 'are' : 'is'} thinking…`),
     Object.entries(mod.rules.external ?? {}).map(([name, dom]) => h('label', { class: 'ext', title: 'External input (set by the host, logged in the replay)' }, `⚙ ${name} `,
       select(String(v.ext[name]), dom.map((x) => [String(x), String(x)]), (val) => A.setExternal(name, val), `External input ${name}`))),
     h('span', { class: 'hud-right' },
@@ -113,7 +158,7 @@ function hud(c: C, mine: boolean) {
 function obj(c: C, o: ObjView, size: 'sm' | 'md') {
   const hit = c.fx.hit.get(o.id);
   const state = cls(c.sources.has(o.id) && 'legal', c.targets.has(o.id) && 'target', c.picked.has(o.id) && 'picked', c.ui.inspect === o.id && 'inspected',
-    c.fx.entered.has(o.id) && 'fx-enter', !!hit && 'fx-hit', c.fx.flipped.has(o.id) && 'fx-flip', c.fx.tapped.get(o.id) === true && 'fx-tap', c.fx.tapped.get(o.id) === false && 'fx-untap', o.controller === c.ui.viewer ? 'own' : 'foe');
+    c.fx.entered.has(o.id) && 'fx-enter', !!hit && 'fx-hit', c.fx.flipped.has(o.id) && 'fx-flip', c.fx.tapped.get(o.id) === true && 'fx-tap', c.fx.tapped.get(o.id) === false && 'fx-untap', c.fx.glow.has(o.id) && !c.fx.entered.has(o.id) && 'fx-glow', o.controller === c.ui.viewer ? 'own' : 'foe');
   const onclick = () => c.A.pick(o.id);
   const el = o.card
     ? cardFace(c.mod, o.card, { size, state, onclick, obj: o.id, stats: o.stats, vars: o.vars, baseVars: c.mod.rules.objectVars, keywords: o.blank ? [] : o.keywords, faceDown: o.faceDown, note: noteOf(c.mod, o) })
@@ -174,9 +219,9 @@ function seat(c: C, p: string, me: boolean) {
   const bar = h('div', { class: 'seat-bar' },
     h('button', {
       class: cls('avatar', targets.has(p) && 'target', picked.has(p) && 'picked', c.fx.hit.has(p) && 'fx-hit'), style: `--h:${(+p.slice(1) * 97 + 200) % 360}`,
-      'aria-label': `${pname(p)}${targets.has(p) ? ', can be chosen' : ''}`, onclick: () => (c.ui.sel ? A.pick(p) : A.view(p)),
+      'aria-label': `${whoOf(c.ui)(p)}${targets.has(p) ? ', can be chosen' : ''}`, 'data-player': p, onclick: () => (c.ui.sel ? A.pick(p) : A.view(p)),
     }, String(+p.slice(1) + 1), c.fx.hit.has(p) && h('span', { class: 'dmg-float', 'aria-hidden': 'true' }, `-${c.fx.hit.get(p)}`)),
-    h('span', { class: 'seat-name' }, `${pname(p)}${me ? ' (you)' : ''}`, v.active === p ? h('span', { class: 'turn-dot', title: 'Active player' }, ' ●') : null, pl.lost ? ' — out' : ''),
+    h('span', { class: 'seat-name' }, whoOf(c.ui)(p) === 'You' ? 'You' : whoOf(c.ui)(p), v.active === p ? h('span', { class: 'turn-dot', title: 'Active player' }, ' ●') : null, pl.lost ? ' — out' : ''),
     h('span', { class: 'vars' }, Object.entries(pl.vars).filter(([k]) => !mod.manifest.theme?.hideVars?.includes(k)).map(([k, n]) => h('span', { class: cls('chip', c.fx.pulse.get(p)?.has(k) && 'fx-pulse') }, h('b', {}, String(n)), ` ${mod.manifest.theme?.labels?.[k] ?? k}`))),
     h('span', { class: 'piles' }, L.piles.map((z) => pile(c, `${p}:${z.id}`, z))));
   const field = h('div', { class: 'field' }, L.field.map((z) => zoneBlock(c, `${p}:${z.id}`, z)));
@@ -361,7 +406,7 @@ function banner(c: C) {
         h('div', { class: 'opts end' }, h('button', { class: 'cta small', onclick: c.A.ackDialogue, autofocus: true }, 'Continue')))));
 }
 
-function fmt(e: Record<string, any>, mod: Mod, label: (x: string) => string): string | null {
+function fmt(e: Record<string, any>, mod: Mod, label: (x: string) => string, pname: (p: string) => string): string | null {
   const cn = (id?: string) => (id ? mod.card.get(id)?.name ?? id : undefined);
   switch (e.type) {
     case 'moved': return `${cn(e.card) ?? 'A card'}: ${e.from} → ${e.to}${e.toPlayer && e.toPlayer !== 'shared' ? ` (${pname(e.toPlayer)})` : ''}`;
@@ -407,6 +452,6 @@ function fmt(e: Record<string, any>, mod: Mod, label: (x: string) => string): st
 function log(c: C) {
   const m = c.ui.match!;
   const ev = eventsFor(m, c.ui.viewer, Math.max(0, m.s.events.length - 150));
-  const lines = ev.map((e) => fmt(e as GEvent, c.mod, c.label)).filter(Boolean).slice(-60).reverse();
+  const lines = ev.map((e) => fmt(e as GEvent, c.mod, c.label, whoOf(c.ui))).filter(Boolean).slice(-60).reverse();
   return [h('h3', {}, 'Log'), h('ol', { class: 'log', reversed: true }, lines.map((l) => h('li', {}, l!)))];
 }
