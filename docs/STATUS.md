@@ -30,13 +30,14 @@
 
   The AI waits for its beats to finish before moving again (Fast AI shortens them). Also new: a phase strip in the HUD, players named "You" and "Opponent", a glow when counters or stats change, and the playtest Workshop button moved bottom-left.
 
-  Next for the battle screen:
-  - a persistent side log;
-  - hover and long-press card zoom;
-  - clearer targeting (drag or tap an arrow from source to target);
-  - "Next: Combat / End turn" buttons;
-  - hand fan and draw animations;
-  - mobile layout polish.
+- **Battle screen, part 2 (done):**
+  - a log docked beside the table: plain language by default, with a Details switch for every engine event, remembered between games;
+  - hover zoom on desktop (a large live card beside the pointer);
+  - arrows from the card being used to each target while choosing;
+  - the pass button says what it does ("Next: Combat ▸", "End turn ▸", "No response", "Continue");
+  - draw (fly in from the deck) and play (drop onto the board) animations.
+
+  Phone layout is out of scope (tablet and desktop only). Next for the battle screen: fit the whole board in one viewport (a compact opponent hand, card sizes from the board's fill); "how to play this card" hints; per-card action menus with costs shown.
 - **Clean slate (done):**
   - Every module and its artwork was deleted (NIGHTFALL, Shadow Earth and the Workshop starter games; git history keeps them).
   - The eight small reference games survive only as engine test fixtures in `packages/test-harness/fixtures`.

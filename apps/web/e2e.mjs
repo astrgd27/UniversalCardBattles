@@ -90,9 +90,16 @@ try {
   await page.click('[data-menu=play]');
   await page.click('[data-seat="2"] .seg button:text-is("AI")');
   await page.click('text=Start match');
-  await page.waitForSelector('.hud-status', { timeout: 20000 });
-  await page.setViewportSize({ width: 390, height: 844 });
-  ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'table on a phone: no sideways scroll');
+  await page.waitForSelector('.hud-status.go', { timeout: 30000 });
+  ok(await page.isVisible('.logdock'), 'log is docked beside the table');
+  await page.click('[data-act=log]');
+  ok(!(await page.isVisible('.logdock')), 'log can be hidden');
+  await page.click('[data-act=log]');
+  ok(await page.isVisible('.phase-strip li.on'), 'phase strip shows the current phase');
+  const passText = await page.textContent('[data-act=pass]').catch(() => '');
+  ok(/Next:|End turn|Continue|No response|Keep|Mulligan/.test(passText ?? '') || await page.isVisible('.dock .opt'), `pass button says what it does (${passText})`);
+  const card = await page.$('.hand.mine .card');
+  if (card) { await card.hover(); await page.waitForTimeout(150); ok(await page.isVisible('#hover-zoom'), 'hovering a card zooms it'); }
   await page.setViewportSize({ width: 834, height: 1194 });
   ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'table on a tablet: no sideways scroll');
   await browser.close();

@@ -16,6 +16,7 @@ import { connectSync, initSync, openStore, persistStorage, store, sync, unlinkSy
 import { PackageError } from '#sdk';
 import { MODULES, loadZipModule } from './modules.ts';
 import { render } from './ui/render.ts';
+import { cardZoom } from './ui/kit.ts';
 import { type MakerUI, makerActions, registerPublished } from './maker.ts';
 
 export type Seat = 'human' | 'heuristic' | 'random';
@@ -64,6 +65,8 @@ export interface UI {
   mk?: MakerUI; // Game Maker screen state
   beats?: (import('./ui/director.ts').Beat & { at: number })[]; // the battle director's queue
   makerReturn?: string | null; // playtesting a Game Maker project: its id
+  logDock?: boolean; // the game log docked beside the table
+  logAll?: boolean; // the log shows every engine event
 }
 
 const PROFILE = (id: string) => `ucb-profile:${id}`;
@@ -448,6 +451,8 @@ export const actions = {
   },
   ackDialogue() { const d = pendingDialogue(); if (d) ui.dialogSeen = d.seq; advance(); },
   reveal() { ui.cover = null; redraw(); },
+  toggleLogAll() { ui.logAll = !ui.logAll; redraw(); },
+  toggleLog() { ui.logDock = !ui.logDock; store.set('ucb-logdock', ui.logDock); redraw(); },
   drawer(d: UI['drawer'], pile: string | null = null) { ui.drawer = ui.drawer === d && ui.pile === pile ? null : d; ui.pile = pile; redraw(); },
   view(p: string) { if (ui.seats.every((s) => s !== 'human')) { ui.viewer = p; redraw(); } },
   /** Click on a card, player or stack item. */
@@ -702,6 +707,28 @@ document.addEventListener('contextmenu', (e) => {
   if (el) { e.preventDefault(); clearTimeout(press?.timer); press = null; peekAt(el); }
 });
 
+// Hover zoom (mouse): a large copy of the card under the pointer, like digital TCG clients. Touch uses long-press.
+let zoomFor: string | null = null;
+document.addEventListener('pointerover', (e) => {
+  if (e.pointerType !== 'mouse') return;
+  const el = (e.target as HTMLElement).closest<HTMLElement>('[data-card]');
+  const key = el ? `${el.dataset.card}|${el.dataset.obj ?? ''}` : null;
+  if (key === zoomFor) return;
+  zoomFor = key;
+  document.getElementById('hover-zoom')?.remove();
+  const m = ui.mod;
+  if (!el || !m || ui.screen !== 'game' || !el.dataset.card || el.closest('.beat, .peek, .drawer')) return;
+  const big = cardZoom(m, el.dataset.card, el.dataset.obj);
+  if (!big) return;
+  const r = el.getBoundingClientRect();
+  const left = r.right + 300 < window.innerWidth ? r.right + 12 : Math.max(8, r.left - 292);
+  const box = Object.assign(document.createElement('div'), { id: 'hover-zoom', className: 'hover-zoom' });
+  box.style.left = `${left}px`;
+  box.style.top = `${Math.max(64, Math.min(window.innerHeight - 420, r.top - 60))}px`;
+  box.append(big);
+  document.body.append(box);
+});
+
 window.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
   if (ui.peek) return actions.closePeek();
@@ -720,6 +747,7 @@ openStore((msg) => { ui.note = { title: 'Storage problem', text: msg }; redraw()
   registerPublished();
   ui.theme = store.get<'light' | 'dark'>('ucb-theme', 'dark') === 'light' ? 'light' : 'dark';
   ui.cardSize = (['s', 'm', 'l'] as const).find((z) => z === store.get<string>('ucb-cards', 'm')) ?? 'm';
+  ui.logDock = store.get<boolean>('ucb-logdock', true);
   redraw();
   await initSync(() => JSON.stringify(makeBackup(store.all()), null, 1), redraw);
   storageInfo.persisted = await persistStorage();

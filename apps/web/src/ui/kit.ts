@@ -133,6 +133,13 @@ export function cardFace(m: Mod, cardId: string, o: FaceOpts = {}): HTMLElement 
   [...corners].map(([pos, slots]) => h('span', { class: `statbox pos-${pos}` }, slots.map(statText).join(tpl.base === 'classic' ? '/' : ' '))));
 }
 
+/** A large card for hover zoom: on the table it shows the live object's counters and changed values. */
+export function cardZoom(m: Mod, cardId: string, objId?: string): HTMLElement | null {
+  if (!m.card.has(cardId)) return null;
+  const live = objId ? (globalThis as any).__ucb?.match?.s.objects?.[objId] : null;
+  return cardFace(m, cardId, { size: 'lg', ...(live ? { vars: live.vars, baseVars: m.rules.objectVars } : {}) });
+}
+
 export function cardBack(m: Mod, o: FaceOpts = {}): HTMLElement {
   const back = assetUrl(m.manifest.moduleId, undefined, 'assets/back');
   return h('button', { class: cls('card back', back && 'art-back', `size-${o.size ?? 'md'}`, o.state), onclick: o.onclick, 'aria-label': o.label ?? 'Face-down card' },

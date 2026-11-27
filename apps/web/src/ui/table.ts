@@ -114,7 +114,10 @@ export function table(ui: UI, A: any) {
   };
   const onGrid = new Set(mod.rules.grid?.zones ?? []);
   const shared = mod.rules.zones.filter((z) => z.shared && !onGrid.has(z.id) && !z.offTable);
-  return h('div', { class: 'screen table', style: themeStyle(mod) },
+  // while choosing targets, arrows run from the card being used to each pick
+  const selSrc = ui.sel?.tpl?.source;
+  requestAnimationFrame(() => drawSelArrows(selSrc ?? undefined, step ? ui.sel!.picks[step.key] ?? [] : []));
+  return h('div', { class: cls('screen table', ui.logDock && 'with-log'), style: themeStyle(mod) },
     hud(c, mine),
     h('div', { class: 'felt' },
       h('div', { class: 'opponents' }, v.players.filter((p) => p.id !== ui.viewer).map((p) => seat(c, p.id, false))),
@@ -123,6 +126,7 @@ export function table(ui: UI, A: any) {
         shared.map((z) => zoneBlock(c, `shared:${z.id}`, z)),
         v.stack.length > 0 && stack(c)),
       seat(c, ui.viewer, true)),
+    ui.logDock && h('aside', { class: 'logdock', 'aria-label': 'Game log' }, h('div', { class: 'logdock-head' }, h('strong', {}, 'Log'), h('button', { class: 'x', onclick: A.toggleLog, 'aria-label': 'Hide log' }, '×')), log(c).slice(1)),
     dock(c, mine, tpls, step),
     (() => { const b = currentBeat(ui); requestAnimationFrame(() => drawArrows(document.body, b)); return b && beatView(c, b); })(),
     (c.ui.banners ?? []).map((b) => h('div', { class: 'turn-banner', style: `animation-delay:${(b.at - Date.now()) / 1000}s`, 'aria-hidden': 'true' }, b.text)),
@@ -151,7 +155,7 @@ function hud(c: C, mine: boolean) {
     Object.entries(mod.rules.external ?? {}).map(([name, dom]) => h('label', { class: 'ext', title: 'External input (set by the host, logged in the replay)' }, `⚙ ${name} `,
       select(String(v.ext[name]), dom.map((x) => [String(x), String(x)]), (val) => A.setExternal(name, val), `External input ${name}`))),
     h('span', { class: 'hud-right' },
-      h('button', { class: cls('icon', ui.drawer === 'log' && 'on'), onclick: () => A.drawer('log'), 'aria-label': 'Log' }, '☷ Log'),
+      h('button', { class: cls('icon', ui.logDock && 'on'), onclick: A.toggleLog, 'aria-label': 'Log', 'data-act': 'log' }, '☷ Log'),
       h('button', { class: cls('icon', ui.drawer === 'card' && 'on'), onclick: () => A.drawer('card'), 'aria-label': 'Card details' }, '🔍')));
 }
 
@@ -310,7 +314,7 @@ function dock(c: C, mine: boolean, tpls: Template[], step: ReturnType<typeof cur
     : ui.sel && step ? prompt(c, step)
       : ui.menu ? h('div', { class: 'dock-body' }, h('strong', {}, 'Choose an action'),
         h('div', { class: 'opts' }, ui.menu.tpls.map((t) => h('button', { class: 'opt', onclick: () => A.start(t) }, t.label)), h('button', { class: 'ghost', onclick: A.cancel }, 'Cancel')))
-        : mine ? actionsBar(A, tpls)
+        : mine ? actionsBar(A, tpls, c)
           : h('div', { class: 'dock-body waiting' }, h('span', { class: 'spinner', 'aria-hidden': 'true' }), ui.match!.s.result ? 'Game over' : 'Opponent is playing…');
   return h('div', { class: 'dock' }, coach(c), body);
 }
@@ -343,7 +347,7 @@ function prompt(c: C, step: ReturnType<typeof current>) {
       h('button', { class: 'cta small', disabled: !ok, onclick: A.confirm }, 'Confirm')));
 }
 
-function actionsBar(A: any, tpls: Template[]) {
+function actionsBar(A: any, tpls: Template[], c?: C) {
   const free = tpls.filter((t) => !t.source);
   const n = tpls.length - free.length;
   const pass = free.find((t) => t.action === 'pass');
@@ -351,7 +355,36 @@ function actionsBar(A: any, tpls: Template[]) {
     h('span', { class: 'muted hint' }, n ? `${n} playable — glowing cards. Tap a dim card to see why it can't be used.` : 'Nothing to play with cards right now.'),
     h('div', { class: 'opts end' },
       free.filter((t) => t !== pass).map((t) => h('button', { class: 'opt', onclick: () => A.start(t) }, t.label)),
-      pass && h('button', { class: 'cta small pass', onclick: () => A.start(pass) }, pass.label)));
+      pass && h('button', { class: 'cta small pass', onclick: () => A.start(pass), 'data-act': 'pass' }, c ? passLabel(c) : pass.label)));
+}
+
+/** What passing does right now, in the player's words: finish responding, go to the next phase, or end the turn. */
+function passLabel(c: C): string {
+  const { v, mod, ui } = c;
+  if (v.window) return v.active === ui.viewer ? 'Continue' : 'No response';
+  if (v.active !== ui.viewer) return 'No response';
+  const ph = mod.rules.phases;
+  const i = ph.findIndex((p) => p.id === v.phase);
+  const next = ph.slice(i + 1).find((p) => !p.auto);
+  return next ? `Next: ${mod.manifest.theme?.labels?.[next.id] ?? title(next.id)} ▸` : 'End turn ▸';
+}
+function drawSelArrows(src: string | undefined, picks: string[]) {
+  document.querySelectorAll('svg.sel-arrows').forEach((s) => s.remove());
+  if (!src || !picks.length) return;
+  const find = (id: string) => document.querySelector<HTMLElement>(/^p\d+$/.test(id) ? `[data-player="${id}"]` : `[data-obj="${id}"]`);
+  const a = find(src);
+  if (!a) return;
+  const ra = a.getBoundingClientRect();
+  const paths = picks.map(find).filter(Boolean).map((b) => {
+    const rb = b!.getBoundingClientRect();
+    const x1 = ra.left + ra.width / 2, y1 = ra.top + ra.height / 2, x2 = rb.left + rb.width / 2, y2 = rb.top + rb.height / 2;
+    return `<path d="M${x1},${y1} Q${(x1 + x2) / 2},${Math.min(y1, y2) - 60} ${x2},${y2}" marker-end="url(#sa)"/>`;
+  });
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'beat-arrows sel-arrows');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.innerHTML = '<defs><marker id="sa" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>' + paths.join('');
+  document.body.append(svg);
 }
 
 function drawer(c: C) {
@@ -449,9 +482,54 @@ function fmt(e: Record<string, any>, mod: Mod, label: (x: string) => string, pna
   }
 }
 
+/** Plain-language log lines: what happened, from the viewer's seat, without bookkeeping. */
+function friendly(e: Record<string, any>, c: C): string | null {
+  const { mod, ui } = c;
+  const who = whoOf(ui);
+  const s = (p: string) => (who(p) === 'You' ? '' : 's');
+  const cn = (id?: string) => (id ? mod.card.get(id)?.name ?? 'a card' : 'a card');
+  const lbl = (k: string) => mod.manifest.theme?.labels?.[k] ?? title(k);
+  const hide = new Set(mod.manifest.theme?.hideVars ?? []);
+  switch (e.type) {
+    case 'phase': return e.phase === mod.rules.phases[0].id ? `— ${who(e.active) === 'You' ? 'Your' : `${who(e.active)}'s`} turn ${e.turn} —` : null;
+    case 'action': {
+      if (e.action === 'pass') return null;
+      const [base, i] = String(e.action).split('#');
+      if (/^(attack|march|quest)$/.test(base)) return null;
+      const d = mod.rules.actions[base];
+      const ab = i !== undefined && d?.activated && e.card ? (mod.card.get(e.card) as any)?.[d.activated]?.[+i]?.label : undefined;
+      const verb = (ab ?? d?.label ?? base).toLowerCase();
+      return `${who(e.player)} ${ab ? `use${s(e.player)} ${cn(e.card)}: ${ab}` : `${verb === 'play' || verb === 'summon' ? `play${s(e.player)}` : verb}${e.card ? ` ${cn(e.card)}` : ''}`}`;
+    }
+    case 'moved':
+      if (e.from === 'deck' && e.to === 'hand') return `${who(e.toPlayer ?? e.owner)} draw${s(e.toPlayer ?? e.owner)} ${e.card ? cn(e.card) : 'a card'}`;
+      if (e.from === 'hand' && e.to === 'grave') return `${who(e.owner)} discard${s(e.owner)} ${cn(e.card)}`;
+      if (e.to === 'hand' && e.from !== 'deck' && e.from !== 'limbo') return `${cn(e.card)} returns to ${who(e.owner) === 'You' ? 'your' : 'their'} hand`;
+      if (e.to === 'banished') return `${cn(e.card)} is banished`;
+      return null;
+    case 'attack': return `${c.label(e.o ?? e.attacker)} attacks ${c.label(e.t ?? e.target)}`;
+    case 'blocked': return e.o ? `${c.label(e.o)} blocks` : null;
+    case 'damage': return `${e.source ? c.label(e.source) : 'Damage'} → ${c.label(e.target)}: ${e.amount} damage`;
+    case 'destroyed': return `${cn(e.card)} is destroyed`;
+    case 'changed': return /^p\d+$/.test(e.ref) && !hide.has(e.name) && !String(e.name).includes(':') ? `${who(e.ref)}: ${e.to} ${lbl(e.name)} (${e.to - e.from >= 0 ? '+' : ''}${e.to - e.from})` : null;
+    case 'created': return `${cn(e.card)} appears`;
+    case 'stacked': return `${who(e.ctrl)} cast${s(e.ctrl)} ${e.label ?? cn(e.card)}`;
+    case 'countered': return `${cn(e.card)} is cancelled`;
+    case 'flipped': return e.card ? `${cn(e.card)} is revealed` : null;
+    case 'lifeLost': return `${who(e.p)} lose${s(e.p)} a life card`;
+    case 'prize': return `${who(e.p)} take${s(e.p)} a prize card`;
+    case 'quest': return `${c.label(e.o)} quests for ${e.n}`;
+    case 'conquer': return `${who(e.p)} conquer${s(e.p)} a battlefield`;
+    case 'lost': return `${who(e.player)} ${who(e.player) === 'You' ? 'are' : 'is'} out`;
+    case 'gameOver': return 'Game over';
+    case 'dialogue': return `${e.speaker}: “${e.text}”`;
+    default: return null;
+  }
+}
+
 function log(c: C) {
   const m = c.ui.match!;
   const ev = eventsFor(m, c.ui.viewer, Math.max(0, m.s.events.length - 150));
-  const lines = ev.map((e) => fmt(e as GEvent, c.mod, c.label, whoOf(c.ui))).filter(Boolean).slice(-60).reverse();
-  return [h('h3', {}, 'Log'), h('ol', { class: 'log', reversed: true }, lines.map((l) => h('li', {}, l!)))];
+  const lines = ev.map((e) => (c.ui.logAll ? fmt(e as GEvent, c.mod, c.label, whoOf(c.ui)) : friendly(e as GEvent, c))).filter(Boolean).slice(-60).reverse();
+  return [h('h3', {}, 'Log'), h('label', { class: 'chk log-all' }, h('input', { type: 'checkbox', checked: !!c.ui.logAll, onchange: c.A.toggleLogAll }), h('span', {}, 'Details')), h('ol', { class: 'log', reversed: true }, lines.map((l) => h('li', {}, l!)))];
 }
