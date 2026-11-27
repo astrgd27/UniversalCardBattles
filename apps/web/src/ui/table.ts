@@ -228,7 +228,8 @@ function seat(c: C, p: string, me: boolean) {
     h('span', { class: 'seat-name' }, whoOf(c.ui)(p) === 'You' ? 'You' : whoOf(c.ui)(p), v.active === p ? h('span', { class: 'turn-dot', title: 'Active player' }, ' ●') : null, pl.lost ? ' — out' : ''),
     h('span', { class: 'vars' }, Object.entries(pl.vars).filter(([k]) => !mod.manifest.theme?.hideVars?.includes(k)).map(([k, n]) => h('span', { class: cls('chip', c.fx.pulse.get(p)?.has(k) && 'fx-pulse') }, h('b', {}, String(n)), ` ${mod.manifest.theme?.labels?.[k] ?? k}`))),
     h('span', { class: 'piles' }, L.piles.map((z) => pile(c, `${p}:${z.id}`, z))));
-  const field = h('div', { class: 'field' }, L.field.map((z) => zoneBlock(c, `${p}:${z.id}`, z)));
+  const mirror = !me && !!(mod.manifest.theme as any)?.mirror; // grid boards: the opponent's side is drawn as seen across the table
+  const field = h('div', { class: 'field' }, (mirror ? [...L.field].reverse() : L.field).map((z) => zoneBlock(c, `${p}:${z.id}`, z)));
   const hand = L.hand ? handRow(c, `${p}:${L.hand.id}`, me) : null;
   return h('section', { class: cls('seat-area', me ? 'me' : 'opp', pl.lost && 'lost', v.active === p && 'active') },
     me ? [field, hand, bar] : [bar, hand, field]);
@@ -247,8 +248,9 @@ function pile(c: C, key: string, z: ZoneDef) {
 /** A zone with named slots: rows grouped by each slot's first tag; empty slots show their name and can be targets. */
 function slotted(c: C, key: string, z: ZoneDef, cards: ObjView[]) {
   const mine = key.startsWith(`${c.ui.viewer}:`);
+  const mirror = !mine && !!(c.mod.manifest.theme as any)?.mirror;
   const rows = new Map<string, NonNullable<ZoneDef['slots']>>();
-  for (const sp of z.slots!) { const r = sp.tags?.[0] ?? ''; rows.set(r, [...(rows.get(r) ?? []), sp]); }
+  for (const sp of mirror ? [...z.slots!].reverse() : z.slots!) { const r = sp.tags?.[0] ?? ''; rows.set(r, [...(rows.get(r) ?? []), sp]); }
   return h('div', { class: 'zone slotted' }, h('span', { class: 'zone-l' }, c.mod.manifest.theme?.labels?.[z.id] ?? title(z.id)),
     [...rows.values()].map((row) => h('div', { class: 'slot-row' }, row.map((sp) => {
       const here = cards.filter((o) => o.slot === sp.id);
@@ -551,6 +553,14 @@ function friendly(e: Record<string, any>, c: C): string | null {
     case 'marched': return `${who(e.p)} move${s(e.p)} ${e.n} unit${e.n === 1 ? '' : 's'} into ${lbl(e.z)}`;
     case 'recalled': return `Attackers fall back from ${lbl(e.z)}`;
     case 'showdownFight': return `Fight at ${lbl(e.z)}: ${e.a} against ${e.b}`;
+    case 'synchro': return `${who(e.p)} synchro summon${s(e.p)}!`;
+    case 'xyz': return `${who(e.p)} xyz summon${s(e.p)}!`;
+    case 'linkSummon': return `${who(e.p)} link summon${s(e.p)}!`;
+    case 'fusion': return `${who(e.p)} fusion summon${s(e.p)}!`;
+    case 'ritual': return `${who(e.p)} ritual summon${s(e.p)}!`;
+    case 'pendulum': return `${who(e.p)} pendulum summon${s(e.p)}!`;
+    case 'scale': return `${who(e.p)} set${s(e.p)} a pendulum scale: ${c.label(e.o)}`;
+    case 'placed': return `${c.label(e.o)} takes the field`;
     case 'dice': return `${who(e.p)} roll${s(e.p)} a d${e.sides}: ${e.value}`;
     case 'rolled': return e.dice > 1 ? `Total: ${e.total}` : null;
     case 'coin': return `${who(e.p)} flip${s(e.p)} a coin: ${e.heads ? 'heads!' : 'tails'}`;

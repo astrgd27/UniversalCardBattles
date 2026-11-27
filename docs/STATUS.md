@@ -19,7 +19,7 @@
 - **Order:**
   1. Clean slate (done).
   2. Battle-screen rebuild.
-  3. The games one at a time: Generation Wars (playable) → Ringworld Rumble (playable) → Looboo (playable) → Crystal Circuit (playable) → Looboo → Crystal Circuit → Taste Dimension.
+  3. The games one at a time: Generation Wars (playable) → Ringworld Rumble (playable) → Looboo (playable) → Crystal Circuit (playable) → Taste Dimension (playable) → Looboo → Crystal Circuit → Taste Dimension.
   4. Shop, campaign and multiplayer polish.
 - **Battle screen, part 1 (done):** a battle director (`apps/web/src/ui/director.ts`) turns the viewer's events into beats that play one at a time:
   - a caption for every opponent move;
@@ -100,6 +100,24 @@
   - Also: coin-flip attacks, bench damage, energy-scaling attacks, gust/switch, deck search, Leap Candy (skip a stage).
   - Balance and content are deferred, per the user (mechanics and tests first).
   - Not yet: abilities usable from the bench with restrictions (they work as once-per-turn activations), Tera, Lost Zone, devolving.
+- **Taste Dimension (fifth clone, playable; mechanics reference: Yu-Gi-Oh!):** `packages/modules/taste-dimension`.
+  - Content:
+    - 46 cards (a content pass comes later): four kitchens (Dim Sum Dynasty, Inferno Noodle House, Patisserie Royale, Spice Market);
+    - Fusion/Synchro/Xyz/Link/Ritual dishes, pendulum scales;
+    - Recipes (normal, quick-play, equip, continuous, field Kitchen), traps (normal, counter, continuous);
+    - 4 decks of 40 + extra decks.
+  - Rules:
+    - 8000 LP; one normal summon or set per turn, tributes for level 5+; attack/defense positions, set, flip, position changes;
+    - ATK vs ATK/DEF battle with damage and piercing; chain timing with speeds 1/2/3;
+    - the board grid with chosen zones, two shared Extra Monster Zones and full link arrows (including into the opponent's side);
+    - all summon methods; quick effects, hand traps, graveyard effects, detach, flip effects, once per turn per name.
+  - Tests:
+    - shared extra zones (the opponent's right blocks your left);
+    - a second link only where the first one's arrows point, and an arrow aura that boosts only the pointed-at unit;
+    - synchro offers only exact-total materials;
+    - xyz attaches and detaches; pendulum offers only levels between the scales;
+    - ritual, and fusion with named materials.
+  - Not yet: co-linked effects, materials that count as more than one (Link-2 as two), "summoned this way" restrictions, choosing the summon position for special summons, monster effect negation as a separate verb.
 - **Dice rolls (Workshop block):** roll N dice with S sides, with result-range effects, "then" effects, and amounts equal to the roll (see `docs/MAKER.md`). No default game uses them yet.
 - **Crystal Circuit (fourth clone, playable; mechanics reference: Magic: The Gathering):** `packages/modules/crystal-circuit`.
   - Content:

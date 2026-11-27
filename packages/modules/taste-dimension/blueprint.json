@@ -1,0 +1,1624 @@
+{
+ "v": 1,
+ "id": "taste-dimension",
+ "name": "Taste Dimension",
+ "blueprint": "blank",
+ "author": "Universal Card Battles",
+ "tagline": "Rival chefs summon monstrous dishes. Only one menu survives.",
+ "look": {
+  "accent": "#f97316",
+  "accent2": "#a855f7",
+  "glyph": "🍜"
+ },
+ "colors": [],
+ "stats": [
+  {
+   "id": "atk",
+   "name": "ATK",
+   "icon": "⚔"
+  },
+  {
+   "id": "def",
+   "name": "DEF",
+   "icon": "🛡"
+  },
+  {
+   "id": "level",
+   "name": "Level",
+   "icon": "★"
+  },
+  {
+   "id": "rank",
+   "name": "Rank",
+   "icon": "☆"
+  }
+ ],
+ "types": [
+  {
+   "id": "dish",
+   "name": "Dish",
+   "role": "unit",
+   "frame": {
+    "base": "monster",
+    "cost": "none",
+    "stats": [
+     {
+      "stat": "atk",
+      "pos": "bl",
+      "label": "ATK"
+     },
+     {
+      "stat": "def",
+      "pos": "br",
+      "label": "DEF"
+     }
+    ],
+    "art": 48,
+    "text": true,
+    "level": "level"
+   },
+   "icon": "🍲"
+  },
+  {
+   "id": "ritualDish",
+   "name": "Ritual Dish",
+   "role": "unit",
+   "ritual": true,
+   "frame": {
+    "base": "monster",
+    "cost": "none",
+    "stats": [
+     {
+      "stat": "atk",
+      "pos": "bl",
+      "label": "ATK"
+     },
+     {
+      "stat": "def",
+      "pos": "br",
+      "label": "DEF"
+     }
+    ],
+    "art": 48,
+    "text": true,
+    "level": "level"
+   },
+   "icon": "🎂"
+  },
+  {
+   "id": "fusion",
+   "name": "Fusion Dish",
+   "role": "extra",
+   "method": "fusion",
+   "frame": {
+    "base": "monster",
+    "cost": "none",
+    "stats": [
+     {
+      "stat": "atk",
+      "pos": "bl",
+      "label": "ATK"
+     },
+     {
+      "stat": "def",
+      "pos": "br",
+      "label": "DEF"
+     }
+    ],
+    "art": 48,
+    "text": true,
+    "level": "level"
+   },
+   "icon": "🥣"
+  },
+  {
+   "id": "synchro",
+   "name": "Synchro Dish",
+   "role": "extra",
+   "method": "synchro",
+   "frame": {
+    "base": "monster",
+    "cost": "none",
+    "stats": [
+     {
+      "stat": "atk",
+      "pos": "bl",
+      "label": "ATK"
+     },
+     {
+      "stat": "def",
+      "pos": "br",
+      "label": "DEF"
+     }
+    ],
+    "art": 48,
+    "text": true,
+    "level": "level"
+   },
+   "icon": "🍽"
+  },
+  {
+   "id": "xyz",
+   "name": "Xyz Dish",
+   "role": "extra",
+   "method": "xyz",
+   "frame": {
+    "base": "monster",
+    "cost": "none",
+    "stats": [
+     {
+      "stat": "atk",
+      "pos": "bl",
+      "label": "ATK"
+     },
+     {
+      "stat": "def",
+      "pos": "br",
+      "label": "DEF"
+     }
+    ],
+    "art": 48,
+    "text": true,
+    "level": "rank"
+   },
+   "icon": "🍱"
+  },
+  {
+   "id": "link",
+   "name": "Link Dish",
+   "role": "extra",
+   "method": "link",
+   "frame": {
+    "base": "monster",
+    "cost": "none",
+    "stats": [
+     {
+      "stat": "atk",
+      "pos": "bl",
+      "label": "ATK"
+     }
+    ],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🔗"
+  },
+  {
+   "id": "recipe",
+   "name": "Recipe",
+   "role": "spell",
+   "frame": {
+    "base": "spell",
+    "cost": "none",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "📜"
+  },
+  {
+   "id": "quickplay",
+   "name": "Quick-Play Recipe",
+   "role": "fast",
+   "settable": true,
+   "frame": {
+    "base": "spell",
+    "cost": "none",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "⚡"
+  },
+  {
+   "id": "equipSpell",
+   "name": "Equip Recipe",
+   "role": "attachment",
+   "anyUnit": true,
+   "frame": {
+    "base": "spell",
+    "cost": "none",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🍳"
+  },
+  {
+   "id": "contSpell",
+   "name": "Continuous Recipe",
+   "role": "permanent",
+   "frame": {
+    "base": "spell",
+    "cost": "none",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "♾"
+  },
+  {
+   "id": "kitchen",
+   "name": "Kitchen (Field)",
+   "role": "permanent",
+   "playTo": "kitchen",
+   "frame": {
+    "base": "spell",
+    "cost": "none",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🏠"
+  },
+  {
+   "id": "trap",
+   "name": "Trap",
+   "role": "trap",
+   "frame": {
+    "base": "spell",
+    "cost": "none",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🪤"
+  },
+  {
+   "id": "counterTrap",
+   "name": "Counter Trap",
+   "role": "trap",
+   "speed3": true,
+   "frame": {
+    "base": "spell",
+    "cost": "none",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "⛔"
+  },
+  {
+   "id": "contTrap",
+   "name": "Continuous Trap",
+   "role": "trap",
+   "continuous": true,
+   "frame": {
+    "base": "spell",
+    "cost": "none",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "♾"
+  }
+ ],
+ "zones": [
+  {
+   "id": "kitchen",
+   "name": "Kitchen",
+   "vis": "public",
+   "size": 1,
+   "inPlay": true
+  }
+ ],
+ "keywords": [
+  {
+   "id": "tuner",
+   "name": "Garnish (Tuner)",
+   "rule": "tuner",
+   "text": "Garnish: a Tuner for synchro summons."
+  },
+  {
+   "id": "piercing",
+   "name": "Piercing",
+   "rule": "overflow",
+   "text": "Piercing: attacking a defense-position dish deals the difference as damage."
+  },
+  {
+   "id": "directAttack",
+   "name": "Takeout",
+   "rule": "directAttack",
+   "text": "Takeout: can attack the opponent directly."
+  },
+  {
+   "id": "extraAttack",
+   "name": "Second Course",
+   "rule": "extraAttack",
+   "text": "Second Course: can attack twice each turn."
+  },
+  {
+   "id": "noKO",
+   "name": "Stain-Proof",
+   "rule": "noKO",
+   "text": "Stain-Proof: can't be destroyed by battle."
+  }
+ ],
+ "turn": [
+  {
+   "id": "start",
+   "name": "Start",
+   "kind": "ready"
+  },
+  {
+   "id": "draw",
+   "name": "Draw",
+   "kind": "draw",
+   "n": 1
+  },
+  {
+   "id": "main",
+   "name": "Main 1",
+   "kind": "main"
+  },
+  {
+   "id": "battle",
+   "name": "Battle",
+   "kind": "combat"
+  },
+  {
+   "id": "main2",
+   "name": "Main 2",
+   "kind": "main"
+  },
+  {
+   "id": "end",
+   "name": "End",
+   "kind": "end"
+  }
+ ],
+ "timing": "chain",
+ "resource": {
+  "mode": "none",
+  "name": "None",
+  "icon": "",
+  "start": 0,
+  "perTurn": 0,
+  "max": 0,
+  "deckSize": 0,
+  "boost": 0,
+  "summonsPerTurn": 1,
+  "tribute": [
+   {
+    "level": 5,
+    "n": 1
+   },
+   {
+    "level": 7,
+    "n": 2
+   }
+  ]
+ },
+ "combat": {
+  "mode": "target",
+  "power": "atk",
+  "health": null,
+  "defense": "def",
+  "damage": "persist",
+  "sickness": false,
+  "firstTurnAttack": false,
+  "targetUnits": "any",
+  "directOnlyIfEmpty": true,
+  "direct": "ifEmpty",
+  "leaderDefends": false,
+  "leaderAttacks": false,
+  "compare": {
+   "ties": "both",
+   "loser": true,
+   "overflow": true
+  },
+  "positions": true,
+  "counterStep": false,
+  "fieldSize": 5,
+  "benchSize": 0,
+  "attackEndsTurn": false,
+  "weakness": 1,
+  "lanes": [],
+  "grid": true,
+  "emz": true
+ },
+ "win": {
+  "life": 8000,
+  "lifeCards": 0,
+  "prizes": 0,
+  "points": 0,
+  "deckOut": true,
+  "noUnits": false
+ },
+ "setup": {
+  "hand": 5,
+  "mulligan": false,
+  "handLimit": 6,
+  "deckMin": 40,
+  "deckMax": 60,
+  "maxCopies": 3,
+  "skipFirstDraw": true,
+  "leader": false,
+  "extraMax": 15,
+  "turnLimit": 80
+ },
+ "zoneNames": {
+  "field": "Dish Zones",
+  "emz": "Extra Zones",
+  "support": "Recipe & Trap Zones",
+  "grave": "Scrap Bin",
+  "banished": "Eaten",
+  "extra": "Extra Menu",
+  "pextra": "Extra Menu (face up)",
+  "overlay": "Ingredients",
+  "hand": "Hand"
+ },
+ "cards": [
+  {
+   "id": "dumpling-golem",
+   "name": "Dumpling Golem",
+   "type": "dish",
+   "stats": {
+    "level": 4,
+    "atk": 1800,
+    "def": 1200
+   },
+   "traits": [
+    "Umami",
+    "Dumpling"
+   ],
+   "keywords": [],
+   "abilities": [],
+   "flavor": "Folded by hand, eighteen pleats, zero mercy."
+  },
+  {
+   "id": "bao-bun-sentry",
+   "name": "Bao Bun Sentry",
+   "type": "dish",
+   "stats": {
+    "level": 4,
+    "atk": 1200,
+    "def": 1800
+   },
+   "traits": [
+    "Umami",
+    "Dumpling"
+   ],
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "putIntoPlay",
+       "zone": "hand",
+       "filter": {
+        "trait": "Dumpling",
+        "stat": "level",
+        "op": "le",
+        "val": 4
+       }
+      }
+     ],
+     "oncePerName": true
+    }
+   ]
+  },
+  {
+   "id": "har-gow-scout",
+   "name": "Har Gow Scout",
+   "type": "dish",
+   "stats": {
+    "level": 3,
+    "atk": 1000,
+    "def": 1000
+   },
+   "traits": [
+    "Salty",
+    "Dumpling"
+   ],
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "flip",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Translucent. You never see it coming."
+  },
+  {
+   "id": "steamer-basket-guardian",
+   "name": "Steamer Basket Guardian",
+   "type": "dish",
+   "stats": {
+    "level": 4,
+    "atk": 1000,
+    "def": 2000
+   },
+   "traits": [
+    "Salty",
+    "Dumpling"
+   ],
+   "keywords": [
+    "noKO"
+   ],
+   "abilities": []
+  },
+  {
+   "id": "siu-mai-squire",
+   "name": "Siu Mai Squire",
+   "type": "dish",
+   "stats": {
+    "level": 4,
+    "atk": 1600,
+    "def": 1000
+   },
+   "traits": [
+    "Umami",
+    "Dumpling"
+   ],
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "buff",
+       "n": 500,
+       "stat": "atk",
+       "target": "ownUnit"
+      }
+     ],
+     "quick": true,
+     "once": true
+    }
+   ]
+  },
+  {
+   "id": "dumpling-emperor",
+   "name": "Dumpling Emperor",
+   "type": "xyz",
+   "stats": {
+    "level": 0,
+    "atk": 2500,
+    "def": 2000,
+    "rank": 4
+   },
+   "traits": [
+    "Umami",
+    "Dumpling"
+   ],
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "destroy",
+       "target": "enemyUnit"
+      }
+     ],
+     "detach": 1,
+     "oncePerName": true
+    }
+   ],
+   "materials": 2,
+   "flavor": "Rules the steamer from a throne of bamboo."
+  },
+  {
+   "id": "bamboo-steamer-titan",
+   "name": "Bamboo Steamer Titan",
+   "type": "xyz",
+   "stats": {
+    "level": 0,
+    "atk": 2200,
+    "def": 2600,
+    "rank": 4
+   },
+   "traits": [
+    "Salty",
+    "Dumpling"
+   ],
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "buff",
+       "n": 1000,
+       "stat": "atk",
+       "target": "self"
+      }
+     ],
+     "detach": 1,
+     "once": true
+    }
+   ],
+   "materials": 2
+  },
+  {
+   "id": "dim-sum-cart",
+   "name": "Dim Sum Cart",
+   "type": "link",
+   "stats": {
+    "level": 0,
+    "atk": 1800,
+    "def": 0
+   },
+   "traits": [
+    "Umami",
+    "Dumpling"
+   ],
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "static",
+     "do": [
+      {
+       "k": "aura",
+       "n": 300,
+       "stat": "atk",
+       "target": "allOwnUnits",
+       "filter": {
+        "pointed": true
+       }
+      }
+     ]
+    }
+   ],
+   "arrows": [
+    "BL",
+    "BR"
+   ],
+   "mats": [
+    {
+     "trait": "Dumpling"
+    }
+   ],
+   "flavor": "Rolls between the tables, feeding whoever it points at."
+  },
+  {
+   "id": "tea-house-matron",
+   "name": "Tea House Matron",
+   "type": "link",
+   "stats": {
+    "level": 0,
+    "atk": 800,
+    "def": 0
+   },
+   "traits": [
+    "Salty",
+    "Dumpling"
+   ],
+   "keywords": [],
+   "abilities": [],
+   "arrows": [
+    "B"
+   ],
+   "mats": [
+    {
+     "stat": "level",
+     "op": "le",
+     "val": 4
+    }
+   ]
+  },
+  {
+   "id": "chili-garnish",
+   "name": "Chili Garnish",
+   "type": "dish",
+   "stats": {
+    "level": 2,
+    "atk": 600,
+    "def": 400
+   },
+   "traits": [
+    "Spicy",
+    "Noodle"
+   ],
+   "keywords": [
+    "tuner"
+   ],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "damage",
+       "n": 300,
+       "target": "opponent"
+      }
+     ]
+    }
+   ],
+   "flavor": "A sprinkle on top. A fire in the belly."
+  },
+  {
+   "id": "wasabi-sprite",
+   "name": "Wasabi Sprite",
+   "type": "dish",
+   "stats": {
+    "level": 1,
+    "atk": 300,
+    "def": 300
+   },
+   "traits": [
+    "Spicy",
+    "Garnish"
+   ],
+   "keywords": [
+    "tuner"
+   ],
+   "abilities": [
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "counter"
+      }
+     ],
+     "from": "hand",
+     "sacSelf": true,
+     "oncePerName": true,
+     "label": "Discard this: negate the last spell, trap or effect"
+    }
+   ],
+   "flavor": "Too much, too fast, too green."
+  },
+  {
+   "id": "ramen-ronin",
+   "name": "Ramen Ronin",
+   "type": "dish",
+   "stats": {
+    "level": 4,
+    "atk": 1700,
+    "def": 1100
+   },
+   "traits": [
+    "Spicy",
+    "Noodle"
+   ],
+   "keywords": [
+    "piercing"
+   ],
+   "abilities": []
+  },
+  {
+   "id": "soba-scout",
+   "name": "Soba Scout",
+   "type": "dish",
+   "stats": {
+    "level": 3,
+    "atk": 1200,
+    "def": 800
+   },
+   "traits": [
+    "Salty",
+    "Noodle"
+   ],
+   "keywords": [
+    "directAttack"
+   ],
+   "abilities": []
+  },
+  {
+   "id": "udon-brute",
+   "name": "Udon Brute",
+   "type": "dish",
+   "stats": {
+    "level": 5,
+    "atk": 2100,
+    "def": 1300
+   },
+   "traits": [
+    "Umami",
+    "Noodle"
+   ],
+   "keywords": [],
+   "abilities": []
+  },
+  {
+   "id": "leftover-lo-mein",
+   "name": "Leftover Lo Mein",
+   "type": "dish",
+   "stats": {
+    "level": 3,
+    "atk": 1100,
+    "def": 900
+   },
+   "traits": [
+    "Salty",
+    "Noodle"
+   ],
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ],
+     "from": "grave",
+     "sacSelf": true,
+     "oncePerName": true,
+     "label": "Banish this from your discard pile: draw a card"
+    }
+   ],
+   "flavor": "Better the next day."
+  },
+  {
+   "id": "spicy-wonton-wyrm",
+   "name": "Spicy Wonton Wyrm",
+   "type": "synchro",
+   "stats": {
+    "level": 5,
+    "atk": 2200,
+    "def": 1500
+   },
+   "traits": [
+    "Spicy",
+    "Noodle"
+   ],
+   "keywords": [
+    "piercing"
+   ],
+   "abilities": []
+  },
+  {
+   "id": "inferno-noodle-hydra",
+   "name": "Inferno Noodle Hydra",
+   "type": "synchro",
+   "stats": {
+    "level": 6,
+    "atk": 2400,
+    "def": 2000
+   },
+   "traits": [
+    "Spicy",
+    "Noodle"
+   ],
+   "keywords": [
+    "extraAttack"
+   ],
+   "abilities": [],
+   "flavor": "Nine heads. Nine broths. One appetite."
+  },
+  {
+   "id": "scorching-pho-phoenix",
+   "name": "Scorching Pho Phoenix",
+   "type": "synchro",
+   "stats": {
+    "level": 8,
+    "atk": 2800,
+    "def": 2300
+   },
+   "traits": [
+    "Spicy",
+    "Noodle"
+   ],
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "destroy",
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "cupcake-knight",
+   "name": "Cupcake Knight",
+   "type": "dish",
+   "stats": {
+    "level": 3,
+    "atk": 1300,
+    "def": 1000
+   },
+   "traits": [
+    "Sweet",
+    "Dessert"
+   ],
+   "keywords": [],
+   "abilities": []
+  },
+  {
+   "id": "macaron-mage",
+   "name": "Macaron Mage",
+   "type": "dish",
+   "stats": {
+    "level": 4,
+    "atk": 1500,
+    "def": 1200
+   },
+   "traits": [
+    "Sweet",
+    "Dessert"
+   ],
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "tutor",
+       "n": 1,
+       "to": "hand",
+       "filter": {
+        "name": "Master Stock"
+       }
+      }
+     ],
+     "oncePerName": true
+    }
+   ]
+  },
+  {
+   "id": "eclair-archer",
+   "name": "Eclair Archer",
+   "type": "dish",
+   "stats": {
+    "level": 4,
+    "atk": 1700,
+    "def": 800
+   },
+   "traits": [
+    "Sweet",
+    "Dessert"
+   ],
+   "keywords": [],
+   "abilities": []
+  },
+  {
+   "id": "fondant-fiend",
+   "name": "Fondant Fiend",
+   "type": "dish",
+   "stats": {
+    "level": 6,
+    "atk": 2300,
+    "def": 1800
+   },
+   "traits": [
+    "Sweet",
+    "Dessert"
+   ],
+   "keywords": [],
+   "abilities": []
+  },
+  {
+   "id": "mystery-meatball",
+   "name": "Mystery Meatball",
+   "type": "dish",
+   "stats": {
+    "level": 2,
+    "atk": 500,
+    "def": 1600
+   },
+   "traits": [
+    "Umami",
+    "Grill"
+   ],
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "flip",
+     "do": [
+      {
+       "k": "destroy",
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Nobody knows what is inside. That is the point."
+  },
+  {
+   "id": "mille-feuille-paladin",
+   "name": "Mille-Feuille Paladin",
+   "type": "fusion",
+   "stats": {
+    "level": 7,
+    "atk": 2600,
+    "def": 2200
+   },
+   "traits": [
+    "Sweet",
+    "Dessert"
+   ],
+   "keywords": [],
+   "abilities": [],
+   "mats": [
+    {
+     "name": "Cupcake Knight"
+    },
+    {
+     "name": "Macaron Mage"
+    }
+   ]
+  },
+  {
+   "id": "croquembouche-colossus",
+   "name": "Croquembouche Colossus",
+   "type": "fusion",
+   "stats": {
+    "level": 8,
+    "atk": 3000,
+    "def": 2500
+   },
+   "traits": [
+    "Sweet",
+    "Dessert"
+   ],
+   "keywords": [],
+   "abilities": [],
+   "mats": [
+    {
+     "trait": "Dessert"
+    },
+    {
+     "trait": "Dessert"
+    },
+    {
+     "trait": "Dessert"
+    }
+   ],
+   "flavor": "A tower of choux, held together by caramel and spite."
+  },
+  {
+   "id": "wedding-cake-empress",
+   "name": "Wedding Cake Empress",
+   "type": "ritualDish",
+   "stats": {
+    "level": 8,
+    "atk": 2900,
+    "def": 2400
+   },
+   "traits": [
+    "Sweet",
+    "Dessert"
+   ],
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "bounce",
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "saffron-scale-keeper",
+   "name": "Saffron Scale-Keeper",
+   "type": "dish",
+   "stats": {
+    "level": 3,
+    "atk": 1200,
+    "def": 1000
+   },
+   "traits": [
+    "Bitter",
+    "Grill"
+   ],
+   "keywords": [],
+   "abilities": [],
+   "scale": 1
+  },
+  {
+   "id": "cardamom-conjurer",
+   "name": "Cardamom Conjurer",
+   "type": "dish",
+   "stats": {
+    "level": 7,
+    "atk": 2500,
+    "def": 2000
+   },
+   "traits": [
+    "Bitter",
+    "Grill"
+   ],
+   "keywords": [],
+   "abilities": [],
+   "scale": 8,
+   "flavor": "Weighs the world in pods."
+  },
+  {
+   "id": "paprika-pendulum-knight",
+   "name": "Paprika Pendulum Knight",
+   "type": "dish",
+   "stats": {
+    "level": 5,
+    "atk": 2000,
+    "def": 1600
+   },
+   "traits": [
+    "Spicy",
+    "Grill"
+   ],
+   "keywords": [],
+   "abilities": [],
+   "scale": 4
+  },
+  {
+   "id": "turmeric-tamer",
+   "name": "Turmeric Tamer",
+   "type": "dish",
+   "stats": {
+    "level": 4,
+    "atk": 1600,
+    "def": 1600
+   },
+   "traits": [
+    "Bitter",
+    "Grill"
+   ],
+   "keywords": [],
+   "abilities": [],
+   "scale": 6
+  },
+  {
+   "id": "cumin-courier",
+   "name": "Cumin Courier",
+   "type": "dish",
+   "stats": {
+    "level": 3,
+    "atk": 1000,
+    "def": 1500
+   },
+   "traits": [
+    "Bitter",
+    "Grill"
+   ],
+   "keywords": [],
+   "abilities": []
+  },
+  {
+   "id": "spice-route-navigator",
+   "name": "Spice Route Navigator",
+   "type": "link",
+   "stats": {
+    "level": 0,
+    "atk": 1600,
+    "def": 0
+   },
+   "traits": [
+    "Bitter",
+    "Grill"
+   ],
+   "keywords": [],
+   "abilities": [],
+   "arrows": [
+    "L",
+    "B"
+   ],
+   "mats": [
+    {}
+   ]
+  },
+  {
+   "id": "grand-bazaar-sultan",
+   "name": "Grand Bazaar Sultan",
+   "type": "link",
+   "stats": {
+    "level": 0,
+    "atk": 2400,
+    "def": 0
+   },
+   "traits": [
+    "Spicy",
+    "Grill"
+   ],
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "static",
+     "do": [
+      {
+       "k": "aura",
+       "n": 500,
+       "stat": "atk",
+       "target": "allOwnUnits",
+       "filter": {
+        "pointed": true
+       }
+      }
+     ]
+    }
+   ],
+   "arrows": [
+    "L",
+    "B",
+    "R"
+   ],
+   "mats": [
+    {}
+   ],
+   "flavor": "Every stall in the bazaar answers to him."
+  },
+  {
+   "id": "master-stock",
+   "name": "Master Stock",
+   "type": "recipe",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "fusion"
+      }
+     ]
+    }
+   ],
+   "flavor": "Simmered for a thousand years. Combines anything."
+  },
+  {
+   "id": "grand-banquet-ceremony",
+   "name": "Grand Banquet Ceremony",
+   "type": "recipe",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "ritual"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "pantry-raid",
+   "name": "Pantry Raid",
+   "type": "recipe",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "draw",
+       "n": 2
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "second-helping",
+   "name": "Second Helping",
+   "type": "recipe",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "putIntoPlay",
+       "zone": "grave"
+      }
+     ]
+    }
+   ],
+   "flavor": "There is always room for more."
+  },
+  {
+   "id": "emergency-mise-en-place",
+   "name": "Emergency Mise en Place",
+   "type": "quickplay",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "putIntoPlay",
+       "zone": "hand",
+       "filter": {
+        "stat": "level",
+        "op": "le",
+        "val": 4
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "Everything in its place. Now!"
+  },
+  {
+   "id": "flash-fry",
+   "name": "Flash Fry",
+   "type": "quickplay",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "buff",
+       "n": 800,
+       "stat": "atk",
+       "target": "ownUnit"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "cast-iron-skillet",
+   "name": "Cast-Iron Skillet",
+   "type": "equipSpell",
+   "stats": {},
+   "keywords": [],
+   "abilities": [],
+   "bonus": {
+    "atk": 500
+   }
+  },
+  {
+   "id": "food-court-kitchen",
+   "name": "Food Court Kitchen",
+   "type": "kitchen",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "static",
+     "do": [
+      {
+       "k": "aura",
+       "n": 300,
+       "stat": "atk",
+       "target": "allOwnUnits",
+       "filter": {
+        "trait": "Noodle"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "kitchen-fire",
+   "name": "Kitchen Fire",
+   "type": "trap",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "opAttack",
+     "do": [
+      {
+       "k": "destroy",
+       "target": "attacker"
+      }
+     ]
+    }
+   ],
+   "flavor": "Grease plus flame equals a very short battle."
+  },
+  {
+   "id": "sous-chef-sabotage",
+   "name": "Sous Chef Sabotage",
+   "type": "trap",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "destroy",
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "health-inspection",
+   "name": "Health Inspection",
+   "type": "counterTrap",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "counter"
+      }
+     ]
+    }
+   ],
+   "flavor": "Closed until further notice."
+  },
+  {
+   "id": "bottomless-buffet",
+   "name": "Bottomless Buffet",
+   "type": "contTrap",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "static",
+     "do": [
+      {
+       "k": "aura",
+       "n": 500,
+       "stat": "def",
+       "target": "allOwnUnits"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "chef-rivalry",
+   "name": "Chef Rivalry",
+   "type": "contSpell",
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "static",
+     "do": [
+      {
+       "k": "aura",
+       "n": 200,
+       "stat": "atk",
+       "target": "allOwnUnits",
+       "filter": {
+        "adjacent": true
+       }
+      }
+     ]
+    }
+   ],
+   "flavor": "Two chefs side by side always cook harder."
+  }
+ ],
+ "decks": [
+  {
+   "id": "dim-sum-dynasty",
+   "name": "Dim Sum Dynasty",
+   "main": {
+    "dumpling-golem": 3,
+    "bao-bun-sentry": 3,
+    "har-gow-scout": 3,
+    "steamer-basket-guardian": 3,
+    "siu-mai-squire": 3,
+    "mystery-meatball": 3,
+    "cumin-courier": 3,
+    "wasabi-sprite": 2,
+    "pantry-raid": 2,
+    "second-helping": 1,
+    "emergency-mise-en-place": 2,
+    "flash-fry": 1,
+    "kitchen-fire": 2,
+    "sous-chef-sabotage": 1,
+    "health-inspection": 1,
+    "cast-iron-skillet": 1,
+    "bottomless-buffet": 2,
+    "chef-rivalry": 2,
+    "leftover-lo-mein": 2
+   },
+   "extra": {
+    "dumpling-emperor": 2,
+    "bamboo-steamer-titan": 2,
+    "dim-sum-cart": 2,
+    "tea-house-matron": 2,
+    "grand-bazaar-sultan": 1,
+    "spice-route-navigator": 1
+   }
+  },
+  {
+   "id": "inferno-noodle-house",
+   "name": "Inferno Noodle House",
+   "main": {
+    "chili-garnish": 3,
+    "wasabi-sprite": 3,
+    "ramen-ronin": 3,
+    "soba-scout": 3,
+    "udon-brute": 3,
+    "leftover-lo-mein": 3,
+    "cumin-courier": 3,
+    "har-gow-scout": 3,
+    "pantry-raid": 3,
+    "second-helping": 2,
+    "emergency-mise-en-place": 2,
+    "flash-fry": 1,
+    "kitchen-fire": 2,
+    "sous-chef-sabotage": 1,
+    "health-inspection": 1,
+    "cast-iron-skillet": 1,
+    "food-court-kitchen": 2,
+    "bottomless-buffet": 1
+   },
+   "extra": {
+    "spicy-wonton-wyrm": 2,
+    "inferno-noodle-hydra": 2,
+    "scorching-pho-phoenix": 2,
+    "tea-house-matron": 1,
+    "spice-route-navigator": 1
+   }
+  },
+  {
+   "id": "patisserie-royale",
+   "name": "Patisserie Royale",
+   "main": {
+    "cupcake-knight": 3,
+    "macaron-mage": 3,
+    "eclair-archer": 3,
+    "fondant-fiend": 3,
+    "wedding-cake-empress": 3,
+    "mystery-meatball": 3,
+    "har-gow-scout": 3,
+    "master-stock": 3,
+    "grand-banquet-ceremony": 3,
+    "pantry-raid": 2,
+    "second-helping": 1,
+    "emergency-mise-en-place": 2,
+    "flash-fry": 1,
+    "kitchen-fire": 2,
+    "sous-chef-sabotage": 1,
+    "health-inspection": 1,
+    "cast-iron-skillet": 1,
+    "chef-rivalry": 1,
+    "bottomless-buffet": 1
+   },
+   "extra": {
+    "mille-feuille-paladin": 2,
+    "croquembouche-colossus": 2,
+    "tea-house-matron": 1,
+    "spice-route-navigator": 1
+   }
+  },
+  {
+   "id": "spice-market",
+   "name": "Spice Market",
+   "main": {
+    "saffron-scale-keeper": 3,
+    "cardamom-conjurer": 3,
+    "paprika-pendulum-knight": 3,
+    "turmeric-tamer": 3,
+    "cumin-courier": 3,
+    "chili-garnish": 3,
+    "soba-scout": 3,
+    "mystery-meatball": 3,
+    "pantry-raid": 3,
+    "second-helping": 2,
+    "emergency-mise-en-place": 2,
+    "flash-fry": 1,
+    "kitchen-fire": 2,
+    "sous-chef-sabotage": 1,
+    "health-inspection": 1,
+    "cast-iron-skillet": 1,
+    "chef-rivalry": 2,
+    "bottomless-buffet": 1
+   },
+   "extra": {
+    "spice-route-navigator": 2,
+    "grand-bazaar-sultan": 2,
+    "tea-house-matron": 2,
+    "spicy-wonton-wyrm": 1
+   }
+  }
+ ]
+}

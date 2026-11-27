@@ -6,7 +6,7 @@
 export type Role = 'unit' | 'spell' | 'fast' | 'permanent' | 'attachment' | 'resource' | 'trap' | 'leader' | 'evolution' | 'extra' | 'token' | 'attack' | 'battlefield' | 'walker';
 export type Pos = 'tl' | 'tr' | 'bl' | 'br' | 'line';
 export type PhaseKind = 'ready' | 'draw' | 'resource' | 'main' | 'combat' | 'end' | 'custom';
-export type When = 'play' | 'leave' | 'attack' | 'hit' | 'quest' | 'startTurn' | 'endTurn' | 'activated' | 'static' | 'opAttack' | 'conquer' | 'hold' | 'block' | 'castSpell' | 'landfall';
+export type When = 'play' | 'leave' | 'attack' | 'hit' | 'quest' | 'startTurn' | 'endTurn' | 'activated' | 'static' | 'opAttack' | 'conquer' | 'hold' | 'block' | 'castSpell' | 'landfall' | 'flip';
 export type TargetKind =
   | 'self' | 'enemyUnit' | 'anyUnit' | 'ownUnit' | 'otherOwnUnit' | 'enemyAny' | 'opponent' | 'you' | 'eachPlayer'
   | 'allEnemyUnits' | 'allUnits' | 'allOwnUnits' | 'randomEnemyUnit' | 'attacker' | 'battleTarget' | 'ownLeader' | 'ownAny';
@@ -16,12 +16,13 @@ export type EffectKind =
   | 'addCounter' | 'removeCounter' | 'strike' | 'deploy'
   | 'restrict' | 'prevent' | 'costMod' | 'insteadDestroy' | 'moveTo' | 'scry'
   | 'dig' | 'putIntoPlay' | 'addRes' | 'readyRes' | 'giveRes' | 'lifeToHand' | 'handToLife'
-  | 'inflict' | 'cure' | 'flip' | 'switch' | 'tutor' | 'attachFrom' | 'drawTo' | 'skipEvolve' | 'fight' | 'surveil' | 'roll';
+  | 'inflict' | 'cure' | 'flip' | 'switch' | 'tutor' | 'attachFrom' | 'drawTo' | 'skipEvolve' | 'fight' | 'surveil' | 'roll' | 'fusion' | 'ritual';
 export type KeywordRule = 'none' | 'haste' | 'guard' | 'blocker' | 'flying' | 'vigilance' | 'lifesteal' | 'deadly' | 'shield' | 'double' | 'overflow' | 'ward'
   | 'firstStrike' | 'resist' | 'challenger' | 'saboteur' | 'goAgain' | 'trigger' | 'song'
   | 'noAttack' | 'noBlock' | 'noBeAttacked' | 'unblockable' | 'entersExhausted'
   | 'tank' | 'bulwark' | 'accelerate' | 'ganking' | 'temporary' | 'banish' | 'rushUnits' | 'noKO'
-  | 'reach' | 'doubleStrike' | 'menace' | 'indestructible' | 'flash' | 'wardTax' | 'legendary';
+  | 'reach' | 'doubleStrike' | 'menace' | 'indestructible' | 'flash' | 'wardTax' | 'legendary'
+  | 'tuner' | 'directAttack' | 'extraAttack';
 
 export interface StatDef { id: string; name: string; icon?: string }
 export interface Color { id: string; name: string; hex: string; icon?: string }
@@ -44,7 +45,10 @@ export interface CustomZone { id: string; name: string; vis: 'public' | 'owner' 
 export interface Arena { id: string; name: string; size: number; attack: boolean } // a board area units are played into; `attack`: units here can attack/block
 export interface StatSlot { stat: string; pos: Pos; icon?: string; label?: string }
 export interface FrameDef { base: string; cost: 'tl' | 'tr' | 'none'; stats: StatSlot[]; art: number; level?: string; text: boolean; layout?: 'portrait' | 'landscape' }
-export interface CardType { id: string; name: string; role: Role; frame: FrameDef; icon?: string; zone?: string; playTo?: string; perTurn?: number; notFirstTurn?: boolean; perUnit?: number; anyUnit?: boolean; equipment?: boolean }
+export interface CardType { id: string; name: string; role: Role; frame: FrameDef; icon?: string; zone?: string; playTo?: string; perTurn?: number; notFirstTurn?: boolean; perUnit?: number; anyUnit?: boolean; equipment?: boolean;
+  method?: 'materials' | 'fusion' | 'synchro' | 'xyz' | 'link'; ritual?: boolean; settable?: boolean; speed3?: boolean; continuous?: boolean }
+// method (extra-deck types): how it is summoned; ritual: summoned only by a ritual effect; settable (quick spells): can be set and used from the next turn;
+// speed3 (traps): responds to anything; continuous (traps): stays face up after it is sprung
 // anyUnit (attachments): may go on any unit, yours or the opponent's (auras, curses); equipment: stays when its unit leaves and can be moved with equipCost
 // perTurn: at most N of this type per turn; notFirstTurn: not on the first turn of the game; perUnit (attachments): at most N on one unit // zone: the arena its units enter; playTo: a custom zone permanents go to
 export interface Keyword { id: string; name: string; rule: KeywordRule; text: string; valued?: boolean; abilities?: Ability[]; deckMax?: number } // deckMax: at most N cards with it per deck
@@ -87,6 +91,8 @@ export interface Combat {
   conquest?: boolean; // lanes: units enter exhausted and move in groups; moving into an enemy battlefield opens a showdown (response window), then a fight (Tank first, lethal damage, survivors heal, attackers recalled on a tie)
   counterOnly?: boolean; // quick spells can be played only while defending (in the response step)
   replaceFull?: boolean; // with a full board, playing a unit first trashes one of yours
+  grid?: boolean; // units occupy numbered columns (the player picks one), support has 5 slots; enables adjacent/opposite filters
+  emz?: boolean; // grid: two shared extra zones above the board (one per player); link and extra-deck pendulum summons go there or where your link arrows point
   mass?: boolean; // block mode: declare all attackers at once (at the player or a walker), assign blockers (several per attacker), first-strike and regular damage steps
   firstTurnEach?: boolean; // with firstTurnAttack off: neither player attacks on their own first turn (not just turn 1)
   finalPoint?: boolean; // lanes: a conquest can't win the game unless you scored every battlefield this turn (draw a card instead)
@@ -103,8 +109,9 @@ export interface Setup { hand: number; mulligan: boolean; handLimit: number; dec
   london?: boolean; // mulligan: shuffle and draw a full hand again, then put 1 card on the bottom per mulligan
 }
 
-export interface Cond { k: 'units' | 'life' | 'hand' | 'yourTurn' | 'res' | 'counter' | 'zone' | 'played' | 'attached' | 'oppTurn' | 'oppLife' | 'status' | 'kicked' | 'charged' | 'raw'; n?: number; counter?: string; zone?: string; status?: string; raw?: unknown }
-export interface Filter { type?: string; color?: string; keyword?: string; stat?: string; op?: 'le' | 'ge'; val?: number; exhausted?: boolean; zone?: string; name?: string; trait?: string; status?: string }
+export interface Cond { k: 'units' | 'life' | 'hand' | 'yourTurn' | 'res' | 'counter' | 'zone' | 'played' | 'attached' | 'oppTurn' | 'oppLife' | 'status' | 'kicked' | 'charged' | 'linked' | 'raw'; n?: number; counter?: string; zone?: string; status?: string; raw?: unknown }
+export interface Filter { type?: string; color?: string; keyword?: string; stat?: string; op?: 'le' | 'ge'; val?: number; exhausted?: boolean; zone?: string; name?: string; trait?: string; status?: string;
+  adjacent?: boolean; opposite?: boolean; pointed?: boolean } // grid boards: in a neighboring column of this; in the column facing this; pointed at by this card's link arrows
 export interface Effect { k: EffectKind; n?: number; kw?: string; target?: TargetKind; filter?: Filter; stat?: string; until?: 'turn' | 'forever' | 'battle'; who?: 'me' | 'opp' | 'each'; card?: string; type?: string; rule?: KeywordRule; to?: 'hand' | 'deck' | 'play'; zone?: string; raw?: unknown[];
   status?: string; // inflict / cure (cure: empty = every status)
   heads?: Effect[]; tails?: Effect[]; perHeads?: boolean; // flip: n coins; heads/tails effects (several coins: heads only if all are heads, or once per heads with perHeads)
@@ -113,7 +120,8 @@ export interface Effect { k: EffectKind; n?: number; kw?: string; target?: Targe
 }
 export interface Ability {
   when: When; if?: Cond; do: Effect[]; once?: boolean | 'game'; label?: string;
-  loyalty?: number; sacSelf?: boolean; // loyalty: walkers' +N / -N cost (once per turn per walker, main phase); sacSelf: sacrifice this card as a cost
+  loyalty?: number; sacSelf?: boolean;
+  quick?: boolean; from?: 'hand' | 'grave'; detach?: number; oncePerName?: boolean; // quick: speed 2, usable on either turn; from: used from hand or discard pile; detach: remove N attached materials; oncePerName: once per turn for all copies // loyalty: walkers' +N / -N cost (once per turn per walker, main phase); sacSelf: sacrifice this card as a cost
   cost?: number; tap?: boolean; discard?: number; sacrifice?: boolean; life?: number; uncount?: { id: string; n: number }; banish?: number; returnRes?: number; // activation costs
 }
 export interface Move {
@@ -139,6 +147,9 @@ export interface CardBP {
   crew?: number; // vehicle: can attack/block only after tapping units with this much total power this turn
   station?: number; // spacecraft: tap another unit to add charge equal to its power; attacks/blocks once charge reaches this
   isToken?: boolean; // made only by effects (any card type, e.g. a non-unit treasure)
+  mats?: Filter[]; // fusion recipe (one filter per material) or link material requirement (first filter)
+  arrows?: ('TL' | 'T' | 'TR' | 'L' | 'R' | 'BL' | 'B' | 'BR')[]; // link arrows (grid boards); the link rating is the number of arrows
+  scale?: number; // pendulum scale: can be placed in the leftmost/rightmost support slot
   bonus?: Record<string, number>; // attachments: stat bonus to the bearer
   raw?: Record<string, unknown>; // advanced: merged over the compiled card
 }
@@ -224,6 +235,9 @@ export const KEYWORD_RULES: Record<KeywordRule, { label: string; text: string; v
   indestructible: { label: "Can't be destroyed", text: "Damage and destroy effects don't destroy it." },
   flash: { label: 'Play any time (instant speed)', text: 'You may play it whenever you could play a quick spell.' },
   wardTax: { label: 'Ward N (opponents pay N to target it)', text: "When an opponent's effect targets it, that effect does nothing to it unless they pay N.", valued: true },
+  tuner: { label: 'Tuner (synchro material)', text: 'Tuner: needed for synchro summons.' },
+  directAttack: { label: 'Can attack directly', text: 'Can attack the opponent directly even while they have units.' },
+  extraAttack: { label: 'Attacks twice', text: 'Can attack twice each turn.' },
   legendary: { label: 'Legendary (only one of each name)', text: 'If you control two with the same name, the older one goes to the discard pile.' },
 };
 

@@ -251,6 +251,41 @@ Crystal Circuit (`packages/modules/crystal-circuit`) is built from these.
   - effects fight and surveil;
   - the London mulligan (`setup.london`).
 
+## Board grids, link arrows and extra-deck summons (Advanced)
+Taste Dimension (`packages/modules/taste-dimension`) is built from these.
+- **`combat.grid`** (target and block modes):
+  - units sit in numbered columns `m1…mN`, and the player picks the column when playing a unit;
+  - support has 5 slots `s1…s5`;
+  - the table mirrors the opponent's side as seen across a real table (their S row on top, M1 on your right);
+  - filters "next to this" (`adjacent`) and "facing this" (`opposite`) work for any grid game.
+- **`combat.emz`:**
+  - two shared extra zones between the players; each player may hold one, and the opponent's right zone is your left;
+  - link arrows (`card.arrows`: TL T TR L R BL B BR, from the controller's side) point at your columns, the extra zones, and from an extra zone up into the opponent's columns;
+  - link summons, and pendulum summons from the extra deck, go to a free extra zone or to a column your link arrows point to;
+  - filter "this points to it" (`pointed`), condition "if this is linked".
+- **Extra-deck methods** (`type.method`):
+  - `materials`: the old "send N units";
+  - `fusion`: `card.mats` is a list of filters, one per material, matched from hand or board by the effect "Fusion summon" (`fusion`);
+  - `synchro`: 1 Tuner (keyword rule `tuner`) + non-Tuners whose levels add up exactly; only materials that keep an exact total possible are offered;
+  - `xyz`: `card.materials` units whose level equals its Rank stat; they are attached under it (an "overlay" zone) and abilities can cost "detach N";
+  - `link`: as many materials as arrows, optionally matching `mats[0]`.
+
+  Fusion, synchro and xyz summons may go to any free column or a free extra zone.
+- **Ritual** (`type.ritual`): never normal-summoned. The effect "Ritual summon" (`ritual`) tributes units from hand or board until their levels reach the ritual unit's level.
+- **Pendulum** (`card.scale`):
+  - put it in support slot s1 or s5 as a scale;
+  - with two scales, once per turn summon any number of units from hand, and face-up pendulums from the extra deck, whose level is strictly between the scales;
+  - a destroyed pendulum goes face up to the extra deck (`pextra`).
+- **Abilities:**
+  - Quick (speed 2, either turn);
+  - used from hand (hand traps; "sacrifice this" discards it) or from the discard pile ("sacrifice this" banishes it);
+  - "detach N"; once per turn per name;
+  - the trigger "When flipped face up".
+- **Spells and traps:**
+  - quick spells can be settable (set, then used from the next turn);
+  - traps can have counter speed (`speed3`, responds to anything) or be continuous (stay face up; their statics apply).
+- **Battle:** keyword rules `directAttack` (may attack the player past units) and `extraAttack` (attacks twice). Piercing is the existing `overflow` rule in compare combat.
+
 ## Mechanics Shelf (mix and match)
 A station listing 40 recipes in seven groups:
 - Resources
