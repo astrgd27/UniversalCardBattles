@@ -88,6 +88,14 @@ try {
   await page.click('text=← Projects');
   await page.click('text=← Library');
 
+  // ---- Crystal Circuit: in the library, and its remix builds in the Workshop
+  ok(await page.isVisible('[data-module=crystal-circuit]'), 'Crystal Circuit in the library');
+  await page.click('[data-module=crystal-circuit]');
+  await page.click('[data-menu=remix]');
+  ok(await page.isVisible('.mk-bugs.good'), `Crystal Circuit remix builds (${await page.textContent('.mk-bugs').catch(() => '')})`);
+  await page.click('text=← Projects');
+  await page.click('text=← Library');
+
   // ---- Looboo: in the library, and its remix builds in the Workshop
   ok(await page.isVisible('[data-module=looboo]'), 'Looboo in the library');
   await page.click('[data-module=looboo]');

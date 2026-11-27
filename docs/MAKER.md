@@ -211,6 +211,40 @@ Options for the Active duel combat mode (Looboo, `packages/modules/looboo`, is b
   - evolve two stages at once (`skipEvolve`).
 - **Table:** attachments (energy, gear, auras) are drawn small under the unit they are attached to.
 
+## Mass combat, walkers and Magic-style keywords (Advanced)
+Crystal Circuit (`packages/modules/crystal-circuit`) is built from these.
+- **`combat.mass`** (Attack & block mode):
+  - one Attack action per turn declares every attacker; with walkers in play, each attacker picks the opponent or a walker;
+  - a response step, then blocks: for each attacker, the defender picks any number of untapped units. Flying is blocked only by flying or reach; menace needs 2+ blockers; Cloaked can't be blocked;
+  - a second response step, then a first-strike damage step (first strike and double strike) and a regular one (everything else, plus double strike);
+  - the attacker divides damage automatically: lethal to each blocker in turn (deathtouch counts 1 as lethal); the rest tramples through or piles on the first blocker;
+  - all damage in a step is simultaneous; lifelink gains life; damage to a walker removes loyalty.
+- **Walkers** (role `walker`):
+  - enter with their Loyalty stat;
+  - their activated abilities take a loyalty cost (`ability.loyalty`, +N or −N), with one per turn per walker in your main phase;
+  - at 0 loyalty they go to the discard pile;
+  - "an enemy unit or the opponent" targets also reach enemy walkers.
+- **Keyword rules:**
+  - reach, double strike, menace, indestructible (never destroyed by damage or destroy effects), flash (play units at instant speed);
+  - Ward N (`wardTax`): an opponent's effect that targets it does nothing unless they pay N;
+  - legendary: a second copy with the same name sends the older one to the discard pile;
+  - the old "can't be targeted" rule is labeled Hexproof.
+- **Card costs and options:**
+  - Kicker N (an optional extra cost, with the condition "if it was kicked");
+  - Flashback N (cast from the discard pile, then banish it);
+  - Cycling N (pay, discard: draw);
+  - Equip N (equipment stays when its unit leaves and moves for N);
+  - Crew N (vehicles attack and block only after you tap units with that much total power this turn);
+  - Station N (tap another unit to add charge equal to its power; at N charge it can attack and block; the condition "if this has N+ charge" unlocks abilities).
+- **Card types:** attachments can go on enemy units (`anyUnit`, auras and curses) or be equipment (`equipment`). Any card can be a token (`isToken`, e.g. a non-unit Power Cell with "Sacrifice this: add 1"). Sacrifice-this abilities resolve immediately (mana abilities).
+- **Mana:**
+  - dual resources (`color2` on a resource card) add a two-color mana type; costs check each color and each pair, and payment spends own-color mana first, then duals;
+  - "enters tapped" resources (the entersExhausted rule) give no mana the turn they are played.
+- **Other:**
+  - triggers "whenever you cast a spell" (prowess) and "whenever a resource enters for you" (landfall);
+  - effects fight and surveil;
+  - the London mulligan (`setup.london`).
+
 ## Mechanics Shelf (mix and match)
 A station listing 40 recipes in seven groups:
 - Resources

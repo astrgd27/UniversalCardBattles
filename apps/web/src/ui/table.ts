@@ -523,7 +523,17 @@ function friendly(e: Record<string, any>, c: C): string | null {
       if (e.to === 'banished') return `${cn(e.card)} is banished`;
       return null;
     case 'attack': return `${c.label(e.o ?? e.attacker)} attacks ${c.label(e.t ?? e.target)}`;
-    case 'blocked': return e.o ? `${c.label(e.o)} blocks` : null;
+    case 'blocked': return e.o ? `${c.label(e.o)} blocks${e.a ? ` ${c.label(e.a)}` : ''}` : null;
+    case 'blockAsk': return `Blockers for ${c.label(e.a)}?`;
+    case 'menace': return `${c.label(e.a)} has menace: one blocker isn't enough`;
+    case 'walkerHit': return `${c.label(e.o)} loses ${e.n} loyalty`;
+    case 'walkerDown': return `${who(e.p)} lose${s(e.p)} a walker`;
+    case 'crewed': return `${c.label(e.o)} is crewed`;
+    case 'stationed': return `${c.label(e.o)} gains ${e.n} charge`;
+    case 'legendRule': return `Legend rule: the older ${cn(e.card)} goes to the discard pile`;
+    case 'warded': return `Ward: the effect fizzles on ${c.label(e.o)}`;
+    case 'kicked': return `${who(e.p)} kick${s(e.p)} the spell`;
+    case 'cycled': return `${who(e.p)} cycle${s(e.p)} a card`;
     case 'damage': return `${e.source ? c.label(e.source) : 'Damage'} → ${c.label(e.target)}: ${e.amount} damage`;
     case 'destroyed': return `${cn(e.card)} is destroyed`;
     case 'changed': return /^p\d+$/.test(e.ref) && !hide.has(e.name) && !String(e.name).includes(':') ? `${who(e.ref)}: ${e.to} ${lbl(e.name)} (${e.to - e.from >= 0 ? '+' : ''}${e.to - e.from})` : null;

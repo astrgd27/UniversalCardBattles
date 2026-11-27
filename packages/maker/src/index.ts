@@ -44,7 +44,7 @@ export function lint(bp: Blueprint): Problem[] {
     if (role && UNIT_ROLES.includes(role) && bp.combat.mode !== 'none' && k.stats[bp.combat.power] === undefined) tip(`${k.name} has no ${bp.combat.power}.`, `card:${k.id}`);
     if (role === 'evolution' && !bp.cards.some((b) => b.name === k.evolvesFrom)) bug(`${k.name} evolves from "${k.evolvesFrom ?? '?'}", but no card has that name.`, `card:${k.id}`);
     for (const a of k.abilities) for (const e of a.do) {
-      if (e.k === 'token' && x.roleOf.get(bp.cards.find((c) => c.id === e.card)?.type ?? '') !== 'token') bug(`${k.name} makes a token "${e.card ?? '?'}", which isn't a Token card.`, `card:${k.id}`);
+      if (e.k === 'token') { const tk = bp.cards.find((c) => c.id === e.card); if (!tk || (x.roleOf.get(tk.type) !== 'token' && !tk.isToken)) bug(`${k.name} makes a token "${e.card ?? '?'}", which isn't a Token card (or marked as a token).`, `card:${k.id}`); }
       if (e.k === 'counter' && bp.timing === 'simple') tip(`${k.name} cancels spells, which only works with stack or chain timing.`, `card:${k.id}`);
     }
     if (bp.combat.mode === 'duel' && role === 'unit' && !k.moves?.length) tip(`${k.name} has no attacks.`, `card:${k.id}`);

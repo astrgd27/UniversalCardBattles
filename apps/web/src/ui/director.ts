@@ -23,10 +23,17 @@ const BEAT_EVENTS = new Set(['quest', 'lifeLost', 'prize', 'conquer', 'hold', 'd
 export function beatsOf(events: Ev[], mod: Mod, viewer: string, who: (p: string) => string, cardOf: (id: string) => string | undefined): Beat[] {
   const out: Beat[] = [];
   const name = (id?: string) => (!id ? 'something' : /^p\d+$/.test(id) ? who(id) : mod.card.get(cardOf(id) ?? '')?.name ?? 'a card');
-  let battle: { a?: string; t?: string; mine: boolean; dmg: Map<string, number>; dead: Set<string>; deadCards: Map<string, string> } | null = null;
+  let battle: { a?: string; t?: string; mine: boolean; dmg: Map<string, number>; dead: Set<string>; deadCards: Map<string, string>; multi?: boolean } | null = null;
   const flush = () => {
     if (!battle) return;
     const { a, t, dmg, dead, deadCards } = battle;
+    if (battle.multi) {
+      const lost = [...dmg].filter(([k]) => /^p\d+$/.test(k)).map(([k, n]) => `${who(k)} take${who(k) === 'You' ? '' : 's'} ${n}`);
+      const outcome = [...dead].map((d) => `${mod.card.get(cardOf(d) ?? deadCards.get(d) ?? '')?.name ?? 'A card'} is destroyed`);
+      if (lost.length || outcome.length) out.push({ kind: 'clash', mine: battle.mine, ms: 1300, text: [...lost, ...outcome].join(', ') || 'Combat is over' });
+      battle = null;
+      return;
+    }
     const side = (id?: string, other?: string) => (id && !/^p\d+$/.test(id) ? { card: cardOf(id) ?? deadCards.get(id) ?? '', dealt: other ? dmg.get(other) ?? 0 : 0, took: dmg.get(id) ?? 0, dead: dead.has(id) } : undefined);
     const anything = dmg.size > 0 || dead.size > 0;
     if (anything) {
@@ -51,13 +58,15 @@ export function beatsOf(events: Ev[], mod: Mod, viewer: string, who: (p: string)
         break;
       }
       case 'attack': {
+        if (battle && !battle.dmg.size && !battle.dead.size && battle.mine === mine) { battle.multi = true; out.push({ kind: 'attack', mine, ms: mine ? 500 : 800, from: e.o ?? e.attacker, to: e.t ?? e.target, card: e.o ? cardOf(e.o) : undefined, text: `${name(e.o ?? e.attacker)} attacks ${name(e.t ?? e.target)}` }); break; }
         flush();
         const a = e.o ?? e.attacker, t = e.t ?? e.target;
         battle = { a, t, mine, dmg: new Map(), dead: new Set(), deadCards: new Map() };
         out.push({ kind: 'attack', mine, ms: mine ? 700 : 1000, from: a, to: t, card: a ? cardOf(a) : undefined, text: `${name(a)} attacks ${name(t)}` });
         break;
       }
-      case 'blocked': if (e.o) { out.push({ kind: 'block', mine: !(battle?.mine ?? false), ms: 800, from: e.o, to: battle?.a, text: `${name(e.o)} steps in to block!` }); if (battle) battle.t = e.o; } break;
+      case 'blocked': if (e.o) { out.push({ kind: 'block', mine: !(battle?.mine ?? false), ms: 800, from: e.o, to: e.a ?? battle?.a, text: `${name(e.o)} blocks ${e.a ? name(e.a) : 'the attack'}!` }); if (battle && !e.a) battle.t = e.o; } break;
+      case 'blockAsk': if (e.p === viewer) out.push({ kind: 'block', mine: true, ms: 500, from: e.a, text: `Choose blockers for ${name(e.a)}` }); break;
       case 'damage':
         if (battle) battle.dmg.set(e.target, (battle.dmg.get(e.target) ?? 0) + e.amount);
         else if (/^p\d+$/.test(e.target)) out.push({ kind: 'hit', mine: e.target !== viewer, ms: 700, to: e.target, text: `${who(e.target)} take${who(e.target) === 'You' ? '' : 's'} ${e.amount} damage` });

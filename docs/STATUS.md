@@ -19,7 +19,7 @@
 - **Order:**
   1. Clean slate (done).
   2. Battle-screen rebuild.
-  3. The games one at a time: Generation Wars (playable) → Ringworld Rumble (playable) → Looboo (playable) → Looboo → Crystal Circuit → Taste Dimension.
+  3. The games one at a time: Generation Wars (playable) → Ringworld Rumble (playable) → Looboo (playable) → Crystal Circuit (playable) → Looboo → Crystal Circuit → Taste Dimension.
   4. Shop, campaign and multiplayer polish.
 - **Battle screen, part 1 (done):** a battle director (`apps/web/src/ui/director.ts`) turns the viewer's events into beats that play one at a time:
   - a caption for every opponent move;
@@ -100,6 +100,20 @@
   - Also: coin-flip attacks, bench damage, energy-scaling attacks, gust/switch, deck search, Leap Candy (skip a stage).
   - Balance and content are deferred, per the user (mechanics and tests first).
   - Not yet: abilities usable from the bench with restrictions (they work as once-per-turn activations), Tera, Lost Zone, devolving.
+- **Crystal Circuit (fourth clone, playable; mechanics reference: Magic: The Gathering):** `packages/modules/crystal-circuit`.
+  - Content:
+    - 64 cards: five crystals (Quartz, Azure, Onyx, Ruby, Jade);
+    - arrays/reactors and enters-tapped dual conduits;
+    - Units, Protocols (instants), Programs (sorceries), Mods (auras/curses), Gear (equipment), Devices, Power Cell tokens, Operators (planeswalkers), a Vehicle, Spacecraft;
+    - 4 two-color decks of 60.
+  - Rules:
+    - stack timing; London mulligan; 20 life; land drop 1 per turn; two main phases around combat;
+    - mass combat with first strike and double strike, trample, deathtouch, lifelink, flying and reach, menace, vigilance, haste;
+    - indestructible, hexproof, ward, flash, prowess, the legend rule;
+    - kicker, flashback, cycling, landfall, fight, surveil, crew, station, loyalty abilities.
+  - Tests: set-piece boards check trample over deathtouch, double strike, an unblockable flyer, attacking an Operator, the legend rule, a counterspell response and the London mulligan.
+  - Not yet: protection, Battles, Sagas, Adventures/Rooms, Snow, convoke, manual damage division and blocker ordering (automatic), mana abilities on lands beyond the pool model.
+  - Fixed along the way (affected other games): permanents with no custom zone never entered play (Ringworld Rumble's Venues); colorless attackers always triggered weakness/resistance in Looboo; untyped cost reducers never applied; an object var can't hold an id (`set` stores numbers), so combat references use links.
 - **Clean slate (done):**
   - Every module and its artwork was deleted (NIGHTFALL, Shadow Earth and the Workshop starter games; git history keeps them).
   - The eight small reference games survive only as engine test fixtures in `packages/test-harness/fixtures`.

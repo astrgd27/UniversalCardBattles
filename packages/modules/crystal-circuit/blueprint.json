@@ -1,0 +1,2123 @@
+{
+ "v": 1,
+ "id": "crystal-circuit",
+ "name": "Crystal Circuit",
+ "blueprint": "blank",
+ "author": "Universal Card Battles",
+ "tagline": "Bionic warriors, five crystal energies, one overloaded war.",
+ "look": {
+  "accent": "#38bdf8",
+  "accent2": "#f43f5e",
+  "glyph": "💠"
+ },
+ "colors": [
+  {
+   "id": "quartz",
+   "name": "Quartz",
+   "hex": "#e2e8f0",
+   "icon": "◇"
+  },
+  {
+   "id": "azure",
+   "name": "Azure",
+   "hex": "#3b82f6",
+   "icon": "💠"
+  },
+  {
+   "id": "onyx",
+   "name": "Onyx",
+   "hex": "#475569",
+   "icon": "◆"
+  },
+  {
+   "id": "ruby",
+   "name": "Ruby",
+   "hex": "#ef4444",
+   "icon": "♦"
+  },
+  {
+   "id": "jade",
+   "name": "Jade",
+   "hex": "#22c55e",
+   "icon": "❖"
+  }
+ ],
+ "stats": [
+  {
+   "id": "power",
+   "name": "Power",
+   "icon": "⚔"
+  },
+  {
+   "id": "toughness",
+   "name": "Toughness",
+   "icon": "♥"
+  },
+  {
+   "id": "loyalty",
+   "name": "Loyalty",
+   "icon": "✦"
+  }
+ ],
+ "types": [
+  {
+   "id": "unit",
+   "name": "Unit",
+   "role": "unit",
+   "frame": {
+    "base": "skirmisher",
+    "cost": "tl",
+    "stats": [
+     {
+      "stat": "power",
+      "pos": "bl",
+      "icon": "⚔"
+     },
+     {
+      "stat": "toughness",
+      "pos": "br",
+      "icon": "♥"
+     }
+    ],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🤖"
+  },
+  {
+   "id": "vehicle",
+   "name": "Vehicle",
+   "role": "unit",
+   "frame": {
+    "base": "skirmisher",
+    "cost": "tl",
+    "stats": [
+     {
+      "stat": "power",
+      "pos": "bl",
+      "icon": "⚔"
+     },
+     {
+      "stat": "toughness",
+      "pos": "br",
+      "icon": "♥"
+     }
+    ],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🚚"
+  },
+  {
+   "id": "spacecraft",
+   "name": "Spacecraft",
+   "role": "unit",
+   "frame": {
+    "base": "skirmisher",
+    "cost": "tl",
+    "stats": [
+     {
+      "stat": "power",
+      "pos": "bl",
+      "icon": "⚔"
+     },
+     {
+      "stat": "toughness",
+      "pos": "br",
+      "icon": "♥"
+     }
+    ],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🛸"
+  },
+  {
+   "id": "protocol",
+   "name": "Protocol",
+   "role": "fast",
+   "frame": {
+    "base": "spell",
+    "cost": "tl",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "⚡"
+  },
+  {
+   "id": "program",
+   "name": "Program",
+   "role": "spell",
+   "frame": {
+    "base": "spell",
+    "cost": "tl",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "⌨"
+  },
+  {
+   "id": "mod",
+   "name": "Mod",
+   "role": "attachment",
+   "frame": {
+    "base": "spell",
+    "cost": "tl",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🧬",
+   "anyUnit": true
+  },
+  {
+   "id": "gear",
+   "name": "Gear",
+   "role": "attachment",
+   "frame": {
+    "base": "spell",
+    "cost": "tl",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "⚙",
+   "equipment": true
+  },
+  {
+   "id": "device",
+   "name": "Device",
+   "role": "permanent",
+   "frame": {
+    "base": "spell",
+    "cost": "tl",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🔋"
+  },
+  {
+   "id": "operator",
+   "name": "Operator",
+   "role": "walker",
+   "frame": {
+    "base": "leader",
+    "cost": "tl",
+    "stats": [
+     {
+      "stat": "loyalty",
+      "pos": "br",
+      "icon": "✦"
+     }
+    ],
+    "art": 52,
+    "text": true
+   },
+   "icon": "👁"
+  },
+  {
+   "id": "crystal",
+   "name": "Crystal",
+   "role": "resource",
+   "frame": {
+    "base": "resource",
+    "cost": "none",
+    "stats": [],
+    "art": 70,
+    "text": false
+   },
+   "icon": "💎"
+  },
+  {
+   "id": "token",
+   "name": "Token",
+   "role": "token",
+   "frame": {
+    "base": "token",
+    "cost": "none",
+    "stats": [
+     {
+      "stat": "power",
+      "pos": "bl",
+      "icon": "⚔"
+     },
+     {
+      "stat": "toughness",
+      "pos": "br",
+      "icon": "♥"
+     }
+    ],
+    "art": 48,
+    "text": true
+   },
+   "icon": "•"
+  }
+ ],
+ "keywords": [
+  {
+   "id": "flying",
+   "name": "Flying",
+   "rule": "flying",
+   "text": "Flying: only units with flying or reach can block it."
+  },
+  {
+   "id": "reach",
+   "name": "Reach",
+   "rule": "reach",
+   "text": "Reach: can block units with flying."
+  },
+  {
+   "id": "vigilance",
+   "name": "Vigilance",
+   "rule": "vigilance",
+   "text": "Vigilance: attacking doesn't tap it."
+  },
+  {
+   "id": "haste",
+   "name": "Haste",
+   "rule": "haste",
+   "text": "Haste: can attack the turn it comes in."
+  },
+  {
+   "id": "defender",
+   "name": "Defender",
+   "rule": "noAttack",
+   "text": "Defender: can't attack."
+  },
+  {
+   "id": "firstStrike",
+   "name": "First Strike",
+   "rule": "firstStrike",
+   "text": "First strike: deals combat damage before units without it."
+  },
+  {
+   "id": "doubleStrike",
+   "name": "Double Strike",
+   "rule": "doubleStrike",
+   "text": "Double strike: deals first-strike and regular combat damage."
+  },
+  {
+   "id": "deathtouch",
+   "name": "Deathtouch",
+   "rule": "deadly",
+   "text": "Deathtouch: any damage it deals to a unit destroys it."
+  },
+  {
+   "id": "lifelink",
+   "name": "Lifelink",
+   "rule": "lifesteal",
+   "text": "Lifelink: damage it deals also gains you that much life."
+  },
+  {
+   "id": "trample",
+   "name": "Trample",
+   "rule": "overflow",
+   "text": "Trample: damage beyond what its blockers need goes through."
+  },
+  {
+   "id": "menace",
+   "name": "Menace",
+   "rule": "menace",
+   "text": "Menace: can't be blocked except by two or more units."
+  },
+  {
+   "id": "indestructible",
+   "name": "Indestructible",
+   "rule": "indestructible",
+   "text": "Indestructible: damage and destroy effects don't destroy it."
+  },
+  {
+   "id": "hexproof",
+   "name": "Hexproof",
+   "rule": "ward",
+   "text": "Hexproof: can't be the target of opponents' effects."
+  },
+  {
+   "id": "ward",
+   "name": "Ward",
+   "rule": "wardTax",
+   "valued": true,
+   "text": "Ward N: when an opponent's effect targets it, it does nothing unless they pay N."
+  },
+  {
+   "id": "unblockable",
+   "name": "Cloaked",
+   "rule": "unblockable",
+   "text": "Cloaked: can't be blocked."
+  },
+  {
+   "id": "flash",
+   "name": "Flash",
+   "rule": "flash",
+   "text": "Flash: you may play it any time you could play a Protocol."
+  },
+  {
+   "id": "legendary",
+   "name": "Legendary",
+   "rule": "legendary",
+   "text": "Legendary: if you control two with the same name, the older one goes to the scrapyard."
+  },
+  {
+   "id": "tapped",
+   "name": "Enters tapped",
+   "rule": "entersExhausted",
+   "text": "Enters tapped."
+  },
+  {
+   "id": "prowess",
+   "name": "Prowess",
+   "rule": "none",
+   "text": "Prowess: whenever you cast a Protocol or Program, this gets +1/+1 until end of turn.",
+   "abilities": [
+    {
+     "when": "castSpell",
+     "do": [
+      {
+       "k": "buff",
+       "n": 1,
+       "stat": "power",
+       "target": "self"
+      },
+      {
+       "k": "buff",
+       "n": 1,
+       "stat": "toughness",
+       "target": "self"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "turn": [
+  {
+   "id": "untap",
+   "name": "Untap",
+   "kind": "ready"
+  },
+  {
+   "id": "draw",
+   "name": "Draw",
+   "kind": "draw",
+   "n": 1
+  },
+  {
+   "id": "main",
+   "name": "Main 1",
+   "kind": "main"
+  },
+  {
+   "id": "combat",
+   "name": "Combat",
+   "kind": "combat"
+  },
+  {
+   "id": "main2",
+   "name": "Main 2",
+   "kind": "main"
+  },
+  {
+   "id": "end",
+   "name": "End",
+   "kind": "end"
+  }
+ ],
+ "timing": "stack",
+ "resource": {
+  "mode": "cards",
+  "name": "Crystals",
+  "icon": "💎",
+  "start": 0,
+  "perTurn": 0,
+  "max": 0,
+  "deckSize": 0,
+  "boost": 0,
+  "summonsPerTurn": 0,
+  "tribute": []
+ },
+ "combat": {
+  "mode": "block",
+  "power": "power",
+  "health": "toughness",
+  "defense": null,
+  "damage": "heal",
+  "sickness": true,
+  "firstTurnAttack": true,
+  "targetUnits": "none",
+  "directOnlyIfEmpty": false,
+  "leaderDefends": false,
+  "leaderAttacks": false,
+  "compare": {
+   "ties": "both",
+   "loser": true,
+   "overflow": false
+  },
+  "positions": false,
+  "counterStep": false,
+  "fieldSize": 40,
+  "benchSize": 0,
+  "attackEndsTurn": false,
+  "weakness": 1,
+  "lanes": [],
+  "maxBlockers": 1,
+  "mass": true
+ },
+ "win": {
+  "life": 20,
+  "lifeCards": 0,
+  "prizes": 0,
+  "points": 0,
+  "deckOut": true,
+  "noUnits": false
+ },
+ "setup": {
+  "hand": 7,
+  "mulligan": true,
+  "london": true,
+  "handLimit": 7,
+  "deckMin": 60,
+  "deckMax": 60,
+  "maxCopies": 4,
+  "skipFirstDraw": true,
+  "leader": false,
+  "extraMax": 0,
+  "turnLimit": 80
+ },
+ "zoneNames": {
+  "field": "Battlefield",
+  "support": "Devices & Operators",
+  "grave": "Scrapyard",
+  "banished": "Exile",
+  "resources": "Crystals"
+ },
+ "cards": [
+  {
+   "id": "sentinel-cadet",
+   "name": "Sentinel Cadet",
+   "type": "unit",
+   "cost": {
+    "quartz": 1
+   },
+   "stats": {
+    "power": 1,
+    "toughness": 2
+   },
+   "color": "quartz",
+   "keywords": [
+    "lifelink"
+   ],
+   "kwv": {},
+   "abilities": [],
+   "flavor": "First day on the wall. Already flawless."
+  },
+  {
+   "id": "riot-warden",
+   "name": "Riot Warden",
+   "type": "unit",
+   "cost": {
+    "any": 1,
+    "quartz": 1
+   },
+   "stats": {
+    "power": 2,
+    "toughness": 2
+   },
+   "color": "quartz",
+   "keywords": [
+    "firstStrike"
+   ],
+   "kwv": {},
+   "abilities": []
+  },
+  {
+   "id": "halo-interceptor",
+   "name": "Halo Interceptor",
+   "type": "unit",
+   "cost": {
+    "any": 2,
+    "quartz": 1
+   },
+   "stats": {
+    "power": 2,
+    "toughness": 2
+   },
+   "color": "quartz",
+   "keywords": [
+    "flying",
+    "vigilance"
+   ],
+   "kwv": {},
+   "abilities": [],
+   "flavor": "Patrols the stratosphere in perfect silence."
+  },
+  {
+   "id": "bastion-r-12",
+   "name": "Bastion R-12",
+   "type": "unit",
+   "cost": {
+    "any": 2,
+    "quartz": 1
+   },
+   "stats": {
+    "power": 3,
+    "toughness": 4
+   },
+   "color": "quartz",
+   "keywords": [
+    "vigilance",
+    "legendary"
+   ],
+   "kwv": {},
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "token",
+       "card": "drone",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Stands guard over the Quartz Spire. Has never once sat down."
+  },
+  {
+   "id": "aegis-matron",
+   "name": "Aegis Matron",
+   "type": "unit",
+   "cost": {
+    "any": 3,
+    "quartz": 2
+   },
+   "stats": {
+    "power": 4,
+    "toughness": 4
+   },
+   "color": "quartz",
+   "keywords": [
+    "flying",
+    "lifelink"
+   ],
+   "kwv": {},
+   "abilities": []
+  },
+  {
+   "id": "hardlight-shield",
+   "name": "Hardlight Shield",
+   "type": "protocol",
+   "cost": {
+    "quartz": 1
+   },
+   "stats": {},
+   "color": "quartz",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "buff",
+       "n": 2,
+       "stat": "toughness",
+       "target": "ownUnit"
+      },
+      {
+       "k": "restrict",
+       "rule": "indestructible",
+       "target": "ownUnit",
+       "until": "turn"
+      }
+     ]
+    }
+   ],
+   "flavor": "Light, solidified. Bullets, deflected."
+  },
+  {
+   "id": "purge-directive",
+   "name": "Purge Directive",
+   "type": "program",
+   "cost": {
+    "any": 3,
+    "quartz": 1
+   },
+   "stats": {},
+   "color": "quartz",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "destroy",
+       "target": "enemyUnit",
+       "filter": {
+        "stat": "power",
+        "op": "ge",
+        "val": 4
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "reinforcement-drop",
+   "name": "Reinforcement Drop",
+   "type": "program",
+   "cost": {
+    "any": 2,
+    "quartz": 1
+   },
+   "stats": {},
+   "color": "quartz",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "token",
+       "card": "drone",
+       "n": 2
+      }
+     ]
+    },
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "token",
+       "card": "drone",
+       "n": 2
+      }
+     ],
+     "if": {
+      "k": "kicked"
+     }
+    }
+   ],
+   "kicker": 3
+  },
+  {
+   "id": "shield-matrix",
+   "name": "Shield Matrix",
+   "type": "mod",
+   "cost": {
+    "any": 1,
+    "quartz": 1
+   },
+   "stats": {},
+   "color": "quartz",
+   "keywords": [],
+   "abilities": [],
+   "bonus": {
+    "power": 1,
+    "toughness": 2
+   }
+  },
+  {
+   "id": "commander-lyra-7",
+   "name": "Commander Lyra-7",
+   "type": "operator",
+   "cost": {
+    "any": 3,
+    "quartz": 1
+   },
+   "stats": {
+    "loyalty": 4
+   },
+   "color": "quartz",
+   "keywords": [
+    "legendary"
+   ],
+   "abilities": [
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "token",
+       "card": "drone",
+       "n": 1
+      }
+     ],
+     "loyalty": 1,
+     "label": "+1: create a Drone"
+    },
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "destroy",
+       "target": "enemyUnit",
+       "filter": {
+        "stat": "power",
+        "op": "ge",
+        "val": 4
+       }
+      }
+     ],
+     "loyalty": -3,
+     "label": "-3: destroy a unit with 4+ power"
+    }
+   ],
+   "flavor": "Commands the Quartz Legion from a throne of hardlight."
+  },
+  {
+   "id": "data-wisp",
+   "name": "Data Wisp",
+   "type": "unit",
+   "cost": {
+    "azure": 1
+   },
+   "stats": {
+    "power": 1,
+    "toughness": 1
+   },
+   "color": "azure",
+   "keywords": [
+    "flying"
+   ],
+   "kwv": {},
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "scry",
+       "n": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "azure-archivist",
+   "name": "Azure Archivist",
+   "type": "unit",
+   "cost": {
+    "any": 1,
+    "azure": 1
+   },
+   "stats": {
+    "power": 1,
+    "toughness": 3
+   },
+   "color": "azure",
+   "keywords": [],
+   "kwv": {},
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "flavor": "Has read every file in the Array. Twice."
+  },
+  {
+   "id": "ghost-runner",
+   "name": "Ghost Runner",
+   "type": "unit",
+   "cost": {
+    "any": 1,
+    "azure": 1
+   },
+   "stats": {
+    "power": 2,
+    "toughness": 1
+   },
+   "color": "azure",
+   "keywords": [
+    "hexproof",
+    "unblockable"
+   ],
+   "kwv": {},
+   "abilities": []
+  },
+  {
+   "id": "glitch-stalker",
+   "name": "Glitch Stalker",
+   "type": "unit",
+   "cost": {
+    "any": 2,
+    "azure": 1
+   },
+   "stats": {
+    "power": 3,
+    "toughness": 2
+   },
+   "color": "azure",
+   "keywords": [
+    "flash"
+   ],
+   "kwv": {},
+   "abilities": []
+  },
+  {
+   "id": "cipher-golem",
+   "name": "Cipher Golem",
+   "type": "unit",
+   "cost": {
+    "any": 3,
+    "azure": 1
+   },
+   "stats": {
+    "power": 4,
+    "toughness": 4
+   },
+   "color": "azure",
+   "keywords": [
+    "ward"
+   ],
+   "kwv": {
+    "ward": 2
+   },
+   "abilities": [],
+   "flavor": "Encrypted from the alloy up."
+  },
+  {
+   "id": "probe-drone",
+   "name": "Probe Drone",
+   "type": "unit",
+   "cost": {
+    "any": 3,
+    "azure": 1
+   },
+   "stats": {
+    "power": 3,
+    "toughness": 3
+   },
+   "color": "azure",
+   "keywords": [
+    "flying"
+   ],
+   "kwv": {},
+   "abilities": [],
+   "cycling": 2
+  },
+  {
+   "id": "signal-jammer",
+   "name": "Signal Jammer",
+   "type": "protocol",
+   "cost": {
+    "any": 1,
+    "azure": 1
+   },
+   "stats": {},
+   "color": "azure",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "counter"
+      }
+     ]
+    }
+   ],
+   "flavor": "Your command was not received."
+  },
+  {
+   "id": "phase-shift",
+   "name": "Phase Shift",
+   "type": "protocol",
+   "cost": {
+    "any": 1,
+    "azure": 1
+   },
+   "stats": {},
+   "color": "azure",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "bounce",
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "predictive-model",
+   "name": "Predictive Model",
+   "type": "protocol",
+   "cost": {
+    "azure": 1
+   },
+   "stats": {},
+   "color": "azure",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "surveil",
+       "n": 2
+      },
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "oracle-mainframe",
+   "name": "Oracle Mainframe",
+   "type": "operator",
+   "cost": {
+    "any": 2,
+    "azure": 2
+   },
+   "stats": {
+    "loyalty": 3
+   },
+   "color": "azure",
+   "keywords": [
+    "legendary"
+   ],
+   "abilities": [
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ],
+     "loyalty": 1,
+     "label": "+1: draw a card"
+    },
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "bounce",
+       "target": "enemyUnit"
+      }
+     ],
+     "loyalty": -2,
+     "label": "-2: return an enemy unit to hand"
+    }
+   ]
+  },
+  {
+   "id": "leviathan-ark",
+   "name": "Leviathan Ark",
+   "type": "spacecraft",
+   "cost": {
+    "any": 3,
+    "azure": 1
+   },
+   "stats": {
+    "power": 6,
+    "toughness": 6
+   },
+   "color": "azure",
+   "keywords": [
+    "flying"
+   ],
+   "kwv": {},
+   "abilities": [],
+   "station": 6,
+   "flavor": "A city-ship that wakes only when its crew has given enough."
+  },
+  {
+   "id": "rust-leech",
+   "name": "Rust Leech",
+   "type": "unit",
+   "cost": {
+    "onyx": 1
+   },
+   "stats": {
+    "power": 1,
+    "toughness": 1
+   },
+   "color": "onyx",
+   "keywords": [
+    "deathtouch"
+   ],
+   "kwv": {},
+   "abilities": []
+  },
+  {
+   "id": "scrap-revenant",
+   "name": "Scrap Revenant",
+   "type": "unit",
+   "cost": {
+    "any": 1,
+    "onyx": 1
+   },
+   "stats": {
+    "power": 2,
+    "toughness": 1
+   },
+   "color": "onyx",
+   "keywords": [
+    "menace"
+   ],
+   "kwv": {},
+   "abilities": [
+    {
+     "when": "leave",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "null-collector",
+   "name": "Null Collector",
+   "type": "unit",
+   "cost": {
+    "any": 2,
+    "onyx": 1
+   },
+   "stats": {
+    "power": 2,
+    "toughness": 2
+   },
+   "color": "onyx",
+   "keywords": [],
+   "kwv": {},
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "recover",
+       "type": "unit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Nothing is ever truly deleted."
+  },
+  {
+   "id": "onyx-reaper",
+   "name": "Onyx Reaper",
+   "type": "unit",
+   "cost": {
+    "any": 3,
+    "onyx": 2
+   },
+   "stats": {
+    "power": 4,
+    "toughness": 4
+   },
+   "color": "onyx",
+   "keywords": [
+    "menace",
+    "lifelink"
+   ],
+   "kwv": {},
+   "abilities": []
+  },
+  {
+   "id": "undying-chassis",
+   "name": "Undying Chassis",
+   "type": "unit",
+   "cost": {
+    "any": 3,
+    "onyx": 1
+   },
+   "stats": {
+    "power": 3,
+    "toughness": 3
+   },
+   "color": "onyx",
+   "keywords": [
+    "indestructible"
+   ],
+   "kwv": {},
+   "abilities": [],
+   "flavor": "They melted it down. It walked out of the furnace."
+  },
+  {
+   "id": "terminate-process",
+   "name": "Terminate Process",
+   "type": "protocol",
+   "cost": {
+    "any": 1,
+    "onyx": 1
+   },
+   "stats": {},
+   "color": "onyx",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "destroy",
+       "target": "enemyUnit",
+       "filter": {
+        "stat": "power",
+        "op": "le",
+        "val": 3
+       }
+      }
+     ]
+    }
+   ],
+   "flashback": 4
+  },
+  {
+   "id": "corrupt-siphon",
+   "name": "Corrupt Siphon",
+   "type": "protocol",
+   "cost": {
+    "any": 2,
+    "onyx": 1
+   },
+   "stats": {},
+   "color": "onyx",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "damage",
+       "n": 2,
+       "target": "enemyAny"
+      },
+      {
+       "k": "lifeGain",
+       "n": 2
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "grave-scan",
+   "name": "Grave Scan",
+   "type": "program",
+   "cost": {
+    "onyx": 1
+   },
+   "stats": {},
+   "color": "onyx",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "surveil",
+       "n": 2
+      },
+      {
+       "k": "recover",
+       "type": "unit"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "virus-payload",
+   "name": "Virus Payload",
+   "type": "mod",
+   "cost": {
+    "any": 1,
+    "onyx": 1
+   },
+   "stats": {},
+   "color": "onyx",
+   "keywords": [],
+   "abilities": [],
+   "bonus": {
+    "power": -2,
+    "toughness": -2
+   },
+   "flavor": "Installs silently. Uninstalls the host."
+  },
+  {
+   "id": "hex-queen-nyx",
+   "name": "Hex-Queen Nyx",
+   "type": "operator",
+   "cost": {
+    "any": 3,
+    "onyx": 1
+   },
+   "stats": {
+    "loyalty": 5
+   },
+   "color": "onyx",
+   "keywords": [
+    "legendary"
+   ],
+   "abilities": [
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "lifeLoss",
+       "n": 1,
+       "who": "opp"
+      },
+      {
+       "k": "lifeGain",
+       "n": 1
+      }
+     ],
+     "loyalty": 1,
+     "label": "+1: drain 1 life"
+    },
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "destroy",
+       "target": "enemyUnit"
+      }
+     ],
+     "loyalty": -4,
+     "label": "-4: destroy an enemy unit"
+    }
+   ]
+  },
+  {
+   "id": "spark-runner",
+   "name": "Spark Runner",
+   "type": "unit",
+   "cost": {
+    "ruby": 1
+   },
+   "stats": {
+    "power": 1,
+    "toughness": 1
+   },
+   "color": "ruby",
+   "keywords": [
+    "haste",
+    "prowess"
+   ],
+   "kwv": {},
+   "abilities": []
+  },
+  {
+   "id": "furnace-ex",
+   "name": "Furnace EX",
+   "type": "unit",
+   "cost": {
+    "any": 2,
+    "ruby": 1
+   },
+   "stats": {
+    "power": 4,
+    "toughness": 2
+   },
+   "color": "ruby",
+   "keywords": [
+    "haste",
+    "trample",
+    "legendary"
+   ],
+   "kwv": {},
+   "abilities": [],
+   "flavor": "Runs hot. Runs fast. Runs over things."
+  },
+  {
+   "id": "ember-berserker",
+   "name": "Ember Berserker",
+   "type": "unit",
+   "cost": {
+    "any": 2,
+    "ruby": 1
+   },
+   "stats": {
+    "power": 2,
+    "toughness": 2
+   },
+   "color": "ruby",
+   "keywords": [
+    "doubleStrike"
+   ],
+   "kwv": {},
+   "abilities": []
+  },
+  {
+   "id": "arc-welder-adept",
+   "name": "Arc Welder Adept",
+   "type": "unit",
+   "cost": {
+    "any": 1,
+    "ruby": 1
+   },
+   "stats": {
+    "power": 2,
+    "toughness": 2
+   },
+   "color": "ruby",
+   "keywords": [
+    "prowess"
+   ],
+   "kwv": {},
+   "abilities": []
+  },
+  {
+   "id": "slag-golem",
+   "name": "Slag Golem",
+   "type": "unit",
+   "cost": {
+    "any": 3,
+    "ruby": 1
+   },
+   "stats": {
+    "power": 4,
+    "toughness": 4
+   },
+   "color": "ruby",
+   "keywords": [
+    "trample",
+    "menace"
+   ],
+   "kwv": {},
+   "abilities": []
+  },
+  {
+   "id": "plasma-bolt",
+   "name": "Plasma Bolt",
+   "type": "protocol",
+   "cost": {
+    "ruby": 1
+   },
+   "stats": {},
+   "color": "ruby",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "damage",
+       "n": 3,
+       "target": "enemyAny"
+      }
+     ]
+    }
+   ],
+   "flavor": "Point. Click. Cinder."
+  },
+  {
+   "id": "overclock",
+   "name": "Overclock",
+   "type": "protocol",
+   "cost": {
+    "ruby": 1
+   },
+   "stats": {},
+   "color": "ruby",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "buff",
+       "n": 3,
+       "stat": "power",
+       "target": "ownUnit"
+      },
+      {
+       "k": "restrict",
+       "rule": "firstStrike",
+       "target": "ownUnit",
+       "until": "turn"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "thermal-lance",
+   "name": "Thermal Lance",
+   "type": "program",
+   "cost": {
+    "any": 1,
+    "ruby": 1
+   },
+   "stats": {},
+   "color": "ruby",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "damage",
+       "n": 2,
+       "target": "enemyUnit"
+      }
+     ]
+    },
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "damage",
+       "n": 2,
+       "target": "opponent"
+      }
+     ],
+     "if": {
+      "k": "kicked"
+     }
+    }
+   ],
+   "kicker": 2
+  },
+  {
+   "id": "scrap-hauler",
+   "name": "Scrap Hauler",
+   "type": "vehicle",
+   "cost": {
+    "any": 2,
+    "ruby": 1
+   },
+   "stats": {
+    "power": 5,
+    "toughness": 4
+   },
+   "color": "ruby",
+   "keywords": [
+    "trample"
+   ],
+   "kwv": {},
+   "abilities": [],
+   "crew": 2,
+   "flavor": "Nobody drives it. Everybody pushes it."
+  },
+  {
+   "id": "pyro-sage-kael",
+   "name": "Pyro-Sage Kael",
+   "type": "operator",
+   "cost": {
+    "any": 2,
+    "ruby": 1
+   },
+   "stats": {
+    "loyalty": 3
+   },
+   "color": "ruby",
+   "keywords": [
+    "legendary"
+   ],
+   "abilities": [
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "damage",
+       "n": 1,
+       "target": "enemyAny"
+      }
+     ],
+     "loyalty": 1,
+     "label": "+1: deal 1 damage"
+    },
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "damage",
+       "n": 4,
+       "target": "enemyUnit"
+      }
+     ],
+     "loyalty": -2,
+     "label": "-2: deal 4 damage to a unit"
+    }
+   ]
+  },
+  {
+   "id": "moss-drone",
+   "name": "Moss Drone",
+   "type": "unit",
+   "cost": {
+    "jade": 1
+   },
+   "stats": {
+    "power": 1,
+    "toughness": 2
+   },
+   "color": "jade",
+   "keywords": [],
+   "kwv": {},
+   "abilities": [
+    {
+     "when": "landfall",
+     "do": [
+      {
+       "k": "buff",
+       "n": 1,
+       "stat": "power",
+       "target": "self"
+      },
+      {
+       "k": "buff",
+       "n": 1,
+       "stat": "toughness",
+       "target": "self"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "canopy-sentinel",
+   "name": "Canopy Sentinel",
+   "type": "unit",
+   "cost": {
+    "any": 1,
+    "jade": 1
+   },
+   "stats": {
+    "power": 2,
+    "toughness": 4
+   },
+   "color": "jade",
+   "keywords": [
+    "reach"
+   ],
+   "kwv": {},
+   "abilities": []
+  },
+  {
+   "id": "vine-lasher",
+   "name": "Vine Lasher",
+   "type": "unit",
+   "cost": {
+    "any": 2,
+    "jade": 1
+   },
+   "stats": {
+    "power": 3,
+    "toughness": 3
+   },
+   "color": "jade",
+   "keywords": [],
+   "kwv": {},
+   "abilities": [
+    {
+     "when": "landfall",
+     "do": [
+      {
+       "k": "buff",
+       "n": 2,
+       "stat": "power",
+       "target": "self"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "biomech-behemoth",
+   "name": "Biomech Behemoth",
+   "type": "unit",
+   "cost": {
+    "any": 4,
+    "jade": 2
+   },
+   "stats": {
+    "power": 6,
+    "toughness": 6
+   },
+   "color": "jade",
+   "keywords": [
+    "trample"
+   ],
+   "kwv": {},
+   "abilities": []
+  },
+  {
+   "id": "grafting-protocol",
+   "name": "Grafting Protocol",
+   "type": "program",
+   "cost": {
+    "jade": 1
+   },
+   "stats": {},
+   "color": "jade",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "fight",
+       "target": "enemyUnit"
+      }
+     ]
+    }
+   ],
+   "flavor": "Bio-steel meets bio-steel. One of them gets recycled."
+  },
+  {
+   "id": "overgrowth-spike",
+   "name": "Overgrowth Spike",
+   "type": "protocol",
+   "cost": {
+    "jade": 1
+   },
+   "stats": {},
+   "color": "jade",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "buff",
+       "n": 2,
+       "stat": "power",
+       "target": "ownUnit"
+      },
+      {
+       "k": "buff",
+       "n": 2,
+       "stat": "toughness",
+       "target": "ownUnit"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "root-network",
+   "name": "Root Network",
+   "type": "program",
+   "cost": {
+    "any": 1,
+    "jade": 1
+   },
+   "stats": {},
+   "color": "jade",
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "tutor",
+       "n": 1,
+       "type": "crystal",
+       "to": "hand"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "seedship-verdance",
+   "name": "Seedship Verdance",
+   "type": "spacecraft",
+   "cost": {
+    "any": 2,
+    "jade": 1
+   },
+   "stats": {
+    "power": 5,
+    "toughness": 5
+   },
+   "color": "jade",
+   "keywords": [
+    "reach"
+   ],
+   "kwv": {},
+   "abilities": [],
+   "station": 5
+  },
+  {
+   "id": "grove-mind-arbor",
+   "name": "Grove-Mind Arbor",
+   "type": "operator",
+   "cost": {
+    "any": 3,
+    "jade": 1
+   },
+   "stats": {
+    "loyalty": 4
+   },
+   "color": "jade",
+   "keywords": [
+    "legendary"
+   ],
+   "abilities": [
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "token",
+       "card": "seedling",
+       "n": 1
+      }
+     ],
+     "loyalty": 1,
+     "label": "+1: create a 2/2 Seedling"
+    },
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "fight",
+       "target": "enemyUnit"
+      }
+     ],
+     "loyalty": -1,
+     "label": "-1: one of your units fights an enemy unit"
+    }
+   ]
+  },
+  {
+   "id": "titan-exo-frame",
+   "name": "Titan Exo-Frame",
+   "type": "gear",
+   "cost": 2,
+   "stats": {},
+   "keywords": [],
+   "abilities": [],
+   "bonus": {
+    "power": 2,
+    "toughness": 2
+   },
+   "equipCost": 2,
+   "flavor": "Step in. Power up. Punch through."
+  },
+  {
+   "id": "cell-printer",
+   "name": "Cell Printer",
+   "type": "device",
+   "cost": 2,
+   "stats": {},
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "token",
+       "card": "power-cell",
+       "n": 1
+      }
+     ]
+    },
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "token",
+       "card": "power-cell",
+       "n": 1
+      }
+     ],
+     "tap": true,
+     "cost": 2
+    }
+   ]
+  },
+  {
+   "id": "drone",
+   "name": "Drone",
+   "type": "token",
+   "stats": {
+    "power": 1,
+    "toughness": 1
+   },
+   "color": "quartz",
+   "keywords": [
+    "flying"
+   ],
+   "abilities": []
+  },
+  {
+   "id": "seedling",
+   "name": "Seedling",
+   "type": "token",
+   "stats": {
+    "power": 2,
+    "toughness": 2
+   },
+   "color": "jade",
+   "keywords": [],
+   "abilities": []
+  },
+  {
+   "id": "power-cell",
+   "name": "Power Cell",
+   "type": "device",
+   "stats": {},
+   "keywords": [],
+   "isToken": true,
+   "abilities": [
+    {
+     "when": "activated",
+     "do": [
+      {
+       "k": "gain",
+       "n": 1
+      }
+     ],
+     "sacSelf": true,
+     "label": "Sacrifice: add 1 crystal power"
+    }
+   ]
+  },
+  {
+   "id": "quartz-crystal-array",
+   "name": "Quartz Crystal Array",
+   "type": "crystal",
+   "stats": {},
+   "color": "quartz",
+   "keywords": [],
+   "abilities": []
+  },
+  {
+   "id": "azure-crystal-array",
+   "name": "Azure Crystal Array",
+   "type": "crystal",
+   "stats": {},
+   "color": "azure",
+   "keywords": [],
+   "abilities": []
+  },
+  {
+   "id": "onyx-crystal-array",
+   "name": "Onyx Crystal Array",
+   "type": "crystal",
+   "stats": {},
+   "color": "onyx",
+   "keywords": [],
+   "abilities": []
+  },
+  {
+   "id": "ruby-crystal-reactor",
+   "name": "Ruby Crystal Reactor",
+   "type": "crystal",
+   "stats": {},
+   "color": "ruby",
+   "keywords": [],
+   "abilities": []
+  },
+  {
+   "id": "jade-crystal-array",
+   "name": "Jade Crystal Array",
+   "type": "crystal",
+   "stats": {},
+   "color": "jade",
+   "keywords": [],
+   "abilities": []
+  },
+  {
+   "id": "prism-conduit",
+   "name": "Prism Conduit",
+   "type": "crystal",
+   "stats": {},
+   "color": "azure",
+   "color2": "quartz",
+   "keywords": [
+    "tapped"
+   ],
+   "abilities": [],
+   "raw": {
+    "maxCopies": 4
+   },
+   "text": "Enters tapped. Taps for either of its two crystals."
+  },
+  {
+   "id": "smelter-conduit",
+   "name": "Smelter Conduit",
+   "type": "crystal",
+   "stats": {},
+   "color": "onyx",
+   "color2": "ruby",
+   "keywords": [
+    "tapped"
+   ],
+   "abilities": [],
+   "raw": {
+    "maxCopies": 4
+   },
+   "text": "Enters tapped. Taps for either of its two crystals."
+  },
+  {
+   "id": "geothermal-conduit",
+   "name": "Geothermal Conduit",
+   "type": "crystal",
+   "stats": {},
+   "color": "jade",
+   "color2": "ruby",
+   "keywords": [
+    "tapped"
+   ],
+   "abilities": [],
+   "raw": {
+    "maxCopies": 4
+   },
+   "text": "Enters tapped. Taps for either of its two crystals."
+  },
+  {
+   "id": "greenhouse-conduit",
+   "name": "Greenhouse Conduit",
+   "type": "crystal",
+   "stats": {},
+   "color": "jade",
+   "color2": "quartz",
+   "keywords": [
+    "tapped"
+   ],
+   "abilities": [],
+   "raw": {
+    "maxCopies": 4
+   },
+   "text": "Enters tapped. Taps for either of its two crystals."
+  }
+ ],
+ "decks": [
+  {
+   "id": "skyward-protocol",
+   "name": "Skyward Protocol",
+   "main": {
+    "sentinel-cadet": 2,
+    "riot-warden": 2,
+    "halo-interceptor": 2,
+    "bastion-r-12": 1,
+    "aegis-matron": 2,
+    "hardlight-shield": 2,
+    "purge-directive": 2,
+    "reinforcement-drop": 2,
+    "shield-matrix": 2,
+    "commander-lyra-7": 1,
+    "data-wisp": 2,
+    "azure-archivist": 2,
+    "ghost-runner": 2,
+    "glitch-stalker": 2,
+    "cipher-golem": 2,
+    "probe-drone": 1,
+    "signal-jammer": 1,
+    "phase-shift": 1,
+    "predictive-model": 1,
+    "oracle-mainframe": 1,
+    "leviathan-ark": 1,
+    "titan-exo-frame": 1,
+    "cell-printer": 1,
+    "quartz-crystal-array": 10,
+    "azure-crystal-array": 10,
+    "prism-conduit": 4
+   }
+  },
+  {
+   "id": "burn-notice",
+   "name": "Burn Notice",
+   "main": {
+    "rust-leech": 2,
+    "scrap-revenant": 2,
+    "null-collector": 2,
+    "onyx-reaper": 2,
+    "undying-chassis": 2,
+    "terminate-process": 2,
+    "corrupt-siphon": 2,
+    "grave-scan": 2,
+    "virus-payload": 2,
+    "hex-queen-nyx": 1,
+    "spark-runner": 2,
+    "furnace-ex": 1,
+    "ember-berserker": 2,
+    "arc-welder-adept": 2,
+    "slag-golem": 2,
+    "plasma-bolt": 2,
+    "overclock": 1,
+    "thermal-lance": 1,
+    "scrap-hauler": 1,
+    "pyro-sage-kael": 1,
+    "titan-exo-frame": 1,
+    "cell-printer": 1,
+    "onyx-crystal-array": 10,
+    "ruby-crystal-reactor": 10,
+    "smelter-conduit": 4
+   }
+  },
+  {
+   "id": "overclocked-growth",
+   "name": "Overclocked Growth",
+   "main": {
+    "spark-runner": 2,
+    "furnace-ex": 1,
+    "ember-berserker": 2,
+    "arc-welder-adept": 2,
+    "slag-golem": 2,
+    "plasma-bolt": 2,
+    "overclock": 2,
+    "thermal-lance": 2,
+    "scrap-hauler": 2,
+    "pyro-sage-kael": 1,
+    "moss-drone": 2,
+    "canopy-sentinel": 2,
+    "vine-lasher": 2,
+    "biomech-behemoth": 2,
+    "grafting-protocol": 2,
+    "overgrowth-spike": 2,
+    "root-network": 2,
+    "seedship-verdance": 1,
+    "grove-mind-arbor": 1,
+    "titan-exo-frame": 1,
+    "cell-printer": 1,
+    "ruby-crystal-reactor": 10,
+    "jade-crystal-array": 10,
+    "geothermal-conduit": 4
+   }
+  },
+  {
+   "id": "garden-wardens",
+   "name": "Garden Wardens",
+   "main": {
+    "sentinel-cadet": 2,
+    "riot-warden": 2,
+    "halo-interceptor": 2,
+    "bastion-r-12": 1,
+    "aegis-matron": 2,
+    "hardlight-shield": 2,
+    "purge-directive": 2,
+    "reinforcement-drop": 2,
+    "shield-matrix": 2,
+    "commander-lyra-7": 1,
+    "moss-drone": 2,
+    "canopy-sentinel": 2,
+    "vine-lasher": 2,
+    "biomech-behemoth": 2,
+    "grafting-protocol": 2,
+    "overgrowth-spike": 2,
+    "root-network": 2,
+    "seedship-verdance": 1,
+    "grove-mind-arbor": 1,
+    "titan-exo-frame": 1,
+    "cell-printer": 1,
+    "jade-crystal-array": 10,
+    "quartz-crystal-array": 10,
+    "greenhouse-conduit": 4
+   }
+  }
+ ]
+}

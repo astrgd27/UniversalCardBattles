@@ -226,7 +226,7 @@ function frames(bp: Blueprint, A: any, mk: MakerUI, mod: Mod | null) {
 
 // ---------------------------------------------------------------- 3. types & stats
 const ROLE_OPTS = Object.entries(ROLES).map(([k, v]) => [k, v.label] as [string, string]);
-const FRAME_FOR: Record<Role, string> = { attack: 'classic', unit: 'skirmisher', spell: 'spell', fast: 'spell', permanent: 'spell', attachment: 'spell', resource: 'resource', trap: 'spell', leader: 'leader', evolution: 'vital', extra: 'monster', token: 'token', battlefield: 'spell' };
+const FRAME_FOR: Record<Role, string> = { attack: 'classic', unit: 'skirmisher', spell: 'spell', fast: 'spell', permanent: 'spell', attachment: 'spell', resource: 'resource', trap: 'spell', leader: 'leader', evolution: 'vital', extra: 'monster', token: 'token', battlefield: 'spell', walker: 'leader' };
 function types(bp: Blueprint, A: any) {
   const used = (id: string) => bp.cards.some((c) => c.type === id);
   return [
@@ -239,6 +239,7 @@ function types(bp: Blueprint, A: any) {
         ['spell', 'fast', 'permanent', 'attachment', 'trap'].includes(t.role) && num(bp, A, ['types', i, 'perTurn'], { label: 'Per turn (0 = any)', min: 0, max: 9 }),
         ['spell', 'fast', 'permanent', 'attachment', 'trap'].includes(t.role) && chk(bp, A, ['types', i, 'notFirstTurn'], 'Not on turn 1'),
         t.role === 'attachment' && num(bp, A, ['types', i, 'perUnit'], { label: 'Per unit (0 = any)', min: 0, max: 9 }),
+        t.role === 'attachment' && chk(bp, A, ['types', i, 'anyUnit'], 'Can go on enemy units too'), t.role === 'attachment' && chk(bp, A, ['types', i, 'equipment'], 'Equipment (stays; re-equip for a cost)'),
         !!bp.combat.arenas?.length && UNIT_ROLES.includes(t.role) && sel(bp, A, ['types', i, 'zone'], bp.combat.arenas.map((z) => [z.id, z.name] as [string, string]), { label: 'Enters' }),
         h('button', { class: 'x', disabled: used(t.id), title: used(t.id) ? 'Cards still use this type' : 'Remove', onclick: () => A.mkEdit((b: Blueprint) => { b.types.splice(i, 1); }) }, '🗑'))),
       h('div', { class: 'mk-addrow' }, h('span', { class: 'muted' }, 'Add:'), (Object.keys(ROLES) as Role[]).map((r) => h('button', { class: 'chip', onclick: () => A.mkEdit((b: Blueprint) => {
@@ -362,7 +363,7 @@ function rules(bp: Blueprint, A: any) {
     c.mode === 'cards' && row(sel(bp, A, [...Cb, 'blockStat'], stats, { label: 'Blocking stat (cards discarded to defend)' })),
     c.mode === 'lanes' && row(chk(bp, A, [...Cb, 'conquest'], 'Conquest: group moves, showdowns, fights with Tank, recall on a tie'), chk(bp, A, [...Cb, 'finalPoint'], 'The winning point needs every battlefield scored this turn'),
       bp.types.some((t) => t.role === 'battlefield') && num(bp, A, [...S, 'sites'], { label: 'Battlefield cards per deck', min: 0, max: 5 })),
-    c.mode === 'block' && row(num(bp, A, [...Cb, 'maxBlockers'], { label: 'Blockers per attacker', min: 1, max: 5 })),
+    c.mode === 'block' && row(chk(bp, A, [...Cb, 'mass'], 'Declare all attackers at once; blockers per attacker; first-strike step; attack walkers'), !c.mass && num(bp, A, [...Cb, 'maxBlockers'], { label: 'Blockers per attacker', min: 1, max: 5 })),
     ['block', 'target'].includes(c.mode) && row(sel(bp, A, [...Cb, 'quest'], [['', 'No questing'], ...stats], { label: 'Questing: exhaust to score this stat', map: (v) => v || null })),
     c.mode !== 'none' && [
       row(sel(bp, A, [...Cb, 'power'], stats, { label: 'Attack stat' }), sel(bp, A, [...Cb, 'health'], [['', 'None (compare power)'], ...stats], { label: 'Health stat', map: (v) => v || null }),
@@ -393,7 +394,7 @@ function rules(bp: Blueprint, A: any) {
       row(num(bp, A, [...S, 'hand'], { label: 'Opening hand', min: 0, max: 15 }), num(bp, A, [...S, 'handLimit'], { label: 'Hand limit', min: 1, max: 99 }), num(bp, A, [...S, 'deckMin'], { label: 'Deck min', min: 5, max: 100 }),
         num(bp, A, [...S, 'deckMax'], { label: 'Deck max', min: 5, max: 120 }), num(bp, A, [...S, 'maxCopies'], { label: 'Copies per card', min: 1, max: 20 }), num(bp, A, [...S, 'turnLimit'], { label: 'Turn limit', min: 10, max: 400 })),
       row(chk(bp, A, [...S, 'mulligan'], 'Free mulligan'), bp.setup.mulligan && num(bp, A, [...S, 'mulliganN'], { label: 'Mulligan: set aside up to N (0 = whole hand)', min: 0, max: 10 }),
-        chk(bp, A, [...S, 'champion'], 'Each deck names a champion (playable from its own zone)'), bp.setup.leader && chk(bp, A, [...S, 'leaderColors'], "Cards must match the leader's two colors")),
+        bp.setup.mulligan && chk(bp, A, [...S, 'london'], 'London mulligan (redraw, then bottom 1 per mulligan)'), chk(bp, A, [...S, 'champion'], 'Each deck names a champion (playable from its own zone)'), bp.setup.leader && chk(bp, A, [...S, 'leaderColors'], "Cards must match the leader's two colors")),
       bp.combat.mode === 'duel' && row(chk(bp, A, [...S, 'benchSetup'], 'Also put basic units on the bench at setup'), chk(bp, A, [...S, 'mulliganBonus'], 'Mulligan only without a basic unit; the opponent draws 1 per mulligan')),
       row(chk(bp, A, [...S, 'noEvolveFirstTurn'], 'Nobody evolves on their own first turn'), chk(bp, A, [...S, 'skipFirstDraw'], 'First player skips the first draw'), chk(bp, A, [...S, 'leader'], 'Each deck has a leader card'),
         bp.types.some((t) => t.role === 'extra') && num(bp, A, [...S, 'extraMax'], { label: 'Extra deck size', min: 0, max: 30 }))),
@@ -460,7 +461,7 @@ function shelf(bp: Blueprint, A: any) {
 // ---------------------------------------------------------------- 8. cards and the ability builder
 const WHEN: [When, string][] = [['play', 'When played'], ['leave', 'When destroyed'], ['attack', 'When it attacks'], ['hit', 'When it hits the opponent'], ['quest', 'When it quests'], ['startTurn', 'At the start of your turn'],
   ['endTurn', 'At the end of your turn'], ['activated', 'Activated (exhaust and/or pay)'], ['static', 'Always on (aura)'], ['opAttack', 'When the opponent attacks (traps: spring)'], ['block', 'When it blocks'],
-  ['conquer', 'When it conquers (battlefields: when you conquer here)'], ['hold', 'When you hold its battlefield (battlefields: here)']];
+  ['castSpell', 'Whenever you cast a spell'], ['landfall', 'Whenever a resource enters for you'], ['conquer', 'When it conquers (battlefields: when you conquer here)'], ['hold', 'When you hold its battlefield (battlefields: here)']];
 const EFF: [EffectKind, string, string[]][] = [
   ['draw', 'Draw cards', ['n', 'who']], ['damage', 'Deal damage', ['n', 'target']], ['heal', 'Heal', ['n', 'target']], ['buff', 'Boost a stat', ['n', 'stat', 'target', 'until']],
   ['destroy', 'Destroy', ['target']], ['bounce', 'Return to hand', ['target']], ['exhaust', 'Exhaust (tap)', ['target']], ['ready', 'Ready (untap)', ['target']],
@@ -475,7 +476,7 @@ const EFF: [EffectKind, string, string[]][] = [
   ['lifeToHand', 'Top life card to hand', ['n']], ['handToLife', 'A card from hand to the top of life', []],
   ['inflict', 'Give a status', ['status', 'n', 'target']], ['cure', 'Cure a status', ['statusAll', 'target']], ['flip', 'Flip coins (heads / tails)', ['n', 'flip']],
   ['switch', 'Switch the active unit', ['side']], ['tutor', 'Search your deck (choose)', ['n', 'type', 'dest', 'dfilter']], ['attachFrom', 'Attach a resource card from a zone', ['src', 'target', 'dfilter']],
-  ['drawTo', 'Draw up to N in hand', ['n']], ['skipEvolve', 'Evolve two stages at once', []], ['raw', 'Custom script (JSON)', ['raw']],
+  ['drawTo', 'Draw up to N in hand', ['n']], ['skipEvolve', 'Evolve two stages at once', []], ['fight', 'Fight (one of your units)', ['target']], ['surveil', 'Surveil (top cards to discard)', ['n']], ['raw', 'Custom script (JSON)', ['raw']],
 ];
 const TGT: [TargetKind, string][] = [['enemyUnit', 'an enemy unit (choose)'], ['anyUnit', 'any unit (choose)'], ['ownUnit', 'one of your units'], ['otherOwnUnit', 'another of your units'], ['enemyAny', 'enemy unit or opponent'],
   ['opponent', 'the opponent'], ['you', 'you'], ['self', 'this card'], ['randomEnemyUnit', 'a random enemy unit'], ['allEnemyUnits', 'all enemy units'], ['allUnits', 'all units'], ['allOwnUnits', 'all your units'],
@@ -533,7 +534,7 @@ function abilityBox(bp: Blueprint, A: any, cp: Path, a: Ability, ai: number, rol
   return h('div', { class: 'mk-ability' },
     h('div', { class: 'mk-ab-head' },
       sel(bp, A, [...ap, 'when'], WHEN.filter(([w]) => (['conquer', 'hold'].includes(w) ? bp.combat.mode === 'lanes' : true)), { label: 'When', q: 'cards' }),
-      a.when === 'activated' && [chk(bp, A, [...ap, 'tap'], 'Exhaust this'), num(bp, A, [...ap, 'cost'], { label: 'Pay', min: 0, max: 20 }), num(bp, A, [...ap, 'discard'], { label: 'Discard', min: 0, max: 5 }),
+      a.when === 'activated' && [role === 'walker' && num(bp, A, [...ap, 'loyalty'], { label: 'Loyalty (+/-)', min: -20, max: 20 }), chk(bp, A, [...ap, 'sacSelf'], 'Sacrifice this'), chk(bp, A, [...ap, 'tap'], 'Exhaust this'), num(bp, A, [...ap, 'cost'], { label: 'Pay', min: 0, max: 20 }), num(bp, A, [...ap, 'discard'], { label: 'Discard', min: 0, max: 5 }),
         chk(bp, A, [...ap, 'sacrifice'], 'Sacrifice a unit'), num(bp, A, [...ap, 'banish'], { label: 'Banish from discard', min: 0, max: 10 }),
         ['cards', 'anycard', 'deck'].includes(bp.resource.mode) && num(bp, A, [...ap, 'returnRes'], { label: `Return ${bp.resource.name}`, min: 0, max: 10 }), (bp.win.life > 0 || bp.win.lifeCards > 0 || bp.setup.leader) && num(bp, A, [...ap, 'life'], { label: bp.win.life > 0 ? 'Pay life' : 'Life cards to hand', min: 0, max: 100000 }),
         (bp.counters ?? []).length > 0 && h('label', { class: 'fld' }, h('span', {}, 'Remove counters'), h('select', { 'aria-label': 'Counter cost', onchange: (ev: Event) => { const v = (ev.target as HTMLSelectElement).value; A.mkSet([...ap, 'uncount'], v ? { id: v, n: a.uncount?.n ?? 1 } : undefined); } },
@@ -541,11 +542,11 @@ function abilityBox(bp: Blueprint, A: any, cp: Path, a: Ability, ai: number, rol
         a.uncount && num(bp, A, [...ap, 'uncount', 'n'], { label: 'How many', min: 1, max: 20 })],
       h('label', { class: 'fld' }, h('span', {}, 'If'), h('select', { 'aria-label': 'Condition', onchange: (e: Event) => { const v = (e.target as HTMLSelectElement).value; A.mkSet([...ap, 'if'], v ? { k: v, n: a.if?.n ?? 1 } : undefined); } },
         [['', 'always'], ['units', 'if you control N+ units'], ['life', 'if your life is N or less'], ['hand', 'if your hand has N or fewer'], ['yourTurn', 'during your turn'], ['res', 'if you have N+ resources'], ['counter', 'if this has N+ counters'], ['zone', 'if you have N+ cards in a zone'],
-          ['played', 'if you played N other cards this turn'], ['status', 'if this has a status'], ['attached', 'if this was given N+ resources'], ['oppTurn', "during the opponent's turn"], ['oppLife', 'if the opponent has N or less life']].map(([v, l]) => h('option', { value: v, selected: (a.if?.k ?? '') === v }, l)))),
+          ['played', 'if you played N other cards this turn'], ['status', 'if this has a status'], ['kicked', 'if it was kicked'], ['charged', 'if this has N+ charge'], ['attached', 'if this was given N+ resources'], ['oppTurn', "during the opponent's turn"], ['oppLife', 'if the opponent has N or less life']].map(([v, l]) => h('option', { value: v, selected: (a.if?.k ?? '') === v }, l)))),
       a.if?.k === 'zone' && sel(bp, A, [...ap, 'if', 'zone'], zoneOpts(bp).filter(([z]) => z !== 'deck' && z !== 'hand'), { label: 'Zone' }),
       a.if?.k === 'status' && sel(bp, A, [...ap, 'if', 'status'], (bp.statuses ?? []).map((k) => [k.id, k.name] as [string, string]), { label: 'Status' }),
       a.if?.k === 'counter' && sel(bp, A, [...ap, 'if', 'counter'], (bp.counters ?? []).map((k) => [k.id, k.name] as [string, string]), { label: 'Counter' }),
-      a.if && !['yourTurn', 'oppTurn', 'status'].includes(a.if.k) && num(bp, A, [...ap, 'if', 'n'], { label: 'N', min: 0, max: 100000 }),
+      a.if && !['yourTurn', 'oppTurn', 'status', 'kicked'].includes(a.if.k) && num(bp, A, [...ap, 'if', 'n'], { label: 'N', min: 0, max: 100000 }),
       h('label', { class: 'fld' }, h('span', {}, 'Limit'), h('select', { 'aria-label': 'Limit', onchange: (e: Event) => { const v = (e.target as HTMLSelectElement).value; A.mkSet([...ap, 'once'], v === 'turn' ? true : v === 'game' ? 'game' : undefined); } },
         [['', 'every time'], ['turn', 'once per turn'], ['game', 'once per game']].map(([v, l]) => h('option', { value: v, selected: (a.once === true ? 'turn' : a.once || '') === v }, l)))),
       h('button', { class: 'x', onclick: () => A.mkEdit((b: Blueprint) => { get(b, cp).abilities.splice(ai, 1); }), 'aria-label': 'Remove ability' }, '🗑')),
@@ -598,7 +599,13 @@ function cardEditor(bp: Blueprint, A: any, mk: MakerUI, ci: number, c: CardBP, m
         txt(bp, A, [...cp, 'family'], { label: 'Family (evolutions onto any card of this family)', ph: 'e.g. Dragon' }),
         bp.win.prizes > 0 && UNIT_ROLES.includes(role) && num(bp, A, [...cp, 'prizes'], { label: 'Prizes taken when destroyed', min: 1, max: 6 }),
         bp.combat.mode === 'duel' && UNIT_ROLES.includes(role) && bp.colors.length > 0 && sel(bp, A, [...cp, 'resist'], [['', 'no resistance'], ...bp.colors.map((k) => [k.id, k.name] as [string, string])], { label: 'Resists', map: (v) => v || undefined }),
-        role === 'resource' && row(num(bp, A, [...cp, 'provides'], { label: 'Counts as N energy', min: 1, max: 4 }), chk(bp, A, [...cp, 'rainbow'], 'Counts as every color')))),
+        role === 'resource' && row(num(bp, A, [...cp, 'provides'], { label: 'Counts as N energy', min: 1, max: 4 }), chk(bp, A, [...cp, 'rainbow'], 'Counts as every color'),
+          bp.colors.length > 1 && sel(bp, A, [...cp, 'color2'], [['', 'single color'], ...bp.colors.map((k) => [k.id, k.name] as [string, string])], { label: 'Also makes (dual)', map: (v) => v || undefined })),
+        ['ramp', 'cards', 'anycard', 'deck'].includes(bp.resource.mode) && row(!['resource', 'token'].includes(role) && num(bp, A, [...cp, 'kicker'], { label: 'Kicker (extra cost, 0 = none)', min: 0, max: 10 }),
+          ['spell', 'fast'].includes(role) && num(bp, A, [...cp, 'flashback'], { label: 'Flashback cost', min: 0, max: 10 }), !['resource', 'token'].includes(role) && num(bp, A, [...cp, 'cycling'], { label: 'Cycling cost', min: 0, max: 10 }),
+          role === 'attachment' && num(bp, A, [...cp, 'equipCost'], { label: 'Equip cost', min: 0, max: 10 })),
+        UNIT_ROLES.includes(role) && row(num(bp, A, [...cp, 'crew'], { label: 'Crew N (vehicle, 0 = off)', min: 0, max: 10 }), num(bp, A, [...cp, 'station'], { label: 'Station N (spacecraft, 0 = off)', min: 0, max: 20 })),
+        role !== 'token' && chk(bp, A, [...cp, 'isToken'], 'Token (made by effects, never in decks)'))),
     role === 'evolution' && row(sel(bp, A, [...cp, 'evolvesFrom'], unitNames.filter((n) => n !== c.name).map((n) => [n, n]), { label: 'Evolves from' })),
     role === 'extra' && row(num(bp, A, [...cp, 'materials'], { label: 'Units sent to summon it', min: 1, max: 5 })),
     role === 'attachment' && h('div', { class: 'mk-row' }, h('span', { class: 'muted' }, 'Gives the unit:'), bp.stats.map((s) => num(bp, A, [...cp, 'bonus', s.id], { label: `+${s.name}`, min: -100000, max: 100000 }))),
