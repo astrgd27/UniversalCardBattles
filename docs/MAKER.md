@@ -584,6 +584,38 @@ Templates:
 ## Card tags
 Cards a mechanic adds are tagged `<recipe>:<card>` (e.g. `costReducer:guild-charter`). Sub-options find their example cards by tag, so renaming a card or changing its id doesn't break the option.
 
+## Shop and Campaign stations (optional)
+Two optional stations; a game can have either, both or neither (`bp.economy`, compiled by `economy.ts` into the module's `campaign`).
+- **Shared:**
+  - **currencies**, up to 5; the first is the main one, and each has a name, an icon and a starting amount;
+  - **decks every player starts with** (leave it empty to make players pick a free starter in the shop).
+- **Shop:** a Shop on the game menu.
+  - **Booster packs:** slots of N random cards drawn by rarity, type and/or color (cards get a *rarity*; *Set rarities from cost* fills them in).
+  - **Items:** a pack or a deck, with:
+    - a price in any currency;
+    - how often it can be bought (once, N times, any number of times);
+    - a **choose-one group** (price 0 makes it a free starter pick);
+    - a **promo first price**;
+    - a badge;
+    - **locks** behind campaign wins.
+
+    *+ Free starter pick* adds your decks as a free choose-one set.
+  - Without a campaign, the Shop starts the player's collection by itself.
+- **Campaign:** a Campaign on the game menu.
+  - **Story:** a name and an opening dialogue.
+  - **Tiers:** named, shown in order on the map.
+  - **Battles**, each with:
+    - an opponent, a portrait and **their deck** (a Workshop deck);
+    - an **AI level**: Easy = random, Normal = one move ahead, Hard = the planner;
+    - a tier, and **locks** behind other battles;
+    - **rewards in each currency** for the first win, each replay win and a loss, plus packs on the first win;
+    - dialogue **before**, **after a win** and **after a loss**.
+- **✨ Fill in an example** sets up two currencies, free starter picks, a booster (first one free), a gem pack, a deck locked behind the final battle, and three tiered battles from Easy to Hard.
+- **Checks:**
+  - lint flags: more than 5 currencies, no way to get a first deck, items selling missing decks or packs, missing currencies, battles with a missing deck, and gates on battles that don't exist;
+  - the compiled data also goes through the campaign validator;
+  - `economy.test.ts` runs the compiled shop and campaign through the real runtime: picks, promos, locks, multi-currency rewards, gates and shop-only games.
+
 ## Workshop extras
 - **Undo / redo** (↶ ↷ in the top bar). Fast typing collapses into one step.
 - **Auto-written rulebook** on the Publish station, downloadable as Markdown (`rulebook()`/`rulebookMarkdown()`).

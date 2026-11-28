@@ -1,12 +1,16 @@
 // Campaign screens: map, encounter (dialogue + deck choice), reward, shop (with pack reveal).
 import type { Campaign, Line, Reward } from '#campaign';
-import { itemBlocked, nodeState, ownedErrors } from '#campaign';
+import { balance, currenciesOf, hasEncounters, itemBlocked, mainCurrency, nodeState, ownedErrors, priceOf, type Profile } from '#campaign';
 import { assetUrl } from '../modules.ts';
 import { deckErrors } from '#engine';
 import { campaign, type UI } from '../main.ts';
 import { cardFace, cls, emblem, h, select, themeStyle, topnav } from './kit.ts';
 
-const money = (c: Campaign, n: number) => h('span', { class: 'money', 'aria-label': `${n} ${c.currency.name}` }, `◆ ${n} ${c.currency.name}`);
+/** The wallet: every currency the campaign uses, with its icon. */
+const money = (c: Campaign, p: Profile) => h('span', { class: 'money wallet', 'aria-label': 'Your currencies' },
+  currenciesOf(c).map((cu) => h('span', { class: 'coin', 'data-coin': cu.id, title: cu.name }, `${cu.icon ?? '◆'} ${balance(c, p, cu.id)} ${currenciesOf(c).length > 1 ? '' : cu.name}`)));
+const coinName = (c: Campaign, id?: string) => { const cu = currenciesOf(c).find((x) => x.id === (id ?? mainCurrency(c))); return { icon: cu?.icon ?? '◆', name: cu?.name ?? id ?? '' }; };
+const AI_NAME: Record<string, string> = { random: 'Easy AI', heuristic: 'Normal AI', planner: 'Hard AI' };
 
 function dialogue(ui: UI, A: any, portrait: string) {
   const d = ui.dialog!;
@@ -39,7 +43,7 @@ export function campaignScreen(ui: UI, A: any) {
         h('button', { class: 'cta', onclick: A.beginCampaign }, 'Begin campaign')));
   }
   return h('div', { class: 'screen campaign', style: themeStyle(m) },
-    topnav([m.manifest.displayName, () => A.go('home')], c.name, money(c, p.currency)),
+    topnav([m.manifest.displayName, () => A.go('home')], c.name, money(c, p)),
     ui.dialog && dialogue(ui, A, emblem(m)),
     h('div', { class: 'camp-actions' },
       (c.shop?.length ?? 0) > 0 && h('button', { class: cls(!Object.keys(p.decks).length && 'cta small'), onclick: () => A.go('shop'), 'data-camp': 'shop' }, Object.keys(p.decks).length ? '🛒 Shop' : '🛒 Shop: claim your starter deck'),
@@ -63,7 +67,8 @@ export function campaignScreen(ui: UI, A: any) {
 function rewardChips(c: Campaign, r: Reward | undefined, m: any) {
   if (!r) return h('span', { class: 'muted' }, 'No reward');
   return [
-    !!r.currency && h('span', { class: 'chip' }, `◆ ${r.currency} ${c.currency.name}`),
+    !!r.currency && h('span', { class: 'chip' }, `${coinName(c).icon} ${r.currency} ${coinName(c).name}`),
+    ...Object.entries(r.coins ?? {}).filter(([, n]) => n > 0).map(([id, n]) => h('span', { class: 'chip' }, `${coinName(c, id).icon} ${n} ${coinName(c, id).name}`)),
     ...(r.cards ?? []).map((x) => h('span', { class: 'chip' }, `🂠 ${m.card.get(x)?.name ?? x}`)),
     ...(r.packs ?? []).map((x) => h('span', { class: 'chip' }, `🎁 ${c.boosters?.[x]?.name ?? x}`)),
   ];
@@ -78,10 +83,10 @@ export function encounterScreen(ui: UI, A: any) {
   const errs = deck ? [...deckErrors(m, deck), ...ownedErrors(p.collection, deck)] : ['Choose a deck'];
   const won = !!p.wins[ui.encounter!];
   return h('div', { class: 'screen encounter', style: themeStyle(m) },
-    topnav([c.name, () => A.go('campaign')], en.name, money(c, p.currency)),
+    topnav([c.name, () => A.go('campaign')], en.name, money(c, p)),
     ui.dialog && dialogue(ui, A, en.portrait ?? '⚔'),
     h('div', { class: 'versus' },
-      h('div', { class: 'vs-card' }, h('div', { class: 'portrait big' }, en.portrait ?? '⚔'), h('h2', {}, en.opponent), h('p', { class: 'muted' }, en.name)),
+      h('div', { class: 'vs-card' }, h('div', { class: 'portrait big' }, en.portrait ?? '⚔'), h('h2', {}, en.opponent), h('p', { class: 'muted' }, en.name), h('span', { class: cls('chip', 'ai-level', en.ai?.kind ?? 'heuristic') }, AI_NAME[en.ai?.kind ?? 'heuristic'])),
       h('div', { class: 'vs-mid' }, 'VS'),
       h('div', { class: 'vs-card' },
         h('div', { class: 'portrait big you' }, '★'), h('h2', {}, 'You'),
@@ -104,7 +109,7 @@ export function rewardScreen(ui: UI, A: any) {
     h('h1', { class: cls('result', r.won ? 'win' : 'loss') }, r.won ? 'Victory' : 'Defeat'),
     r.lines.map((l: Line) => h('blockquote', {}, h('strong', {}, l.speaker), ` — ${l.text}`)),
     g && h('div', { class: 'loot' },
-      g.currency > 0 && h('div', { class: 'loot-money' }, `+${g.currency} ${c.currency.name}`),
+      Object.entries(g.coins ?? { [mainCurrency(c)]: g.currency }).filter(([, n]) => n > 0).map(([id, n]) => h('div', { class: 'loot-money', 'data-coin': id }, `+${n} ${coinName(c, id).icon} ${coinName(c, id).name}`)),
       cards.length > 0 && h('div', { class: 'grid reveal' }, cards.map((x, i) => h('div', { class: 'flip', style: `animation-delay:${i * 90}ms` }, cardFace(m, x, { size: 'md' }))))),
     !r.won && !g && h('p', { class: 'muted' }, 'No rewards this time. Adjust your deck and try again.'),
     h('div', { class: 'center-row' }, h('button', { class: 'cta', onclick: () => A.go('campaign') }, 'Back to the map')));
@@ -115,9 +120,11 @@ export function shopScreen(ui: UI, A: any) {
   const c = campaign()!;
   const p = ui.profile;
   if (!p) return h('div', { class: 'screen shop', style: themeStyle(m) }, topnav([m.manifest.displayName, () => A.go('home')], 'Shop'),
-    h('div', { class: 'empty' }, h('p', {}, 'Begin the campaign to earn currency.'), h('button', { class: 'cta', onclick: () => A.go('campaign') }, 'Go to campaign')));
+    h('div', { class: 'empty' }, hasEncounters(c) ? [h('p', {}, 'Begin the campaign to earn currency.'), h('button', { class: 'cta', onclick: () => A.go('campaign') }, 'Go to campaign')]
+      : [h('p', {}, 'Open your collection to start shopping.'), h('button', { class: 'cta', 'data-act': 'open-shop', onclick: A.openShop }, 'Open the shop')]));
   return h('div', { class: 'screen shop', style: themeStyle(m) },
-    topnav([m.manifest.displayName, () => A.go('home')], 'Shop', money(c, p.currency)),
+    topnav([m.manifest.displayName, () => A.go('home')], 'Shop', money(c, p)),
+    !hasEncounters(c) && h('div', { class: 'camp-actions' }, h('button', { onclick: () => A.editCampaignDeck(Object.keys(p.decks)[0] ?? null), 'data-camp': 'decks' }, '🂠 Your decks')),
     h('div', { class: 'shop-grid' }, (c.shop ?? []).map((it) => {
       const left = it.stock === undefined ? null : it.stock - (p.bought[it.id] ?? 0);
       const why = itemBlocked(c, p, it);
@@ -127,6 +134,7 @@ export function shopScreen(ui: UI, A: any) {
       const n = deck ? (Array.isArray(deck) ? deck.length : Object.values(deck as Record<string, string[]>).flat().length) : 0;
       return h('div', { class: cls('shop-item', it.group && 'promo', why && 'blocked'), 'data-item': it.id },
         it.group && h('span', { class: 'promo-tag' }, it.price === 0 ? 'Free promo · choose one' : 'Choose one'),
+        it.badge && h('span', { class: 'item-badge' }, it.badge),
         art ? h('img', { class: 'item-art', src: art, alt: it.name })
           : it.booster ? h('div', { class: 'pack' }, h('span', { class: 'pack-emblem' }, emblem(m)), h('span', {}, it.name),
             h('span', { class: 'muted' }, `${c.boosters![it.booster].slots.reduce((a, s) => a + s.count, 0)} cards`))
@@ -134,9 +142,11 @@ export function shopScreen(ui: UI, A: any) {
         h('strong', {}, it.name),
         it.text && h('p', { class: 'muted item-text' }, it.text),
         deck && h('div', { class: 'muted' }, `${n}-card ready-to-play deck`),
-        h('div', { class: 'price' }, it.price === 0 ? 'Free' : `◆ ${it.price}`),
+        h('div', { class: 'price' }, (() => { const pr = priceOf(it, p); const cn = coinName(c, it.currency);
+          return [pr !== it.price && h('s', { class: 'muted' }, `${cn.icon} ${it.price}`), ' ', pr === 0 ? 'Free' : `${cn.icon} ${pr}`, pr !== it.price && h('span', { class: 'promo-note' }, ' first one')]; })()),
         left !== null && it.price > 0 && h('div', { class: 'muted' }, left > 0 ? `${left} left` : 'Sold out'),
-        h('button', { class: 'cta small', disabled: !!why, 'data-buy': it.id, onclick: () => A.buyItem(it.id) }, why ?? (it.price === 0 ? 'Claim' : 'Buy')));
+        left === null && h('div', { class: 'muted' }, 'Buy as often as you like'),
+        h('button', { class: 'cta small', disabled: !!why, 'data-buy': it.id, onclick: () => A.buyItem(it.id) }, why ?? (priceOf(it, p) === 0 ? 'Claim' : 'Buy')));
     })),
     ui.reveal && h('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' },
       h('div', { class: 'panel-pop wide' }, h('h2', {}, 'You got'),

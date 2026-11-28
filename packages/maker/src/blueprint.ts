@@ -202,8 +202,29 @@ export interface Move {
   plus?: { per: 'energy' | 'targetDamage' | 'benched' | 'oppBenched' | 'heads'; n: number; coins?: number }; // damage bonus (+n for each …)
   discard?: number; // discard this many attached energy after attacking
 }
+// ---------------------------------------------------------------- shop & campaign (the Workshop's Shop and Campaign stations)
+export type Rarity = 'common' | 'uncommon' | 'rare' | 'mythic';
+export interface CurrencyBP { id: string; name: string; icon?: string; start: number }
+/** A booster pack: slots, each drawing `count` random cards from a pool (by rarity, type and/or color, or a card list). */
+export interface BoosterBP { id: string; name: string; slots: { count: number; rarity?: Rarity; type?: string; color?: string; cards?: string[] }[] }
+/** Something for sale. repeat: 'once' (one copy), 'forever' (no limit) or a number (that many). group: items sharing a group
+ *  are a "choose one" set (e.g. pick a free starter). requires: campaign wins needed before it is for sale. */
+export interface ShopItemBP { id: string; name: string; kind: 'booster' | 'deck'; ref: string; price: number; currency?: string; repeat: 'once' | 'forever' | number;
+  group?: string; requires?: string[]; firstPrice?: number; badge?: string; text?: string }
+export interface LineBP { speaker: string; text: string }
+/** A campaign battle: an opponent with a Workshop deck and an AI level, rewards per currency, a tier, prerequisites and dialogue. */
+export interface EncounterBP { id: string; name: string; opponent: string; portrait?: string; deck: string; ai: 'random' | 'heuristic' | 'planner'; tier: number;
+  requires?: string[]; repeatable?: boolean; before?: LineBP[]; win?: LineBP[]; lose?: LineBP[];
+  first?: Record<string, number>; repeat?: Record<string, number>; loss?: Record<string, number>; packs?: string[] } // first/repeat/loss: currency id -> amount; packs: boosters given on the first win
+export interface Economy {
+  currencies: CurrencyBP[]; // up to 5; the first is the main one
+  starterDecks: string[]; // decks every player starts with (Workshop deck ids)
+  shop?: { enabled: boolean; boosters: BoosterBP[]; items: ShopItemBP[] };
+  campaign?: { enabled: boolean; name: string; intro?: LineBP[]; tiers: string[]; encounters: EncounterBP[] };
+}
 export interface CardBP {
   id: string; name: string; type: string;
+  rarity?: Rarity; // for booster packs (default common)
   xCost?: boolean; // X cost: as you play it, choose X and pay X more (amounts can use X = the chosen X)
   tag?: string; // a stable handle for cards a mechanic added ("heat:cool-down"), so its options still find them after renames
   cost?: number | Record<string, number>;
@@ -243,6 +264,7 @@ export interface Blueprint {
   counters?: Counter[];
   statuses?: Status[];
   meters?: Meter[]; comeback?: Comeback;
+  economy?: Economy; // shop and campaign (both optional; a game can have either, both or neither)
   opts?: Record<string, unknown>; // Mechanics Shelf sub-option values that can't be read back from the game itself
   zones?: CustomZone[];
   types: CardType[];

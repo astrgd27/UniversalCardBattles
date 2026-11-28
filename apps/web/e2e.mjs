@@ -23,7 +23,7 @@ try {
   await page.click('[data-act=mk-new]');
   await page.click('[data-blueprint=blank]');
   ok(await page.isVisible('.mk-bugs.good'), 'blank game builds');
-  for (const st of ['identity', 'shelf', 'frames', 'types', 'board', 'turn', 'rules', 'keywords', 'cards', 'decks', 'test', 'publish', 'lab']) {
+  for (const st of ['identity', 'shelf', 'frames', 'types', 'board', 'turn', 'rules', 'keywords', 'cards', 'decks', 'shop', 'campaign', 'test', 'publish', 'lab']) {
     await page.click(`[data-station=${st}]`);
     ok(await page.isVisible('.mk-main'), `station ${st} renders`);
   }
@@ -62,6 +62,12 @@ try {
   await page.click('[data-act=mk-play]');
   await page.waitForSelector('.hud-status', { timeout: 20000 });
   await page.click('[data-act=mk-back]');
+  // optional shop and campaign: an example fills both, the game still builds, battles and items are listed
+  await page.click('[data-station=shop]');
+  await page.click('[data-act=mk-example-economy]');
+  ok(await page.isVisible('.mk-bugs.good') && (await page.locator('.mk-shop-item').count()) >= 3, `shop example builds (${await page.textContent('.mk-bugs')})`);
+  await page.click('[data-station=campaign]');
+  ok((await page.locator('.mk-battle').count()) === 3, 'campaign example has three battles');
   await page.click('[data-station=publish]');
   ok(await page.isVisible('.mk-rules'), 'rulebook renders');
   await page.click('[data-act=mk-publish]');
@@ -206,6 +212,20 @@ try {
   const r = await page.evaluate(() => ({ r: window.__ucb.match.s.result, t: window.__ucb.match.s.turn.n }));
   console.log(`my-card-game: ${JSON.stringify(r.r)} after ${r.t} turns`);
   await page.click('.gameover >> text=Game menu');
+  // the published game's shop and campaign: claim a free starter, get the first pack free, see a locked deck
+  ok(await page.isVisible('[data-menu=campaign]') && await page.isVisible('[data-menu=shop]'), 'published game has Campaign and Shop');
+  await page.click('[data-menu=campaign]');
+  await page.click('text=Begin campaign');
+  await page.click('[data-camp=shop]');
+  await page.click('[data-buy=starter-1]');
+  await page.click('text=Collect');
+  ok((await page.textContent('[data-item=pack] .price')).includes('Free'), 'first pack is a free promo');
+  await page.click('[data-buy=pack]');
+  await page.click('text=Collect');
+  ok((await page.textContent('[data-item=pack] .price')).includes('50'), 'then it has its price');
+  ok((await page.textContent('[data-buy=champ-deck]')).includes('Win Title Match first'), 'a deck locked behind a campaign win');
+  ok((await page.locator('.money.wallet .coin').count()) === 2, 'wallet shows both currencies');
+  await page.click('text=← My Card Game').catch(() => page.goBack());
   await page.click('[data-menu=decks]');
   ok(await page.isVisible('.screen'), 'deckbuilder opens');
   await page.click('text=← My Card Game').catch(() => page.goBack());

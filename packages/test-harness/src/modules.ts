@@ -19,6 +19,7 @@ for (const id of readdirSync(MOD_DIR)) {
   w('manifest.json', def.manifest); w('rules.json', def.rules); w('cards.json', def.cards); w('decks.json', def.decks);
   mkdirSync(join(MOD_DIR, id, 'ai'), { recursive: true });
   w('ai/ai.json', def.ai);
+  if (def.campaign) { mkdirSync(join(MOD_DIR, id, 'campaign'), { recursive: true }); w('campaign/campaign.json', def.campaign); }
   console.log(`${id}: ${def.cards.length} cards, ${Object.keys(def.decks).length} decks`);
 }
 // usage counts: how often each ability-builder option appears in the default games, so the Workshop lists the most used first

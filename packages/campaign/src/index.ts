@@ -2,18 +2,18 @@
 // (with a validated scenario), and results come back as a match Result. Profiles are plain JSON.
 import type { Deck, MatchOpts, Mod, ModuleDef, Result, Scenario, View } from '#engine';
 import { deckErrors, rand, seedRng, validateScenario } from '#engine';
-import { heuristicAgent, randomAgent, type Agent } from '#ai';
+import { heuristicAgent, plannerAgent, randomAgent, type Agent } from '#ai';
 import { type Tutorial, validateTutorials } from './tutorial.ts';
 export * from './tutorial.ts';
 
 export interface Line { speaker: string; text: string }
-export interface Reward { currency?: number; cards?: string[]; packs?: string[] }
+export interface Reward { currency?: number; coins?: Record<string, number>; cards?: string[]; packs?: string[] } // currency: the main currency; coins: amounts in any of the campaign's currencies
 export interface Encounter {
   name: string;
   opponent: string;
   portrait?: string;
   deck: string; // a campaign deck or a module deck
-  ai?: { kind?: 'heuristic' | 'random'; bias?: Record<string, number>; phaseVar?: string; phases?: Record<string, { bias?: Record<string, number> }> };
+  ai?: { kind?: 'heuristic' | 'random' | 'planner'; bias?: Record<string, number>; phaseVar?: string; phases?: Record<string, { bias?: Record<string, number> }> };
   intro?: Line[];
   outro?: Line[];
   defeat?: Line[];
@@ -27,11 +27,19 @@ export interface Booster { name: string; slots: { count: number; pool: string[];
  * A shop item sells a booster, a single card, or a whole deck (its cards join the collection and the deck is saved).
  * group: items sharing a group are exclusive; once one is bought the others can't be (e.g. "claim one starter").
  */
-export interface ShopItem { id: string; name: string; price: number; booster?: string; card?: string; deck?: string; stock?: number; group?: string; text?: string; art?: string }
+export interface ShopItem { id: string; name: string; price: number; booster?: string; card?: string; deck?: string; stock?: number; group?: string; text?: string; art?: string;
+  currency?: string; // the currency the price is in (default: the main one)
+  requires?: string[]; // encounters you must have won before it is for sale
+  firstPrice?: number; // promo: the price of the first purchase
+  badge?: string; // a label on the item (e.g. "New", "Promo", "Starter")
+}
+/** A currency. The first one is the main currency (Campaign.currency mirrors it). Up to 5. */
+export interface Currency { id: string; name: string; icon?: string; start: number }
 export interface Campaign {
   name: string;
   intro?: Line[];
   currency: { name: string; start: number };
+  currencies?: Currency[]; // several currencies (up to 5); when set, the first is the main one
   starter: { collection: Record<string, number>; decks: Record<string, Deck> };
   decks?: Record<string, Deck>;
   chapters: { id: string; name: string; nodes: string[] }[];
@@ -40,11 +48,12 @@ export interface Campaign {
   shop?: ShopItem[];
   tutorials?: Tutorial[]; // scripted lessons (see tutorial.ts); rewards are paid once, on first completion
 }
-export const PROFILE_VERSION = 1;
+export const PROFILE_VERSION = 2;
 export interface Profile {
   v: number; // profile format version (see migrateProfile)
   module: string;
-  currency: number;
+  currency: number; // the main currency (mirrors wallet[main])
+  wallet?: Record<string, number>; // every currency, by id (v2)
   collection: Record<string, number>;
   decks: Record<string, Deck>;
   wins: Record<string, number>;
@@ -60,6 +69,20 @@ export class CampaignError extends Error {
 }
 
 export const campaignOf = (m: Mod | ModuleDef): Campaign | undefined => (m as any).campaign;
+/** The campaign's currencies (a single main one when it lists none). */
+export const currenciesOf = (c: Campaign): Currency[] => (c.currencies?.length ? c.currencies : [{ id: 'main', name: c.currency.name, start: c.currency.start }]);
+export const mainCurrency = (c: Campaign) => currenciesOf(c)[0].id;
+/** How much of a currency a profile holds. */
+export function balance(c: Campaign, p: Profile, id = mainCurrency(c)): number { return id === mainCurrency(c) ? p.currency : p.wallet?.[id] ?? 0; }
+function addCoins(c: Campaign, p: Profile, id: string, n: number) {
+  if (id === mainCurrency(c)) p.currency += n;
+  p.wallet = { ...(p.wallet ?? {}), [id]: (p.wallet?.[id] ?? 0) + n };
+  if (id === mainCurrency(c)) p.wallet[id] = p.currency;
+}
+/** Whether the campaign has battles (a shop-only module has none). */
+export const hasEncounters = (c: Campaign) => Object.keys(c.encounters ?? {}).length > 0;
+/** The price of an item for this profile (promo first price, then the normal one). */
+export const priceOf = (it: ShopItem, p: Profile) => (it.firstPrice !== undefined && !(p.bought[it.id] ?? 0) ? it.firstPrice : it.price);
 const cardsOf = (d: Deck) => Object.values(Array.isArray(d) ? { deck: d } : d).flat();
 const countOf = (l: string[]) => l.reduce<Record<string, number>>((a, c) => ((a[c] = (a[c] ?? 0) + 1), a), {});
 const add = (col: Record<string, number>, cards: string[]) => { for (const c of cards) col[c] = (col[c] ?? 0) + 1; };
@@ -84,6 +107,15 @@ function checkCampaign(m: Mod, c: Campaign): string[] {
   if (typeof c.name !== 'string' || !c.name) e.push('campaign/name: required');
   lines(c.intro, 'campaign/intro');
   if (!rec(c.currency) || typeof c.currency.name !== 'string' || !(Number.isInteger(c.currency.start) && c.currency.start >= 0)) e.push('campaign/currency: needs {name, start}');
+  const curIds = new Set<string>();
+  if (c.currencies !== undefined) {
+    if (!arr(c.currencies) || c.currencies.length > 5) e.push('campaign/currencies: a list of at most 5');
+    for (const cu of arr(c.currencies) ? c.currencies : []) {
+      if (!rec(cu) || typeof cu.id !== 'string' || typeof cu.name !== 'string' || !(Number.isInteger(cu.start) && cu.start >= 0)) { e.push('campaign/currencies: each needs {id, name, start}'); continue; }
+      if (curIds.has(cu.id)) e.push(`campaign/currencies: duplicate id "${cu.id}"`);
+      curIds.add(cu.id);
+    }
+  } else curIds.add('main');
   if (!rec(c.starter) || !rec(c.starter.collection) || !rec(c.starter.decks)) return [...e, 'campaign/starter: needs {collection, decks}'];
   for (const [id, n] of Object.entries(c.starter.collection)) {
     card(id, 'campaign/starter/collection');
@@ -101,7 +133,7 @@ function checkCampaign(m: Mod, c: Campaign): string[] {
   const decks = { ...(m.decks ?? {}), ...extra };
   const encs = rec(c.encounters) ? c.encounters : (e.push('campaign/encounters: must be an object'), {});
   const boosters = rec(c.boosters) ? c.boosters : {};
-  if (!arr(c.chapters)) e.push('campaign/chapters: must be a list');
+  if (!arr(c.chapters)) e.push('campaign/chapters: must be a list (empty for a shop-only module)');
   else for (const ch of c.chapters) {
     if (!rec(ch) || typeof ch.id !== 'string' || !arr(ch.nodes)) { e.push('campaign/chapters: each needs {id, name, nodes}'); continue; }
     for (const n of ch.nodes) if (typeof n !== 'string' || !encs[n]) e.push(`campaign/chapters/${ch.id}: unknown encounter "${n}"`);
@@ -110,6 +142,10 @@ function checkCampaign(m: Mod, c: Campaign): string[] {
     if (r === undefined) return;
     if (!rec(r)) { e.push(`${where}: must be an object`); return; }
     if (r.currency !== undefined && !(Number.isInteger(r.currency) && r.currency >= 0)) e.push(`${where}/currency: must be a non-negative integer`);
+    if (r.coins !== undefined) { if (!rec(r.coins)) e.push(`${where}/coins: must map currency ids to amounts`); else for (const [k, v] of Object.entries(r.coins)) {
+      if (!curIds.has(k)) e.push(`${where}/coins: unknown currency "${k}"`);
+      if (!(Number.isInteger(v) && (v as number) >= 0)) e.push(`${where}/coins/${k}: must be a non-negative integer`);
+    } }
     if (r.cards !== undefined) (arr(r.cards) ? r.cards : [null]).forEach((x: unknown) => card(x, where));
     if (r.packs !== undefined) (arr(r.packs) ? r.packs : [null]).forEach((p: unknown) => { if (typeof p !== 'string' || !boosters[p]) e.push(`${where}: unknown booster "${p}"`); });
   };
@@ -145,13 +181,16 @@ function checkCampaign(m: Mod, c: Campaign): string[] {
     if (it.deck !== undefined && (typeof it.deck !== 'string' || !decks[it.deck])) e.push(`campaign/shop/${it.id}: unknown deck "${it.deck}"`);
     if ([it.card, it.booster, it.deck].filter((x) => x !== undefined).length !== 1) e.push(`campaign/shop/${it.id}: needs exactly one of card, booster or deck`);
     if (it.group !== undefined && typeof it.group !== 'string') e.push(`campaign/shop/${it.id}/group: must be a string`);
+    if (it.currency !== undefined && !curIds.has(it.currency)) e.push(`campaign/shop/${it.id}: unknown currency "${it.currency}"`);
+    if (it.firstPrice !== undefined && !(Number.isInteger(it.firstPrice) && it.firstPrice >= 0)) e.push(`campaign/shop/${it.id}/firstPrice: bad price`);
+    if (it.requires !== undefined) (arr(it.requires) ? it.requires : [null]).forEach((r: unknown) => { if (typeof r !== 'string' || !encs[r]) e.push(`campaign/shop/${it.id}: requires unknown encounter "${r}"`); });
   }
   return e;
 }
 
 export function newProfile(m: Mod, c: Campaign, seed: number): Profile {
   return {
-    v: PROFILE_VERSION, module: m.manifest.moduleId, currency: c.currency.start, collection: { ...c.starter.collection }, decks: structuredClone(c.starter.decks),
+    v: PROFILE_VERSION, module: m.manifest.moduleId, currency: currenciesOf(c)[0].start, wallet: Object.fromEntries(currenciesOf(c).map((cu) => [cu.id, cu.start])), collection: { ...c.starter.collection }, decks: structuredClone(c.starter.decks),
     wins: {}, bought: {}, ledger: [], seq: 0, seed: seed >>> 0, active: null,
   };
 }
@@ -186,6 +225,7 @@ export function startEncounter(m: Mod, c: Campaign, p: Profile, id: string, deck
 /** The opponent's agent: heuristic or random, with per-phase biases switched by a game var (boss phases). */
 export function encounterAgent(en: Encounter, seed: number): Agent {
   if (en.ai?.kind === 'random') return randomAgent(seed);
+  if (en.ai?.kind === 'planner') return plannerAgent(seed);
   const base = heuristicAgent(seed, { bias: en.ai?.bias });
   const phased = new Map<string, Agent>();
   const pick = (v: View) => {
@@ -215,12 +255,15 @@ export function openBooster(c: Campaign, id: string, rng: number[]): string[] {
   return out;
 }
 
-function grant(c: Campaign, p: Profile, r: Reward, rng: number[]): { currency: number; cards: string[]; packs: { id: string; cards: string[] }[] } {
+function grant(c: Campaign, p: Profile, r: Reward, rng: number[]): { currency: number; coins: Record<string, number>; cards: string[]; packs: { id: string; cards: string[] }[] } {
   const packs = (r.packs ?? []).map((id) => ({ id, cards: openBooster(c, id, rng) }));
   const cards = [...(r.cards ?? []), ...packs.flatMap((x) => x.cards)];
-  p.currency += r.currency ?? 0;
+  if (r.currency) addCoins(c, p, mainCurrency(c), r.currency);
+  for (const [id, n] of Object.entries(r.coins ?? {})) if (n) addCoins(c, p, id, n);
   add(p.collection, cards);
-  return { currency: r.currency ?? 0, cards: r.cards ?? [], packs };
+  const coins: Record<string, number> = { ...(r.coins ?? {}) };
+  if (r.currency) coins[mainCurrency(c)] = (coins[mainCurrency(c)] ?? 0) + r.currency;
+  return { currency: coins[mainCurrency(c)] ?? 0, coins, cards: r.cards ?? [], packs };
 }
 export type Granted = ReturnType<typeof grant>;
 
@@ -248,7 +291,11 @@ export function itemBlocked(c: Campaign, p: Profile, it: ShopItem): string | nul
   if (it.stock !== undefined && (p.bought[it.id] ?? 0) >= it.stock) return it.price === 0 ? 'Claimed' : 'Sold out';
   const rival = it.group ? c.shop?.find((x) => x.group === it.group && x.id !== it.id && (p.bought[x.id] ?? 0) > 0) : undefined;
   if (rival) return `You chose ${rival.name}`;
-  if (p.currency < it.price) return `Needs ${it.price} ${c.currency.name}`;
+  const lock = (it.requires ?? []).find((r) => !p.wins[r]);
+  if (lock) return `Win ${c.encounters[lock]?.name ?? lock} first`;
+  const cur = it.currency ?? mainCurrency(c);
+  const price = priceOf(it, p);
+  if (balance(c, p, cur) < price) return `Needs ${price} ${currenciesOf(c).find((x) => x.id === cur)?.name ?? cur}`;
   return null;
 }
 
@@ -270,11 +317,13 @@ export function buy(c: Campaign, p: Profile, itemId: string, m?: Mod): { profile
   const it = c.shop?.find((x) => x.id === itemId);
   if (!it) throw new CampaignError([`unknown shop item "${itemId}"`]);
   const why = itemBlocked(c, p, it);
-  if (why) throw new CampaignError([it.stock !== undefined && why === 'Sold out' ? `${it.name} is sold out` : why.startsWith('Needs') ? `not enough ${c.currency.name} (${p.currency}/${it.price})` : `${it.name}: ${why}`]);
+  const cur = it.currency ?? mainCurrency(c);
+  const price = priceOf(it, p);
+  if (why) throw new CampaignError([it.stock !== undefined && why === 'Sold out' ? `${it.name} is sold out` : why.startsWith('Needs') ? `not enough ${currenciesOf(c).find((x) => x.id === cur)?.name ?? cur} (${balance(c, p, cur)}/${price})` : `${it.name}: ${why}`]);
   const np = structuredClone(p);
   np.seq++;
   np.ledger.push(`shop:${it.id}:${np.seq}`);
-  np.currency -= it.price;
+  addCoins(c, np, cur, -price);
   np.bought[it.id] = (np.bought[it.id] ?? 0) + 1;
   let cards: string[];
   if (it.deck) {
@@ -304,6 +353,7 @@ export function migrateProfile(raw: unknown): Profile {
   if (p.v === undefined) p.v = 0;
   if (typeof p.v !== 'number' || p.v > PROFILE_VERSION) throw new CampaignError([`unsupported profile version ${p.v}`]);
   if (p.v < 1) { p.bought ??= {}; p.active ??= null; p.v = 1; }
+  if (p.v < 2) { p.wallet ??= { main: p.currency }; p.v = 2; } // v2: several currencies
   const errs: string[] = [];
   if (typeof p.module !== 'string') errs.push('module missing');
   if (!(Number.isInteger(p.currency) && p.currency >= 0)) errs.push('currency must be a non-negative integer');

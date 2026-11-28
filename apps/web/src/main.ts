@@ -620,6 +620,11 @@ export const actions = {
     ui.dialog = campaign()!.intro?.length ? { lines: campaign()!.intro!, i: 0 } : null;
     actions.go('campaign');
   },
+  /** A shop-only game: the shop starts the player's collection (no campaign to begin). */
+  openShop() {
+    if (!ui.profile) { ui.profile = newProfile(ui.mod!, campaign()!, Math.floor(Math.random() * 2 ** 31)); saveProfile(); }
+    actions.go('shop');
+  },
   resetCampaign() {
     if (!window.confirm('Erase all campaign progress for this game?')) return;
     store.del(PROFILE(ui.mod!.manifest.moduleId));

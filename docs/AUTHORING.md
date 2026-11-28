@@ -41,6 +41,15 @@ Rules of thumb:
 
 ## 4. Campaigns
 - Add `campaign/campaign.json`: currency, starter collection and decks, chapters of encounters, boosters and a shop.
+  - `currencies: [{id, name, icon?, start}]` (up to 5; the first is the main one and `currency` mirrors it).
+  - Rewards take `coins: {currencyId: n}`.
+  - Shop items take:
+    - `currency` (what the price is in);
+    - `requires` (encounters to win first);
+    - `firstPrice` (a promo first price);
+    - `badge`.
+  - `encounters` may be empty for a shop-only module; the menu then shows only the Shop.
+  - Encounter AI `kind` can be `random`, `heuristic` or `planner`.
 - An encounter can carry a `scenario`: extra setup, game vars and `once` triggers. Triggers can `emit` dialogue, `create` tokens, change a boss phase var, or end the game.
 - Rewards are granted exactly once per attempt.
 - See `docs/DSL.md` (Scenarios, Campaigns) and the Spark Duel campaign.

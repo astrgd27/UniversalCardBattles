@@ -978,3 +978,12 @@ svg.sel-arrows { color: var(--accent2); }
 .mk-bal-tag { font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 6px; }
 .mk-balance li.strong .mk-bal-tag { background: color-mix(in srgb, var(--bad, #e5484d) 25%, transparent); }
 .mk-balance li.weak .mk-bal-tag { background: color-mix(in srgb, var(--accent) 25%, transparent); }
+/* multi-currency wallet, shop badges, AI level */
+.money.wallet { display: inline-flex; gap: 10px; flex-wrap: wrap; }
+.money.wallet .coin { font-weight: 700; white-space: nowrap; }
+.item-badge { align-self: flex-start; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--accent); color: #fff; }
+.promo-note { font-size: 11px; opacity: .8; }
+.chip.ai-level.random { opacity: .8; }
+.chip.ai-level.planner { border-color: var(--bad, #e5484d); }
+.mk-battle > summary { cursor: pointer; font-weight: 600; }
+.mk-enable { font-weight: 700; }

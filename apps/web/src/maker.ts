@@ -9,7 +9,7 @@ import { type Blueprint, type CardBP, type Problem, BLUEPRINTS, RECIPES, applyRe
 import { MODULES, SOURCES } from './modules.ts';
 import { store } from './storage.ts';
 
-export type Station = 'identity' | 'shelf' | 'frames' | 'types' | 'board' | 'turn' | 'rules' | 'keywords' | 'cards' | 'decks' | 'test' | 'publish' | 'lab';
+export type Station = 'identity' | 'shelf' | 'frames' | 'types' | 'board' | 'turn' | 'rules' | 'keywords' | 'cards' | 'decks' | 'shop' | 'campaign' | 'test' | 'publish' | 'lab';
 export interface MakerUI {
   project: string | null;
   station: Station;
@@ -47,6 +47,8 @@ export const STATIONS: { id: Station; name: string; icon: string; quest: string;
   { id: 'keywords', name: 'Keywords & Counters', icon: '✧', quest: 'keyword', xp: 25, goal: 'Invent a keyword and give it a rule or abilities.' },
   { id: 'cards', name: 'Cards', icon: '🂠', quest: 'ability', xp: 50, goal: 'Create a card and give it an ability.' },
   { id: 'decks', name: 'Decks', icon: '▤', quest: 'deck', xp: 25, goal: 'Build or tune a deck.' },
+  { id: 'shop', name: 'Shop (optional)', icon: '🛒', quest: 'shop', xp: 30, goal: 'Optional: sell booster packs and decks for your currencies.' },
+  { id: 'campaign', name: 'Campaign (optional)', icon: '🗺', quest: 'campaign', xp: 40, goal: 'Optional: line up opponents to beat for rewards.' },
   { id: 'test', name: 'Playtest', icon: '▶', quest: 'win', xp: 100, goal: 'Win a playtest against the AI.' },
   { id: 'publish', name: 'Publish', icon: '★', quest: 'publish', xp: 100, goal: 'Publish your game to the library.' },
   { id: 'lab', name: 'Script Lab', icon: '⚙', quest: 'script', xp: 50, goal: 'Advanced: patch the rules with your own script.' },
@@ -437,7 +439,7 @@ export function makerActions(ui: any, redraw: () => void, A: any) {
       if (!mod) { ui.note = { title: 'Fix the bugs first', text: 'Only a game that builds can be exported.' }; return redraw(); }
       const def = compileBlueprint(p.bp) as any;
       const enc = (o: unknown) => new TextEncoder().encode(`${JSON.stringify(o, null, 1)}\n`);
-      const files = new Map<string, Uint8Array>([['manifest.json', enc(def.manifest)], ['rules.json', enc(def.rules)], ['cards.json', enc(def.cards)], ['decks.json', enc(def.decks)], ['ai/ai.json', enc(def.ai)]]);
+      const files = new Map<string, Uint8Array>([['manifest.json', enc(def.manifest)], ['rules.json', enc(def.rules)], ['cards.json', enc(def.cards)], ['decks.json', enc(def.decks)], ['ai/ai.json', enc(def.ai)], ...(def.campaign ? [['campaign/campaign.json', enc(def.campaign)] as [string, Uint8Array]] : [])]);
       download(`${p.bp.id}.zip`, (await packFiles(files)) as BlobPart, 'application/zip');
       award('export', 25, 'Quest complete: export a module package.');
       redraw();

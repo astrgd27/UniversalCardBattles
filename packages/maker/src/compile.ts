@@ -1,6 +1,7 @@
 // Compiles a Game Maker blueprint into an engine module (manifest, rules, cards, decks, AI hints).
 // The blueprint picks systems (resources, combat, winning, turn) and the compiler writes the DSL for each one.
 import type { ModuleDef } from '#engine';
+import { compileEconomy } from './economy.ts';
 import { ENGINE_API } from '#engine';
 import type { Ability, Amount, Blueprint, CardBP, Cond, Effect, Filter, Meter, Role, TargetKind, TargetPick } from './blueprint.ts';
 import { normalize } from './blueprint.ts';
@@ -1947,7 +1948,8 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
   };
   const ai = { eval: aiEval(x), samples: 1, horizon: 'pass' };
   stubZones(rules, compiledCards);
-  return { manifest, rules, cards: compiledCards, decks, ai: bp.advanced?.ai ? { ...ai, ...bp.advanced.ai } : ai } as unknown as ModuleDef;
+  const campaign = compileEconomy(bp, decks);
+  return { manifest, rules, cards: compiledCards, decks, ai: bp.advanced?.ai ? { ...ai, ...bp.advanced.ai } : ai, ...(campaign ? { campaign } : {}) } as unknown as ModuleDef;
 }
 
 function aiEval(x: Ctx): X {

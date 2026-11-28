@@ -520,6 +520,24 @@ A survey of about 30 published TCG rulebooks (`docs/COVERAGE.md`, second table) 
   - Across five games it won 56 of 100: clearly ahead on Crystal Circuit and Generation Wars, about even on Storyweavers, Looboo and Arcade Showdown.
   - It's available as "Strong AI" in seats, in the Workshop playtest and in the AI lab. The evaluation function is now the limit.
 
+## Done: Workshop Shop and Campaign (optional stations)
+- **Shop:** booster packs (rarity/type/color slots) and decks for sale, in up to 5 currencies, with:
+  - free choose-one starters;
+  - promo first prices;
+  - buy-once, buy-N or buy-forever items;
+  - badges;
+  - locks behind campaign wins.
+- **Campaign:** tiered battles against Workshop decks at three AI levels (Easy, Normal, Hard = planner), with per-currency rewards (first, repeat, loss), packs, gates, and before / win / lose dialogue.
+- Both are optional and independent: shop-only games have no campaign on the menu, and the shop starts the collection.
+- **Campaign runtime** (`#campaign`):
+  - `currencies` and `balance`;
+  - reward `coins`;
+  - shop items get `currency`, `requires`, `firstPrice` and `badge`;
+  - the `planner` AI kind;
+  - profiles v2 (`wallet`), migrated from v1.
+- **Game screens:** a wallet with every currency, prices in their currency, promo prices, locks and the AI level before a battle.
+- Tests: `economy.test.ts`; the e2e run fills the example, publishes, claims a starter, buys the free first pack and checks a locked deck.
+
 ## Possible next steps
 - NIGHTFALL: the remaining art; human playtests to confirm the AI-tuned numbers.
 - Shadow Earth: card art prompts, a tutorial, human playtests of the 2.0 numbers.

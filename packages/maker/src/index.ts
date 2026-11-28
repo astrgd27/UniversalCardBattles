@@ -1,6 +1,8 @@
 // Game Maker: friendly blueprints compiled into engine modules, with plain-language checks ("bugs" and "tips").
 import type { Mod } from '#engine';
 import { compileModule, deckErrors, validateModule } from '#engine';
+import { validateCampaign } from '#campaign';
+import { campaignOn, shopOn } from './economy.ts';
 import type { Blueprint, Cond } from './blueprint.ts';
 import { UNIT_ROLES, compileBlueprint, context } from './compile.ts';
 
@@ -54,6 +56,31 @@ export function lint(bp: Blueprint): Problem[] {
     if (a.when === 'event' && !a.event) bug(`${k.name}: a "whenever an event happens" ability needs an event.`, `card:${k.id}`);
     if ((a.if?.k === 'all' || a.if?.k === 'any' || a.if?.k === 'not') && !a.if.of?.length) tip(`${k.name}: a combined condition has nothing in it.`, `card:${k.id}`);
   }
+  // shop & campaign
+  const eco = bp.economy;
+  if (eco && (shopOn(bp) || campaignOn(bp))) {
+    const deckIds = new Set(bp.decks.map((d) => d.id));
+    const curIds = new Set(eco.currencies.map((c) => c.id));
+    if (eco.currencies.length > 5) bug('A game can have at most 5 currencies.', 'shop');
+    if (curIds.size !== eco.currencies.length) bug('Two currencies share an id.', 'shop');
+    const freeDeck = shopOn(bp) && eco.shop!.items.some((i) => i.kind === 'deck' && i.price === 0 && deckIds.has(i.ref));
+    if (!eco.starterDecks.some((d) => deckIds.has(d)) && !freeDeck) bug('Players need a deck to start: give them a starter deck, or put a free deck (or a free "choose one" starter) in the shop.', shopOn(bp) ? 'shop' : 'campaign');
+    if (shopOn(bp)) for (const i of eco.shop!.items) {
+      if (i.kind === 'deck' && !deckIds.has(i.ref)) bug(`Shop item "${i.name}" sells a deck that doesn't exist.`, 'shop');
+      if (i.kind === 'booster' && !eco.shop!.boosters.some((b) => b.id === i.ref)) bug(`Shop item "${i.name}" sells a booster that doesn't exist.`, 'shop');
+      if (i.currency && !curIds.has(i.currency)) bug(`Shop item "${i.name}" is priced in a currency that doesn't exist.`, 'shop');
+      if (i.requires?.length && !campaignOn(bp)) tip(`Shop item "${i.name}" is locked behind campaign wins, but the campaign is off, so it is always for sale.`, 'shop');
+    }
+    if (campaignOn(bp)) {
+      const encIds = new Set(eco.campaign!.encounters.map((e) => e.id));
+      if (!eco.campaign!.encounters.length) tip('The campaign has no battles yet.', 'campaign');
+      for (const e of eco.campaign!.encounters) {
+        if (!deckIds.has(e.deck)) bug(`Campaign battle "${e.name}" uses a deck that doesn't exist.`, 'campaign');
+        for (const r of e.requires ?? []) if (!encIds.has(r) || r === e.id) bug(`Campaign battle "${e.name}" is gated behind a battle that doesn't exist.`, 'campaign');
+        for (const k of Object.keys({ ...e.first, ...e.repeat, ...e.loss })) if (!curIds.has(k)) bug(`Campaign battle "${e.name}" rewards a currency that doesn't exist.`, 'campaign');
+      }
+    }
+  }
   const ids = new Set<string>();
   for (const t of bp.types) { if (ids.has(t.id)) bug(`Two card types share the id "${t.id}".`, 'types'); ids.add(t.id); }
   const cardIds = new Set<string>();
@@ -93,6 +120,7 @@ export function build(bp: Blueprint): { mod: Mod | null; problems: Problem[] } {
   const errs = validateModule(def);
   if (errs.length) return { mod: null, problems: [...problems, ...errs.slice(0, 12).map((t) => ({ level: 'bug' as const, text: `Engine check: ${t}`, where: 'advanced' }))] };
   const mod = compileModule(def);
+  if ((def as any).campaign) for (const e of validateCampaign(mod, (def as any).campaign).slice(0, 12)) problems.push({ level: 'bug', text: `Shop/campaign: ${e}`, where: campaignOn(bp) ? 'campaign' : 'shop' });
   for (const d of bp.decks) for (const e of deckErrors(mod, mod.decks![d.id])) problems.push({ level: 'bug', text: `Deck "${d.name}": ${e}`, where: `deck:${d.id}` });
   return { mod: problems.some((p) => p.level === 'bug') ? null : mod, problems };
 }
@@ -106,3 +134,4 @@ export { answerFeatures } from './wizard.ts';
 export { USAGE } from './usage.ts';
 export { balanceReport, cardValue, effectValue, abilityValue, setCardCost } from './balance.ts';
 export type { BalanceNote, PlayStat } from './balance.ts';
+export { compileEconomy, starterEconomy, slotPool, shopOn, campaignOn } from './economy.ts';

@@ -2,7 +2,7 @@
 // previews, the ability builder, playtests, the AI lab, publishing and the Script Lab). Everything edits a blueprint.
 import type { Mod } from '#engine';
 import {
-  type Ability, type Blueprint, type CardBP, type Cond, type Effect, type TargetPick, pickText, USAGE, balanceReport, setCardCost, type EffectKind, type Phase, type Role, type TargetKind, type When,
+  type Ability, type Blueprint, type CardBP, type Cond, type Effect, type TargetPick, pickText, USAGE, balanceReport, setCardCost, shopOn, campaignOn, slotPool, starterEconomy, type EffectKind, type Phase, type Role, type TargetKind, type When,
   KEYWORD_RULES, RECIPES, ROLES, setRecipeOpt, featuresOf, fitIssues, COND_OP, EVENT_TEXT, UNIT_ROLES, cardText, costLabel, effectText, rulebook, slug,
   type RecipeOpt, type LibraryScript, STARTER_SCRIPTS, type WizAnswers, type WizStep, WIZARD, optionsFor, wizardBuild,
 } from '#maker';
@@ -187,6 +187,7 @@ function workshop(ui: any, A: any, mk: MakerUI, bp: Blueprint) {
   const views: Record<Station, () => Child> = {
     identity: () => identity(bp, A), shelf: () => shelf(bp, A, mk), frames: () => frames(bp, A, mk, mod), types: () => types(bp, A), board: () => board(bp, A, mod), turn: () => turn(bp, A),
     rules: () => rules(bp, A), keywords: () => keywords(bp, A), cards: () => cardsView(bp, A, mk, mod), decks: () => decksView(bp, A, mk, mod, probs), test: () => testView(bp, A, mk, bugs.length),
+    shop: () => shopView(bp, A), campaign: () => campaignView(bp, A),
     publish: () => publishView(bp, A, bugs.length), lab: () => labView(bp, A, mk, mod),
   };
   const st = STATIONS.find((s) => s.id === mk.station)!;
@@ -211,6 +212,8 @@ function workshop(ui: any, A: any, mk: MakerUI, bp: Blueprint) {
 }
 
 const TIPS: Record<Station, string> = {
+  shop: 'Optional. Turn it on and your game gets a Shop: players spend up to five currencies on booster packs and decks. Use "choose one" groups for free starter picks.',
+  campaign: 'Optional. Turn it on and your game gets a Campaign: opponents with your decks and an AI level, rewards in your currencies, tiers, locks, and dialogue before and after each battle.',
   identity: 'Every great game starts with a name. Pick colors that fit its mood; your emblem shows on the library tile.',
   shelf: 'Mix and match! Each recipe drops a whole mechanic into your game: its stats, card types, keywords, rules and a few example cards. Stack as many as you like, then tune them.',
   frames: 'Click a frame family, then place each stat in a corner. The preview is a real card from your game.',
@@ -231,7 +234,7 @@ function guide(st: Station, probs: ReturnType<typeof problems>, A: any, mk: Make
   const go = (w?: string) => {
     if (!w) return;
     if (w.startsWith('card:')) { mk.card = w.slice(5); A.mkStation('cards'); } else if (w.startsWith('deck:')) { mk.deck = w.slice(5); A.mkStation('decks'); }
-    else A.mkStation(({ identity: 'identity', types: 'types', rules: 'rules', turn: 'turn', decks: 'decks', look: 'identity', advanced: 'lab' } as Record<string, Station>)[w] ?? 'rules');
+    else A.mkStation(({ identity: 'identity', types: 'types', rules: 'rules', turn: 'turn', decks: 'decks', look: 'identity', advanced: 'lab', shop: 'shop', campaign: 'campaign', keywords: 'keywords' } as Record<string, Station>)[w] ?? 'rules');
   };
   return [
     h('div', { class: 'mk-guide' }, h('span', { class: 'mk-bot', 'aria-hidden': 'true' }, '🤖'), h('div', {}, h('strong', {}, 'Gizmo'), h('p', {}, TIPS[st]),
@@ -985,6 +988,7 @@ function cardEditor(bp: Blueprint, A: any, mk: MakerUI, ci: number, c: CardBP, m
         bp.combat.mode === 'duel' && UNIT_ROLES.includes(role) && bp.colors.length > 0 && sel(bp, A, [...cp, 'resist'], [['', 'no resistance'], ...bp.colors.map((k) => [k.id, k.name] as [string, string])], { label: 'Resists', map: (v) => v || undefined }),
         role === 'resource' && row(num(bp, A, [...cp, 'provides'], { label: 'Counts as N energy', min: 1, max: 4 }), chk(bp, A, [...cp, 'rainbow'], 'Counts as every color'),
           bp.colors.length > 1 && sel(bp, A, [...cp, 'color2'], [['', 'single color'], ...bp.colors.map((k) => [k.id, k.name] as [string, string])], { label: 'Also makes (dual)', map: (v) => v || undefined })),
+        shopOn(bp) && !['token', 'leader'].includes(role) && row(sel(bp, A, [...cp, 'rarity'], RARITIES, { label: 'Rarity (booster packs)' })),
         ['ramp', 'cards', 'anycard', 'deck'].includes(bp.resource.mode) && row(!['resource', 'token'].includes(role) && num(bp, A, [...cp, 'kicker'], { label: 'Kicker (extra cost, 0 = none)', min: 0, max: 10 }),
           !['resource', 'token'].includes(role) && chk(bp, A, [...cp, 'xCost'], 'X cost (choose X and pay X more)'),
           ['unit', 'evolution'].includes(role) && num(bp, A, [...cp, 'shift'], { label: 'Shift cost (onto a same-named unit; 0 = none)', min: 0, max: 15 }),
@@ -1104,6 +1108,126 @@ function publishView(bp: Blueprint, A: any, bugs: number) {
       h('button', { onclick: A.mkRulebook }, '⬇ Download rulebook (.md)')),
     panel('Share', hint('A module package (.zip) can be opened by anyone with "Load a game" in the library. The blueprint (.maker.json) opens in the Game Maker so others can remix it.'),
       row(h('button', { onclick: A.mkExportZip, disabled: bugs > 0 }, '⬇ Export module (.zip)'), h('button', { onclick: A.mkExportJson }, '⬇ Export blueprint (.maker.json)'))),
+  ];
+}
+
+// ---------------------------------------------------------------- shop & campaign (optional)
+const emptyEconomy = (): NonNullable<Blueprint['economy']> => ({ currencies: [{ id: 'gold', name: 'Gold', icon: '◆', start: 100 }], starterDecks: [] });
+const RARITIES: [string, string][] = [['common', 'Common'], ['uncommon', 'Uncommon'], ['rare', 'Rare'], ['mythic', 'Mythic']];
+const AI_LEVELS: [string, string][] = [['random', 'Easy (plays at random)'], ['heuristic', 'Normal (one move ahead)'], ['planner', 'Hard (plays out each turn)']];
+const nextId = (base: string, have: string[]) => { let id = base; for (let i = 2; have.includes(id); i++) id = `${base}${i}`; return id; };
+/** Speaker/line dialogue lists (before a battle, after a win, after a loss, the campaign intro). */
+function linesEditor(bp: Blueprint, A: any, path: Path, label: string, speaker: string) {
+  const list = (get(bp, path) ?? []) as { speaker: string; text: string }[];
+  return h('div', { class: 'mk-sub mk-lines' }, h('strong', {}, label),
+    list.map((_, i) => row(txt(bp, A, [...path, i, 'speaker'], { label: 'Who' }), txt(bp, A, [...path, i, 'text'], { label: 'Says', wide: true }),
+      h('button', { class: 'x', onclick: () => A.mkEdit((b: Blueprint) => { get(b, path).splice(i, 1); }), 'aria-label': 'Remove line' }, '🗑'))),
+    h('button', { class: 'chip', onclick: () => A.mkEdit((b: Blueprint) => { const parent = get(b, path.slice(0, -1)); (parent[path[path.length - 1]] ??= []).push({ speaker, text: '…' }); }) }, '+ line'));
+}
+/** Currencies (up to 5) and the decks every player starts with: shared by the shop and the campaign. */
+function economyBasics(bp: Blueprint, A: any) {
+  const eco = bp.economy!;
+  return [
+    panel('Currencies', hint('Up to five. The first one is the main currency. Battles pay rewards in any of them, and each shop item is priced in one.'),
+      eco.currencies.map((c, i) => row(txt(bp, A, ['economy', 'currencies', i, 'name'], { label: 'Name' }), txt(bp, A, ['economy', 'currencies', i, 'icon'], { label: 'Icon' }),
+        num(bp, A, ['economy', 'currencies', i, 'start'], { label: 'Players start with', min: 0, max: 100000 }), h('span', { class: 'muted' }, i === 0 ? 'main' : `id: ${c.id}`),
+        eco.currencies.length > 1 && h('button', { class: 'x', onclick: () => A.mkEdit((b: Blueprint) => { b.economy!.currencies.splice(i, 1); }), 'aria-label': 'Remove currency' }, '🗑'))),
+      eco.currencies.length < 5 && h('button', { 'data-act': 'mk-add-currency', onclick: () => A.mkEdit((b: Blueprint) => { const ids = b.economy!.currencies.map((c) => c.id); b.economy!.currencies.push({ id: nextId('coin', ids), name: 'New Currency', icon: '●', start: 0 }); }) }, '+ Currency')),
+    panel('Every player starts with', hint('Decks given to a new player for free. Leave this empty to make them pick a free starter in the shop instead.'),
+      bp.decks.map((d) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: eco.starterDecks.includes(d.id), onchange: (e: Event) => A.mkEdit((b: Blueprint) => {
+        const l = b.economy!.starterDecks; const on = (e.target as HTMLInputElement).checked; b.economy!.starterDecks = on ? [...new Set([...l, d.id])] : l.filter((x) => x !== d.id); }) }), d.name))),
+  ];
+}
+function enableBox(bp: Blueprint, A: any, part: 'shop' | 'campaign', text: string) {
+  const on = part === 'shop' ? shopOn(bp) : campaignOn(bp);
+  return panel(part === 'shop' ? 'Shop' : 'Campaign', hint(text),
+    row(h('label', { class: 'chk mk-enable' }, h('input', { type: 'checkbox', checked: on, 'data-act': `mk-enable-${part}`, onchange: (e: Event) => A.mkEdit((b: Blueprint) => {
+        b.economy ??= emptyEconomy();
+        const want = (e.target as HTMLInputElement).checked;
+        if (part === 'shop') b.economy.shop = { boosters: [], items: [], ...b.economy.shop, enabled: want };
+        else b.economy.campaign = { name: `${b.name} Campaign`, tiers: ['Chapter 1'], encounters: [], ...b.economy.campaign, enabled: want };
+      }, part) }), `Turn on the ${part}`),
+      h('button', { class: 'ghost', 'data-act': 'mk-example-economy', onclick: () => { if (!bp.economy || window.confirm('Replace your shop and campaign with a ready-made example (2 currencies, starters, packs, 3 battles)?')) A.mkEdit((b: Blueprint) => { b.economy = starterEconomy(b); }, part); } }, '✨ Fill in an example shop + campaign')),
+    !on && h('p', { class: 'muted' }, `Optional: a game works without a ${part}.`));
+}
+
+function shopView(bp: Blueprint, A: any) {
+  const head = enableBox(bp, A, 'shop', 'Adds a Shop to your game\'s menu: players spend currencies on booster packs and decks. Promos, free starter picks, buy-once or buy-forever items, and items unlocked by campaign wins.');
+  if (!shopOn(bp)) return [head];
+  const eco = bp.economy!, shop = eco.shop!;
+  const curOpts = eco.currencies.map((c) => [c.id, `${c.icon ?? ''} ${c.name}`] as [string, string]);
+  const encs = campaignOn(bp) ? eco.campaign!.encounters : [];
+  const typeOpts: [string, string][] = [['', 'any type'], ...bp.types.map((t) => [t.id, t.name] as [string, string])];
+  const colorOpts: [string, string][] = [['', 'any color'], ...bp.colors.map((c) => [c.id, c.name] as [string, string])];
+  const rarityCount = Object.fromEntries(RARITIES.map(([r]) => [r, bp.cards.filter((c) => (c.rarity ?? 'common') === r).length]));
+  return [head, ...economyBasics(bp, A),
+    panel('Booster packs', hint(`Each slot gives that many random cards from a pool. Your cards: ${RARITIES.map(([r, n]) => `${rarityCount[r]} ${n.toLowerCase()}`).join(', ')} (set rarity on each card, or use the button).`),
+      row(h('button', { class: 'ghost', onclick: () => A.mkEdit((b: Blueprint) => { const cs = b.cards.filter((c) => !['token', 'leader', 'resource'].includes(b.types.find((t) => t.id === c.type)?.role ?? ''));
+        const costs = cs.map((c) => (typeof c.cost === 'number' ? c.cost : Object.values(c.cost ?? {}).reduce((x, y) => x + y, 0))).sort((x, y) => x - y);
+        const q = (f: number) => costs[Math.floor((costs.length - 1) * f)] ?? 0;
+        for (const c of cs) { const n = typeof c.cost === 'number' ? c.cost : Object.values(c.cost ?? {}).reduce((x, y) => x + y, 0); c.rarity = n >= q(0.95) && n > q(0.75) ? 'mythic' : n >= q(0.75) ? 'rare' : n >= q(0.45) ? 'uncommon' : 'common'; } }) }, 'Set rarities from cost')),
+      shop.boosters.map((b, bi) => { const bpth: Path = ['economy', 'shop', 'boosters', bi]; return h('div', { class: 'mk-sub' },
+        row(txt(bp, A, [...bpth, 'name'], { label: 'Pack name' }), h('span', { class: 'muted' }, `id: ${b.id} · ${b.slots.reduce((x, s) => x + s.count, 0)} cards`),
+          h('button', { class: 'x', onclick: () => A.mkEdit((x: Blueprint) => { x.economy!.shop!.boosters.splice(bi, 1); }), 'aria-label': 'Remove pack' }, '🗑')),
+        b.slots.map((sl, si) => row(num(bp, A, [...bpth, 'slots', si, 'count'], { label: 'Cards', min: 0, max: 30 }),
+          sel(bp, A, [...bpth, 'slots', si, 'rarity'], [['', 'any rarity'], ...RARITIES], { label: 'Rarity', map: (v) => v || undefined }),
+          sel(bp, A, [...bpth, 'slots', si, 'type'], typeOpts, { label: 'Type', map: (v) => v || undefined }),
+          bp.colors.length > 0 && sel(bp, A, [...bpth, 'slots', si, 'color'], colorOpts, { label: 'Color', map: (v) => v || undefined }),
+          h('span', { class: 'muted' }, `${slotPool(bp, sl).length} cards can appear`),
+          h('button', { class: 'x', onclick: () => A.mkEdit((x: Blueprint) => { x.economy!.shop!.boosters[bi].slots.splice(si, 1); }), 'aria-label': 'Remove slot' }, '🗑'))),
+        h('button', { class: 'chip', onclick: () => A.mkEdit((x: Blueprint) => { x.economy!.shop!.boosters[bi].slots.push({ count: 1, rarity: 'rare' }); }) }, '+ slot')); }),
+      h('button', { 'data-act': 'mk-add-booster', onclick: () => A.mkEdit((x: Blueprint) => { const s = x.economy!.shop!; s.boosters.push({ id: nextId('pack', s.boosters.map((q) => q.id)), name: `${x.name} Booster`, slots: [{ count: 5, rarity: 'common' }, { count: 2, rarity: 'uncommon' }, { count: 1, rarity: 'rare' }] }); }) }, '+ Booster pack')),
+    panel('For sale', hint('Each item sells a booster pack or a deck. "Choose one" groups make a pick-one set (give them price 0 for free starters). A promo first price makes the first purchase cheaper (or free). Locks keep an item off sale until campaign battles are won.'),
+      shop.items.map((it, ii) => { const ip: Path = ['economy', 'shop', 'items', ii]; return h('div', { class: 'mk-sub mk-shop-item', 'data-item': it.id },
+        row(txt(bp, A, [...ip, 'name'], { label: 'Name' }), sel(bp, A, [...ip, 'kind'], [['booster', 'Booster pack'], ['deck', 'Deck']], { label: 'Sells' }),
+          sel(bp, A, [...ip, 'ref'], it.kind === 'deck' ? bp.decks.map((d) => [d.id, d.name] as [string, string]) : shop.boosters.map((b) => [b.id, b.name] as [string, string]), { label: it.kind === 'deck' ? 'Deck' : 'Pack' }),
+          num(bp, A, [...ip, 'price'], { label: 'Price', min: 0, max: 100000 }), sel(bp, A, [...ip, 'currency'], curOpts, { label: 'Paid in', map: (v) => (v === eco.currencies[0].id ? undefined : v) }),
+          h('button', { class: 'x', onclick: () => A.mkEdit((x: Blueprint) => { x.economy!.shop!.items.splice(ii, 1); }), 'aria-label': 'Remove item' }, '🗑')),
+        row(h('label', { class: 'fld' }, h('span', {}, 'Can be bought'), h('select', { 'aria-label': 'Can be bought', onchange: (e: Event) => { const v = (e.target as HTMLSelectElement).value; A.mkSet([...ip, 'repeat'], v === 'once' || v === 'forever' ? v : Number(v)); } },
+            [['once', 'once'], ['forever', 'any number of times'], ['3', '3 times'], ['5', '5 times'], ['10', '10 times']].map(([v, l]) => h('option', { value: v, selected: String(it.repeat) === v }, l)))),
+          txt(bp, A, [...ip, 'group'], { label: '"Choose one" group', ph: 'e.g. starter' }), num(bp, A, [...ip, 'firstPrice'], { label: 'Promo: first price', min: 0, max: 100000, dflt: it.price }),
+          txt(bp, A, [...ip, 'badge'], { label: 'Badge', ph: 'New, Promo…' }), txt(bp, A, [...ip, 'text'], { label: 'Description', wide: true })),
+        encs.length > 0 && h('div', { class: 'mk-row' }, h('span', { class: 'muted' }, 'Locked until you beat:'), encs.map((en) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!it.requires?.includes(en.id),
+          onchange: (e: Event) => A.mkEdit((x: Blueprint) => { const i2 = x.economy!.shop!.items[ii]; const on = (e.target as HTMLInputElement).checked; i2.requires = on ? [...new Set([...(i2.requires ?? []), en.id])] : (i2.requires ?? []).filter((r) => r !== en.id); if (!i2.requires.length) delete i2.requires; }) }), en.name)))); }),
+      row(h('button', { 'data-act': 'mk-add-item', onclick: () => A.mkEdit((x: Blueprint) => { const s = x.economy!.shop!; s.items.push({ id: nextId('item', s.items.map((q) => q.id)), name: s.boosters[0]?.name ?? 'Deck', kind: s.boosters.length ? 'booster' : 'deck', ref: s.boosters[0]?.id ?? x.decks[0]?.id ?? '', price: 50, repeat: s.boosters.length ? 'forever' : 'once' }); }, 'shop') }, '+ Item'),
+        h('button', { class: 'ghost', 'data-act': 'mk-add-starters', onclick: () => A.mkEdit((x: Blueprint) => { const s = x.economy!.shop!; for (const d of x.decks.slice(0, 4)) if (!s.items.some((q) => q.kind === 'deck' && q.ref === d.id && q.group === 'starter'))
+          s.items.push({ id: nextId('starter', s.items.map((q) => q.id)), name: d.name, kind: 'deck', ref: d.id, price: 0, repeat: 'once', group: 'starter', badge: 'Starter', text: 'Free: choose one to begin.' }); }, 'shop') }, '+ Free starter pick (choose one of your decks)'))),
+  ];
+}
+
+function campaignView(bp: Blueprint, A: any) {
+  const head = enableBox(bp, A, 'campaign', 'Adds a Campaign to your game\'s menu: battles against opponents you set up, each with its own deck and AI level, rewards in your currencies, tiers, locks and dialogue before and after.');
+  if (!campaignOn(bp)) return [head];
+  const eco = bp.economy!, camp = eco.campaign!;
+  const deckOpts = bp.decks.map((d) => [d.id, d.name] as [string, string]);
+  const tierOpts = camp.tiers.map((t, i) => [String(i + 1), `${i + 1}. ${t}`] as [string, string]);
+  const packs = eco.shop?.boosters ?? [];
+  const coinRow = (path: Path, label: string) => h('div', { class: 'mk-row' }, h('span', { class: 'muted' }, label), eco.currencies.map((c) => num(bp, A, [...path, c.id], { label: `${c.icon ?? ''} ${c.name}`, min: 0, max: 100000 })));
+  return [head,
+    panel('Story', row(txt(bp, A, ['economy', 'campaign', 'name'], { label: 'Campaign name', wide: true })), linesEditor(bp, A, ['economy', 'campaign', 'intro'], 'Opening dialogue', 'Narrator')),
+    ...(shopOn(bp) ? [] : economyBasics(bp, A)),
+    panel('Tiers', hint('Battles are grouped into tiers, shown in order on the campaign map. Lock a battle behind others to make players climb.'),
+      camp.tiers.map((_, i) => row(txt(bp, A, ['economy', 'campaign', 'tiers', i], { label: `Tier ${i + 1}` }),
+        camp.tiers.length > 1 && h('button', { class: 'x', onclick: () => A.mkEdit((b: Blueprint) => { const c2 = b.economy!.campaign!; c2.tiers.splice(i, 1); for (const e of c2.encounters) if (e.tier > i + 1) e.tier--; else if (e.tier === i + 1) e.tier = Math.max(1, i); }), 'aria-label': 'Remove tier' }, '🗑'))),
+      h('button', { class: 'chip', onclick: () => A.mkEdit((b: Blueprint) => { b.economy!.campaign!.tiers.push(`Chapter ${b.economy!.campaign!.tiers.length + 1}`); }) }, '+ tier')),
+    panel('Battles', hint('Opponents play a deck you designed in Decks. Rewards are paid in each currency: a first win, each replay win, and even a loss.'),
+      camp.encounters.map((en, ei) => { const ep: Path = ['economy', 'campaign', 'encounters', ei]; return h('details', { class: 'mk-sub mk-battle', open: ei === camp.encounters.length - 1, 'data-battle': en.id },
+        h('summary', {}, `${en.portrait ?? '⚔'} ${en.name} — vs ${en.opponent} (tier ${en.tier}${en.requires?.length ? `, after ${en.requires.length} win${en.requires.length > 1 ? 's' : ''}` : ''})`),
+        row(txt(bp, A, [...ep, 'name'], { label: 'Battle name' }), txt(bp, A, [...ep, 'opponent'], { label: 'Opponent' }), txt(bp, A, [...ep, 'portrait'], { label: 'Portrait (emoji)' }),
+          h('button', { class: 'x', onclick: () => A.mkEdit((b: Blueprint) => { const c2 = b.economy!.campaign!; const [gone] = c2.encounters.splice(ei, 1); for (const e of c2.encounters) e.requires = e.requires?.filter((r) => r !== gone.id); }), 'aria-label': 'Remove battle' }, '🗑')),
+        row(sel(bp, A, [...ep, 'deck'], deckOpts, { label: 'Their deck' }), sel(bp, A, [...ep, 'ai'], AI_LEVELS, { label: 'AI' }),
+          sel(bp, A, [...ep, 'tier'], tierOpts, { label: 'Tier', map: Number }), chk(bp, A, [...ep, 'repeatable'], 'Can be replayed')),
+        camp.encounters.length > 1 && h('div', { class: 'mk-row' }, h('span', { class: 'muted' }, 'Unlocked after beating:'), camp.encounters.filter((o) => o.id !== en.id).map((o) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!en.requires?.includes(o.id),
+          onchange: (e: Event) => A.mkEdit((b: Blueprint) => { const t = b.economy!.campaign!.encounters[ei]; const on = (e.target as HTMLInputElement).checked; t.requires = on ? [...new Set([...(t.requires ?? []), o.id])] : (t.requires ?? []).filter((r) => r !== o.id); }) }), o.name))),
+        coinRow([...ep, 'first'], 'First win:'), coinRow([...ep, 'repeat'], 'Each replay win:'), coinRow([...ep, 'loss'], 'A loss:'),
+        packs.length > 0 && h('div', { class: 'mk-row' }, h('span', { class: 'muted' }, 'Packs on the first win:'), packs.map((p) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!en.packs?.includes(p.id),
+          onchange: (e: Event) => A.mkEdit((b: Blueprint) => { const t = b.economy!.campaign!.encounters[ei]; const on = (e.target as HTMLInputElement).checked; t.packs = on ? [...(t.packs ?? []), p.id] : (t.packs ?? []).filter((q) => q !== p.id); }) }), p.name))),
+        linesEditor(bp, A, [...ep, 'before'], 'Before the battle', en.opponent), linesEditor(bp, A, [...ep, 'win'], 'After a win', en.opponent), linesEditor(bp, A, [...ep, 'lose'], 'After a loss', en.opponent)); }),
+      h('button', { 'data-act': 'mk-add-battle', onclick: () => A.mkEdit((b: Blueprint) => { const c2 = b.economy!.campaign!; const id = nextId('battle', c2.encounters.map((e) => e.id));
+        const prev = c2.encounters[c2.encounters.length - 1];
+        c2.encounters.push({ id, name: `Battle ${c2.encounters.length + 1}`, opponent: 'A Challenger', portrait: '⚔', deck: b.decks[c2.encounters.length % Math.max(1, b.decks.length)]?.id ?? '', ai: 'heuristic', tier: prev?.tier ?? 1,
+          ...(prev ? { requires: [prev.id] } : {}), first: { [b.economy!.currencies[0].id]: 50 }, repeat: { [b.economy!.currencies[0].id]: 10 }, repeatable: true,
+          before: [{ speaker: 'A Challenger', text: 'Let\'s see what you\'ve got.' }], win: [{ speaker: 'A Challenger', text: 'Well played.' }], lose: [{ speaker: 'A Challenger', text: 'Better luck next time.' }] }); }, 'campaign') }, '+ Battle')),
   ];
 }
 
