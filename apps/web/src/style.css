@@ -899,3 +899,10 @@ svg.sel-arrows { color: var(--accent2); }
   background: color-mix(in srgb, var(--panel-solid) 92%, transparent); box-shadow: var(--shadow); }
 .has-lanes .seat-area { grid-template-columns: minmax(170px, 250px) minmax(0, 1fr); }
 .has-lanes .seat-bar .pile .pile-l { max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* cards used this turn (Board & layout: used style) */
+.card.used-dim { filter: brightness(.62) saturate(.55); }
+.used-badge { position: absolute; top: 3px; right: 3px; z-index: 2; font-size: 10px; font-weight: 800; padding: 1px 5px; border-radius: 999px; background: rgba(0,0,0,.78); color: #fde68a;
+  border: 1px solid rgba(253,230,138,.6); animation: used-in .3s ease-out both; pointer-events: none; }
+@keyframes used-in { from { transform: scale(1.8); opacity: 0; } }
+.def-badge { position: absolute; bottom: 30%; left: 50%; transform: translateX(-50%); z-index: 2; font-size: 10px; font-weight: 900; padding: 1px 6px; border-radius: 6px; background: #1d4ed8; color: #fff; pointer-events: none; }

@@ -178,6 +178,17 @@ function obj(c: C, o: ObjView, size: 'sm' | 'md') {
     : cardBack(c.mod, { size, state, onclick });
   if (hit) el.append(h('span', { class: 'dmg-float', 'aria-hidden': 'true' }, `-${hit}`));
   (c.fx.float.get(o.id) ?? []).forEach((f, i) => el.append(h('span', { class: cls('stat-float', f.kind), style: `--i:${i + (hit ? 1 : 0)}`, 'aria-hidden': 'true' }, f.text)));
+  // used this turn (attacked, exhausted or used an ability): drawn the way the game asks (tilt is the card's tapped state)
+  const th = c.mod.manifest.theme as any;
+  const style: string = th?.usedStyle ?? (th?.tapVar === 'ex' ? 'tilt' : 'badge');
+  const exhausted = (o.vars?.ex ?? 0) > 0, usedNow = (o.vars?.ut ?? 0) === c.v.turn && (o.vars?.ut ?? 0) > 0;
+  if (size === 'sm' && style !== 'none') { // board cards only (the hand is drawn at md size)
+    const tilted = th?.tapVar === 'ex' && exhausted;
+    if (style === 'dim' && (exhausted || usedNow)) el.classList.add('used-dim');
+    if ((style === 'badge' && (exhausted || usedNow)) || (style === 'tilt' && usedNow && !tilted) || (style === 'dim' && usedNow && !exhausted))
+      el.append(h('span', { class: 'used-badge', title: exhausted ? 'Attacked or exhausted this turn' : 'Used an ability this turn', 'aria-label': 'used this turn' }, exhausted ? '⚔✓' : '↻✓'));
+  }
+  if (th?.defenseSideways === false && (o.vars?.pos ?? 0) > 0) el.append(h('span', { class: 'def-badge', title: 'Defense position' }, 'DEF'));
   if (c.beatTargets.has(o.id)) el.classList.add('beat-target');
   return el;
 }

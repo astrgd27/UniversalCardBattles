@@ -214,6 +214,14 @@ const condText = (k: Cond | undefined, bp: Blueprint) => !k ? '' : k.k === 'unit
       : k.k === 'played' ? `if you played ${(k.n ?? 1) === 1 ? 'another card' : `${k.n} other cards`} this turn, `
         : k.k === 'attached' ? `if this has ${k.n ?? 1} or more ${bp.resource.name} given to it, ` : k.k === 'oppTurn' ? 'during your opponent\'s turn, '
           : k.k === 'oppLife' ? `if your opponent has ${k.n ?? 2} or less life, ` : k.k === 'status' ? `if this is ${nm(bp, 'statuses', k.status)}, ` : k.k === 'kicked' ? 'if it was kicked, ' : k.k === 'linked' ? 'if this is linked, ' : k.k === 'charged' ? `if this has ${k.n ?? 1} or more charge, ` : k.k === 'under' ? `if this has ${k.n ?? 1} or more cards under it, ` : k.k === 'attacking' ? 'while you are attacking, ' : k.k === 'defending' ? 'while you are being attacked, ' : k.k === 'here' ? 'while this is at a location (or a location has a unit here), ' : 'if the custom condition holds, ';
+/** How cards that attacked or used an ability this turn are drawn, and whether defense position is sideways. Defaults: games
+ *  with positions, active duels and runs use a badge (they don't tap); everything else tilts (taps) them. */
+export function usedLook(bp: Blueprint): { tapVar?: string; usedStyle: 'tilt' | 'dim' | 'badge' | 'none'; defenseSideways: boolean } {
+  const b = bp.look.board ?? {};
+  const style = b.used ?? (bp.combat.positions || ['duel', 'runs'].includes(bp.combat.mode) ? 'badge' : 'tilt');
+  const side = !!bp.combat.positions && b.defenseSideways !== false;
+  return { ...(side ? { tapVar: 'pos' } : style === 'tilt' ? { tapVar: 'ex' } : {}), usedStyle: style, defenseSideways: side };
+}
 /** Servers in an asymmetric runs game: three central servers and N remotes, each with an ICE zone (outermost last). */
 export function runServers(bp: Blueprint): { name: string; ice: string; access: 'hq' | 'rd' | 'arc' | 'remote'; content?: string }[] {
   const z = bp.zoneNames ?? {};
@@ -592,7 +600,7 @@ function compileCard(x: Ctx, k: CardBP): Record<string, X> {
     if (a.when === 'conquer' || a.when === 'hold') { (a.when === 'conquer' ? onConq : onHold).push(...(cond ? [IF(cond, body)] : body)); continue; }
     if (a.when === 'activated') {
       const req: X[] = [];
-      const cost: X[] = [];
+      const cost: X[] = [SET('$self', 'ut', '$turn')]; // "used this turn", for the table's used-card display
       if (a.tap) { req.push({ if: eq(g('$self', 'ex'), 0), why: 'Already exhausted' }); cost.push(SET('$self', 'ex', 1)); }
       if (a.loyalty !== undefined) { if (a.loyalty < 0) req.push({ if: ge(g('$self', 'loy'), -a.loyalty), why: 'Not enough loyalty' }); cost.push(INC('$self', 'loy', a.loyalty)); }
       if (a.sacSelf) cost.push(['move', '$self', a.from === 'grave' ? 'banished' : 'grave']);
@@ -673,7 +681,7 @@ function moveAbility(x: Ctx, mv: NonNullable<CardBP['moves']>[number]): X {
     label: `${mv.name} (${mv.damage}${bonusText})`,
     req: [{ if: ok, why: `Needs ${costLabel(mv.cost, x.bp)} energy attached` }],
     limit: { per: 'turn', group: 'attack' },
-    do: [...guarded, ...(x.c.attackEndsTurn ? [['gotoPhase', x.endP]] : [])],
+    do: [SET('$self', 'ut', '$turn'), ...guarded, ...(x.c.attackEndsTurn ? [['gotoPhase', x.endP]] : [])],
   };
 }
 
@@ -1592,7 +1600,7 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
   const rules: Record<string, any> = {
     players: { min: 2, max: 2 },
     playerVars: { life: bp.win.life, score: 0, cap: 0, turns: 0, ap: 0, pp: 0, ...(x.sides ? { side: 0 } : {}), ...(x.runs ? { tags: 0 } : {}), ...(x.check ? { pen: 0 } : {}), ...(usesEff('drops') ? { drops: 0 } : {}), ...(usesPlayed ? { plays: 0 } : {}), ...(bp.setup.mulliganBonus ? { mull: 0 } : {}), ...(bp.setup.london ? { kept: 0, mulls: 0 } : {}), ...Object.fromEntries(bp.types.filter((t) => t.perTurn).map((t) => [`tp_${t.id}`, 0])) },
-    objectVars: { dmg: 0, ex: 0, newT: 0, pos: 0, shu: 0, att: 0, ...(x.runs ? { adv: 0 } : {}), ...(x.zonesC ? { hitd: 0 } : {}), ...(conq ? { atk: 0, dfn: 0, pd: 0 } : {}), ...(r.give ? { don: 0 } : {}), ...(x.battle ? { bb: 0 } : {}), mat: 0, xa: 0, ...(c.mode === 'block' && c.mass ? { atk: 0, blkd: 0, dtd: 0 } : {}), ...(x.hasRole('walker') ? { loy: 0 } : {}), ...(bp.cards.some((k) => k.crew) ? { crewT: 0 } : {}), ...(bp.cards.some((k) => k.station) ? { chg: 0 } : {}), ...Object.fromEntries((bp.statuses ?? []).flatMap((s) => [[`st_${s.id}`, 0], [`sT_${s.id}`, 0]])), ...Object.fromEntries(counters.map((k) => [`c_${k.id}`, 0])) },
+    objectVars: { dmg: 0, ex: 0, ut: 0, newT: 0, pos: 0, shu: 0, att: 0, ...(x.runs ? { adv: 0 } : {}), ...(x.zonesC ? { hitd: 0 } : {}), ...(conq ? { atk: 0, dfn: 0, pd: 0 } : {}), ...(r.give ? { don: 0 } : {}), ...(x.battle ? { bb: 0 } : {}), mat: 0, xa: 0, ...(c.mode === 'block' && c.mass ? { atk: 0, blkd: 0, dtd: 0 } : {}), ...(x.hasRole('walker') ? { loy: 0 } : {}), ...(bp.cards.some((k) => k.crew) ? { crewT: 0 } : {}), ...(bp.cards.some((k) => k.station) ? { chg: 0 } : {}), ...Object.fromEntries((bp.statuses ?? []).flatMap((s) => [[`st_${s.id}`, 0], [`sT_${s.id}`, 0]])), ...Object.fromEntries(counters.map((k) => [`c_${k.id}`, 0])) },
     gameVars: { first: 0, started: 0, bat: 0, rem: 0, hd: 0, af: 0, wf: 0, kick: 0, roll: 0, ...(x.runs ? { live: 0, nth: 0 } : {}), ...(x.check ? { ck: 0 } : {}), ...(x.hasRule('singTogether') ? { sgt: 0 } : {}), ...Object.fromEntries(lanes.map((_, i) => [`c${i + 1}`, 0])), ...(conq ? Object.fromEntries(lanes.map((_, i) => [`s${i + 1}`, 0])) : {}) },
     zones,
     deckZone: 'deck', handZone: 'hand', graveZone: 'grave',
@@ -1658,10 +1666,10 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
     moduleId: bp.id, displayName: bp.name, semanticVersion: '1.0.0', engineApiRange: `^${ENGINE_API}`,
     licensing: `Made with the Universal Card Battles Game Maker${bp.author ? ` by ${bp.author}` : ''}.`,
     tagline: bp.tagline,
-    theme: { accent: bp.look.accent, accent2: bp.look.accent2, glyph: bp.look.glyph, tapVar: c.positions ? 'pos' : 'ex', labels, ...(bp.look.board ? { board: bp.look.board } : {}), ...(x.grid ? { mirror: true, mat: { rows: ['field', 'support'], center: x.emz ? 'emz' : null } } : {}),
+    theme: { accent: bp.look.accent, accent2: bp.look.accent2, glyph: bp.look.glyph, ...usedLook(bp), labels, ...(bp.look.board ? { board: bp.look.board } : {}), ...(x.grid ? { mirror: true, mat: { rows: ['field', 'support'], center: x.emz ? 'emz' : null } } : {}),
       ...(c.mode === 'lanes' ? { lanes: c.lanes.map((name, i) => ({ name, units: `lane${i + 1}`, ...(x.sites ? { site: `site${i + 1}` } : {}), ...(conq && x.hasRule('hidden') ? { hidden: `hid${i + 1}` } : {}), ctrl: `c${i + 1}` })) } : {}),
       hideStats: [...(x.zonesC ? ['azone', 'bzone', 'bmod'] : []), ...(x.runs ? ['side', 'iceType', 'breaks', 'bCost', 'bBy', 'brk', 'nsubs', 'hasAcc'] : []), 'base', 'shift', 'combo', 'role', 'res', 'trapOn', 'playTo', 'evolvesFrom', 'materials', 'retreat', 'hue', 'glyph', 'zone', 'family', 'hasEff', 'hasHit', 'hasConq', 'hasHold', 'traits', 'actsNow', 'evolvesFrom2', 'method', 'ritual', 'spd3', 'cont', 'linkN', 'arrows', 'actsQ', 'actsHand', 'actsGrave', 'prizes', 'resist', 'pv', 'rainbow', 'perUnit', 'kicker', 'flashback', 'cycling', 'equipCost', 'equipment', 'anyUnit', 'crew', 'station', 'loyalty', 'onConquer', 'onHold', 'en', 'pw', 'color2', 'cmN', 'cmType', ...kwFields, ...(c.mode === 'duel' ? [] : ['weakness'])],
-      hideVars: [...(x.sides ? ['side'] : []), 'ex', 'newT', 'pos', 'shu', 'att', 'bb', 'mat', 'xa', 'pd', 'hd', 'af', 'roll', 'mull', 'atkT', 'blk', 'blkd', 'dtd', 'crewT', 'wf', 'kick', 'kept', 'mulls', ...(bp.statuses ?? []).map((s) => `sT_${s.id}`), ...bp.types.map((t) => `tp_${t.id}`), 'cap', 'turns', 'first', 'started', 'bat', 'rem', 'atk', 'dfn', 'plays', ...lanes.map((_, i) => `s${i + 1}`), ...(x.points ? [] : ['score']), ...(x.life ? [] : ['life']), ...(ap ? [] : ['ap']), ...(r.mode === 'pitch' ? [] : ['pp'])],
+      hideVars: [...(x.sides ? ['side'] : []), 'ex', 'ut', 'newT', 'pos', 'shu', 'att', 'bb', 'mat', 'xa', 'pd', 'hd', 'af', 'roll', 'mull', 'atkT', 'blk', 'blkd', 'dtd', 'crewT', 'wf', 'kick', 'kept', 'mulls', ...(bp.statuses ?? []).map((s) => `sT_${s.id}`), ...bp.types.map((t) => `tp_${t.id}`), 'cap', 'turns', 'first', 'started', 'bat', 'rem', 'atk', 'dfn', 'plays', ...lanes.map((_, i) => `s${i + 1}`), ...(x.points ? [] : ['score']), ...(x.life ? [] : ['life']), ...(ap ? [] : ['ap']), ...(r.mode === 'pitch' ? [] : ['pp'])],
       hideKeywords: ['token'] },
     presentation: { templates, byType },
   };

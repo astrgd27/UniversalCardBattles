@@ -377,7 +377,9 @@ Built for Lairbreakers (mechanics reference: Android: Netrunner).
 - **Duel mat:** opponent's spell/trap row, opponent's monster row, the shared extra zones, your monster row, your spell/trap row. Card-shaped corner piles: left of monsters (field zone or banished), left of spells/traps (extra deck), right of monsters (discard pile), right of spells/traps (deck), mirrored for the opponent. Names, counters and other piles go in a corner column. `corners: {lm, ls, rm, rs}` picks the corner zones; `slotNames: false` hides M1/S1 labels.
 - **Zone names:** `labels: 'top'` (small and horizontal above each zone, the default), `'side'` (vertical) or `'hidden'`.
 - **Board card size:** `scale` multiplies board card sizes (0.8–1.25). Card sizes otherwise follow the screen height so the board and your hand fit a tablet in landscape.
-- Games with attack/defense positions show defense position sideways (the old "exhausted" tilt is used only by games without positions).
+- **Used cards** (`used`): how a card that attacked, exhausted or used an ability this turn is drawn: `tilt` (sideways, like tapping), `dim`, `badge` (a small ⚔✓ / ↻✓ tag) or `none`. Default: `badge` for games with positions, active duels and runs (they don't tap), `tilt` otherwise. Using any activated ability or printed attack sets the object var `ut` to the turn, so abilities that don't exhaust still show as used.
+- **Defense position** (`defenseSideways`, games with positions): sideways by default, or upright with a DEF tag.
+- Default games: tilt in Crystal Circuit, Storyweavers, Ringworld Rumble, Generation Wars and Arcade Showdown; badge in Taste Dimension (defense sideways), Looboo and Lairbreakers.
 
 ## Mechanics Shelf (mix and match)
 A station listing 40 recipes in seven groups:

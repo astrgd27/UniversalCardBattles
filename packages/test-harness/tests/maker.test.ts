@@ -282,3 +282,20 @@ test('dice rolls: result ranges, "then" effects and amounts equal to the roll', 
   assert.ok(new Set(values).size >= 5, 'the die lands on many faces');
   assert.ok(totals.length > 0 && totals.every((t) => t >= 2 && t <= 12));
 });
+
+test('board look: every default game draws used cards its own way; abilities and printed attacks mark the card as used this turn', async () => {
+  const { loadRef } = await import('#harness');
+  const want: Record<string, [string, string | undefined]> = {
+    'crystal-circuit': ['tilt', 'ex'], storyweavers: ['tilt', 'ex'], 'ringworld-rumble': ['tilt', 'ex'], 'generation-wars': ['tilt', 'ex'], 'arcade-showdown': ['tilt', 'ex'],
+    'taste-dimension': ['badge', 'pos'], looboo: ['badge', undefined], lairbreakers: ['badge', undefined],
+  };
+  for (const [id, [style, tap]] of Object.entries(want)) {
+    const th = loadRef(id).manifest.theme as any;
+    assert.equal(th.usedStyle, style, `${id} used style`);
+    assert.equal(th.tapVar, tap, `${id}: ${tap === 'pos' ? 'defense position is drawn sideways' : tap ? 'exhausted cards tilt' : 'nothing tilts'}`);
+  }
+  const sw = loadRef('storyweavers').card.get('glass-slipper') as any;
+  assert.deepEqual(sw.acts[0].cost[0], ['set', '$self', 'ut', '$turn'], 'using an ability marks the card as used');
+  const lb = loadRef('looboo').cards.find((k: any) => k.moves?.length) as any;
+  assert.deepEqual(lb.moves[0].do[0], ['set', '$self', 'ut', '$turn'], 'a printed attack marks the attacker as used');
+});

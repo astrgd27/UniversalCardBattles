@@ -8,7 +8,10 @@
  "look": {
   "accent": "#38bdf8",
   "accent2": "#f43f5e",
-  "glyph": "💠"
+  "glyph": "💠",
+  "board": {
+   "used": "tilt"
+  }
  },
  "colors": [
   {

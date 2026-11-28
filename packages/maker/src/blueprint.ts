@@ -32,6 +32,8 @@ export interface BoardLook {
   labels?: 'top' | 'side' | 'hidden'; // zone names: small on top (default), vertical on the side, or hidden
   scale?: number; // board card size multiplier (0.7-1.4)
   slotNames?: boolean; // show slot names (M1, S1...) in empty slots (default true)
+  used?: 'tilt' | 'dim' | 'badge' | 'none'; // cards that attacked, exhausted or used an ability this turn: tilt sideways (tap), dim, a small badge, or no change
+  defenseSideways?: boolean; // games with positions: draw defense position sideways (default true)
   corners?: { lm?: string; ls?: string; rm?: string; rs?: string }; // duel mat corner piles: left of monsters, left of spells, right of monsters, right of spells
 }
 export interface StatDef { id: string; name: string; icon?: string }
