@@ -6,6 +6,7 @@ import type { Blueprint, CardBP, Color, KeywordRule } from './blueprint.ts';
 import { KEYWORD_RULES, normalize } from './blueprint.ts';
 import { blank, card, fx, on } from './presets.ts';
 import { applyRecipe } from './recipes.ts';
+import { fits } from './fits.ts';
 import { slug } from './compile.ts';
 
 export interface WizAnswers { picks: Record<string, string[]>; vals: Record<string, string | number> }
@@ -17,6 +18,18 @@ const pick = (a: WizAnswers, step: string) => a.picks[step] ?? [];
 const one = (a: WizAnswers, step: string, def: string) => pick(a, step)[0] ?? def;
 const val = (a: WizAnswers, id: string, def: string | number) => a.vals[id] ?? def;
 const num = (a: WizAnswers, id: string, def: number) => { const v = Number(a.vals[id]); return Number.isFinite(v) && a.vals[id] !== '' && a.vals[id] !== undefined ? v : def; };
+/** The features a game made from these answers will have, in the terms of the shared needs/clashes table (fits.ts). */
+export function answerFeatures(a: WizAnswers): Set<string> {
+  const f = new Set<string>();
+  for (const st of WIZARD) for (const id of pick(a, st.id)) f.add(id);
+  f.add(`res:${one(a, 'resources', 'ramp')}`);
+  const cb = combatOf(a);
+  f.add(`combat:${cb}`);
+  if (cb === 'compare' || cb === 'positions') f.add('combat:target');
+  f.add('units'); // the wizard always makes fighting units
+  return f;
+}
+const fitWhen = (id: string) => (a: WizAnswers) => fits(id, answerFeatures(a));
 const combatOf = (a: WizAnswers) => (one(a, 'resources', 'ramp') === 'pitch' ? 'cards' : one(a, 'combat', 'target'));
 
 /** Theme packs: colours, an emblem and names for the generated starter cards. */
@@ -58,38 +71,38 @@ export const WIZARD: WizStep[] = [
       { id: 'none', name: 'Only the example cards', icon: '✏', desc: 'Keep the five blank-canvas cards plus whatever the systems you pick add.' }] },
   { id: 'resources', title: 'Paying for cards', icon: '💰', help: 'How do players afford their cards? This choice shapes the pace of the whole game.',
     options: [
-      { id: 'ramp', name: 'Growing energy', icon: '📈', desc: 'Energy refills and grows by one each turn. Simple and smooth.' },
-      { id: 'lands', name: 'Resource cards (lands)', icon: '⛰', desc: 'Play one resource card a turn; they make coloured mana.' },
-      { id: 'inkwell', name: 'Inkwell', icon: '◈', desc: 'Put a marked card face down as a resource: play it or ink it.' },
-      { id: 'manaZone', name: 'Any card as mana', icon: '🔄', desc: 'Once a turn, any card from hand becomes mana of its colour.' },
-      { id: 'resDeck', name: 'Resource deck', icon: '🪙', desc: 'A separate small deck feeds you resources every turn.' },
-      { id: 'attachEnergy', name: 'Attach energy to units', icon: '🔋', desc: 'Attach an energy card to a unit each turn; attacks cost energy.' },
-      { id: 'pitch', name: 'Pitch cards from hand', icon: '◆', desc: 'Pay by discarding cards worth 1–3. Comes with attack cards and blocking from hand.' },
-      { id: 'skillChecks', name: 'Skill checks', icon: '🎯', desc: 'No resources: turn over your top card to see if you pull the card off. Each card played makes the next harder; a failed check ends your turn.' },
+      { id: 'ramp', name: 'Growing energy', icon: '📈', desc: 'Energy refills and grows by one each turn. Simple and smooth.', when: fitWhen('ramp') },
+      { id: 'lands', name: 'Resource cards (lands)', icon: '⛰', desc: 'Play one resource card a turn; they make coloured mana.', when: fitWhen('lands') },
+      { id: 'inkwell', name: 'Inkwell', icon: '◈', desc: 'Put a marked card face down as a resource: play it or ink it.', when: fitWhen('inkwell') },
+      { id: 'manaZone', name: 'Any card as mana', icon: '🔄', desc: 'Once a turn, any card from hand becomes mana of its colour.', when: fitWhen('manaZone') },
+      { id: 'resDeck', name: 'Resource deck', icon: '🪙', desc: 'A separate small deck feeds you resources every turn.', when: fitWhen('resDeck') },
+      { id: 'attachEnergy', name: 'Attach energy to units', icon: '🔋', desc: 'Attach an energy card to a unit each turn; attacks cost energy.', when: fitWhen('attachEnergy') },
+      { id: 'pitch', name: 'Pitch cards from hand', icon: '◆', desc: 'Pay by discarding cards worth 1–3. Comes with attack cards and blocking from hand.', when: fitWhen('pitch') },
+      { id: 'skillChecks', name: 'Skill checks', icon: '🎯', desc: 'No resources: turn over your top card to see if you pull the card off. Each card played makes the next harder; a failed check ends your turn.', when: fitWhen('skillChecks') },
       { id: 'free', name: 'Free (one summon a turn)', icon: '∅', desc: 'Cards cost nothing; you may summon one unit per turn.' }],
     fields: [{ id: 'rampMax', label: 'Energy maximum', kind: 'num', def: 10, min: 3, max: 20, when: (a) => one(a, 'resources', 'ramp') === 'ramp' }] },
   { id: 'resExtras', title: 'Resource extras', icon: '➕', multi: true, help: 'Optional twists on paying for cards. Skip if unsure.',
     options: [
-      { id: 'boost', name: 'Power boosts', icon: '💪', desc: 'Spend 1 resource to give a unit +1 power this turn.', when: (a) => ['ramp', 'lands', 'manaZone', 'resDeck', 'inkwell'].includes(one(a, 'resources', 'ramp')) },
-      { id: 'actionPoints', name: 'Action points', icon: '🎯', desc: 'Each turn you get a few actions; most cards use one.' },
+      { id: 'boost', name: 'Power boosts', icon: '💪', desc: 'Spend 1 resource to give a unit +1 power this turn.', when: fitWhen('boost') },
+      { id: 'actionPoints', name: 'Action points', icon: '🎯', desc: 'Each turn you get a few actions; most cards use one.', when: fitWhen('actionPoints') },
       { id: 'levelGate', name: 'Level requirement', icon: '📶', desc: "Cards can't be played until you have enough resources in play." }] },
   { id: 'combat', title: 'Board & combat', icon: '⚔', help: 'How do units fight? This is the biggest choice after resources.',
     options: [
-      { id: 'target', name: 'Pick a target', icon: '🎯', desc: 'Attack an enemy unit or the opponent directly. Damage stays.', when: (a) => one(a, 'resources', 'ramp') !== 'pitch' },
-      { id: 'block', name: 'Attack & block', icon: '🛡', desc: 'Attackers hit the player; the defender may block with a unit.', when: (a) => one(a, 'resources', 'ramp') !== 'pitch' },
-      { id: 'compare', name: 'Power duels', icon: '⚖', desc: 'No health: the stronger unit wins; ties destroy both.', when: (a) => one(a, 'resources', 'ramp') !== 'pitch' },
-      { id: 'positions', name: 'Attack & defense positions', icon: '🔃', desc: 'Units have ATK and DEF, can be set face down and switch positions.', when: (a) => one(a, 'resources', 'ramp') !== 'pitch' },
-      { id: 'duel', name: 'Active & bench', icon: '✪', desc: 'One active unit fights with printed attacks; the rest wait on the bench.', when: (a) => !['pitch', 'attachEnergy'].includes(one(a, 'resources', 'ramp')) || one(a, 'resources', 'ramp') === 'attachEnergy' },
-      { id: 'lanes', name: 'Battlefields', icon: '⟁', desc: 'Move units onto shared battlefields; conquer and hold them for points.', when: (a) => one(a, 'resources', 'ramp') !== 'pitch' },
+      { id: 'target', name: 'Pick a target', icon: '🎯', desc: 'Attack an enemy unit or the opponent directly. Damage stays.', when: fitWhen('target') },
+      { id: 'block', name: 'Attack & block', icon: '🛡', desc: 'Attackers hit the player; the defender may block with a unit.', when: fitWhen('block') },
+      { id: 'compare', name: 'Power duels', icon: '⚖', desc: 'No health: the stronger unit wins; ties destroy both.', when: fitWhen('compare') },
+      { id: 'positions', name: 'Attack & defense positions', icon: '🔃', desc: 'Units have ATK and DEF, can be set face down and switch positions.', when: fitWhen('positions') },
+      { id: 'duel', name: 'Active & bench', icon: '✪', desc: 'One active unit fights with printed attacks; the rest wait on the bench.', when: fitWhen('duel') },
+      { id: 'lanes', name: 'Battlefields', icon: '⟁', desc: 'Move units onto shared battlefields; conquer and hold them for points.', when: fitWhen('lanes') },
       { id: 'cards', name: 'Attack cards', icon: '🗡', desc: 'Attack with cards from hand; defenders block with cards from hand.', when: (a) => one(a, 'resources', 'ramp') === 'pitch' }] },
   { id: 'combatExtras', title: 'Combat extras', icon: '➕', multi: true, help: 'Optional combat rules. Skip any you do not want.',
     options: [
       { id: 'mass', name: 'All attackers at once', icon: '🪖', desc: 'Declare every attacker together; the defender assigns blockers; first-strike step.', when: (a) => combatOf(a) === 'block' },
       { id: 'grid', name: 'Board grid', icon: '▦', desc: 'Units go in numbered columns the player picks; enables "next to" and "facing" effects.', when: (a) => ['block', 'target', 'positions', 'compare'].includes(combatOf(a)) },
-      { id: 'counterStep', name: 'Counter step', icon: '✋', desc: 'Defenders can discard cards with a counter value to power up.', when: (a) => ['target', 'compare', 'positions'].includes(combatOf(a)) },
-      { id: 'quest', name: 'Questing', icon: '◆', desc: 'Units exhaust to score points instead of attacking; first to 20 wins.', when: (a) => ['target', 'block'].includes(combatOf(a)) },
-      { id: 'lines', name: 'Front line & reserve', icon: '🏰', desc: 'Two rows: only the front line attacks and blocks.', when: (a) => ['target', 'block'].includes(combatOf(a)) },
-      { id: 'twinArenas', name: 'Twin arenas', icon: '🌌', desc: 'Two separate arenas (ground and sky); units fight in their own.', when: (a) => ['target', 'block'].includes(combatOf(a)) },
+      { id: 'counterStep', name: 'Counter step', icon: '✋', desc: 'Defenders can discard cards with a counter value to power up.', when: fitWhen('counterStep') },
+      { id: 'quest', name: 'Questing', icon: '◆', desc: 'Units exhaust to score points instead of attacking; first to 20 wins.', when: fitWhen('quest') },
+      { id: 'lines', name: 'Front line & reserve', icon: '🏰', desc: 'Two rows: only the front line attacks and blocks.', when: fitWhen('lines') },
+      { id: 'twinArenas', name: 'Twin arenas', icon: '🌌', desc: 'Two separate arenas (ground and sky); units fight in their own.', when: fitWhen('twinArenas') },
       { id: 'conquest', name: 'Showdowns & conquest', icon: '🏴', desc: 'Group moves, response windows before fights, Tank, recall on a tie.', when: (a) => combatOf(a) === 'lanes' }] },
   { id: 'timing', title: 'Turns & timing', icon: '⏱', help: 'Can players answer each other mid-turn? More interaction means more depth (and more decisions).',
     options: [
@@ -99,15 +112,15 @@ export const WIZARD: WizStep[] = [
       { id: 'alternate', name: 'Alternating actions', icon: '🔁', desc: 'Players take one action each in turn until both pass.' }] },
   { id: 'turnExtras', title: 'Turn extras', icon: '➕', multi: true, help: 'Optional turn rules.',
     options: [
-      { id: 'combatPhase', name: 'Separate combat phase', icon: '⚔', desc: 'Attacks happen in their own phase, between two main phases.', when: (a) => !['lanes', 'duel'].includes(combatOf(a)) },
+      { id: 'combatPhase', name: 'Separate combat phase', icon: '⚔', desc: 'Attacks happen in their own phase, between two main phases.', when: fitWhen('combatPhase') },
       { id: 'drawTo', name: 'Draw up to a hand size', icon: '🖐', desc: 'At the end of your turn, draw until you hold a set number of cards.', when: (a) => one(a, 'resources', 'ramp') !== 'pitch' }],
     fields: [{ id: 'refill', label: 'Refill hand to', kind: 'num', def: 5, min: 2, max: 10, when: (a) => pick(a, 'turnExtras').includes('drawTo') }] },
   { id: 'win', title: 'How to win', icon: '🏆', help: 'What does a player need to do to win?',
     options: [
       { id: 'life', name: 'Life total', icon: '❤', desc: 'Reduce the opponent to 0 life.', when: (a) => !['lanes'].includes(combatOf(a)) && !pick(a, 'combatExtras').includes('quest') },
-      { id: 'lifeCards', name: 'Life cards', icon: '🂡', desc: 'Each hit takes a face-down life card into hand; a hit with none left wins.', when: (a) => !['lanes', 'duel', 'cards'].includes(combatOf(a)) && !pick(a, 'combatExtras').includes('quest') },
-      { id: 'shields', name: 'Shields with triggers', icon: '🛡', desc: 'Like life cards, and broken shields with Trigger can be cast for free.', when: (a) => !['lanes', 'duel', 'cards'].includes(combatOf(a)) && !pick(a, 'combatExtras').includes('quest') },
-      { id: 'prizes', name: 'Prize cards', icon: '🎁', desc: 'Take a prize for each enemy unit destroyed; take them all to win.', when: (a) => !['lanes', 'cards'].includes(combatOf(a)) && !pick(a, 'combatExtras').includes('quest') },
+      { id: 'lifeCards', name: 'Life cards', icon: '🂡', desc: 'Each hit takes a face-down life card into hand; a hit with none left wins.', when: fitWhen('lifeCards') },
+      { id: 'shields', name: 'Shields with triggers', icon: '🛡', desc: 'Like life cards, and broken shields with Trigger can be cast for free.', when: fitWhen('shields') },
+      { id: 'prizes', name: 'Prize cards', icon: '🎁', desc: 'Take a prize for each enemy unit destroyed; take them all to win.', when: fitWhen('prizes') },
       { id: 'points', name: 'Points', icon: '⭐', desc: 'First to the target score wins (from battlefields or questing).', when: (a) => combatOf(a) === 'lanes' || pick(a, 'combatExtras').includes('quest') }],
     fields: [{ id: 'life', label: 'Starting life', kind: 'num', def: 20, min: 1, max: 100000, when: (a) => one(a, 'win', '') === 'life' || one(a, 'win', '') === '' },
       { id: 'lifeCards', label: 'Life cards', kind: 'num', def: 5, min: 1, max: 10, when: (a) => ['lifeCards', 'shields'].includes(one(a, 'win', '')) },
@@ -129,19 +142,19 @@ export const WIZARD: WizStep[] = [
   { id: 'leader', title: 'Leaders', icon: '👑', help: 'Optional: every deck can have a leader card that starts in play.',
     options: [
       { id: 'none', name: 'No leader', icon: '∅', desc: 'Just decks.' },
-      { id: 'leader', name: 'Leader', icon: '👑', desc: 'A leader card starts in play with an ability.', when: (a) => !['lanes', 'duel', 'cards'].includes(combatOf(a)) },
-      { id: 'deployLeader', name: 'Deployable leader', icon: '🛡', desc: 'The leader starts aside and can enter the board as a unit later.', when: (a) => !['lanes', 'duel', 'cards'].includes(combatOf(a)) }] },
+      { id: 'leader', name: 'Leader', icon: '👑', desc: 'A leader card starts in play with an ability.', when: fitWhen('leader') },
+      { id: 'deployLeader', name: 'Deployable leader', icon: '🛡', desc: 'The leader starts aside and can enter the board as a unit later.', when: fitWhen('deployLeader') }] },
   { id: 'types', title: 'Card types', icon: '🗃', multi: true, help: 'Units and spells are always in. Add any of these for variety; each adds example cards.',
     options: [
       { id: 'quick', name: 'Quick spells', icon: '⚡', desc: 'Spells you can play on the opponent\'s turn or in battles.' },
       { id: 'items', name: 'Items & locations', icon: '🏛', desc: 'Permanents with ongoing effects.' },
-      { id: 'gear', name: 'Gear', icon: '⚙', desc: 'Attach equipment to units for bonuses.', when: (a) => one(a, 'resources', 'ramp') !== 'skillChecks' },
-      { id: 'traps', name: 'Traps', icon: '🪤', desc: 'Set face down; spring them when an enemy attacks.', when: (a) => one(a, 'resources', 'ramp') !== 'skillChecks' },
+      { id: 'gear', name: 'Gear', icon: '⚙', desc: 'Attach equipment to units for bonuses.', when: fitWhen('gear') },
+      { id: 'traps', name: 'Traps', icon: '🪤', desc: 'Set face down; spring them when an enemy attacks.', when: fitWhen('traps') },
       { id: 'tokens', name: 'Tokens', icon: '🪙', desc: 'Small units created by effects.' },
-      { id: 'evolution', name: 'Evolutions', icon: '🦋', desc: 'Upgrade a unit by playing its evolved form on top.', when: (a) => one(a, 'resources', 'ramp') !== 'skillChecks' },
-      { id: 'extraDeck', name: 'Fusion deck', icon: '🌀', desc: 'A side deck of big units summoned by combining others.', when: (a) => !['duel', 'lanes', 'cards'].includes(combatOf(a)) && one(a, 'resources', 'ramp') !== 'skillChecks' },
-      { id: 'tribute', name: 'Tribute summons', icon: '🗿', desc: 'Big units need other units sacrificed.', when: (a) => one(a, 'resources', 'ramp') === 'free' },
-      { id: 'songs', name: 'Songs', icon: '🎵', desc: 'Spells a unit can sing for free instead of paying.', when: (a) => !['free', 'pitch', 'skillChecks'].includes(one(a, 'resources', 'ramp')) }] },
+      { id: 'evolution', name: 'Evolutions', icon: '🦋', desc: 'Upgrade a unit by playing its evolved form on top.', when: fitWhen('evolution') },
+      { id: 'extraDeck', name: 'Fusion deck', icon: '🌀', desc: 'A side deck of big units summoned by combining others.', when: fitWhen('extraDeck') },
+      { id: 'tribute', name: 'Tribute summons', icon: '🗿', desc: 'Big units need other units sacrificed.', when: fitWhen('tribute') },
+      { id: 'songs', name: 'Songs', icon: '🎵', desc: 'Spells a unit can sing for free instead of paying.', when: fitWhen('songs') }] },
   { id: 'keywords', title: 'Keywords', icon: '✨', multi: true, help: 'Short words on cards with a rule behind them. Pick a handful; the wizard spreads them over your starter units.',
     options: KW_LIB.map(([id, name, rule]) => ({ id, name, icon: '✦', desc: KEYWORD_RULES[rule].text })) },
   { id: 'systems', title: 'Optional systems', icon: '🧩', multi: true, help: 'Extra layers. Each is optional and adds example cards you can edit or delete.',
@@ -149,16 +162,17 @@ export const WIZARD: WizStep[] = [
       { id: 'growth', name: '+1/+1 counters', icon: '⬆', desc: 'Counters that permanently grow units.' },
       { id: 'conditions', name: 'Stun & sleep', icon: '💤', desc: 'Conditions that stop units attacking for a while.' },
       { id: 'restrictions', name: "Can't-attack / can't-block", icon: '🚫', desc: 'Defender, Elusive and similar restriction keywords.' },
-      { id: 'costReducer', name: 'Cost reducers', icon: '🏷', desc: 'Cards that make other cards cheaper.', when: (a) => ['ramp', 'free', 'resDeck'].includes(one(a, 'resources', 'ramp')) },
+      { id: 'costReducer', name: 'Cost reducers', icon: '🏷', desc: 'Cards that make other cards cheaper.', when: fitWhen('costReducer') },
       { id: 'prevention', name: 'Damage prevention', icon: '🛡', desc: 'Shields and second chances.' },
       { id: 'banish', name: 'Banished pile', icon: '🕳', desc: 'Effects that remove cards for good.' },
       { id: 'stadium', name: 'Shared stadium', icon: '🏟', desc: 'One shared location card both players play into.' },
-      { id: 'places', name: 'Places (locations)', icon: '🏰', desc: 'Location cards units move to for bonuses (and lore, with questing).', when: (a) => ['target', 'block', 'compare'].includes(combatOf(a)) && !['pitch', 'free', 'attachEnergy', 'skillChecks'].includes(one(a, 'resources', 'ramp')) },
-      { id: 'shift', name: 'Shift (upgraded versions)', icon: '⇪', desc: 'Legendary versions you can play on top of a unit for a shift cost.', when: (a) => !['pitch', 'free', 'attachEnergy', 'skillChecks'].includes(one(a, 'resources', 'ramp')) && combatOf(a) !== 'duel' },
+      { id: 'places', name: 'Places (locations)', icon: '🏰', desc: 'Location cards units move to for bonuses (and lore, with questing).', when: fitWhen('places') },
+      { id: 'shift', name: 'Shift (upgraded versions)', icon: '⇪', desc: 'Legendary versions you can play on top of a unit for a shift cost.', when: fitWhen('shift') },
       { id: 'chance', name: 'Coins & dice', icon: '🎲', desc: 'Cards that flip coins or roll dice.' },
-      { id: 'worldClock', name: 'World clock', icon: '🌗', desc: 'Day and night (or seasons) turn as the game goes on; some times change every unit.', when: (a) => combatOf(a) !== 'cards' },
+      { id: 'worldClock', name: 'World clock', icon: '🌗', desc: 'Day and night (or seasons) turn as the game goes on; some times change every unit.', when: fitWhen('worldClock') },
       { id: 'heat', name: 'Heat', icon: '🔥', desc: 'Every card you play builds heat; too much and you overheat and pay a price.' },
-      { id: 'aging', name: 'Aging', icon: '⌛', desc: 'Units grow older each turn and crumble at a set age.', when: (a) => combatOf(a) !== 'cards' },
+      { id: 'aging', name: 'Aging', icon: '⌛', desc: 'Units grow older each turn and crumble at a set age.', when: fitWhen('aging') },
+      { id: 'rage', name: 'Rage meter', icon: '💢', desc: 'A meter that fills when your units fall or you take damage, and pays off when full.' },
       { id: 'comeback', name: 'Comeback', icon: '🔄', desc: 'A player who falls behind gets a bonus each turn until they catch up.' }] },
   { id: 'review', title: 'Review & create', icon: '✅', help: 'Here is your game. Create it, then playtest straight away or keep shaping it in the Workshop.', options: [] },
 ];

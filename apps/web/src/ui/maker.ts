@@ -2,11 +2,11 @@
 // previews, the ability builder, playtests, the AI lab, publishing and the Script Lab). Everything edits a blueprint.
 import type { Mod } from '#engine';
 import {
-  type Ability, type Blueprint, type CardBP, type Effect, type EffectKind, type Phase, type Role, type TargetKind, type When,
-  KEYWORD_RULES, RECIPES, ROLES, setRecipeOpt, UNIT_ROLES, cardText, costLabel, effectText, rulebook, slug,
-  type RecipeOpt, type WizAnswers, type WizStep, WIZARD, optionsFor, wizardBuild,
+  type Ability, type Blueprint, type CardBP, type Cond, type Effect, type EffectKind, type Phase, type Role, type TargetKind, type When,
+  KEYWORD_RULES, RECIPES, ROLES, setRecipeOpt, featuresOf, fitIssues, UNIT_ROLES, cardText, costLabel, effectText, rulebook, slug,
+  type RecipeOpt, type LibraryScript, STARTER_SCRIPTS, type WizAnswers, type WizStep, WIZARD, optionsFor, wizardBuild,
 } from '#maker';
-import { type MakerUI, type Station, BLUEPRINTS, RANKS, STATIONS, newMakerUI, previewMod, problems, profile, projects, published, rankOf } from '../maker.ts';
+import { type MakerUI, type Station, scriptLibrary, BLUEPRINTS, RANKS, STATIONS, newMakerUI, previewMod, problems, profile, projects, published, rankOf } from '../maker.ts';
 import { store } from '../storage.ts';
 const sideOff = () => store.get<boolean>('ucb-mk-sideoff', false);
 const setSideOff = (v: boolean) => store.set('ucb-mk-sideoff', v);
@@ -185,7 +185,7 @@ function workshop(ui: any, A: any, mk: MakerUI, bp: Blueprint) {
   const bugs = probs.filter((p) => p.level === 'bug');
   const done = new Set(profile().quests);
   const views: Record<Station, () => Child> = {
-    identity: () => identity(bp, A), shelf: () => shelf(bp, A), frames: () => frames(bp, A, mk, mod), types: () => types(bp, A), board: () => board(bp, A, mod), turn: () => turn(bp, A),
+    identity: () => identity(bp, A), shelf: () => shelf(bp, A, mk), frames: () => frames(bp, A, mk, mod), types: () => types(bp, A), board: () => board(bp, A, mod), turn: () => turn(bp, A),
     rules: () => rules(bp, A), keywords: () => keywords(bp, A), cards: () => cardsView(bp, A, mk, mod), decks: () => decksView(bp, A, mk, mod, probs), test: () => testView(bp, A, mk, bugs.length),
     publish: () => publishView(bp, A, bugs.length), lab: () => labView(bp, A, mk, mod),
   };
@@ -551,20 +551,67 @@ function keywords(bp: Blueprint, A: any) {
         h('span', { class: 'muted' }, `id: ${k.id}`), h('button', { class: 'x', onclick: () => A.mkEdit((b: Blueprint) => { b.counters!.splice(i, 1); }), 'aria-label': 'Remove counter' }, '🗑'))),
       h('button', { onclick: () => A.mkEdit((b: Blueprint) => { const list = (b.counters ??= []); let id = 'counter'; let n = 2; while (list.some((x) => x.id === id)) id = `counter${n++}`; list.push({ id, name: 'New Counter', icon: '●' }); }, 'keywords') }, '+ New counter')),
     statusPanel(bp, A),
+    meterPanel(bp, A),
   ];
 }
 
+const METER_ON: [string, string][] = [['player', 'each player'], ['unit', 'each unit'], ['game', 'the whole game']];
+const METER_GAIN: [string, string][] = [['play', 'a card is played'], ['turnStart', 'its owner\'s turn starts'], ['turnEnd', 'its owner\'s turn ends'], ['damaged', 'it takes damage'], ['attack', 'it attacks'], ['destroyed', 'a unit is destroyed']];
+/** Meters: numbers on players, units or the game that things raise, that decay or cycle, with steps that fire effects. */
+function meterPanel(bp: Blueprint, A: any) {
+  const ms = bp.meters ?? [];
+  return panel('Meters', hint('A meter is a number kept on each player, each unit or the whole game: heat, rage, age, doom, a day/night clock… Pick what raises it, whether it decays or cycles, and what happens when it reaches a step. Conditions and the "Change a meter" block use it on cards.'),
+    ms.map((m, i) => { const mp: Path = ['meters', i]; return h('div', { class: 'mk-sub mk-meter', 'data-meter': m.id },
+      row(txt(bp, A, [...mp, 'name'], { label: 'Name', q: 'keywords' }), txt(bp, A, [...mp, 'icon'], { label: 'Icon' }), sel(bp, A, [...mp, 'on'], METER_ON, { label: 'Kept on' }),
+        h('span', { class: 'muted' }, `id: ${m.id}`), h('button', { class: 'x', onclick: () => A.mkEdit((b: Blueprint) => { b.meters!.splice(i, 1); }), 'aria-label': 'Remove meter' }, '🗑')),
+      h('strong', {}, 'Goes up when'),
+      m.gain.map((q, gi) => row(sel(bp, A, [...mp, 'gain', gi, 'on'], METER_GAIN, { label: 'When' }), num(bp, A, [...mp, 'gain', gi, 'n'], { label: 'By', min: -100, max: 100 }),
+        q.on === 'play' && chk(bp, A, [...mp, 'gain', gi, 'cost'], 'by the card\'s cost instead'),
+        h('button', { class: 'x', onclick: () => A.mkEdit((b: Blueprint) => { b.meters![i].gain.splice(gi, 1); }), 'aria-label': 'Remove gain' }, '🗑'))),
+      h('button', { class: 'chip', onclick: () => A.mkEdit((b: Blueprint) => { b.meters![i].gain.push({ on: 'turnStart', n: 1 }); }) }, '+ way to raise it'),
+      row(num(bp, A, [...mp, 'every'], { label: 'Turn gains every N turns', min: 1, max: 20 }), num(bp, A, [...mp, 'decay'], { label: 'Decays per turn', min: 0, max: 100 }),
+        num(bp, A, [...mp, 'max'], { label: 'Max (0 = none)', min: 0, max: 1000 }), chk(bp, A, [...mp, 'wrap'], 'Cycles back to 0 at max'), chk(bp, A, [...mp, 'hidden'], 'Hidden')),
+      h('label', { class: 'fld wide' }, h('span', {}, 'Names for its values (comma separated, e.g. Day, Night)'),
+        h('input', { type: 'text', value: (m.names ?? []).join(', '), 'aria-label': 'Value names', onchange: (e: Event) => A.mkEdit((b: Blueprint) => {
+          const list = (e.target as HTMLInputElement).value.split(',').map((x) => x.trim()).filter(Boolean); const mm = b.meters![i];
+          if (list.length) { mm.names = list; mm.max = list.length; mm.wrap = true; } else delete mm.names; }) })),
+      h('strong', {}, 'Steps'),
+      (m.steps ?? []).map((st, si) => h('div', { class: 'mk-sub' },
+        row(num(bp, A, [...mp, 'steps', si, 'n'], { label: 'When it reaches', min: 1, max: 1000 }), chk(bp, A, [...mp, 'steps', si, 'reset'], 'then reset to 0'),
+          txt(bp, A, [...mp, 'steps', si, 'say'], { label: 'Log line ({p}, {o}, {s})', ph: '{p} overheat{s}!' }),
+          h('button', { class: 'x', onclick: () => A.mkEdit((b: Blueprint) => { b.meters![i].steps!.splice(si, 1); }), 'aria-label': 'Remove step' }, '🗑')),
+        st.do.map((f, fi) => effectRow(bp, A, [...mp, 'steps', si, 'do', fi], f, () => A.mkEdit((b: Blueprint) => { b.meters![i].steps![si].do.splice(fi, 1); }))),
+        h('button', { class: 'chip', onclick: () => A.mkEdit((b: Blueprint) => { b.meters![i].steps![si].do.push({ k: 'draw', n: 1 }); }) }, '+ effect'))),
+      h('button', { class: 'chip', onclick: () => A.mkEdit((b: Blueprint) => { (b.meters![i].steps ??= []).push({ n: 5, reset: true, do: [{ k: 'draw', n: 1 }] }); }) }, '+ step'),
+      row(h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!m.aura, onchange: (e: Event) => A.mkEdit((b: Blueprint) => { const mm = b.meters![i]; if ((e.target as HTMLInputElement).checked) mm.aura = { at: 1, op: 'ge', stat: b.combat.power, n: 1 }; else delete mm.aura; }) }), 'While it is at a value, units get a bonus'),
+        m.aura && num(bp, A, [...mp, 'aura', 'at'], { label: 'Value', min: 0, max: 1000 }), m.aura && sel(bp, A, [...mp, 'aura', 'op'], [['ge', 'or more'], ['eq', 'exactly']], { label: 'Match' }),
+        m.aura && sel(bp, A, [...mp, 'aura', 'stat'], bp.stats.map((x) => [x.id, x.name]), { label: 'Stat' }), m.aura && num(bp, A, [...mp, 'aura', 'n'], { label: 'Bonus', min: -1000, max: 1000 })),
+      m.on !== 'game' && row(h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!m.per, onchange: (e: Event) => A.mkEdit((b: Blueprint) => { const mm = b.meters![i]; if ((e.target as HTMLInputElement).checked) mm.per = { stat: b.combat.power, n: 1 }; else delete mm.per; }) }), m.on === 'unit' ? 'The unit gets a bonus per point' : 'Your units get a bonus per point'),
+        m.per && sel(bp, A, [...mp, 'per', 'stat'], bp.stats.map((x) => [x.id, x.name]), { label: 'Stat' }), m.per && num(bp, A, [...mp, 'per', 'n'], { label: 'Per point', min: -1000, max: 1000 }))); }),
+    h('button', { 'data-act': 'mk-new-meter', onclick: () => A.mkEdit((b: Blueprint) => { const list = (b.meters ??= []); let id = 'meter'; let n = 2; while (list.some((x) => x.id === id)) id = `meter${n++}`; list.push({ id, name: 'New Meter', icon: '◔', on: 'player', gain: [{ on: 'turnStart', n: 1 }], steps: [] }); }, 'keywords') }, '+ New meter'));
+}
+
 // ---------------------------------------------------------------- shelf: mechanic recipes
-function shelf(bp: Blueprint, A: any) {
+function shelf(bp: Blueprint, A: any, mk: MakerUI) {
   const used = new Set(bp.recipes ?? []);
   const groups = [...new Set(RECIPES.map((r) => r.group))];
+  const feats = featuresOf(bp);
+  const ask = mk.confirm;
   return [
-    hint('Pick mechanics from real card games and drop them into yours. Each one adds what it needs (stats, card types, keywords, rules and example cards); stack them freely and undo any time.'),
-    groups.map((gname) => panel(gname, h('div', { class: 'mk-recipes' }, RECIPES.filter((r) => r.group === gname).map((r) => h('div', { class: cls('mk-recipe', used.has(r.id) && 'on') },
-      h('span', { class: 'mk-recipe-icon' }, r.icon), h('strong', {}, r.name), h('span', { class: 'muted' }, r.desc),
-      used.has(r.id) && r.opts?.length ? h('div', { class: 'mk-opts' }, r.opts.map((o) => optRow(bp, A, o)))
-        : r.opts?.length ? h('span', { class: 'mk-opts-hint muted' }, `⚙ Tune after adding: ${r.opts.map((o) => o.label.toLowerCase()).join(' · ')}`) : null,
-      h('button', { class: cls('chip', used.has(r.id) && 'on'), onclick: () => A.mkRecipe(r.id, r.name), 'data-recipe': r.id }, used.has(r.id) ? '✓ Added (add again)' : '+ Add to my game')))))),
+    hint('Pick mechanics from real card games and drop them into yours. Each one adds what it needs (stats, card types, keywords, rules and example cards); stack them freely and undo any time. A ⚠ means it doesn\'t fit your game as it is.'),
+    ask && h('div', { class: 'mk-confirm', role: 'alertdialog', 'aria-label': `Add ${ask.name}?` }, h('strong', {}, `Adding ${ask.name} would cause problems:`),
+      h('ul', {}, ask.why.map((w) => h('li', {}, w))),
+      row(h('button', { class: 'ghost', onclick: A.mkCancelRecipe, 'data-act': 'mk-recipe-cancel' }, 'Cancel'), h('button', { onclick: () => A.mkRecipe(ask.id, ask.name, true), 'data-act': 'mk-recipe-anyway' }, 'Add anyway (I\'ll fix it)'))),
+    groups.map((gname) => panel(gname, h('div', { class: 'mk-recipes' }, RECIPES.filter((r) => r.group === gname).map((r) => {
+      const issues = used.has(r.id) ? [] : fitIssues(r.id, feats);
+      const blocked = issues.some((q) => q.level === 'blocks');
+      return h('div', { class: cls('mk-recipe', used.has(r.id) && 'on', blocked && 'misfit') },
+        h('span', { class: 'mk-recipe-icon' }, r.icon), h('strong', {}, r.name), h('span', { class: 'muted' }, r.desc),
+        issues.length ? h('span', { class: cls('mk-fit', blocked ? 'blocks' : 'warns') }, `⚠ ${issues.map((q) => q.text).join(' ')}`) : null,
+        used.has(r.id) && r.opts?.length ? h('div', { class: 'mk-opts' }, r.opts.map((o) => optRow(bp, A, o)))
+          : r.opts?.length ? h('span', { class: 'mk-opts-hint muted' }, `⚙ Tune after adding: ${r.opts.map((o) => o.label.toLowerCase()).join(' · ')}`) : null,
+        h('button', { class: cls('chip', used.has(r.id) && 'on'), onclick: () => A.mkRecipe(r.id, r.name), 'data-recipe': r.id }, used.has(r.id) ? '✓ Added (add again)' : '+ Add to my game'));
+    })))),
   ];
 }
 /** One sub-option of an added mechanic: its label and ◀ value ▶ arrows that cycle through the choices. */
@@ -582,6 +629,36 @@ function optRow(bp: Blueprint, A: any, o: RecipeOpt) {
       h('button', { class: 'mk-opt-arrow', 'aria-label': `Next ${o.label}`, onclick: () => step(1) }, '▶')));
 }
 
+// ---------------------------------------------------------------- conditions (nestable with all / any / not)
+const COND_KINDS: [string, string][] = [['units', 'if you control N+ units'], ['life', 'if your life is N or less'], ['hand', 'if your hand has N or fewer'], ['yourTurn', 'during your turn'], ['res', 'if you have N+ resources'], ['counter', 'if this has N+ counters'], ['zone', 'if you have N+ cards in a zone'],
+  ['played', 'if you played N other cards this turn'], ['status', 'if this has a status'], ['kicked', 'if it was kicked'], ['linked', 'if this is linked (arrows)'], ['charged', 'if this has N+ charge'], ['under', 'if this has N+ cards under it'], ['here', 'if this is at a location (or a unit is here)'],
+  ['attached', 'if this was given N+ resources'], ['oppTurn', "during the opponent's turn"], ['oppLife', 'if the opponent has N or less life'], ['attacking', 'while you are attacking'], ['defending', 'while you are being attacked']];
+/** One condition picker. "All of", "any of" and "not" open nested pickers, so conditions combine without scripting. */
+function condEditor(bp: Blueprint, A: any, path: Path, k: Cond | undefined, depth: number): HTMLElement {
+  const meters = bp.meters ?? [];
+  const opts: [string, string][] = [['', depth ? '(pick a condition)' : 'always'], ...COND_KINDS, ...(meters.length ? [['meter', 'if a meter is at a value'] as [string, string]] : []),
+    ...(depth < 3 ? [['all', 'all of these…'], ['any', 'any of these…'], ['not', 'not…']] as [string, string][] : [])];
+  const pick = h('label', { class: 'fld' }, h('span', {}, depth ? 'Condition' : 'If'), h('select', { 'aria-label': depth ? `Condition (level ${depth + 1})` : 'Condition', onchange: (e: Event) => {
+    const v = (e.target as HTMLSelectElement).value;
+    A.mkSet(path, !v ? undefined : v === 'all' || v === 'any' ? { k: v, of: k?.k && !['all', 'any'].includes(k.k) ? [k] : k?.of ?? [{ k: 'yourTurn' }] } : v === 'not' ? { k: v, of: [k?.k ? k : { k: 'yourTurn' }] }
+      : v === 'meter' ? { k: v, meter: meters[0]?.id, n: 1, op: 'ge' } : { k: v, n: k?.n ?? 1 });
+  } }, opts.map(([v, l]) => h('option', { value: v, selected: (k?.k ?? '') === v }, l))));
+  const kids = (k?.k === 'all' || k?.k === 'any' || k?.k === 'not') ? h('div', { class: 'mk-cond-group' },
+    (k.of ?? []).map((q, i) => h('div', { class: 'mk-cond-item' }, condEditor(bp, A, [...path, 'of', i], q, depth + 1),
+      k.k !== 'not' && h('button', { class: 'x', onclick: () => A.mkEdit((b: Blueprint) => { get(b, [...path, 'of']).splice(i, 1); }), 'aria-label': 'Remove condition' }, '🗑'))),
+    k.k !== 'not' && h('button', { class: 'chip', onclick: () => A.mkEdit((b: Blueprint) => { get(b, path).of.push({ k: 'yourTurn' }); }) }, k.k === 'all' ? '+ and…' : '+ or…')) : null;
+  const m = k?.k === 'meter' ? meters.find((q) => q.id === k.meter) : undefined;
+  return h('div', { class: cls('mk-cond', depth > 0 && 'nested') }, pick,
+    k?.k === 'zone' && sel(bp, A, [...path, 'zone'], zoneOpts(bp).filter(([z]) => z !== 'deck' && z !== 'hand'), { label: 'Zone' }),
+    k?.k === 'status' && sel(bp, A, [...path, 'status'], (bp.statuses ?? []).map((q) => [q.id, q.name] as [string, string]), { label: 'Status' }),
+    k?.k === 'counter' && sel(bp, A, [...path, 'counter'], (bp.counters ?? []).map((q) => [q.id, q.name] as [string, string]), { label: 'Counter' }),
+    k?.k === 'meter' && sel(bp, A, [...path, 'meter'], meters.map((q) => [q.id, q.name] as [string, string]), { label: 'Meter' }),
+    k?.k === 'meter' && sel(bp, A, [...path, 'op'], [['ge', 'at least'], ['le', 'at most'], ['eq', 'exactly']], { label: 'Is' }),
+    k?.k === 'meter' && m?.names?.length ? sel(bp, A, [...path, 'n'], m.names.map((nm, i) => [String(i), nm] as [string, string]), { label: 'Value', map: Number })
+      : k?.k && !['yourTurn', 'oppTurn', 'status', 'kicked', 'linked', 'attacking', 'defending', 'all', 'any', 'not', 'raw'].includes(k.k) && num(bp, A, [...path, 'n'], { label: 'N', min: 0, max: 100000 }),
+    kids);
+}
+
 // ---------------------------------------------------------------- 8. cards and the ability builder
 const WHEN: [When, string][] = [['play', 'When played'], ['leave', 'When destroyed'], ['attack', 'When it attacks'], ['hit', 'When it hits the opponent'], ['quest', 'When it quests'], ['startTurn', 'At the start of your turn'],
   ['endTurn', 'At the end of your turn'], ['activated', 'Activated (exhaust and/or pay)'], ['static', 'Always on (aura)'], ['opAttack', 'When the opponent attacks (traps: spring)'], ['block', 'When it blocks'],
@@ -596,7 +673,7 @@ const EFF: [EffectKind, string, string[]][] = [
   ['restrict', "Can't… (restriction)", ['rule', 'target', 'until']], ['prevent', 'Prevent damage (instead)', ['n', 'scope']], ['costMod', 'Make cards cost less', ['n', 'type']],
   ['insteadDestroy', 'If destroyed, instead…', ['to']], ['moveTo', 'Move / banish', ['zone', 'target']], ['win', 'Win the game', []],
   ['scry', 'Look at the top card (may bottom it)', ['n']], ['dig', 'Look at the top N, reveal 1 matching', ['n', 'type', 'dfilter']], ['putIntoPlay', 'Play a unit for free', ['type', 'from', 'dfilter']],
-  ['addRes', 'Add resources from the resource deck', ['n']], ['readyRes', 'Set spent resources active', ['n']], ['giveRes', 'Give spent resources (+power)', ['n', 'target']],
+  ['meter', 'Change a meter', ['n', 'meterId', 'meterWho']], ['addRes', 'Add resources from the resource deck', ['n']], ['readyRes', 'Set spent resources active', ['n']], ['giveRes', 'Give spent resources (+power)', ['n', 'target']],
   ['lifeToHand', 'Top life card to hand', ['n']], ['handToLife', 'A card from hand to the top of life', []],
   ['inflict', 'Give a status', ['status', 'n', 'target']], ['cure', 'Cure a status', ['statusAll', 'target']], ['flip', 'Flip coins (heads / tails)', ['n', 'flip']],
   ['switch', 'Switch the active unit', ['side']], ['tutor', 'Search your deck (choose)', ['n', 'type', 'dest', 'dfilter']], ['attachFrom', 'Attach a resource card from a zone', ['src', 'target', 'dfilter']],
@@ -619,6 +696,9 @@ function effectRow(bp: Blueprint, A: any, ep: Path, e: Effect, onDel: () => void
     P.has('n') && kwId && chk(bp, A, [...ep, 'kw'], 'Amount = keyword N'),
     P.has('n') && e.k !== 'roll' && chk(bp, A, [...ep, 'fromRoll'], 'Amount = the last roll'),
     P.has('counter') && sel(bp, A, [...ep, 'card'], (bp.counters ?? []).length ? bp.counters!.map((k) => [k.id, k.name] as [string, string]) : [['', '(make a counter first)']], { label: 'Counter' }),
+    P.has('meterId') && sel(bp, A, [...ep, 'meter'], (bp.meters ?? []).length ? bp.meters!.map((m) => [m.id, m.name] as [string, string]) : [['', '(make a meter first, under Keywords)']], { label: 'Meter' }),
+    P.has('meterId') && chk(bp, A, [...ep, 'set'], 'Set it to the amount (instead of adding)'),
+    P.has('meterWho') && bp.meters?.find((m) => m.id === e.meter)?.on === 'player' && sel(bp, A, [...ep, 'who'], [['me', 'yours'], ['opp', "the opponent's"]], { label: 'Whose' }),
     P.has('stat') && sel(bp, A, [...ep, 'stat'], bp.stats.map((s) => [s.id, s.name]), { label: 'Stat' }),
     P.has('target') && sel(bp, A, [...ep, 'target'], isStatic ? SCOPE : TGT, { label: isStatic ? 'Affects' : 'Target' }),
     P.has('rule') && sel(bp, A, [...ep, 'rule'], [...RESTRICT, ...bp.keywords.filter((k) => !RESTRICT.some(([r]) => r === k.rule) && k.rule !== 'none').map((k) => [k.rule, `gains ${k.name}`] as [string, string])], { label: 'Rule' }),
@@ -678,13 +758,7 @@ function abilityBox(bp: Blueprint, A: any, cp: Path, a: Ability, ai: number, rol
         (bp.counters ?? []).length > 0 && h('label', { class: 'fld' }, h('span', {}, 'Remove counters'), h('select', { 'aria-label': 'Counter cost', onchange: (ev: Event) => { const v = (ev.target as HTMLSelectElement).value; A.mkSet([...ap, 'uncount'], v ? { id: v, n: a.uncount?.n ?? 1 } : undefined); } },
           [['', 'none'], ...bp.counters!.map((k) => [k.id, k.name])].map(([v, l]) => h('option', { value: v, selected: (a.uncount?.id ?? '') === v }, l)))),
         a.uncount && num(bp, A, [...ap, 'uncount', 'n'], { label: 'How many', min: 1, max: 20 })],
-      h('label', { class: 'fld' }, h('span', {}, 'If'), h('select', { 'aria-label': 'Condition', onchange: (e: Event) => { const v = (e.target as HTMLSelectElement).value; A.mkSet([...ap, 'if'], v ? { k: v, n: a.if?.n ?? 1 } : undefined); } },
-        [['', 'always'], ['units', 'if you control N+ units'], ['life', 'if your life is N or less'], ['hand', 'if your hand has N or fewer'], ['yourTurn', 'during your turn'], ['res', 'if you have N+ resources'], ['counter', 'if this has N+ counters'], ['zone', 'if you have N+ cards in a zone'],
-          ['played', 'if you played N other cards this turn'], ['status', 'if this has a status'], ['kicked', 'if it was kicked'], ['linked', 'if this is linked (arrows)'], ['charged', 'if this has N+ charge'], ['under', 'if this has N+ cards under it'], ['here', 'if this is at a location (or a unit is here)'], ['attached', 'if this was given N+ resources'], ['oppTurn', "during the opponent's turn"], ['oppLife', 'if the opponent has N or less life']].map(([v, l]) => h('option', { value: v, selected: (a.if?.k ?? '') === v }, l)))),
-      a.if?.k === 'zone' && sel(bp, A, [...ap, 'if', 'zone'], zoneOpts(bp).filter(([z]) => z !== 'deck' && z !== 'hand'), { label: 'Zone' }),
-      a.if?.k === 'status' && sel(bp, A, [...ap, 'if', 'status'], (bp.statuses ?? []).map((k) => [k.id, k.name] as [string, string]), { label: 'Status' }),
-      a.if?.k === 'counter' && sel(bp, A, [...ap, 'if', 'counter'], (bp.counters ?? []).map((k) => [k.id, k.name] as [string, string]), { label: 'Counter' }),
-      a.if && !['yourTurn', 'oppTurn', 'status', 'kicked', 'linked'].includes(a.if.k) && num(bp, A, [...ap, 'if', 'n'], { label: 'N', min: 0, max: 100000 }),
+      condEditor(bp, A, [...ap, 'if'], a.if, 0),
       h('label', { class: 'fld' }, h('span', {}, 'Limit'), h('select', { 'aria-label': 'Limit', onchange: (e: Event) => { const v = (e.target as HTMLSelectElement).value; A.mkSet([...ap, 'once'], v === 'turn' ? true : v === 'game' ? 'game' : undefined); } },
         [['', 'every time'], ['turn', 'once per turn'], ['game', 'once per game']].map(([v, l]) => h('option', { value: v, selected: (a.once === true ? 'turn' : a.once || '') === v }, l)))),
       h('button', { class: 'x', onclick: () => A.mkEdit((b: Blueprint) => { get(b, cp).abilities.splice(ai, 1); }), 'aria-label': 'Remove ability' }, '🗑')),
@@ -872,7 +946,7 @@ function scriptIO(bp: Blueprint, A: any, mk: MakerUI) {
   const mode = mk.script?.mode ?? 'merge';
   const adv = bp.advanced ?? {};
   const counts = [adv.rules && 'rules patch', adv.triggers?.length && `${adv.triggers.length} trigger${adv.triggers.length === 1 ? '' : 's'}`,
-    adv.functions && `${Object.keys(adv.functions).length} function(s)`, adv.procedures && `${Object.keys(adv.procedures).length} procedure(s)`, adv.ai && 'AI hints',
+    adv.functions && `${Object.keys(adv.functions).length} function(s)`, adv.procedures && `${Object.keys(adv.procedures).length} procedure(s)`, adv.ai && 'AI hints', adv.log && `${Object.keys(adv.log).length} event message(s)`,
     bp.cards.some((c) => c.raw && Object.keys(c.raw).length) && `${bp.cards.filter((c) => c.raw && Object.keys(c.raw).length).length} card patch(es)`].filter(Boolean);
   let paste = '';
   return h('div', { class: 'mk-sub mk-script-io' }, h('strong', {}, 'Import & export'),
@@ -889,7 +963,22 @@ function scriptIO(bp: Blueprint, A: any, mk: MakerUI) {
       h('textarea', { class: 'code', rows: 5, 'aria-label': 'Paste script JSON', placeholder: '{"format": "ucb-script", "v": 1, "advanced": {"triggers": [...]}}', oninput: (e: Event) => { paste = (e.target as HTMLTextAreaElement).value; } }),
       h('button', { onclick: () => paste.trim() && A.mkImportScripts(paste), 'data-act': 'mk-paste-scripts' }, 'Import pasted JSON')),
     mk.script?.err && h('p', { class: 'mk-prob bug' }, `Could not import: ${mk.script.err}`),
-    mk.script?.report && h('ul', { class: 'mk-script-report' }, mk.script.report.map((l) => h('li', {}, l))));
+    mk.script?.report && h('ul', { class: 'mk-script-report' }, mk.script.report.map((l) => h('li', {}, l))),
+    libraryView(A, counts.length > 0, bp.name));
+}
+/** The script library: starter scripts plus the user's own saved ones, usable in any project. */
+function libraryView(A: any, canSave: boolean, game: string) {
+  let name = '';
+  const item = (e: LibraryScript) => h('li', { class: 'mk-lib-item', 'data-lib': e.id }, h('strong', {}, e.name), h('span', { class: 'muted' }, e.desc),
+    row(h('button', { class: 'chip', onclick: () => A.mkLibAdd(e.id), 'data-act': 'mk-lib-add' }, '+ Add to this game'), h('button', { class: 'ghost', onclick: () => A.mkLibExport(e.id), 'aria-label': `Export ${e.name}` }, '⬇'),
+      !e.builtIn && h('button', { class: 'x', onclick: () => A.mkLibDelete(e.id), 'aria-label': `Delete ${e.name}` }, '🗑')));
+  const mine = scriptLibrary();
+  return h('div', { class: 'mk-lib' }, h('strong', {}, 'Script library'),
+    hint('Scripts you save here are available in all your projects. Adding one uses the import mode above.'),
+    row(h('input', { type: 'text', placeholder: `${game} scripts`, 'aria-label': 'Library name', oninput: (e: Event) => { name = (e.target as HTMLInputElement).value; } }),
+      h('button', { onclick: () => A.mkLibSave(name), disabled: !canSave, 'data-act': 'mk-lib-save' }, '★ Save my scripts to the library')),
+    mine.length ? h('ul', { class: 'mk-lib-list' }, mine.map(item)) : h('p', { class: 'muted' }, 'Nothing saved yet.'),
+    h('details', { open: !mine.length }, h('summary', {}, `Starter scripts (${STARTER_SCRIPTS.length})`), h('ul', { class: 'mk-lib-list' }, STARTER_SCRIPTS.map(item))));
 }
 function labView(bp: Blueprint, A: any, mk: MakerUI, mod: Mod | null) {
   const box = (key: string, path: Path, title: string, help: string, sample: string) => h('div', { class: 'mk-sub' }, h('strong', {}, title), hint(help),
@@ -901,6 +990,7 @@ function labView(bp: Blueprint, A: any, mk: MakerUI, mod: Mod | null) {
     box('lab-trig', ['advanced', 'triggers'], 'Extra rule triggers', 'A list of {on, if?, do}: react to any event.', '[{"on": "turnStart", "if": [">=", "$turn", 10], "do": [["draw", "$active", 1]]}]'),
     box('lab-fn', ['advanced', 'functions'], 'Functions', 'Pure expressions callable with ["call", name, ...].', '{"double": {"params": ["$x"], "body": ["*", "$x", 2]}}'),
     box('lab-proc', ['advanced', 'procedures'], 'Procedures', 'Effect lists callable with ["call", name, ...].', '{"chaos": {"params": [], "do": [["each", ["players"], "$p", [["draw", "$p", 1]]]]}}'),
+    box('lab-log', ['advanced', 'log'], 'Event messages', 'Battle-log and caption text for events, by event type (your triggers can emit their own events). {p} the player, {o} a card, {s}/{es} verb endings, {is}, {has}, or any {field} of the event.', '{"doom": "{p} feel{s} the doom grow ({n})"}'),
     box('lab-ai', ['advanced', 'ai'], 'AI hints', 'Override the AI evaluation: {eval, bias, samples}.', '{"bias": {"attack": 2}}'),
     scriptIO(bp, A, mk),
     h('details', { class: 'mk-sub' }, h('summary', {}, 'View the compiled rules'), h('pre', { class: 'code mk-compiled' }, mod ? JSON.stringify(mod.rules, null, 1).slice(0, 60000) : 'Not built.')),

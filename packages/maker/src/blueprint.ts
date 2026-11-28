@@ -16,7 +16,7 @@ export type EffectKind =
   | 'addCounter' | 'removeCounter' | 'strike' | 'deploy'
   | 'restrict' | 'prevent' | 'costMod' | 'insteadDestroy' | 'moveTo' | 'scry'
   | 'dig' | 'putIntoPlay' | 'addRes' | 'readyRes' | 'giveRes' | 'lifeToHand' | 'handToLife'
-  | 'inflict' | 'cure' | 'flip' | 'switch' | 'tutor' | 'attachFrom' | 'drawTo' | 'skipEvolve' | 'fight' | 'surveil' | 'roll' | 'fusion' | 'ritual' | 'drops' | 'endRun' | 'wound' | 'tag';
+  | 'inflict' | 'cure' | 'flip' | 'switch' | 'tutor' | 'attachFrom' | 'drawTo' | 'skipEvolve' | 'fight' | 'surveil' | 'roll' | 'fusion' | 'ritual' | 'drops' | 'endRun' | 'wound' | 'tag' | 'meter';
 export type KeywordRule = 'none' | 'haste' | 'guard' | 'blocker' | 'flying' | 'vigilance' | 'lifesteal' | 'deadly' | 'shield' | 'double' | 'overflow' | 'ward'
   | 'firstStrike' | 'resist' | 'challenger' | 'saboteur' | 'goAgain' | 'trigger' | 'song'
   | 'noAttack' | 'noBlock' | 'noBeAttacked' | 'unblockable' | 'entersExhausted'
@@ -37,9 +37,28 @@ export interface BoardLook {
   corners?: { lm?: string; ls?: string; rm?: string; rs?: string }; // duel mat corner piles: left of monsters, left of spells, right of monsters, right of spells
 }
 /** New mechanics (not from any one game). */
-export interface WorldClock { names: string[]; every: number; effect?: { at: number; stat: string; n: number } } // a cycle of named times that moves on every `every` turns; while it is names[at], every unit gets +n stat
-export interface Heat { per: 'card' | 'cost'; limit: number; penalty: 'damage' | 'discard' | 'exhaust'; amount: number; cool: number } // playing cards builds heat; at the limit you overheat (penalty) and it resets; it cools each turn
-export interface Aging { dies?: number; grow?: { stat: string; n: number } } // units age each of their owner's turns: crumble at `dies`, and/or grow by n stat each turn
+/** A meter: a number kept on each player, each unit or the whole game. Things raise it, it can decay, cap or cycle, its values
+ *  can have names (Day, Night…), crossing a step runs effects, and while it holds a value it can change units' stats.
+ *  World clocks, heat, aging, rage, doom tracks and combo counters are all meters. Stored as var m_<id>. */
+export interface Meter {
+  id: string; name: string; icon?: string;
+  on: 'player' | 'unit' | 'game';
+  gain: MeterGain[];
+  every?: number; // turn-based gains happen only every N turns
+  decay?: number; // lost at the start of its owner's turn (each turn for a game meter)
+  max?: number; // it can't go above this; with wrap, reaching it starts again from 0 (a cycle)
+  wrap?: boolean;
+  names?: string[]; // a name for each value, e.g. Day / Night; shown instead of the number
+  steps?: MeterStep[]; // when it reaches n: run effects, optionally reset to 0
+  aura?: { at: number; op?: 'eq' | 'ge'; stat: string; n: number }; // while the meter is (at least) `at`: units get +n stat (game: all units; player: their units; unit: that unit)
+  per?: { stat: string; n: number }; // +n stat for each point (unit meters: that unit; player meters: their units)
+  hidden?: boolean; // not shown on the battle screen
+}
+export type MeterTrigger = 'play' | 'turnStart' | 'turnEnd' | 'damaged' | 'attack' | 'destroyed';
+/** play: a card is played (player: by them; unit: by its controller; game: by anyone); turnStart/turnEnd: its owner's turn (game: every turn);
+ *  damaged: the player or unit takes damage; attack: the player or unit attacks; destroyed: a unit of the player dies (game: any unit). */
+export interface MeterGain { on: MeterTrigger; n?: number; cost?: boolean } // cost: gain the played card's cost instead of n
+export interface MeterStep { n: number; do: Effect[]; reset?: boolean; say?: string } // say: the battle log line ({p} the player, {o} the unit, {s} verb ending)
 export interface Comeback { by: 'life' | 'points' | 'units'; gap: number; bonus: 'draw' | 'resource' | 'heal'; n: number } // at the start of your turn, if you trail by `gap` or more, get the bonus
 export interface StatDef { id: string; name: string; icon?: string }
 export interface Color { id: string; name: string; hex: string; icon?: string }
@@ -143,10 +162,13 @@ export interface Setup { hand: number; mulligan: boolean; handLimit: number; dec
   london?: boolean; // mulligan: shuffle and draw a full hand again, then put 1 card on the bottom per mulligan
 }
 
-export interface Cond { k: 'units' | 'life' | 'hand' | 'yourTurn' | 'res' | 'counter' | 'zone' | 'played' | 'attached' | 'oppTurn' | 'oppLife' | 'status' | 'kicked' | 'charged' | 'linked' | 'under' | 'here' | 'attacking' | 'defending' | 'clock' | 'heat' | 'raw'; n?: number; counter?: string; zone?: string; status?: string; raw?: unknown }
+export interface Cond { k: 'units' | 'life' | 'hand' | 'yourTurn' | 'res' | 'counter' | 'zone' | 'played' | 'attached' | 'oppTurn' | 'oppLife' | 'status' | 'kicked' | 'charged' | 'linked' | 'under' | 'here' | 'attacking' | 'defending' | 'meter' | 'all' | 'any' | 'not' | 'raw'; n?: number; counter?: string; zone?: string; status?: string; raw?: unknown;
+  meter?: string; op?: 'ge' | 'le' | 'eq'; // meter: compare the meter (this unit's, your, or the game's) with n (default at least)
+  of?: Cond[] } // all / any / not: combine other conditions (not uses the first)
 export interface Filter { type?: string; color?: string; keyword?: string; stat?: string; op?: 'le' | 'ge'; val?: number; exhausted?: boolean; zone?: string; name?: string; trait?: string; status?: string;
   adjacent?: boolean; opposite?: boolean; pointed?: boolean; here?: boolean } // here: at this location (locations' abilities) // grid boards: in a neighboring column of this; in the column facing this; pointed at by this card's link arrows
-export interface Effect { k: EffectKind; n?: number; kw?: string; target?: TargetKind; filter?: Filter; stat?: string; until?: 'turn' | 'forever' | 'battle'; who?: 'me' | 'opp' | 'each'; card?: string; type?: string; rule?: KeywordRule; to?: 'hand' | 'deck' | 'play'; zone?: string; raw?: unknown[];
+export interface Effect { k: EffectKind; n?: number; meter?: string; set?: boolean; // meter: add n (or set it to n) on a meter (yours / the opponent's with who, this unit's, or the game's)
+   kw?: string; target?: TargetKind; filter?: Filter; stat?: string; until?: 'turn' | 'forever' | 'battle'; who?: 'me' | 'opp' | 'each'; card?: string; type?: string; rule?: KeywordRule; to?: 'hand' | 'deck' | 'play'; zone?: string; raw?: unknown[];
   status?: string; // inflict / cure (cure: empty = every status)
   heads?: Effect[]; tails?: Effect[]; perHeads?: boolean; // flip: n coins; heads/tails effects (several coins: heads only if all are heads, or once per heads with perHeads)
   sides?: number; ranges?: { min: number; max: number; do: Effect[] }[]; then?: Effect[]; // roll: n dice with this many sides; effects for the total's range; effects after every roll
@@ -165,6 +187,7 @@ export interface Move {
 }
 export interface CardBP {
   id: string; name: string; type: string;
+  tag?: string; // a stable handle for cards a mechanic added ("heat:cool-down"), so its options still find them after renames
   cost?: number | Record<string, number>;
   stats: Record<string, number>;
   color?: string; color2?: string; keywords: string[]; abilities: Ability[];
@@ -201,7 +224,7 @@ export interface Blueprint {
   stats: StatDef[];
   counters?: Counter[];
   statuses?: Status[];
-  clock?: WorldClock; heat?: Heat; aging?: Aging; comeback?: Comeback;
+  meters?: Meter[]; comeback?: Comeback;
   zones?: CustomZone[];
   types: CardType[];
   keywords: Keyword[];
@@ -215,7 +238,8 @@ export interface Blueprint {
   cards: CardBP[];
   decks: DeckBP[];
   recipes?: string[]; // mechanic recipes applied from the shelf
-  advanced?: { rules?: Record<string, unknown>; functions?: Record<string, unknown>; procedures?: Record<string, unknown>; triggers?: unknown[]; ai?: Record<string, unknown> };
+  advanced?: { rules?: Record<string, unknown>; functions?: Record<string, unknown>; procedures?: Record<string, unknown>; triggers?: unknown[]; ai?: Record<string, unknown>;
+    log?: Record<string, string> }; // log: battle-log text for events, e.g. {"doom": "{p} feel{s} the doom grow ({n})"}
 }
 
 /** Fills fields added after a blueprint was saved, so older projects keep loading. */

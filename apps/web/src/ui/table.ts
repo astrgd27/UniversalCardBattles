@@ -3,7 +3,7 @@ import type { GEvent, Mod, ObjView, Template, View, ZoneDef } from '#engine';
 import { eventsFor, listActions, observe } from '#engine';
 import { actor, current, pendingDialogue, playable, prefs, tutCoach, tutorial, type UI } from '../main.ts';
 import { cardBack, cardFace, cls, emblem, h, noteEl, pname, segmented, select, themeStyle, title } from './kit.ts';
-import { type Beat, beatIcon, beatsOf, drawArrows } from './director.ts';
+import { type Beat, beatIcon, beatsOf, drawArrows, fillLog } from './director.ts';
 import { animateTable } from './anim.ts';
 
 interface Fx {
@@ -163,7 +163,10 @@ function hud(c: C, mine: boolean) {
     h('button', { class: 'icon', 'aria-label': 'Menu', onclick: () => A.pause(true) }, '☰'),
     h('span', { class: 'hud-game' }, h('span', { class: 'hud-emblem' }, emblem(mod)), mod.manifest.displayName),
     h('span', { class: 'pill' }, `Turn ${v.turn}`),
-    (() => { const names = (mod.manifest.theme as any)?.clock as string[] | undefined; return names?.length ? h('span', { class: 'pill clock-pill', title: `Time: ${names.join(' → ')}` }, `🌗 ${names[v.vars.clk ?? 0] ?? names[0]}`) : null; })(),
+    ...(((mod.manifest.theme as any)?.meters ?? []) as { v: string; name: string; icon?: string; names?: string[] }[]).map((m) => {
+      const n = v.vars[m.v] ?? 0;
+      return h('span', { class: 'pill meter-pill', 'data-meter': m.v, title: m.names?.length ? `${m.name}: ${m.names.join(' → ')}` : m.name }, `${m.icon ? `${m.icon} ` : ''}${m.names?.[n] ?? `${m.name} ${n}`}`);
+    }),
     h('ol', { class: 'phase-strip', 'aria-label': 'Turn phases' }, mod.rules.phases.filter((ph) => !ph.auto || ph.id === v.phase).map((ph) => h('li', { class: cls(ph.id === v.phase && 'on') },
       mod.manifest.theme?.labels?.[ph.id] ?? title(ph.id))),
       v.window && h('li', { class: 'on window' }, `${title(v.window.step)}`)),
@@ -746,6 +749,8 @@ function friendly(e: Record<string, any>, c: C): string | null {
   const cn = (id?: string) => (id ? mod.card.get(id)?.name ?? 'a card' : 'a card');
   const lbl = (k: string) => mod.manifest.theme?.labels?.[k] ?? title(k);
   const hide = new Set(mod.manifest.theme?.hideVars ?? []);
+  const own = ((mod.manifest.theme as any)?.log ?? {}) as Record<string, string>; // the game's own event messages win
+  if (own[e.type]) return fillLog(own[e.type], e, who, (id) => (!id ? 'something' : /^p\d+$/.test(id) ? who(id) : c.label(id)));
   switch (e.type) {
     case 'phase': return e.phase === mod.rules.phases[0].id ? `— ${who(e.active) === 'You' ? 'Your' : `${who(e.active)}'s`} turn ${e.turn} —` : null;
     case 'action': {
@@ -774,10 +779,6 @@ function friendly(e: Record<string, any>, c: C): string | null {
     case 'enhanced': return `${c.label(e.o)} gets +${e.n} ${e.what}`;
     case 'stunned': return `${who(e.p)} ${who(e.p) === 'You' ? 'are' : 'is'} stunned: ${e.n} foundation${e.n === 1 ? '' : 's'} committed`;
     case 'momentum': return `${who(e.p)} gain${s(e.p)} momentum`;
-    case 'clock': { const names = (c.mod.manifest.theme as any)?.clock as string[] | undefined; return `Time passes: it is now ${names?.[e.n] ?? `time ${e.n}`}`; }
-    case 'overheat': return `${who(e.p)} overheat${s(e.p)}!`;
-    case 'aged': return `${c.label(e.o)} crumbles with age`;
-    case 'comeback': return `${who(e.p)} ${who(e.p) === 'You' ? 'are' : 'is'} behind: comeback bonus (${e.bonus === 'draw' ? `draw ${e.n}` : e.bonus === 'heal' ? `heal ${e.n}` : `+${e.n} resource`})`;
     case 'installed': return `${who(e.p)} install${s(e.p)} a card in ${lbl(e.z)}`;
     case 'rezzed': return `${who(e.p)} rez${who(e.p) === 'You' ? '' : 'zes'} ${c.label(e.o)}`;
     case 'advanced': return `${who(e.p)} advance${s(e.p)} a card (${e.n})`;

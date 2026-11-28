@@ -1,9 +1,11 @@
 // Mechanic recipes: one-click packs that add a whole system to any blueprint (stats, types, keywords, rules settings
 // and a few example cards). They are plain edits, so everything they add can be changed afterwards, and they combine:
 // an inkwell with shields and twin arenas, pitch with action points and life cards, and so on.
-import type { Blueprint, CardBP, CardType, Keyword, KeywordRule, Role } from './blueprint.ts';
+import type { Blueprint, CardBP, CardType, Effect, Keyword, KeywordRule, Meter, MeterTrigger, Role } from './blueprint.ts';
 import { normalize } from './blueprint.ts';
 import { slug } from './compile.ts';
+import { featuresOf, fits } from './fits.ts';
+import { blank } from './presets.ts';
 
 export type RecipeGroup = 'Resources' | 'Combat' | 'Board' | 'Winning' | 'Timing & turns' | 'Card types' | 'Keywords & counters';
 /** A sub-option of a shelf recipe: a short list of values you step through with arrows; it reads and writes the live blueprint. */
@@ -49,15 +51,31 @@ function ensureType(bp: Blueprint, id: string, name: string, role: Role, icon = 
   }
   return t;
 }
+let applying = ''; // the recipe being applied: cards it adds are tagged "<recipe>:<card>"
 function addCard(bp: Blueprint, c: Omit<CardBP, 'keywords' | 'abilities' | 'id'> & Partial<CardBP>, copies: number, section: 'main' | 'extra' | 'res' | 'none' = 'main'): CardBP {
   let id = c.id || slug(c.name);
   const base = id;
   for (let i = 2; bp.cards.some((k) => k.id === id); i++) id = `${base}-${i}`;
-  const card: CardBP = { keywords: [], abilities: [], ...c, id };
+  const card: CardBP = { keywords: [], abilities: [], ...c, id, ...(c.tag || applying ? { tag: c.tag ?? `${applying}:${slug(c.name)}` } : {}) };
   bp.cards.push(card);
-  if (section !== 'none') for (const d of bp.decks) { const m = (d[section] ??= {}); m[id] = (m[id] ?? 0) + copies; }
+  if (section !== 'none') for (const d of bp.decks) if (legalIn(bp, card, d)) { const m = (d[section] ??= {}); m[id] = (m[id] ?? 0) + copies; }
   fitDecks(bp);
   return card;
+}
+/** Whether a starter deck may hold this card: same side as its identity, one of its leader's colors, and within the color limit. */
+function legalIn(bp: Blueprint, card: CardBP, d: Blueprint['decks'][number]): boolean {
+  const typeOf = (c?: CardBP) => (c ? bp.types.find((t) => t.id === c.type) : undefined);
+  const leader = bp.cards.find((c) => c.id === d.leader);
+  const ts = typeOf(card)?.side, ls = typeOf(leader)?.side;
+  if (ts !== undefined && ls !== undefined && ts !== ls) return false;
+  if (!card.color) return true;
+  if (bp.setup.leaderColors && leader?.color && ![leader.color, leader.color2].includes(card.color)) return false;
+  if (bp.setup.maxColors) {
+    const cols = new Set(Object.keys(d.main).map((id) => bp.cards.find((c) => c.id === id)?.color).filter(Boolean));
+    cols.add(card.color);
+    if (cols.size > bp.setup.maxColors) return false;
+  }
+  return true;
 }
 /** Keeps deck limits wide enough for what recipes added, and sections consistent with the resource system. */
 function fitDecks(bp: Blueprint) {
@@ -73,6 +91,11 @@ function fitDecks(bp: Blueprint) {
 const needTargetMode = (bp: Blueprint) => { if (!['block', 'target'].includes(bp.combat.mode)) bp.combat.mode = 'target'; };
 const unitTypes = (bp: Blueprint) => bp.types.filter((t) => t.role === 'unit');
 
+/** Adds a meter (or returns the one with that id). */
+function ensureMeter(bp: Blueprint, m: Meter): Meter { bp.meters ??= []; const have = bp.meters.find((q) => q.id === m.id); if (have) return have; bp.meters.push(m); return m; }
+const meterOf = (bp: Blueprint, id: string) => bp.meters?.find((m) => m.id === id);
+const heatPenalty = (bp: Blueprint, kind: 'damage' | 'discard' | 'exhaust'): Effect => kind === 'discard' ? { k: 'discard', n: 2 } : kind === 'exhaust' ? { k: 'exhaust', target: 'allOwnUnits' }
+  : { k: 'lifeLoss', n: Math.max(1, Math.round(scale(bp) / 2)) };
 export const RECIPES: Recipe[] = [
   // ---------------------------------------------------------------- resources
   { id: 'ramp', name: 'Growing energy', icon: '📈', group: 'Resources', desc: 'Your energy refills each turn and grows by one, up to 10.',
@@ -270,7 +293,7 @@ export const RECIPES: Recipe[] = [
     } },
   { id: 'combatPhase', name: 'Separate combat phase', icon: '⚔', group: 'Timing & turns', desc: 'Main, then Combat, then a second Main.',
     apply: (bp) => {
-      if (bp.turn.some((p) => p.kind === 'combat')) return;
+      if (bp.turn.some((p) => p.kind === 'combat' || p.id === 'combat')) return;
       const i = bp.turn.findIndex((p) => p.kind === 'main');
       bp.turn.splice(i + 1, 0, { id: 'combat', name: 'Combat', kind: 'combat' }, { id: 'main2', name: 'Second Main', kind: 'main' });
     } },
@@ -289,6 +312,7 @@ export const RECIPES: Recipe[] = [
   { id: 'extraDeck', name: 'Fusion deck', icon: '✶', group: 'Card types', desc: 'A separate extra deck of big units, summoned by sending two of your units to the discard pile.',
     apply: (bp) => {
       ensureType(bp, 'fusion', 'Fusion', 'extra', '✶');
+      if (!bp.setup.extraMax) bp.setup.extraMax = 15;
       const s = scale(bp);
       addCard(bp, { name: 'Fused Colossus', type: 'fusion', cost: 0, materials: 2, stats: { [bp.combat.power]: s * 3, ...(bp.combat.health ? { [bp.combat.health]: s * 3 } : {}) } }, 2, 'extra');
     } },
@@ -415,19 +439,29 @@ RECIPES.push(
     } },
   { id: 'worldClock', name: 'World clock', icon: '🌗', group: 'Timing & turns', desc: 'Time moves on as turns pass (day and night, seasons…). Each time can change every unit, and cards can do more at certain times.',
     apply: (bp) => {
-      bp.clock ??= { names: ['Day', 'Night'], every: 1, effect: { at: 1, stat: bp.combat.power, n: Math.max(1, Math.round(scale(bp) / 3)) } };
+      const m = ensureMeter(bp, { id: 'clock', name: 'Time', icon: '🌗', on: 'game', gain: [{ on: 'turnStart', n: 1 }], every: 1, max: 2, wrap: true, names: ['Day', 'Night'],
+        aura: { at: 1, op: 'eq', stat: bp.combat.power, n: Math.max(1, Math.round(scale(bp) / 3)) } });
       const unit = bp.types.find((t) => t.role === 'unit');
-      if (unit) addCard(bp, { name: 'Night Prowler', type: unit.id, cost: 2, stats: { [bp.combat.power]: scale(bp), ...(bp.combat.health ? { [bp.combat.health]: scale(bp) } : {}) },
-        abilities: [{ when: 'static', if: { k: 'clock', n: bp.clock.names.length - 1 }, do: [{ k: 'aura', n: Math.max(1, scale(bp)), target: 'self' }] }] }, 2);
+      if (unit) addCard(bp, { name: 'Night Prowler', tag: 'worldClock:prowler', type: unit.id, cost: 2, stats: { [bp.combat.power]: scale(bp), ...(bp.combat.health ? { [bp.combat.health]: scale(bp) } : {}) },
+        abilities: [{ when: 'static', if: { k: 'meter', meter: m.id, op: 'eq', n: (m.names?.length ?? 2) - 1 }, do: [{ k: 'aura', n: Math.max(1, scale(bp)), target: 'self' }] }] }, 2);
     } },
   { id: 'heat', name: 'Heat', icon: '🌡', group: 'Resources', desc: 'Every card you play builds heat. Reach the limit and you overheat (a penalty), then it resets; heat cools at the start of your turn.',
     apply: (bp) => {
-      bp.heat ??= { per: 'card', limit: 5, penalty: 'damage', amount: Math.max(1, Math.round(scale(bp) / 2)), cool: 2 };
-      addCard(bp, { name: 'Cool Down', type: (bp.types.find((t) => t.role === 'spell') ?? ensureType(bp, 'spell', 'Spell', 'spell', '✦')).id, cost: 1, stats: {},
-        abilities: [{ when: 'play', do: [{ k: 'raw', raw: [['set', '$me', 'heat', 0]] }, { k: 'draw', n: 1 }] }] }, 2);
+      const m = ensureMeter(bp, { id: 'heat', name: 'Heat', icon: '🌡', on: 'player', gain: [{ on: 'play', n: 1 }], decay: 2,
+        steps: [{ n: 5, reset: true, do: [heatPenalty(bp, 'damage')], say: '{p} overheat{s}!' }] });
+      addCard(bp, { name: 'Cool Down', tag: 'heat:cool', type: (bp.types.find((t) => t.role === 'spell') ?? ensureType(bp, 'spell', 'Spell', 'spell', '✦')).id, cost: 1, stats: {},
+        abilities: [{ when: 'play', do: [{ k: 'meter', meter: m.id, set: true, n: 0 }, { k: 'draw', n: 1 }] }] }, 2);
     } },
   { id: 'aging', name: 'Aging', icon: '⌛', group: 'Keywords & counters', desc: 'Units grow older each of your turns: they can grow stronger with age, crumble at a set age, or both.',
-    apply: (bp) => { bp.aging ??= { dies: 5 }; } },
+    apply: (bp) => { ensureMeter(bp, { id: 'age', name: 'Age', icon: '⌛', on: 'unit', gain: [{ on: 'turnStart', n: 1 }], steps: [{ n: 5, do: [{ k: 'destroy', target: 'self' }], say: '{o} crumbles with age' }] }); } },
+  { id: 'rage', name: 'Rage meter', icon: '💢', group: 'Keywords & counters', desc: 'A meter of your own that fills when your units fall or you take damage. When it is full, it pays off and empties. A template for any meter: doom, combo, focus…',
+    apply: (bp) => {
+      const m = ensureMeter(bp, { id: 'rage', name: 'Rage', icon: '💢', on: 'player', gain: [{ on: 'destroyed', n: 1 }, { on: 'damaged', n: 1 }], max: 10,
+        steps: [{ n: 4, reset: true, do: [{ k: 'draw', n: 2 }], say: '{p} unleash{es} their rage!' }] });
+      const unit = bp.types.find((t) => t.role === 'unit');
+      if (unit) addCard(bp, { name: 'Seething Brute', tag: 'rage:brute', type: unit.id, cost: 2, stats: { [bp.combat.power]: scale(bp), ...(bp.combat.health ? { [bp.combat.health]: scale(bp) } : {}) },
+        abilities: [{ when: 'static', if: { k: 'meter', meter: m.id, n: 2 }, do: [{ k: 'aura', n: Math.max(1, Math.round(scale(bp) / 2)), target: 'self' }] }] }, 2);
+    } },
   { id: 'comeback', name: 'Comeback', icon: '🔄', group: 'Winning', desc: 'A player who falls behind (in life, points or units) gets a bonus at the start of each turn until they catch up.',
     apply: (bp) => { bp.comeback ??= { by: bp.win.points ? 'points' : bp.win.life ? 'life' : 'units', gap: bp.win.points ? 3 : bp.win.life ? Math.max(2, Math.round(bp.win.life / 4)) : 2, bonus: 'draw', n: 1 }; } },
 );
@@ -439,11 +473,16 @@ const at = (path: (string | number)[], label: string, values: unknown[], names?:
 const yes = ['Yes', 'No'];
 const ofType = (role: Role, key: string, label: string, values: unknown[], names?: string[]): RecipeOpt => ({ id: `${role}.${key}`, label, values, names,
   get: (bp) => (bp.types.find((t) => t.role === role) as any)?.[key], set: (bp, v) => { const t = bp.types.find((x) => x.role === role) as any; if (t) { if (v === undefined) delete t[key]; else t[key] = v; } } });
-const onCard = (id: string, path: (string | number)[], label: string, values: unknown[], names?: string[]): RecipeOpt => ({ id: `${id}.${path.join('.')}`, label, values, names,
-  get: (bp) => getP(bp.cards.find((c) => c.id === id || c.id.startsWith(`${id}-`)) ?? {}, path), set: (bp, v) => { for (const c of bp.cards) if (c.id === id || c.id.startsWith(`${id}-`)) setP(c, path, v); } });
+/** Cards a recipe added, found by their tag ("<recipe>:<card>"), so renaming or re-id-ing them doesn't break the option. */
+const tagged = (bp: Blueprint, tag: string) => bp.cards.filter((c) => c.tag === tag);
+const onCard = (tag: string, path: (string | number)[], label: string, values: unknown[], names?: string[]): RecipeOpt => ({ id: `${tag}.${path.join('.')}`, label, values, names,
+  get: (bp) => getP(tagged(bp, tag)[0] ?? {}, path), set: (bp, v) => { for (const c of tagged(bp, tag)) setP(c, path, v); } });
 const kwRule = (id: string, label: string, values: KeywordRule[], names: string[]): RecipeOpt => ({ id: `kw.${id}`, label, values, names,
   get: (bp) => bp.keywords.find((k) => k.id === id)?.rule, set: (bp, v) => { const k = bp.keywords.find((x) => x.id === id); if (k) k.rule = v; } });
 const pow = (bp: Blueprint) => bp.combat.power;
+/** A sub-option on a meter a recipe added. */
+const mOpt = (id: string, key: string, label: string, values: unknown[], names: string[] | undefined, get: (m: Meter) => unknown, set: (m: Meter, v: any, bp: Blueprint) => void): RecipeOpt =>
+  ({ id: `meter.${id}.${key}`, label, values, names, get: (bp) => { const m = meterOf(bp, id); return m ? get(m) : undefined; }, set: (bp, v) => { const m = meterOf(bp, id); if (m) set(m, v, bp); } });
 const OPTS: Record<string, RecipeOpt[]> = {
   ramp: [at(['resource', 'start'], 'First turn', [0, 1, 2, 3]), at(['resource', 'perTurn'], 'Growth per turn', [1, 2]), at(['resource', 'max'], 'Maximum', [5, 7, 10, 12, 15])],
   lands: [at(['resource', 'plays'], 'Lands per turn', [undefined, 2, 3], ['1', '2', '3']), { id: 'setup.maxColors', label: 'Colors per deck', values: [undefined, 1, 2, 3], names: ['any', '1', '2', '3'], get: (bp) => bp.setup.maxColors,
@@ -457,8 +496,8 @@ const OPTS: Record<string, RecipeOpt[]> = {
   resDeck: [{ id: 'resource.deckSize', label: 'Resource deck size', values: [6, 8, 10, 12], get: (bp) => bp.resource.deckSize,
     set: (bp, v) => { bp.resource.deckSize = v; for (const d of bp.decks) if (d.res?.['resource-card'] !== undefined) d.res['resource-card'] = v; } }, at(['resource', 'perTurn'], 'Per turn', [1, 2, 3]), at(['resource', 'secondBonus'], 'Second player bonus', [undefined, 1, 2], ['none', '+1', '+2'])],
   attachEnergy: [at(['resource', 'plays'], 'Attachments per turn', [undefined, 2], ['1', '2']),
-    { id: 'energy.copies', label: 'Energy cards per deck', values: [8, 12, 16], get: (bp) => bp.decks[0]?.main[bp.cards.find((c) => c.type === 'energy')?.id ?? ''],
-      set: (bp, v) => { const id = bp.cards.find((c) => c.type === 'energy')?.id; if (id) for (const d of bp.decks) d.main[id] = v; } }],
+    { id: 'energy.copies', label: 'Energy cards per deck', values: [8, 12, 16], get: (bp) => bp.decks[0]?.main[tagged(bp, 'attachEnergy:basic-energy')[0]?.id ?? ''],
+      set: (bp, v) => { const id = tagged(bp, 'attachEnergy:basic-energy')[0]?.id; if (id) for (const d of bp.decks) d.main[id] = v; } }],
   pitch: [at(['resource', 'actions'], 'Action points', [1, 2, 3]), at(['win', 'life'], 'Starting life', [20, 30, 40])],
   skillChecks: [at(['resource', 'checkStep'], 'Harder per card played', [undefined, 0, 2], ['+1', 'no', '+2']), at(['resource', 'failEnds'], 'A failed check ends the turn', [undefined, false], yes)],
   actionPoints: [at(['resource', 'actions'], 'Actions per turn', [2, 3, 4, 5]), at(['resource', 'spendAll'], 'Must spend them all', [undefined, true], ['No', 'Yes']), at(['resource', 'basicActions'], "'Draw' and 'take 1' actions", [undefined, true], ['No', 'Yes'])],
@@ -507,10 +546,10 @@ const OPTS: Record<string, RecipeOpt[]> = {
       get: (bp) => !!bp.counters?.find((x) => x.id === 'stun')?.expires, set: (bp, v) => { const k = bp.counters?.find((x) => x.id === 'stun'); if (k) k.expires = v; } },
     { id: 'stun.stops', label: 'A stunned unit cannot', values: ['attack,block', 'attack', 'block'], names: ['attack or block', 'attack', 'block'],
       get: (bp) => bp.counters?.find((x) => x.id === 'stun')?.stops?.join(','), set: (bp, v: string) => { const k = bp.counters?.find((x) => x.id === 'stun'); if (k) k.stops = v.split(',') as any; } }],
-  costReducer: [onCard('guild-charter', ['abilities', 0, 'do', 0, 'n'], 'Cost reduction', [1, 2])],
-  prevention: [onCard('aegis-totem', ['abilities', 0, 'do', 0, 'n'], 'Damage prevented', [1, 2, 3])],
-  banish: [onCard('grave-feaster', ['abilities', 0, 'banish'], 'Banish cost', [1, 2, 3])],
-  places: [onCard('training-grounds', ['abilities', 0, 'do', 0, 'n'], 'Power for units at a place', [1, 2, 3]),
+  costReducer: [onCard('costReducer:guild-charter', ['abilities', 0, 'do', 0, 'n'], 'Cost reduction', [1, 2])],
+  prevention: [onCard('prevention:aegis-totem', ['abilities', 0, 'do', 0, 'n'], 'Damage prevented', [1, 2, 3])],
+  banish: [onCard('banish:grave-feaster', ['abilities', 0, 'banish'], 'Banish cost', [1, 2, 3])],
+  places: [onCard('places:training-grounds', ['abilities', 0, 'do', 0, 'n'], 'Power for units at a place', [1, 2, 3]),
     { id: 'places.move', label: 'Move cost', values: [0, 1, 2], get: (bp) => bp.cards.find((c) => c.stats.move !== undefined)?.stats.move, set: (bp, v) => { for (const c of bp.cards) if (c.stats.move !== undefined) c.stats.move = v; } }],
   shift: [{ id: 'shift.off', label: 'Shift cost', values: [1, 2], names: ['cost − 1', 'cost − 2'],
     get: (bp) => { const c = bp.cards.find((k) => k.shift); return c ? (typeof c.cost === 'number' ? c.cost : 0) - c.shift! : 2; },
@@ -522,19 +561,32 @@ const OPTS: Record<string, RecipeOpt[]> = {
     { id: 'restore.when', label: 'Restore triggers', values: ['attack', 'play', 'startTurn'], names: ['when it attacks', 'when it is played', 'at the start of your turn'],
       get: (bp) => bp.keywords.find((k) => k.id === 'restore')?.abilities?.[0]?.when, set: (bp, v) => { const a = bp.keywords.find((k) => k.id === 'restore')?.abilities?.[0]; if (a) a.when = v; } }],
   zoneCombat: [at(['combat', 'nearBlock'], 'Block from the next zone', [undefined, 'full', 'none'], ['halves the damage', 'stops it all', 'does nothing']), { id: 'zone.speed', label: 'Attack speed', values: [0, 1, 2], names: ['normal', '+1 (harder to block)', '+2'],
-      get: (bp) => { const c = bp.cards.find((k) => k.id === 'low-sweep'); return c ? (c.stats.speed ?? 4) - 4 : 0; },
-      set: (bp, v: number) => { for (const [id, b] of [['low-sweep', 4], ['body-blow', 3], ['overhead-smash', 2]] as const) { const c = bp.cards.find((k) => k.id === id); if (c) c.stats.speed = b + v; } } }],
-  worldClock: [{ id: 'clock.names', label: 'Cycle', values: ['Day,Night', 'Dawn,Day,Dusk,Night', 'Spring,Summer,Autumn,Winter', 'Calm,Storm'],
-      get: (bp) => bp.clock?.names.join(','), set: (bp, v: string) => { if (!bp.clock) return; bp.clock.names = v.split(','); if (bp.clock.effect) bp.clock.effect.at = bp.clock.names.length - 1; for (const c of bp.cards) for (const a of c.abilities) if (a.if?.k === 'clock') a.if.n = bp.clock.names.length - 1; } },
-    at(['clock', 'every'], 'Turns per time', [1, 2, 3]),
-    { id: 'clock.effect', label: 'Last time of the cycle', values: ['+1', '-1', 'none'], names: ['units +1 power', 'units −1 power', 'no change'],
-      get: (bp) => (!bp.clock?.effect ? 'none' : bp.clock.effect.n > 0 ? '+1' : '-1'),
-      set: (bp, v: string) => { if (!bp.clock) return; if (v === 'none') delete bp.clock.effect; else bp.clock.effect = { at: bp.clock.names.length - 1, stat: pow(bp), n: (v === '+1' ? 1 : -1) * Math.max(1, Math.round(scale(bp) / 3)) }; } }],
-  heat: [at(['heat', 'limit'], 'Overheat at', [3, 5, 7, 10]), at(['heat', 'per'], 'Heat per', ['card', 'cost'], ['card played', 'point of cost']),
-    at(['heat', 'penalty'], 'Overheating', ['damage', 'discard', 'exhaust'], ['deals you damage', 'discards cards', 'exhausts your units']), at(['heat', 'cool'], 'Cools per turn', [1, 2, 3])],
-  aging: [at(['aging', 'dies'], 'Crumbles at age', [undefined, 3, 4, 5, 6], ['never', '3', '4', '5', '6']),
-    { id: 'aging.grow', label: 'Each turn of age', values: ['none', 'power'], names: ['no change', '+1 power'],
-      get: (bp) => (bp.aging?.grow ? 'power' : 'none'), set: (bp, v) => { if (!bp.aging) return; if (v === 'none') delete bp.aging.grow; else bp.aging.grow = { stat: pow(bp), n: Math.max(1, Math.round(scale(bp) / 4)) }; } }],
+      get: (bp) => { const c = tagged(bp, 'zoneCombat:low-sweep')[0]; return c ? (c.stats.speed ?? 4) - 4 : 0; },
+      set: (bp, v: number) => { for (const [id, b] of [['low-sweep', 4], ['body-blow', 3], ['overhead-smash', 2]] as const) for (const c of tagged(bp, `zoneCombat:${id}`)) c.stats.speed = b + v; } }],
+  worldClock: [mOpt('clock', 'names', 'Cycle', ['Day,Night', 'Dawn,Day,Dusk,Night', 'Spring,Summer,Autumn,Winter', 'Calm,Storm'], undefined, (m) => m.names?.join(','),
+      (m, v: string, bp) => { m.names = v.split(','); m.max = m.names.length; const last = m.names.length - 1; if (m.aura) m.aura.at = last;
+        for (const c of bp.cards) for (const ab of c.abilities) if (ab.if?.k === 'meter' && ab.if.meter === m.id) ab.if.n = last; }),
+    mOpt('clock', 'every', 'Turns per time', [1, 2, 3], undefined, (m) => m.every ?? 1, (m, v) => { m.every = v; }),
+    mOpt('clock', 'aura', 'Last time of the cycle', ['+1', '-1', 'none'], ['units +1 power', 'units −1 power', 'no change'],
+      (m) => (!m.aura ? 'none' : m.aura.n > 0 ? '+1' : '-1'),
+      (m, v: string, bp) => { if (v === 'none') delete m.aura; else m.aura = { at: (m.names?.length ?? 2) - 1, op: 'eq', stat: pow(bp), n: (v === '+1' ? 1 : -1) * Math.max(1, Math.round(scale(bp) / 3)) }; })],
+  heat: [mOpt('heat', 'limit', 'Overheat at', [3, 5, 7, 10], undefined, (m) => m.steps?.[0]?.n, (m, v) => { if (m.steps?.[0]) m.steps[0].n = v; }),
+    mOpt('heat', 'per', 'Heat per', ['card', 'cost'], ['card played', 'point of cost'], (m) => (m.gain.find((q) => q.on === 'play')?.cost ? 'cost' : 'card'),
+      (m, v) => { const q = m.gain.find((x) => x.on === 'play'); if (q) { if (v === 'cost') q.cost = true; else delete q.cost; } }),
+    mOpt('heat', 'penalty', 'Overheating', ['damage', 'discard', 'exhaust'], ['deals you damage', 'discards cards', 'exhausts your units'],
+      (m) => { const k = m.steps?.[0]?.do[0]?.k; return k === 'discard' ? 'discard' : k === 'exhaust' ? 'exhaust' : 'damage'; },
+      (m, v, bp) => { if (m.steps?.[0]) m.steps[0].do = [heatPenalty(bp, v)]; }),
+    mOpt('heat', 'decay', 'Cools per turn', [1, 2, 3], undefined, (m) => m.decay ?? 0, (m, v) => { m.decay = v; })],
+  aging: [mOpt('age', 'dies', 'Crumbles at age', [0, 3, 4, 5, 6], ['never', '3', '4', '5', '6'], (m) => m.steps?.find((q) => q.do[0]?.k === 'destroy')?.n ?? 0,
+      (m, v) => { m.steps = (m.steps ?? []).filter((q) => q.do[0]?.k !== 'destroy'); if (v) m.steps.push({ n: v, do: [{ k: 'destroy', target: 'self' }], say: '{o} crumbles with age' }); }),
+    mOpt('age', 'per', 'Each turn of age', ['none', 'power'], ['no change', '+1 power'], (m) => (m.per ? 'power' : 'none'),
+      (m, v, bp) => { if (v === 'none') delete m.per; else m.per = { stat: pow(bp), n: Math.max(1, Math.round(scale(bp) / 4)) }; })],
+  rage: [mOpt('rage', 'gain', 'Fills when', ['destroyed,damaged', 'destroyed', 'damaged', 'attack', 'play'], ['your units fall or you are hurt', 'your units fall', 'you take damage', 'you attack', 'you play a card'],
+      (m) => m.gain.map((q) => q.on).join(','), (m, v: string) => { m.gain = v.split(',').map((on) => ({ on: on as MeterTrigger, n: 1 })); }),
+    mOpt('rage', 'size', 'Full at', [3, 4, 6, 8], undefined, (m) => m.steps?.[0]?.n, (m, v) => { if (m.steps?.[0]) m.steps[0].n = v; }),
+    mOpt('rage', 'pay', 'When full', ['draw', 'damage', 'ready'], ['draw 2 cards', 'deal 3 damage to the opponent', 'ready all your units'],
+      (m) => { const k = m.steps?.[0]?.do[0]?.k; return k === 'damage' ? 'damage' : k === 'ready' ? 'ready' : 'draw'; },
+      (m, v) => { if (m.steps?.[0]) m.steps[0].do = [v === 'damage' ? { k: 'damage', n: 3, target: 'opponent' } : v === 'ready' ? { k: 'ready', target: 'allOwnUnits' } : { k: 'draw', n: 2 }]; })],
   comeback: [at(['comeback', 'by'], 'Behind in', ['life', 'points', 'units']), at(['comeback', 'gap'], 'By at least', [2, 3, 5, 10]), at(['comeback', 'bonus'], 'Bonus', ['draw', 'resource', 'heal'], ['draw a card', '+1 resource', 'heal'])],
 };
 for (const r of RECIPES) r.opts = OPTS[r.id] ?? [];
@@ -545,7 +597,8 @@ export function applyRecipe(bp: Blueprint, id: string): Blueprint {
   normalize(bp);
   const r = RECIPES.find((x) => x.id === id);
   if (!r) return bp;
-  r.apply(bp);
+  applying = id;
+  try { r.apply(bp); } finally { applying = ''; }
   fitDecks(bp);
   bp.recipes = [...new Set([...(bp.recipes ?? []), id])];
   return bp;
@@ -558,14 +611,20 @@ export const RANDOM_PICKS: string[][] = [
   ['lifeTotal', 'lifeCards', 'shields', 'prizes'],
   ['stack', 'chain', 'alternate', 'combatPhase', 'drawTo'],
   ['traps', 'tribute', 'evolution', 'extraDeck', 'gear', 'songs', 'items'],
-  ['keywordKit', 'growth', 'restrictions', 'conditions', 'costReducer', 'prevention', 'restore', 'counterStep', 'boost', 'leader', 'banish', 'stadium'],
+  ['keywordKit', 'growth', 'restrictions', 'conditions', 'costReducer', 'prevention', 'restore', 'counterStep', 'boost', 'leader', 'banish', 'stadium', 'worldClock', 'heat', 'aging', 'rage', 'comeback'],
 ];
 export function surpriseRecipes(seed: number): string[] {
   let x = (seed >>> 0) || 1;
   const rnd = (n: number) => { x ^= x << 13; x ^= x >>> 17; x ^= x << 5; return (x >>> 0) % n; };
-  const out = RANDOM_PICKS.map((g) => g[rnd(g.length)]);
-  if (out[0] === 'pitch' && out[1] === 'lanes') out[1] = 'target'; // attack cards need a battle window, which battlefields don't have
-  const extra = RANDOM_PICKS[4 + rnd(2)];
-  out.push(extra[rnd(extra.length)]);
-  return [...new Set(out)];
+  // one pick per group (plus one extra), each chosen among the mechanics that fit what is already in (fits.ts)
+  const bp = blank();
+  const out: string[] = [];
+  for (const g of [...RANDOM_PICKS, RANDOM_PICKS[4 + rnd(2)]]) {
+    const ok = g.filter((id) => !out.includes(id) && fits(id, featuresOf(bp)));
+    if (!ok.length) continue;
+    const id = ok[rnd(ok.length)];
+    applyRecipe(bp, id);
+    out.push(id);
+  }
+  return out;
 }

@@ -1,7 +1,7 @@
 // Game Maker: friendly blueprints compiled into engine modules, with plain-language checks ("bugs" and "tips").
 import type { Mod } from '#engine';
 import { compileModule, deckErrors, validateModule } from '#engine';
-import type { Blueprint } from './blueprint.ts';
+import type { Blueprint, Cond } from './blueprint.ts';
 import { UNIT_ROLES, compileBlueprint, context } from './compile.ts';
 
 export * from './blueprint.ts';
@@ -33,6 +33,20 @@ export function lint(bp: Blueprint): Problem[] {
   if (bp.combat.health && !statIds.has(bp.combat.health)) bug(`Combat uses the health stat "${bp.combat.health}", which your game doesn't have.`, 'rules');
   if (!x.life && !x.lifeCards && !x.prizes && !x.points) bug('Nobody can win! Turn on life, life cards, prizes or points.', 'rules');
   if (!bp.turn.some((p) => p.kind === 'main')) bug('Your turn needs a Main phase, or nobody can play cards.', 'turn');
+  // meters: unique ids, and every condition or effect that names one must find it
+  const meterIds = new Set<string>();
+  for (const m of bp.meters ?? []) {
+    if (meterIds.has(m.id)) bug(`Two meters share the id "${m.id}".`, 'keywords');
+    meterIds.add(m.id);
+    if (!m.gain.length && !(m.steps ?? []).length && !m.aura && !m.per) tip(`The meter "${m.name}" never changes and does nothing yet.`, 'keywords');
+    if (m.wrap && !m.max) bug(`The meter "${m.name}" cycles but has no max.`, 'keywords');
+  }
+  const condMeters = (q: Cond | undefined): string[] => (!q ? [] : q.k === 'meter' ? [q.meter ?? ''] : (q.of ?? []).flatMap(condMeters));
+  for (const k of bp.cards) for (const a of k.abilities) {
+    for (const id of condMeters(a.if)) if (!meterIds.has(id)) bug(`${k.name}: its condition uses a meter that doesn't exist ("${id}").`, `card:${k.id}`);
+    for (const e of a.do) if (e.k === 'meter' && !meterIds.has(e.meter ?? '')) bug(`${k.name}: "Change a meter" needs a meter (make one under Keywords → Meters).`, `card:${k.id}`);
+    if ((a.if?.k === 'all' || a.if?.k === 'any' || a.if?.k === 'not') && !a.if.of?.length) tip(`${k.name}: a combined condition has nothing in it.`, `card:${k.id}`);
+  }
   const ids = new Set<string>();
   for (const t of bp.types) { if (ids.has(t.id)) bug(`Two card types share the id "${t.id}".`, 'types'); ids.add(t.id); }
   const cardIds = new Set<string>();
@@ -77,3 +91,8 @@ export function build(bp: Blueprint): { mod: Mod | null; problems: Problem[] } {
 }
 export { SCRIPT_FORMAT, SCRIPT_PARTS, exportScripts, importScripts, readScripts } from './scripts.ts';
 export type { ScriptBundle, ScriptPart } from './scripts.ts';
+export { STARTER_SCRIPTS, libraryEntry } from './library.ts';
+export type { LibraryScript } from './library.ts';
+export { FITS, featuresOf, fitIssues, fits, featureName } from './fits.ts';
+export type { Fit, FitIssue } from './fits.ts';
+export { answerFeatures } from './wizard.ts';

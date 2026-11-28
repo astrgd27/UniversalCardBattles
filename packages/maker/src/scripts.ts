@@ -5,8 +5,8 @@ import type { Blueprint } from './blueprint.ts';
 export const SCRIPT_FORMAT = 'ucb-script';
 type Advanced = NonNullable<Blueprint['advanced']>;
 export interface ScriptBundle { format: typeof SCRIPT_FORMAT; v: 1; from?: string; advanced: Advanced; cards?: Record<string, Record<string, unknown>> }
-export type ScriptPart = 'rules' | 'triggers' | 'functions' | 'procedures' | 'ai' | 'cards';
-export const SCRIPT_PARTS: ScriptPart[] = ['rules', 'triggers', 'functions', 'procedures', 'ai', 'cards'];
+export type ScriptPart = 'rules' | 'triggers' | 'functions' | 'procedures' | 'ai' | 'log' | 'cards';
+export const SCRIPT_PARTS: ScriptPart[] = ['rules', 'triggers', 'functions', 'procedures', 'ai', 'log', 'cards'];
 
 const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 const empty = (v: unknown) => v === undefined || (Array.isArray(v) ? !v.length : isObj(v) && !Object.keys(v).length);
@@ -33,13 +33,14 @@ export function readScripts(data: unknown): ScriptBundle {
   const b: ScriptBundle = data.format === SCRIPT_FORMAT ? (data as unknown as ScriptBundle)
     : Object.keys(data).length && Object.keys(data).every((k) => SCRIPT_PARTS.includes(k as ScriptPart))
       ? { format: SCRIPT_FORMAT, v: 1, advanced: Object.fromEntries(Object.entries(data).filter(([k]) => k !== 'cards')) as Advanced, ...(isObj(data.cards) ? { cards: data.cards as any } : {}) }
-      : (() => { throw new Error('This is not a Script Lab file (expected "format": "ucb-script", or the keys rules, triggers, functions, procedures, ai, cards).'); })();
+      : (() => { throw new Error('This is not a Script Lab file (expected "format": "ucb-script", or the keys rules, triggers, functions, procedures, ai, log, cards).'); })();
   if (b.v !== undefined && b.v !== 1) throw new Error(`Script file version ${b.v} is newer than this app understands.`);
   const a = b.advanced ?? {};
   if (!isObj(a)) throw new Error('"advanced" must be an object.');
-  for (const k of ['rules', 'functions', 'procedures', 'ai'] as const) if (a[k] !== undefined && !isObj(a[k])) throw new Error(`"${k}" must be an object.`);
+  for (const k of ['rules', 'functions', 'procedures', 'ai', 'log'] as const) if (a[k] !== undefined && !isObj(a[k])) throw new Error(`"${k}" must be an object.`);
   if (a.triggers !== undefined && !Array.isArray(a.triggers)) throw new Error('"triggers" must be a list.');
   for (const [i, t] of (a.triggers ?? []).entries()) if (!isObj(t) || typeof t.on !== 'string' || !Array.isArray(t.do)) throw new Error(`Trigger ${i + 1} needs "on" (an event name) and "do" (a list of effects).`);
+  for (const [t, line] of Object.entries(a.log ?? {})) if (typeof line !== 'string') throw new Error(`The message for event "${t}" must be text.`);
   for (const k of ['functions', 'procedures'] as const) for (const [n, f] of Object.entries(a[k] ?? {}))
     if (!isObj(f) || (k === 'functions' ? !('body' in f) : !Array.isArray(f.do))) throw new Error(`${k === 'functions' ? 'Function' : 'Procedure'} "${n}" needs ${k === 'functions' ? '"body"' : '"do" (a list)'}.`);
   if (b.cards !== undefined && !isObj(b.cards)) throw new Error('"cards" must map card ids to patches.');
@@ -65,14 +66,14 @@ export function importScripts(bp: Blueprint, bundle: ScriptBundle, mode: 'merge'
       report.push(`${plural(add.length, 'trigger')} added${add.length < a.triggers.length ? ` (${a.triggers.length - add.length} already there)` : ''}`);
     }
   }
-  for (const k of ['functions', 'procedures', 'ai'] as const) {
+  for (const k of ['functions', 'procedures', 'ai', 'log'] as const) {
     const inc = a[k];
     if (!inc) continue;
     const before = adv[k] ?? {};
     const clash = Object.keys(inc).filter((n) => n in before);
-    adv[k] = mode === 'merge' ? { ...before, ...structuredClone(inc) } : structuredClone(inc);
-    const what = k === 'ai' ? 'AI hint' : k.slice(0, -1);
-    report.push(mode === 'merge' ? `${plural(Object.keys(inc).length - clash.length, what)} added${clash.length ? `, ${clash.length} replaced (${clash.join(', ')})` : ''}` : `${k === 'ai' ? 'AI hints' : k[0].toUpperCase() + k.slice(1)} replaced (${plural(Object.keys(inc).length, what)})`);
+    (adv as any)[k] = mode === 'merge' ? { ...before, ...structuredClone(inc) } : structuredClone(inc);
+    const what = k === 'ai' ? 'AI hint' : k === 'log' ? 'event message' : k.slice(0, -1);
+    report.push(mode === 'merge' ? `${plural(Object.keys(inc).length - clash.length, what)} added${clash.length ? `, ${clash.length} replaced (${clash.join(', ')})` : ''}` : `${k === 'ai' ? 'AI hints' : k === 'log' ? 'Event messages' : k[0].toUpperCase() + k.slice(1)} replaced (${plural(Object.keys(inc).length, what)})`);
   }
   if (bundle.cards) {
     let n = 0;

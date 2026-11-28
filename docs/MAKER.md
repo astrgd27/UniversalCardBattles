@@ -411,14 +411,15 @@ Every recipe has 1–4 sub-options (103 in all, in `OPTS` in `packages/maker/src
   - at least one value changes the compiled module, so no option is decorative.
 
 ### Mechanics no source game has
-Each of these sits in the group it belongs to, next to the borrowed mechanics: World clock in Timing & turns, Heat in Resources, Aging in Keywords & counters, Comeback in Winning, and Zone combat in Combat.
-- **World clock** (`bp.clock`): named times (Day/Night, four seasons, Calm/Storm) that move on every N turns. The last time can boost or weaken every unit; the condition `{k:'clock', n}` gates abilities ("Night Prowler"). The battle HUD shows the current time, and the log announces changes.
-- **Heat** (`bp.heat`): each card played (or each point of cost) adds heat. At the limit you overheat and take damage, discard or exhaust your units, then reset. It cools each turn. The condition `{k:'heat', n}` and the "Cool Down" card interact with it.
-- **Aging** (`bp.aging`): units gain an age counter each of their owner's turns. They can grow stronger with age, crumble at a set age, or both.
-- **Comeback** (`bp.comeback`): a player behind by a set gap in life, points or units gets a draw, a resource or healing at the start of each turn until they catch up.
-- **Zone combat**: high/mid/low attacks with speed; blocking from the next zone halves, stops or does nothing, and attack speed is tunable.
+Each of these sits in the group it belongs to, next to the borrowed mechanics.
+- **World clock** (Timing & turns): a game **meter** with named values (Day/Night, four seasons, Calm/Storm) that cycles every N turns. Its last value can boost or weaken every unit, and the meter condition gates abilities ("Night Prowler"). The battle HUD shows the current time, and the log announces each change.
+- **Heat** (Resources): a player meter raised by each card played (or by its cost). At its step you overheat, pay the penalty (damage, discard or exhaust) and reset. It decays each turn. "Cool Down" uses the *Change a meter* block.
+- **Aging** (Keywords & counters): a unit meter that rises each of its owner's turns. A step destroys the unit at a set age, and/or it gets +power per point.
+- **Rage meter** (Keywords & counters): a player meter raised when your units fall or you take damage, which pays off when full. It is the template for any custom meter.
+- **Comeback** (Winning): a player behind by a set gap in life, points or units gets a draw, a resource or healing at the start of each turn until they catch up.
+- **Zone combat** (Combat): high/mid/low attacks with speed. Blocking from the next zone halves the damage, stops it all or does nothing, and attack speed is tunable.
 
-All five are in the Game Wizard's optional systems, gated to the combat systems where they make sense.
+All of them are in the Game Wizard's optional systems, gated to the combat systems where they make sense.
 
 Further ideas, not built yet:
 - a shared market row both players buy from;
@@ -436,6 +437,71 @@ The recipes cover the structures needed for future starter games:
 - twin arenas with a base, alternating actions and a deployable leader;
 - pitch with attack cards, blocking from hand and go again;
 - action points with energy lines and life triggers.
+
+## What fits with what (one table)
+`packages/maker/src/fits.ts` holds, for each mechanic, what it **needs** (all of), **needs any** of, **clashes** with, and whether it **replaces** a core system (resources or combat). Features are plain strings:
+- `res:<system>`, e.g. `res:pitch`, `res:skillChecks`, `res:free`;
+- `combat:<style>`, e.g. `combat:lanes`, `combat:duel`, `combat:runs`;
+- the ids of mechanics already added, e.g. `quest`;
+- `units`: a card type that fights;
+- `scripted`: cards or rules with custom script.
+
+Three tools read the same table:
+- **Game Wizard:** `answerFeatures(answers)` turns the picks into features, and each mechanic option is shown only when it fits.
+- **Mechanics Shelf:** `featuresOf(bp)` reads the game.
+  - A mechanic that doesn't fit is dimmed, with the reason ("Needs a card type that fights", "Doesn't work with battlefields").
+  - Swapping a core system in a game with scripted cards gives a softer warning.
+  - **Adding is tried on a copy first.** If the mechanic would add build errors, the shelf lists them and asks *Add anyway* or *Cancel*.
+- **Surprise me:** each pick is chosen among the mechanics that fit what is already in.
+
+Two safety nets in the compiler:
+- Costs paid outside a mana pool (move to a place, shift, boost, ward…) are free in games without one.
+- Zones that effect blocks mention but the game lacks (resources, active, bench…) are declared empty and hidden, so those blocks do nothing instead of breaking the build.
+
+A sweep of every mechanic on every default game is the evidence behind the table. `recipe-options.test.ts` re-checks blank, Lairbreakers, Looboo and Generation Wars: every mechanic the table allows builds there.
+
+## Meters (Keywords station)
+A meter is a number kept on each player, each unit or the whole game (`bp.meters`, stored as var `m_<id>`). Heat, rage, age, doom tracks, combo counters and day/night clocks are all meters.
+- **Raised by** any of:
+  - a card being played (by its amount, or by the card's cost);
+  - the owner's turn starting or ending;
+  - taking damage;
+  - attacking;
+  - a unit being destroyed.
+
+  Turn-based gains can happen every N turns.
+- **Shape:**
+  - it can decay each turn;
+  - it can cap at a max, or cycle back to 0 there;
+  - its values can have names (Day, Night…), shown in the HUD for game meters.
+- **Steps:** when the meter reaches n, it runs effects (any ability block), optionally resets, and writes its own log line (`say`, with `{p}`, `{o}` and `{s}`).
+- **Bonuses:**
+  - *aura*: while the meter is at least (or exactly) a value, units get +n of a stat. Game meters give it to all units, player meters to that player's units, and unit meters to that unit.
+  - *per point*: +n of a stat for each point.
+- **On cards:**
+  - the condition *if a meter is at a value* (at least / at most / exactly; named values can be picked by name);
+  - the effect *Change a meter* (add, subtract or set; yours or the opponent's).
+- **Compiled form:** one procedure per meter, `mtr_<id>(owner, n)`, which adds, clamps or cycles, runs the steps it crosses and emits `mt_<id>_<step>` / `mv_<id>_<value>`. Triggers call it, and so do the effect blocks.
+- **Checks:** lint flags duplicate meter ids, cycles without a max, and conditions or effects naming a missing meter.
+
+## Combined conditions
+An ability's *If* can be **all of these…**, **any of these…** or **not…**, each holding further conditions (up to four levels), e.g. "if it is Night and not during your turn". The card text reads naturally ("if A and B", "if A or B", "unless A"). In the blueprint: `{k: 'all' | 'any' | 'not', of: Cond[]}`.
+
+## Event messages (log text as data)
+The battle log and the move captions take a game's own lines from `theme.log`, keyed by event type, before the built-in text. The compiler fills it from:
+- meter steps and named values;
+- comeback;
+- the Script Lab's **Event messages** box (`advanced.log`), so events your own triggers `emit` get readable lines.
+
+Templates:
+- `{p}`: the player, as You or Opponent;
+- `{o}`: a card;
+- `{s}` / `{es}`: verb endings;
+- `{is}` / `{has}`;
+- any `{field}` of the event: player ids and card ids become names.
+
+## Card tags
+Cards a mechanic adds are tagged `<recipe>:<card>` (e.g. `costReducer:guild-charter`). Sub-options find their example cards by tag, so renaming a card or changing its id doesn't break the option.
 
 ## Workshop extras
 - **Undo / redo** (↶ ↷ in the top bar). Fast typing collapses into one step.
@@ -461,6 +527,7 @@ The recipes cover the structures needed for future starter games:
     - A report lists what changed.
     - *Export compiled rules* downloads the full compiled `rules.json`.
     - `scripts.test.ts` covers the round trip, merge and replace, and rejection of bad files.
+  - **Script library:** save the current game's scripts under a name, then add them to any project, export them or delete them. The library is kept in the browser and shared by all projects. Built-in starter scripts (`packages/maker/src/library.ts`): Overtime, Doom clock, Second wind, Helper functions, Aggressive AI. Each one is tested to build and play on a blank game.
 
 Everything here is the engine DSL (`docs/DSL.md`), so a Maker game can grow into anything an official module does.
 

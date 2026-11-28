@@ -5,7 +5,7 @@ import type { Match } from '#engine';
 import { IllegalAction, commitAction, createMatch, determinize, listActions, observe, submitDecision } from '#engine';
 import { makeAgent } from '#ai';
 import { packFiles } from '#sdk';
-import { type Blueprint, type CardBP, type Problem, BLUEPRINTS, RECIPES, applyRecipe, build, surpriseRecipes, type WizAnswers, WIZARD, optionsFor, wizardBuild, cardsFromCsv, cardsToCsv, compileBlueprint, fromBlueprint, normalize, rulebookMarkdown, slug, exportScripts, importScripts, readScripts } from '#maker';
+import { type Blueprint, type CardBP, type Problem, BLUEPRINTS, RECIPES, applyRecipe, build, surpriseRecipes, type WizAnswers, WIZARD, optionsFor, wizardBuild, cardsFromCsv, cardsToCsv, compileBlueprint, fromBlueprint, normalize, rulebookMarkdown, slug, featuresOf, fitIssues, exportScripts, importScripts, readScripts, STARTER_SCRIPTS, libraryEntry, type LibraryScript, type ScriptBundle } from '#maker';
 import { MODULES, SOURCES } from './modules.ts';
 import { store } from './storage.ts';
 
@@ -24,6 +24,7 @@ export interface MakerUI {
   sim: { done: number; total: number; lines: string[]; running: boolean; cards?: { id: string; name: string; games: number; wins: number }[] } | null;
   undo: string[]; redo: string[]; lastEdit: number;
   rawErr: Record<string, string>;
+  confirm?: { id: string; name: string; why: string[] }; // a mechanic that would break the game, waiting for "add anyway"
   script?: { mode: 'merge' | 'replace'; report?: string[]; err?: string }; // Script Lab import/export
   test: { a: string; b: string; opp: 'heuristic' | 'random' | 'human' };
 }
@@ -62,6 +63,9 @@ export function projects(): { id: string; p: Project }[] {
   return store.keys('ucb-maker:').map((k) => ({ id: k.slice('ucb-maker:'.length), p: store.get<Project | null>(k, null)! })).filter((x) => x.p?.bp)
     .sort((a, b) => b.p.updated.localeCompare(a.p.updated));
 }
+/** The user's own script library, shared by all their projects. */
+const LIB = 'ucb-scriptlib';
+export const scriptLibrary = (): LibraryScript[] => store.get<LibraryScript[]>(LIB, []);
 export const published = (id: string) => store.get<Blueprint | null>(PUB(id), null) !== null;
 export const isMakerModule = (m: Mod) => (m.manifest.licensing ?? '').startsWith('Made with the Universal Card Battles Game Maker');
 
@@ -240,7 +244,18 @@ export function makerActions(ui: any, redraw: () => void, A: any) {
     mkLoad(id: string) { const p = store.get<Project | null>(PKEY(id), null); if (!p) return; Object.assign(mk(), { project: id, station: 'identity', card: null, deck: null, type: p.bp.types[0]?.id ?? null, sim: null, undo: [], redo: [] }); firstDecks(p.bp); redraw(); },
     mkUndo() { const p = cur(); const m = mk(); const prev = m.undo.pop(); if (!p || !prev) return; m.redo.push(JSON.stringify(p.bp)); p.bp = JSON.parse(prev); save(p); m.lastEdit = 0; redraw(); },
     mkRedo() { const p = cur(); const m = mk(); const next = m.redo.pop(); if (!p || !next) return; m.undo.push(JSON.stringify(p.bp)); p.bp = JSON.parse(next); save(p); m.lastEdit = 0; redraw(); },
-    mkRecipe(id: string, name: string) { mk().lastEdit = 0; edit((bp) => applyRecipe(bp, id), 'shelf'); if (!mk().toast || Date.now() - mk().toast!.at > 300) mk().toast = { text: `Added ${name} to your game. Undo if it isn't what you wanted.`, xp: 0, at: Date.now() }; blip(760, 120); redraw(); },
+    /** Adds a mechanic. It is tried on a copy first: if it would break the game, the shelf asks before adding it. */
+    mkRecipe(id: string, name: string, force = false) {
+      const p = cur(); if (!p) return;
+      if (!force) {
+        const before = new Set(problems(p.bp).filter((q) => q.level === 'bug').map((q) => q.text));
+        const trial = applyRecipe(JSON.parse(JSON.stringify(p.bp)) as Blueprint, id);
+        const added = problems(trial).filter((q) => q.level === 'bug' && !before.has(q.text)).map((q) => q.text);
+        const issues = fitIssues(id, featuresOf(p.bp)).filter((q) => q.level === 'blocks').map((q) => q.text);
+        if (added.length || issues.length) { mk().confirm = { id, name, why: [...issues, ...added.slice(0, 4)] }; redraw(); return; }
+      }
+      mk().confirm = undefined;
+      mk().lastEdit = 0; edit((bp) => applyRecipe(bp, id), 'shelf'); if (!mk().toast || Date.now() - mk().toast!.at > 300) mk().toast = { text: `Added ${name} to your game. Undo if it isn't what you wanted.`, xp: 0, at: Date.now() }; blip(760, 120); redraw(); },
     mkCsvExport() { const p = cur(); if (p) download(`${p.bp.id}-cards.csv`, cardsToCsv(p.bp), 'text/csv'); },
     async mkCsvImport(file: File) {
       const text = await file.text();
@@ -444,11 +459,21 @@ export function makerActions(ui: any, redraw: () => void, A: any) {
     mkScriptMode(mode: 'merge' | 'replace') { mk().script = { ...mk().script, mode }; redraw(); },
     mkExportScripts() { const p = cur(); if (p) download(`${p.bp.id}.script.json`, JSON.stringify(exportScripts(p.bp), null, 1), 'application/json'); },
     mkExportRules() { const p = cur(); if (!p) return; const def = compileBlueprint(p.bp) as any; download(`${p.bp.id}.rules.json`, JSON.stringify(def.rules, null, 1), 'application/json'); },
-    async mkImportScripts(src: File | string) {
+    mkLibSave(name: string) {
+      const p = cur(); if (!p) return;
+      const e = libraryEntry(name || `${p.bp.name} scripts`, exportScripts(p.bp));
+      store.set(LIB, [e, ...scriptLibrary()].slice(0, 100));
+      mk().script = { mode: mk().script?.mode ?? 'merge', report: [`Saved "${e.name}" to your script library.`] }; redraw();
+    },
+    mkLibDelete(id: string) { store.set(LIB, scriptLibrary().filter((e) => e.id !== id)); redraw(); },
+    mkLibExport(id: string) { const e = [...STARTER_SCRIPTS, ...scriptLibrary()].find((x) => x.id === id); if (e) download(`${e.id}.script.json`, JSON.stringify(e.bundle, null, 1), 'application/json'); },
+    mkLibAdd(id: string) { const e = [...STARTER_SCRIPTS, ...scriptLibrary()].find((x) => x.id === id); if (e) out.mkImportScripts(e.bundle, e.name); },
+    async mkImportScripts(src: File | string | ScriptBundle, label?: string) {
       const m = mk();
       const mode = m.script?.mode ?? 'merge';
       try {
-        const bundle = readScripts(JSON.parse(typeof src === 'string' ? src : await src.text()));
+        const bundle = readScripts(typeof src === 'string' ? JSON.parse(src) : src instanceof Blob ? JSON.parse(await src.text()) : src);
+        if (label) bundle.from = label;
         let report: string[] = [];
         edit((bp) => { report = importScripts(bp, bundle, mode); }, 'lab');
         m.rawErr = {};
@@ -456,6 +481,7 @@ export function makerActions(ui: any, redraw: () => void, A: any) {
       } catch (e) { m.script = { mode, err: (e as Error).message }; }
       redraw();
     },
+    mkCancelRecipe() { mk().confirm = undefined; redraw(); },
     mkToast() { mk().toast = null; redraw(); },
   };
   return out;

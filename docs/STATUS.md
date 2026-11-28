@@ -465,6 +465,26 @@ A survey of about 30 published TCG rulebooks (`docs/COVERAGE.md`, second table) 
 - Import from a file or pasted JSON, merged in or replacing what is there, with validation and a change report.
 - See MAKER.md, "Deeper scripting". Tests: `scripts.test.ts`; the e2e run covers the recipe arrows and the paste import.
 
+## Done: systemization pass (meters, fits table, log data, combined conditions, tags, script library)
+- **Meters** (`bp.meters`) are one building block for player, unit and game numbers:
+  - gains, decay, cap or cycle, value names, steps with effects, auras and per-point bonuses;
+  - a meter condition and a *Change a meter* effect;
+  - World clock, Heat and Aging are now meter presets, and Rage is a new template.
+- **Fits table** (`fits.ts`): needs, clashes and replaces for each mechanic.
+  - The Wizard, the shelf (warnings, plus a test-build and confirm before adding) and Surprise me all read it.
+  - A sweep of 59 mechanics × 9 games found the compiler and recipe bugs, now fixed:
+    - mana-only costs;
+    - dual-land checks without a pool;
+    - grid-only filters;
+    - missing zones;
+    - extra-deck limits;
+    - duplicate combat phases;
+    - example cards put in decks they're illegal in.
+- **Event messages:** `theme.log` templates for the log and captions, filled from meters, comeback and the Script Lab's Event messages box.
+- **Combined conditions:** all / any / not, nested.
+- **Card tags:** sub-options find example cards by tag.
+- **Script library:** saved scripts shared across projects, plus five starter scripts.
+
 ## Possible next steps
 - NIGHTFALL: the remaining art; human playtests to confirm the AI-tuned numbers.
 - Shadow Earth: card art prompts, a tutorial, human playtests of the 2.0 numbers.

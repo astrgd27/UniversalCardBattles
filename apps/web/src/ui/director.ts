@@ -20,11 +20,12 @@ export interface Beat {
 type Ev = Record<string, any>;
 const ICON: Record<Beat['kind'], string> = { play: '✦', attack: '⚔', block: '🛡', clash: '💥', hit: '♥', destroy: '✖', info: '•', stack: '⧗' };
 export const beatIcon = (k: Beat['kind']) => ICON[k];
-const BEAT_EVENTS = new Set(['quest', 'lifeLost', 'prize', 'conquer', 'hold', 'deployed', 'showdownFight', 'hit', 'marched', 'recalled', 'finalPoint', 'coin', 'status', 'attackFailed', 'evolved', 'switched', 'statusTick', 'dice', 'rolled', 'synchro', 'xyz', 'linkSummon', 'fusion', 'ritual', 'pendulum', 'hidden', 'burnOut', 'shifted', 'locLore', 'movedTo', 'vanished', 'checkFail', 'stunned', 'blockFailed', 'stolen', 'scoredAgenda', 'flatline', 'runEnded', 'rezzed', 'run', 'clock', 'overheat', 'aged', 'comeback']);
+const BEAT_EVENTS = new Set(['quest', 'lifeLost', 'prize', 'conquer', 'hold', 'deployed', 'showdownFight', 'hit', 'marched', 'recalled', 'finalPoint', 'coin', 'status', 'attackFailed', 'evolved', 'switched', 'statusTick', 'dice', 'rolled', 'synchro', 'xyz', 'linkSummon', 'fusion', 'ritual', 'pendulum', 'hidden', 'burnOut', 'shifted', 'locLore', 'movedTo', 'vanished', 'checkFail', 'stunned', 'blockFailed', 'stolen', 'scoredAgenda', 'flatline', 'runEnded', 'rezzed', 'run']);
 
 /** Beats for a slice of the viewer's events. `who(p)` names a player ("You" / "Opponent"). */
 export function beatsOf(events: Ev[], mod: Mod, viewer: string, who: (p: string) => string, cardOf: (id: string) => string | undefined): Beat[] {
   const out: Beat[] = [];
+  const gameLog = ((mod.manifest.theme as any)?.log ?? {}) as Record<string, string>; // the game's own event messages
   const name = (id?: string) => (!id ? 'something' : /^p\d+$/.test(id) ? who(id) : mod.card.get(cardOf(id) ?? '')?.name ?? 'a card');
   let battle: { a?: string; t?: string; mine: boolean; dmg: Map<string, number>; dead: Set<string>; deadCards: Map<string, string>; multi?: boolean } | null = null;
   const flush = () => {
@@ -122,6 +123,7 @@ export function beatsOf(events: Ev[], mod: Mod, viewer: string, who: (p: string)
       case 'windowClosed': flush(); break;
       case 'stacked': if (e.ctrl && e.ctrl !== viewer && e.card) out.push({ kind: 'stack', mine: false, ms: 900, card: e.card, text: `${who(e.ctrl)} casts ${mod.card.get(e.card)?.name ?? 'something'}: you may respond` }); break;
       default:
+        if (gameLog[e.type] && !battle) { out.push({ kind: 'info', mine: (e.p ?? e.player) === viewer, ms: 800, text: fillLog(gameLog[e.type], e, who, name) }); break; }
         if (BEAT_EVENTS.has(e.type) && !battle) {
           const p = e.p ?? e.player;
           const zn = (z: string) => (mod.manifest.theme as any)?.labels?.[z] ?? 'a battlefield';
@@ -137,8 +139,7 @@ export function beatsOf(events: Ev[], mod: Mod, viewer: string, who: (p: string)
                 : e.type === 'attackFailed' ? `${name(e.o)} is ${stl(e.s)}: the attack fails!` : e.type === 'evolved' ? `${name(e.o)} evolves!` : e.type === 'switched' ? `${who(p)} switch${who(p) === 'You' ? '' : 'es'} the active unit`
                 : e.type === 'statusTick' ? `${name(e.o)} takes ${e.n} damage (${stl(e.s)})`
                 : e.type === 'shifted' ? `${name(e.o)} shifts in!` : e.type === 'locLore' ? `${name(e.o)}: +${e.n} point${e.n === 1 ? '' : 's'}` : e.type === 'movedTo' ? `${name(e.o)} moves to ${name(e.loc)}`
-                : e.type === 'vanished' ? `${name(e.o)} vanishes!` : e.type === 'clock' ? `It is now ${((mod.manifest.theme as any)?.clock ?? [])[e.n] ?? 'a new time'}` : e.type === 'overheat' ? `${who(p)} overheat${s}!`
-                : e.type === 'aged' ? `${name(e.o)} crumbles with age!` : e.type === 'comeback' ? `${who(p)} get${s} a comeback bonus`
+                : e.type === 'vanished' ? `${name(e.o)} vanishes!`
                 : e.type === 'stolen' ? `${who(p)} steal${s} a scheme! (+${e.n})` : e.type === 'scoredAgenda' ? `${who(p)} score${s} a scheme! (+${e.n})` : e.type === 'flatline' ? `${who(p)} flatlined!`
                 : e.type === 'runEnded' ? 'The run is stopped!' : e.type === 'rezzed' ? `${name(e.o)} awakens!` : e.type === 'run' ? `${who(p)} start${s} a run…`
                 : e.type === 'checkFail' ? `${who(p)} fail${s} a check — turn over!` : e.type === 'stunned' ? `Stunned! ${e.n} foundation${e.n === 1 ? '' : 's'} committed` : e.type === 'blockFailed' ? 'The block slips!'
@@ -171,4 +172,21 @@ export function drawArrows(root: HTMLElement, beat: { from?: string; to?: string
   document.body.append(svg);
   a.classList.add('beat-src');
   b.classList.add('beat-dst');
+}
+
+/** Fills a game's event message: {p} the player (You / Opponent), {o} a card, {s} / {es} verb endings and {is} / {has} for {p},
+ *  and any other {field} of the event (players and cards by name, numbers as they are). */
+export function fillLog(t: string, e: Record<string, any>, who: (p: string) => string, name: (id?: string) => string): string {
+  const p = e.p ?? e.player;
+  const you = !!p && who(p) === 'You';
+  const out = t.replace(/\{(\w+)\}/g, (_m, k: string) => {
+    if (k === 's') return you ? '' : 's';
+    if (k === 'es') return you ? '' : 'es';
+    if (k === 'is') return you ? 'are' : 'is';
+    if (k === 'has') return you ? 'have' : 'has';
+    if (k === 'p') return p ? who(p) : 'Someone';
+    const v = e[k];
+    return typeof v === 'string' ? (/^p\d+$/.test(v) ? who(v) : name(v)) : v === undefined || v === null ? '' : String(v);
+  });
+  return out.charAt(0).toUpperCase() + out.slice(1);
 }

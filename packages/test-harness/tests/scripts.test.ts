@@ -48,3 +48,22 @@ test('scripts: bad files are rejected with a readable reason', () => {
     [{ format: 'ucb-script', v: 2, advanced: {} }, /newer/], [{ rules: [] }, /"rules" must be an object/]] as const)
     assert.throws(() => readScripts(bad), why as RegExp);
 });
+
+test('script library: every starter script is valid, builds on a blank game and plays to a finish; entries describe their parts', async () => {
+  const { STARTER_SCRIPTS, libraryEntry } = await import('#maker');
+  const { createMatch } = await import('#engine');
+  const { makeAgent } = await import('#ai');
+  const { playMatch } = await import('#harness');
+  for (const s of STARTER_SCRIPTS) {
+    const bp = fromBlueprint('blank');
+    importScripts(bp, readScripts(JSON.parse(JSON.stringify(s.bundle))));
+    const { mod, problems } = build(bp);
+    assert.ok(mod, `${s.id}: ${problems.map((p) => p.text).join('; ')}`);
+    const ids = Object.keys(mod!.decks!);
+    const g = playMatch(createMatch(mod!, { decks: [ids[0], ids[1 % ids.length]].map((d) => structuredClone(mod!.decks![d])), seed: 2 }), [makeAgent('heuristic', 2), makeAgent('heuristic', 3)]);
+    assert.ok(g.s.result, `${s.id} finishes`);
+  }
+  const e = libraryEntry('My Rules!', exportScripts(scripted()), new Date(0));
+  assert.equal(e.id, 'my-rules-0');
+  assert.match(e.desc, /rules patch, 1 trigger\(s\), functions, procedures, card patches/);
+});

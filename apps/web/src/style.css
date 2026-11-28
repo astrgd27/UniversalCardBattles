@@ -958,3 +958,18 @@ svg.sel-arrows { color: var(--accent2); }
 .mk-script-io .mk-file { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 600; }
 .mk-script-report { margin: 6px 0 0; padding-left: 18px; font-size: 13px; }
 .mk-script-io details { margin-top: 6px; }
+/* nested conditions and meters (Workshop) */
+.mk-cond { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px; }
+.mk-cond-group { flex-basis: 100%; display: flex; flex-direction: column; gap: 6px; padding: 6px 0 6px 12px; border-left: 2px solid color-mix(in srgb, var(--accent) 50%, transparent); }
+.mk-cond-item { display: flex; align-items: flex-end; gap: 6px; }
+.mk-meter { border-left: 3px solid var(--accent); }
+.meter-pill { font-weight: 600; }
+.mk-lib { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.mk-lib-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.mk-lib-item { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-solid); }
+.mk-recipe.misfit { opacity: .72; }
+.mk-fit { font-size: 12px; line-height: 1.3; }
+.mk-fit.blocks { color: var(--bad, #e5484d); }
+.mk-fit.warns { color: var(--warn, #d9a40a); }
+.mk-confirm { position: sticky; top: 8px; z-index: 5; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--bad, #e5484d); background: var(--panel-solid); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+.mk-confirm ul { margin: 6px 0; padding-left: 18px; font-size: 13px; }

@@ -34,9 +34,9 @@ try {
   // mechanic sub-options: add a recipe, then cycle one of its options with the arrows
   await page.click('[data-station=shelf]');
   await page.click('[data-recipe=heat]');
-  const heatVal = async () => page.textContent('[data-opt="heat.limit"] .mk-opt-val');
+  const heatVal = async () => page.textContent('[data-opt="meter.heat.limit"] .mk-opt-val');
   const before = await heatVal();
-  await page.click('[data-opt="heat.limit"] [aria-label^=Next]');
+  await page.click('[data-opt="meter.heat.limit"] [aria-label^=Next]');
   ok((await heatVal()) !== before && await page.isVisible('.mk-bugs.good'), 'recipe sub-option arrows change the value');
   // Script Lab: import pasted script JSON
   await page.click('[data-station=lab]');
