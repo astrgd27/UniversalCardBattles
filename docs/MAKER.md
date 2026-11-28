@@ -371,6 +371,14 @@ Built for Lairbreakers (mechanics reference: Android: Netrunner).
   - Programs (types with `memory`) need memory (`mu`), up to `combat.memory` plus `muPlus` on installed gear.
 - **Effects:** `endRun`, `wound` N (random discards; more than the hand flatlines, losing the game) and `tag` N. The raider can pay an action and 2 credits to remove a tag; while the raider has tags, the defender can pay an action and 2 credits to trash a card of a `tagTarget` type.
 
+## Board & layout (Name & Look station)
+`look.board` sets how the battle table draws the game; the compiler passes it to `manifest.theme.board`.
+- **Layout:** `auto` (default) draws slot boards (`combat.grid`) as a Duel Links-style mat and battlefields (`combat.mode: 'lanes'`) as a central strip; anything else as free-form zones. `free` always uses free-form zones; `mat` and `lanes` force those styles where the rules allow.
+- **Duel mat:** opponent's spell/trap row, opponent's monster row, the shared extra zones, your monster row, your spell/trap row. Card-shaped corner piles: left of monsters (field zone or banished), left of spells/traps (extra deck), right of monsters (discard pile), right of spells/traps (deck), mirrored for the opponent. Names, counters and other piles go in a corner column. `corners: {lm, ls, rm, rs}` picks the corner zones; `slotNames: false` hides M1/S1 labels.
+- **Zone names:** `labels: 'top'` (small and horizontal above each zone, the default), `'side'` (vertical) or `'hidden'`.
+- **Board card size:** `scale` multiplies board card sizes (0.8–1.25). Card sizes otherwise follow the screen height so the board and your hand fit a tablet in landscape.
+- Games with attack/defense positions show defense position sideways (the old "exhausted" tilt is used only by games without positions).
+
 ## Mechanics Shelf (mix and match)
 A station listing 40 recipes in seven groups:
 - Resources

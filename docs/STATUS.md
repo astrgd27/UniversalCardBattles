@@ -40,6 +40,7 @@
   - Slot boards (Taste Dimension) draw as a fixed mat: the 5-slot monster row nearest the middle, the spell/trap row behind, the shared extra zones in a middle row, piles in a side column. Slot size comes from the screen height, so the whole board and your hand fit an iPad in landscape.
   - Battlefield games (Generation Wars) draw the battlefields as a central strip: the opponent's units above, yours below, the battlefield card and who controls it in the middle. Each seat keeps one compact row (legend, base, runes).
   - The compiler describes these shapes in `manifest.theme.mat` and `manifest.theme.lanes`.
+  - Follow-up (user feedback from an iPad, about 1000×620 usable): slot boards are now one Duel Links-style board (opponent spells/traps, opponent monsters, extra zones, your monsters, your spells/traps) with card-shaped corner piles and the life/name column at the side; the action panel sits at the bottom right so the hand stays visible. Battlefield games keep names, counters and piles in a column beside each row, and the stack floats. Zone names are small and on top by default. Workshop: Name & Look → **Board & layout** (layout, zone names, card size, slot names, corner piles).
 - **Battle screen, part 2 (done):**
   - a log docked beside the table: plain language by default, with a Details switch for every engine event, remembered between games;
   - hover zoom on desktop (a large live card beside the pointer);

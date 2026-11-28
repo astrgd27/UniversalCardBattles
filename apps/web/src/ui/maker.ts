@@ -250,6 +250,13 @@ function identity(bp: Blueprint, A: any) {
     panel('Name', row(txt(bp, A, ['name'], { label: 'Game name', q: 'identity', wide: true }), txt(bp, A, ['tagline'], { label: 'Tagline', q: 'identity', wide: true })),
       row(txt(bp, A, ['author'], { label: 'Designer' }), txt(bp, A, ['id'], { label: 'Game id', onval: (v) => A.mkSet(['id'], slug(v)) }),
         h('button', { class: 'ghost', onclick: () => A.mkSet(['id'], slug(bp.name)) }, 'Id from name'))),
+    panel('Board & layout', hint('How the battle table draws your game. Auto picks a duel mat for slot boards (Board grid in Rules) and a battlefield strip for battlefields.'),
+      row(sel(bp, A, ['look', 'board', 'layout'], [['auto', 'Auto'], ['free', 'Free-form zones'], ...(bp.combat.grid ? [['mat', 'Duel mat (fixed slots)'] as [string, string]] : []), ...(bp.combat.mode === 'lanes' ? [['lanes', 'Battlefield strip'] as [string, string]] : [])], { label: 'Layout' }),
+        sel(bp, A, ['look', 'board', 'labels'], [['top', 'Small, on top'], ['side', 'On the side'], ['hidden', 'Hidden']], { label: 'Zone names' }),
+        sel(bp, A, ['look', 'board', 'scale'], [['1', 'Normal'], ['0.8', 'Smaller'], ['0.9', 'A bit smaller'], ['1.1', 'A bit bigger'], ['1.25', 'Bigger']], { label: 'Board card size', map: (v) => Number(v) }),
+        bp.combat.grid && sel(bp, A, ['look', 'board', 'slotNames'], [['', 'Shown'], ['false', 'Hidden']], { label: 'Slot names (M1, S1…)', map: (v) => (v ? false : undefined) })),
+      bp.combat.grid && row(...([['lm', 'Left of monsters'], ['ls', 'Left of spells/traps'], ['rm', 'Right of monsters'], ['rs', 'Right of spells/traps']] as const).map(([k, l]) =>
+        sel(bp, A, ['look', 'board', 'corners', k], [['', 'Default'], ['deck', 'Deck'], ['grave', 'Discard pile'], ['extra', 'Extra deck'], ['banished', 'Banished'], ...(bp.zones ?? []).map((z) => [z.id, z.name] as [string, string])], { label: l, map: (v) => v || undefined })))),
     panel('Look', row(colorIn(bp, A, ['look', 'accent'], 'Main color', 'identity'), colorIn(bp, A, ['look', 'accent2'], 'Second color', 'identity'), txt(bp, A, ['look', 'glyph'], { label: 'Emblem' })),
       h('div', { class: 'mk-glyphs' }, GLYPHS.map((g) => h('button', { class: cls('mk-gl', g === bp.look.glyph && 'on'), onclick: () => A.mkSet(['look', 'glyph'], g, 'identity') }, g))),
       h('div', { class: 'tiles mk-preview-tile' }, h('div', { class: 'tile', style: look(bp) }, h('span', { class: 'tile-emblem' }, bp.look.glyph), h('span', { class: 'tile-title' }, bp.name), h('span', { class: 'tile-tag' }, bp.tagline)))),

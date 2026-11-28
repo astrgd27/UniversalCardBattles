@@ -26,6 +26,14 @@ export type KeywordRule = 'none' | 'haste' | 'guard' | 'blocker' | 'flying' | 'v
   | 'ex' | 'powerful' | 'stun' | 'breaker' | 'flashAtk'
   | 'bodyguard' | 'support' | 'reckless' | 'adventurous' | 'vanish' | 'boost' | 'underdog' | 'singer' | 'singTogether';
 
+/** How the battle table draws the board (Workshop: Name & Look → Board & layout). */
+export interface BoardLook {
+  layout?: 'auto' | 'free' | 'mat' | 'lanes'; // auto: a duel mat for slot boards, a battlefield strip for battlefields, free-form zones otherwise; free: always free-form
+  labels?: 'top' | 'side' | 'hidden'; // zone names: small on top (default), vertical on the side, or hidden
+  scale?: number; // board card size multiplier (0.7-1.4)
+  slotNames?: boolean; // show slot names (M1, S1...) in empty slots (default true)
+  corners?: { lm?: string; ls?: string; rm?: string; rs?: string }; // duel mat corner piles: left of monsters, left of spells, right of monsters, right of spells
+}
 export interface StatDef { id: string; name: string; icon?: string }
 export interface Color { id: string; name: string; hex: string; icon?: string }
 export interface Counter { id: string; name: string; icon?: string; adds?: Record<string, number>; stops?: ('attack' | 'block')[]; expires?: boolean; max?: number } // expires: removed at the end of its controller's turn // +1/+1: adds {power: 1, health: 1}; sleep: stops attack
@@ -176,7 +184,7 @@ export interface DeckBP { id: string; name: string; main: Record<string, number>
 export interface Blueprint {
   v: 1;
   id: string; name: string; tagline: string; author?: string; blueprint?: string;
-  look: { accent: string; accent2: string; glyph: string };
+  look: { accent: string; accent2: string; glyph: string; board?: BoardLook };
   colors: Color[];
   stats: StatDef[];
   counters?: Counter[];

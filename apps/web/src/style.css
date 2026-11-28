@@ -90,7 +90,7 @@ h1, h2, h3 { margin: 0; letter-spacing: .02em; }
 :root[data-cards=s] { --card-sm: 84px; --card-md: 104px; --card-fs: 11px; --board-w: 640px; }
 :root[data-cards=l] { --card-sm: clamp(110px, 10.5vw, 176px); --card-md: clamp(124px, 11.5vw, 190px); --card-fs: clamp(12px, 1.05vw, 16px); --board-w: 1500px; }
 .card { container-type: inline-size; }
-.card.size-sm { --w: var(--card-sm); font-size: var(--card-fs); }
+.card.size-sm { --w: calc(var(--card-sm) * var(--board-scale, 1)); font-size: var(--card-fs); }
 .card.size-md { --w: var(--card-md); font-size: calc(var(--card-fs) + 1px); }
 .card.size-lg { --w: 260px; font-size: 15px; padding: 10px; }
 .card .art { flex: 0 0 38%; border-radius: 8px; display: grid; place-items: center; overflow: hidden;
@@ -824,9 +824,78 @@ svg.sel-arrows { color: var(--accent2); }
 .has-mat .seat-bar, .has-lanes .seat-bar { gap: 6px; }
 .has-mat .seat-bar .avatar, .has-lanes .seat-bar .avatar { width: 36px; height: 36px; font-size: 14px; }
 @media (min-width: 760px) {
-  .table.has-lanes { --card-sm: clamp(54px, calc((100dvh - 330px) / 7.8), 140px); --card-md: calc(var(--card-sm) * 1.08); }
+  .table.has-lanes { --card-sm: clamp(42px, calc((100dvh - 300px) / 7.4), 140px); --card-md: calc(var(--card-sm) * 1.08); padding-bottom: 96px; }
+  .table.has-mat { padding-bottom: 12px; }
 }
 .has-lanes .lane-units { min-height: calc(var(--card-sm) * .72 * 1.4); }
 .has-lanes .lane-units .card { --w: calc(var(--card-sm) * .72); }
 .lane-units.crowd > * + * { margin-left: calc(var(--card-sm) * -.28); }
 .has-lanes .lane-mid .card { --w: calc(var(--card-sm) * .78); }
+
+/* ---- zone labels: small and on top (default), on the side, or hidden (Workshop: Board & layout) */
+.labels-top .zone { flex-direction: column; align-items: flex-start; gap: 2px; }
+.labels-top .zone-l { writing-mode: horizontal-tb; transform: none; font-size: 9px; line-height: 1.1; letter-spacing: .06em; }
+.labels-hidden .zone-l { display: none; }
+
+/* ---- Duel Links-style board for slot games */
+.table.has-mat { --mat-w: calc(clamp(40px, min(calc((100dvh - 225px) / 8.7), calc((100vw - 210px) / 7.6)), 128px) * var(--board-scale, 1)); }
+.table.has-mat.with-log { --mat-w: calc(clamp(40px, min(calc((100dvh - 225px) / 8.7), calc((100vw - 520px) / 7.6)), 128px) * var(--board-scale, 1)); }
+.duel { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.duel-grid { display: grid; grid-template-columns: minmax(96px, 150px) repeat(7, calc(var(--mat-w) + 6px)); gap: 5px; justify-content: center; align-items: center;
+  padding: 8px; border-radius: 18px; background: radial-gradient(ellipse at center, rgba(255,255,255,.05), rgba(0,0,0,.25)); border: 1px solid var(--line); }
+.duel-info { grid-column: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; align-self: stretch; justify-content: center; padding: 4px 6px; border-radius: 12px; min-width: 0; font-size: 12px; }
+.duel-info.opp { grid-row: 1 / span 2; justify-content: flex-start; }
+.duel-info.me { grid-row: 4 / span 2; justify-content: flex-end; }
+.duel-info.active { background: color-mix(in srgb, var(--accent2) 12%, transparent); }
+.duel-info .avatar { width: 34px; height: 34px; font-size: 14px; }
+.duel-info .vars { display: flex; flex-wrap: wrap; gap: 4px; }
+.duel-info .recap { max-width: 100%; }
+.duel-info .pile { padding: 3px 6px; font-size: 11px; }
+.duel-name { font-size: 13px; }
+.duel-mid { grid-column: 1; grid-row: 3; display: flex; gap: 4px; min-width: 0; overflow: hidden; }
+.duel-mid .zone .card { --w: calc(var(--mat-w) * .8); }
+.duel .slot { min-width: 0; min-height: 0; width: calc(var(--mat-w) + 6px); height: calc(var(--mat-w) * 1.4 + 6px); padding: 0; border-radius: 7px; position: relative; display: grid; place-items: center;
+  border: 1px solid rgba(255,255,255,.09); background: rgba(255,255,255,.035); box-shadow: inset 0 0 12px rgba(0,0,0,.35); }
+.duel .slot.gap { border: none; background: none; box-shadow: none; }
+.duel .slot .card { --w: var(--mat-w); font-size: calc(var(--mat-w) * .11); }
+.duel .slot-l { position: absolute; top: 3px; left: 0; right: 0; font-size: 9px; letter-spacing: .06em; opacity: .55; padding: 0; }
+.duel.no-slot-names .slot-l { display: none; }
+.duel .slot.target { background: color-mix(in srgb, var(--target) 22%, transparent); border-color: var(--target); }
+.pile-slot { cursor: pointer; color: inherit; font: inherit; border-style: dashed !important; }
+.pile-slot .card { pointer-events: none; }
+.pile-slot .pile-tag { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%); font-size: 9px; padding: 1px 5px; border-radius: 999px; background: rgba(0,0,0,.72); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.pile-slot .pile-tag b { font-size: 11px; }
+.pile-slot.hot { outline: 2px solid var(--good); }
+.duel .hand.mine .card { --w: calc(var(--mat-w) * 1.2); }
+.duel .slot .card.tapped { scale: .7; }
+.duel .hand.mine { padding-top: 2px; }
+.has-mat .felt { gap: 4px; }
+
+/* defined boards: a compact action panel at the bottom right keeps the hand in view */
+@media (min-width: 760px) {
+  .has-mat .dock { left: auto; right: 12px; transform: none; width: min(360px, 36vw); }
+  .has-mat .dock-body, .has-lanes .dock-body { padding: 8px 10px; }
+}
+/* battlefield games: each player's name, counters and piles in a column beside their row */
+.has-lanes .seat-area { display: grid; grid-template-columns: minmax(110px, 150px) minmax(0, 1fr); column-gap: 8px; align-items: center; }
+.has-lanes .seat-area > :not(.seat-bar) { grid-column: 2; min-width: 0; }
+.has-lanes .seat-area > .seat-bar { grid-column: 1; grid-row: 1 / span 3; flex-direction: column; align-items: flex-start; align-self: stretch; justify-content: center; gap: 4px; }
+.has-lanes .seat-bar .vars { display: flex; flex-wrap: wrap; gap: 3px; }
+.has-lanes .seat-bar .piles { margin-left: 0; gap: 3px; }
+.has-lanes .seat-bar .pile { padding: 2px 6px; font-size: 10px; }
+.has-lanes .seat-bar .recap { max-width: 100%; }
+.has-lanes .seat-area.me .hand.mine .card { --w: calc(var(--card-sm) * 1.08); }
+.has-lanes .seat-bar .pile { min-width: 0; min-height: 0; flex-direction: row; gap: 4px; }
+.has-lanes .seat-bar .pile .pile-n { font-size: 12px; }
+.has-lanes .seat-area > .seat-bar { flex-direction: row; flex-wrap: wrap; align-content: center; align-items: center; }
+.has-lanes .seat-area { grid-template-columns: minmax(150px, 210px) minmax(0, 1fr); }
+.has-lanes .seat-bar .seat-name { font-size: 13px; }
+.has-lanes .seat-bar .recap-l { display: none; }
+.has-lanes .seat-bar .recap .recap-i:nth-last-child(n+3) { display: none; }
+.has-lanes .seat-bar .recap-i { font-size: 10px; max-width: 120px; }
+.has-lanes .seat-bar .chip { font-size: 11px; padding: 1px 7px; }
+/* defined boards: the stack floats instead of pushing the board down */
+.has-lanes .felt > .center, .has-mat .felt > .center { position: fixed; left: 12px; bottom: 104px; z-index: 5; max-width: min(360px, 40vw); padding: 6px 8px;
+  background: color-mix(in srgb, var(--panel-solid) 92%, transparent); box-shadow: var(--shadow); }
+.has-lanes .seat-area { grid-template-columns: minmax(170px, 250px) minmax(0, 1fr); }
+.has-lanes .seat-bar .pile .pile-l { max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -124,17 +124,17 @@ export function table(ui: UI, A: any) {
   // while choosing targets, arrows run from the card being used to each pick
   const selSrc = ui.sel?.tpl?.source;
   requestAnimationFrame(() => drawSelArrows(selSrc ?? undefined, step ? ui.sel!.picks[step.key] ?? [] : []));
-  return h('div', { class: cls('screen table', ui.logDock && 'with-log', matOf(mod) && 'has-mat', lanesOf(mod) && 'has-lanes'), style: themeStyle(mod) },
+  return h('div', { class: cls('screen table', ui.logDock && 'with-log', matOf(mod) && 'has-mat', lanesOf(mod) && 'has-lanes', `labels-${boardOf(mod).labels ?? 'top'}`), style: `${themeStyle(mod)};--board-scale:${boardOf(mod).scale ?? 1}` },
     hud(c, mine),
     h('div', { class: 'felt' },
+      matOf(mod) && v.players.length === 2 ? duelBoard(c, matOf(mod)!) : [
       h('div', { class: 'opponents' }, v.players.filter((p) => p.id !== ui.viewer).map((p) => seat(c, p.id, false))),
-      matOf(mod)?.center && matCenter(c, matOf(mod)!.center!),
       lanesOf(mod) && laneStrip(c, lanesOf(mod)!),
       mod.rules.grid && gridBoard(c),
       (shared.length > 0 || v.stack.length > 0) && h('div', { class: 'center' },
         shared.map((z) => zoneBlock(c, `shared:${z.id}`, z)),
         v.stack.length > 0 && stack(c)),
-      seat(c, ui.viewer, true)),
+      seat(c, ui.viewer, true)]),
     ui.logDock && h('aside', { class: 'logdock', 'aria-label': 'Game log' }, h('div', { class: 'logdock-head' }, h('strong', {}, 'Log'), h('button', { class: 'x', onclick: A.toggleLog, 'aria-label': 'Hide log' }, '×')), log(c).slice(1)),
     dock(c, mine, tpls, step),
     (() => { const b = currentBeat(ui); requestAnimationFrame(() => drawArrows(document.body, b)); return b && beatView(c, b); })(),
@@ -220,9 +220,11 @@ function gridBoard(c: C) {
 }
 
 interface Mat { rows: string[]; center: string | null }
+interface BoardOpts { layout?: 'auto' | 'free' | 'mat' | 'lanes'; labels?: 'top' | 'side' | 'hidden'; scale?: number; slotNames?: boolean; corners?: { lm?: string; ls?: string; rm?: string; rs?: string } }
+const boardOf = (mod: Mod) => ((mod.manifest.theme as any)?.board ?? {}) as BoardOpts;
 interface Lane { name: string; units: string; site?: string; hidden?: string; ctrl: string }
-const matOf = (mod: Mod) => (mod.manifest.theme as any)?.mat as Mat | undefined;
-const lanesOf = (mod: Mod) => (mod.manifest.theme as any)?.lanes as Lane[] | undefined;
+const matOf = (mod: Mod) => (boardOf(mod).layout === 'free' ? undefined : (mod.manifest.theme as any)?.mat as Mat | undefined);
+const lanesOf = (mod: Mod) => (boardOf(mod).layout === 'free' ? undefined : (mod.manifest.theme as any)?.lanes as Lane[] | undefined);
 const TEMP_ZONES = new Set(['limbo', 'look']);
 
 /** One slot of a fixed board: the card in it, or its name (and a target while choosing). */
@@ -247,6 +249,63 @@ function matField(c: C, p: string, me: boolean, rowsZ: ZoneDef[], sidePiles: Zon
       }),
       h('div', { class: 'mat-side' }, sidePiles.map((z) => pile(c, `${p}:${z.id}`, z)))),
     tempZ.map((z) => zoneBlock(c, `${p}:${z.id}`, z)));
+}
+/** A pile drawn as a card-shaped slot: the top card face up for public piles, a back otherwise, with its count. */
+function pileSlot(c: C, key: string, z: ZoneDef | undefined) {
+  if (!z) return h('div', { class: 'slot gap' });
+  const zv = c.v.zones[key];
+  const label = c.mod.manifest.theme?.labels?.[z.id] ?? title(z.id);
+  const top = zv?.cards?.length ? zv.cards[zv.cards.length - 1] : undefined;
+  const hot = (zv?.cards ?? []).some((o) => c.sources.has(o.id) || c.targets.has(o.id));
+  return h('button', { class: cls('slot pile-slot', hot && 'hot', c.fx.bump.has(key) && 'fx-bump'), 'aria-label': `${label}: ${zv?.count ?? 0} cards`, title: label, onclick: () => c.A.drawer('pile', key), disabled: !zv?.cards },
+    zv?.count ? (top?.card && z.vis === 'public' ? cardFace(c.mod, top.card, { size: 'sm' }) : cardBack(c.mod, { size: 'sm' })) : null,
+    h('span', { class: 'pile-tag' }, h('b', {}, String(zv?.count ?? 0)), ` ${label}`));
+}
+/** A Duel Links-style board for slot games: opponent spells/traps, opponent monsters, the shared extra zones, your monsters, your spells/traps;
+ *  piles in the corners (field/banished and extra deck on the left, graveyard and deck on the right, mirrored for the opponent). */
+function duelBoard(c: C, mat: Mat) {
+  const me = c.ui.viewer, opp = c.v.players.find((x) => x.id !== me)?.id ?? me;
+  const zd = (id?: string) => (id ? c.mod.rules.zones.find((z) => z.id === id) : undefined);
+  const has = (id: string) => !!zd(id);
+  const opts = boardOf(c.mod);
+  const cn = { lm: opts.corners?.lm ?? (['fieldzone', 'banished'].find(has)), ls: opts.corners?.ls ?? (['extra'].find(has)), rm: opts.corners?.rm ?? 'grave', rs: opts.corners?.rs ?? 'deck' };
+  const placed = new Set([...mat.rows, mat.center ?? '', ...Object.values(cn), c.mod.rules.handZone, 'leader'].filter(Boolean) as string[]);
+  const [monZ, spellZ] = mat.rows.map((id) => zd(id));
+  const row = (p: string, z: ZoneDef | undefined, mine: boolean) => {
+    if (!z) return Array.from({ length: 5 }, () => h('div', { class: 'slot gap' }));
+    const cards = c.v.zones[`${p}:${z.id}`]?.cards ?? [];
+    return (mine ? z.slots ?? [] : [...(z.slots ?? [])].reverse()).map((sp) => slotEl(c, sp, cards.filter((o) => o.slot === sp.id), mine));
+  };
+  const info = (p: string, mine: boolean) => {
+    const pl = c.v.players.find((x) => x.id === p)!;
+    const hand = c.v.zones[`${p}:${c.mod.rules.handZone}`];
+    const extraPiles = c.mod.rules.zones.filter((z) => !z.shared && !z.offTable && !placed.has(z.id) && !TEMP_ZONES.has(z.id) && !(z.slots?.length));
+    return h('div', { class: cls('duel-info', mine ? 'me' : 'opp', c.v.active === p && 'active') },
+      h('button', { class: cls('avatar', c.targets.has(p) && 'target', c.picked.has(p) && 'picked', c.fx.hit.has(p) && 'fx-hit', c.beatTargets.has(p) && 'beat-target'), style: `--h:${(+p.slice(1) * 97 + 200) % 360}`,
+        'aria-label': whoOf(c.ui)(p), 'data-player': p, onclick: () => (c.ui.sel ? c.A.pick(p) : c.A.view(p)) }, String(+p.slice(1) + 1), c.fx.hit.has(p) && h('span', { class: 'dmg-float', 'aria-hidden': 'true' }, `-${c.fx.hit.get(p)}`)),
+      h('strong', { class: 'duel-name' }, whoOf(c.ui)(p), c.v.active === p ? h('span', { class: 'turn-dot' }, ' ●') : null),
+      h('span', { class: 'vars' }, Object.entries(pl.vars).filter(([k]) => !c.mod.manifest.theme?.hideVars?.includes(k)).map(([k, n]) => h('span', { class: cls('chip', c.fx.pulse.get(p)?.has(k) && 'fx-pulse') }, h('b', {}, String(n)), ` ${c.mod.manifest.theme?.labels?.[k] ?? k}`,
+        (() => { const d = c.fx.chip.get(`${p}:${k}`); return d ? h('span', { class: cls('chip-float', d < 0 && 'neg'), 'aria-hidden': 'true' }, `${d > 0 ? '+' : ''}${d}`) : null; })()))),
+      !mine && hand && h('span', { class: 'chip' }, `✋ ${hand.count}`),
+      extraPiles.map((z) => pile(c, `${p}:${z.id}`, z)),
+      !mine && recap(c, p));
+  };
+  const center = mat.center ? (() => {
+    const mineZ = c.v.zones[`${me}:${mat.center}`]?.cards ?? [], theirZ = c.v.zones[`${opp}:${mat.center}`]?.cards ?? [];
+    const cell = (mySlot: string, theirSlot: string) => slotEl(c, { id: mySlot }, [...mineZ.filter((o) => o.slot === mySlot), ...theirZ.filter((o) => o.slot === theirSlot)], true);
+    return [h('div', { class: 'slot gap' }), h('div', { class: 'slot gap' }), cell('L', 'R'), h('div', { class: 'slot gap' }), cell('R', 'L'), h('div', { class: 'slot gap' }), h('div', { class: 'slot gap' })];
+  })() : Array.from({ length: 7 }, () => h('div', { class: 'slot gap' }));
+  const temp = c.mod.rules.zones.filter((z) => TEMP_ZONES.has(z.id)).flatMap((z) => [zoneBlock(c, `${me}:${z.id}`, z), zoneBlock(c, `${opp}:${z.id}`, z)]).filter(Boolean);
+  return h('div', { class: cls('duel', opts.slotNames === false && 'no-slot-names') },
+    h('div', { class: 'duel-grid' },
+      info(opp, false),
+      pileSlot(c, `${opp}:${cn.rs}`, zd(cn.rs)), ...row(opp, spellZ, false), pileSlot(c, `${opp}:${cn.ls}`, zd(cn.ls)),
+      pileSlot(c, `${opp}:${cn.rm}`, zd(cn.rm)), ...row(opp, monZ, false), pileSlot(c, `${opp}:${cn.lm}`, zd(cn.lm)),
+      h('div', { class: 'duel-mid' }, temp), ...center,
+      info(me, true),
+      pileSlot(c, `${me}:${cn.lm}`, zd(cn.lm)), ...row(me, monZ, true), pileSlot(c, `${me}:${cn.rm}`, zd(cn.rm)),
+      pileSlot(c, `${me}:${cn.ls}`, zd(cn.ls)), ...row(me, spellZ, true), pileSlot(c, `${me}:${cn.rs}`, zd(cn.rs))),
+    handRow(c, `${me}:${c.mod.rules.handZone}`, true));
 }
 /** The shared middle row of a slot board (extra zones): your left zone is the opponent's right one. */
 function matCenter(c: C, zid: string) {
