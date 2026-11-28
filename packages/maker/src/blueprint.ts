@@ -36,6 +36,11 @@ export interface BoardLook {
   defenseSideways?: boolean; // games with positions: draw defense position sideways (default true)
   corners?: { lm?: string; ls?: string; rm?: string; rs?: string }; // duel mat corner piles: left of monsters, left of spells, right of monsters, right of spells
 }
+/** New mechanics (not from any one game). */
+export interface WorldClock { names: string[]; every: number; effect?: { at: number; stat: string; n: number } } // a cycle of named times that moves on every `every` turns; while it is names[at], every unit gets +n stat
+export interface Heat { per: 'card' | 'cost'; limit: number; penalty: 'damage' | 'discard' | 'exhaust'; amount: number; cool: number } // playing cards builds heat; at the limit you overheat (penalty) and it resets; it cools each turn
+export interface Aging { dies?: number; grow?: { stat: string; n: number } } // units age each of their owner's turns: crumble at `dies`, and/or grow by n stat each turn
+export interface Comeback { by: 'life' | 'points' | 'units'; gap: number; bonus: 'draw' | 'resource' | 'heal'; n: number } // at the start of your turn, if you trail by `gap` or more, get the bonus
 export interface StatDef { id: string; name: string; icon?: string }
 export interface Color { id: string; name: string; hex: string; icon?: string }
 export interface Counter { id: string; name: string; icon?: string; adds?: Record<string, number>; stops?: ('attack' | 'block')[]; expires?: boolean; max?: number } // expires: removed at the end of its controller's turn // +1/+1: adds {power: 1, health: 1}; sleep: stops attack
@@ -83,6 +88,9 @@ export interface Resource {
   levelGate?: string; // a card can be played only if its value of this stat <= the resources you have in play
   need?: { stat: string; gen: string } | null; // a card needs the sum of `gen` on your units >= its `stat` (not spent)
   actions?: number; // action points per turn (0 = off): non-quick cards cost 1, Go again gives it back
+  plays?: number; // resource cards you may place per turn (lands, inkwell, energy attachments; default 1)
+  checkStep?: number; failEnds?: boolean; // check mode: difficulty added per card already in your pool (default 1); a failed check ends your turn (default true)
+  songAny?: boolean; // songs: any ready unit may sing them, whatever its cost
   checkStat?: string; // check mode: the stat on every card used as its check value (default 'check')
   pitchStat?: string; // pitch mode: the stat a card is worth when pitched from hand
   recycle?: boolean; // deck mode: each resource gives 1 generic; colored costs are paid by recycling resources of that color to the bottom of the resource deck
@@ -111,6 +119,8 @@ export interface Combat {
   replaceFull?: boolean; // with a full board, playing a unit first trashes one of yours
   grid?: boolean; // units occupy numbered columns (the player picks one), support has 5 slots; enables adjacent/opposite filters
   emz?: boolean; // grid: two shared extra zones above the board (one per player); link and extra-deck pendulum summons go there or where your link arrows point
+  nearBlock?: 'half' | 'full' | 'none'; momentum?: boolean; // zone combat: what a block from the neighbouring zone does (default half damage); attacks that hit become momentum (default true)
+  placeLore?: boolean; // places with lore score it at the start of their owner's turn (default true)
   zones?: boolean; // cards mode: attacks have a zone (stat azone: 1 low, 2 mid, 3 high), speed and damage; defenders block from hand with a check (speed + the block card's bmod); same zone blocks it all, a neighbouring zone half; an enhance step comes first; attacks that hit become momentum
   mass?: boolean; // block mode: declare all attackers at once (at the player or a walker), assign blockers (several per attacker), first-strike and regular damage steps
   firstTurnEach?: boolean; // with firstTurnAttack off: neither player attacks on their own first turn (not just turn 1)
@@ -133,7 +143,7 @@ export interface Setup { hand: number; mulligan: boolean; handLimit: number; dec
   london?: boolean; // mulligan: shuffle and draw a full hand again, then put 1 card on the bottom per mulligan
 }
 
-export interface Cond { k: 'units' | 'life' | 'hand' | 'yourTurn' | 'res' | 'counter' | 'zone' | 'played' | 'attached' | 'oppTurn' | 'oppLife' | 'status' | 'kicked' | 'charged' | 'linked' | 'under' | 'here' | 'attacking' | 'defending' | 'raw'; n?: number; counter?: string; zone?: string; status?: string; raw?: unknown }
+export interface Cond { k: 'units' | 'life' | 'hand' | 'yourTurn' | 'res' | 'counter' | 'zone' | 'played' | 'attached' | 'oppTurn' | 'oppLife' | 'status' | 'kicked' | 'charged' | 'linked' | 'under' | 'here' | 'attacking' | 'defending' | 'clock' | 'heat' | 'raw'; n?: number; counter?: string; zone?: string; status?: string; raw?: unknown }
 export interface Filter { type?: string; color?: string; keyword?: string; stat?: string; op?: 'le' | 'ge'; val?: number; exhausted?: boolean; zone?: string; name?: string; trait?: string; status?: string;
   adjacent?: boolean; opposite?: boolean; pointed?: boolean; here?: boolean } // here: at this location (locations' abilities) // grid boards: in a neighboring column of this; in the column facing this; pointed at by this card's link arrows
 export interface Effect { k: EffectKind; n?: number; kw?: string; target?: TargetKind; filter?: Filter; stat?: string; until?: 'turn' | 'forever' | 'battle'; who?: 'me' | 'opp' | 'each'; card?: string; type?: string; rule?: KeywordRule; to?: 'hand' | 'deck' | 'play'; zone?: string; raw?: unknown[];
@@ -191,6 +201,7 @@ export interface Blueprint {
   stats: StatDef[];
   counters?: Counter[];
   statuses?: Status[];
+  clock?: WorldClock; heat?: Heat; aging?: Aging; comeback?: Comeback;
   zones?: CustomZone[];
   types: CardType[];
   keywords: Keyword[];

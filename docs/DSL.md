@@ -106,7 +106,7 @@ Effects run in effect lists `[[op...], [op...]]`.
 - `gameVars`: game-wide numbers.
 - `sharedDecks {sharedZone: [ids]}`: cards created at the start in shared zones, owned by `"shared"` (markets, dice, a common deck).
 - `setup`: effects run once with `$me` = p0.
-- `phases[] {id, auto?, do?, mustAct?}`: `do` runs on entry. Auto phases advance by themselves. Others give the active player priority until they `pass`. A turn ends after the last phase. `mustAct: [{if, why}]` forbids the active player from passing (ending the phase) while the stack is empty, no window is open and any `if` holds; `why` is the explanation. Use it for "must attack if able" rules, and make each `if` true only while a legal action can satisfy it.
+- `phases[] {id, auto?, do?, mustAct?}`: `do` runs on entry. Auto phases advance by themselves. Others give the active player priority until they `pass`. A turn ends after the last phase. `mustAct: [{if, why}]` forbids the active player from passing (ending the phase) while the stack is empty, no window is open and any `if` holds; `why` is the explanation. Use it for "must attack if able" rules, It never applies when the player has no other legal action, so a rule like "spend all your actions" cannot strand a player.
 - `actions{name: {label, phases, source?, req[{if, why}], targets[slot], cardTargets?, cost, do}}`:
   - `source` lists the legal source objects (`$self`).
   - `req` failures become explanation children.

@@ -327,7 +327,7 @@ function evalAction(m: Mod, s: State, p: string, name: string, src: string | nul
   if (name === 'pass') {
     const ph = m.rules.phases[s.turn.phase];
     if (ph?.mustAct && !s.stack.length && !s.windows.length && p === s.players[s.turn.active]?.id)
-      for (const k of ph.mustAct) if (ev(m, s, k.if, base)) return fail(no('mustAct', k.why));
+      for (const k of ph.mustAct) if (ev(m, s, k.if, base) && anyOther(m, s, p)) return fail(no('mustAct', k.why));
     return { r: ok('Pass'), slots: [], ctx: base };
   }
   const a = actionDef(m, s, name, src);
@@ -363,6 +363,18 @@ function evalAction(m: Mod, s: State, p: string, name: string, src: string | nul
     slots.push({ as: d.as, options, min, max: Math.min(num(ev(m, s, d.max ?? 1, ctx)), options.length), prompt });
   }
   return { r: ok(label, checks), slots, ctx };
+}
+
+/** Whether the player has any legal action besides passing (mustAct never leaves a player with no move at all). */
+function anyOther(m: Mod, s: State, p: string): boolean {
+  for (const [name, a] of Object.entries(m.rules.actions)) {
+    const srcs: (string | null)[] = a.source ? list(ev(m, s, a.source, baseCtx(s, p))) : [null];
+    for (const src of srcs) {
+      const names = a.activated ? (((src ? (m.card.get(s.objects[src]?.card) as any)?.[a.activated] : null) ?? []) as unknown[]).map((_, i) => `${name}#${i}`) : [name];
+      for (const n of names) if (evalAction(m, s, p, n, src).r.ok) return true;
+    }
+  }
+  return false;
 }
 
 export function listActions({ m, s }: Match, p: string): Template[] {

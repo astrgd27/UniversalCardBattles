@@ -382,7 +382,7 @@ Built for Lairbreakers (mechanics reference: Android: Netrunner).
 - Default games: tilt in Crystal Circuit, Storyweavers, Ringworld Rumble, Generation Wars and Arcade Showdown; badge in Taste Dimension (defense sideways), Looboo and Lairbreakers.
 
 ## Mechanics Shelf (mix and match)
-A station listing 40 recipes in seven groups:
+A station listing 58 recipes in eight groups:
 - Resources
 - Combat
 - Board
@@ -390,6 +390,7 @@ A station listing 40 recipes in seven groups:
 - Timing & turns
 - Card types
 - Keywords & counters
+- New ideas
 
 Each recipe is a one-click edit that adds a whole mechanic to any game: its stats, types, keywords, rules settings and example cards. Examples:
 - colored lands; inkwell; any card as mana; face-down resources;
@@ -400,6 +401,31 @@ Each recipe is a one-click edit that adds a whole mechanic to any game: its stat
 - stack; chains; alternating actions; draw up to; combat phase;
 - traps; tributes; evolution/shift; fusion deck; gear & pilots; songs; items;
 - keyword toolkit; +1/+1 counters; a custom keyword with abilities.
+
+### Sub-options (◀ ▶ on an added recipe)
+Every recipe has 1–4 sub-options (103 in all, in `OPTS` in `packages/maker/src/recipes.ts`). Once a recipe is added, its box shows each option as a row, *label ◀ value ▶*, and the arrows cycle through the choices. Before a recipe is added, its box lists the option names.
+- **Design rule:** no recipe only copies the element from the game it came from. Each one exposes the knobs that turn it into something else: lands per turn and a colour limit, a stun that wears off or lasts until removed, a front line of any size, a resource deck of 6–12, breaker-style "harder per card" skill checks, and so on.
+- A `RecipeOpt` is `{ id, label, values, names?, get(bp), set(bp, v) }`. `setRecipeOpt(bp, opt, v)` applies one value and keeps the starter decks legal: it refits deck sizes, trims off-colour cards when the colour limit drops, and resizes resource decks.
+- `recipe-options.test.ts` checks every value of every option on a blank game:
+  - the value sticks (`get` returns what `set` wrote);
+  - the game builds and an AI game finishes;
+  - at least one value changes the compiled module, so no option is decorative.
+
+### New ideas (mechanics no source game has)
+- **World clock** (`bp.clock`): named times (Day/Night, four seasons, Calm/Storm) that move on every N turns. The last time can boost or weaken every unit; the condition `{k:'clock', n}` gates abilities ("Night Prowler"). The battle HUD shows the current time, and the log announces changes.
+- **Heat** (`bp.heat`): each card played (or each point of cost) adds heat. At the limit you overheat and take damage, discard or exhaust your units, then reset. It cools each turn. The condition `{k:'heat', n}` and the "Cool Down" card interact with it.
+- **Aging** (`bp.aging`): units gain an age counter each of their owner's turns. They can grow stronger with age, crumble at a set age, or both.
+- **Comeback** (`bp.comeback`): a player behind by a set gap in life, points or units gets a draw, a resource or healing at the start of each turn until they catch up.
+- **Zone combat**: high/mid/low attacks with speed; blocking from the next zone halves, stops or does nothing, and attack speed is tunable.
+
+All five are in the Game Wizard's optional systems, gated to the combat systems where they make sense.
+
+Further ideas, not built yet:
+- a shared market row both players buy from;
+- initiative bidding for who acts first each round;
+- public objectives drawn mid-game;
+- a shared draft pool between turns;
+- weather that rotates rule changes.
 
 Recipes stack, are recorded on the blueprint (`recipes`), and can be undone. `maker.test.ts` builds every recipe on a blank game, plays mixed combinations through, and checks replay and hidden information.
 

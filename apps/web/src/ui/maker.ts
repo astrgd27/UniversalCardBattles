@@ -3,8 +3,8 @@
 import type { Mod } from '#engine';
 import {
   type Ability, type Blueprint, type CardBP, type Effect, type EffectKind, type Phase, type Role, type TargetKind, type When,
-  KEYWORD_RULES, RECIPES, ROLES, UNIT_ROLES, cardText, costLabel, effectText, rulebook, slug,
-  type WizAnswers, type WizStep, WIZARD, optionsFor, wizardBuild,
+  KEYWORD_RULES, RECIPES, ROLES, setRecipeOpt, UNIT_ROLES, cardText, costLabel, effectText, rulebook, slug,
+  type RecipeOpt, type WizAnswers, type WizStep, WIZARD, optionsFor, wizardBuild,
 } from '#maker';
 import { type MakerUI, type Station, BLUEPRINTS, RANKS, STATIONS, newMakerUI, previewMod, problems, profile, projects, published, rankOf } from '../maker.ts';
 import { store } from '../storage.ts';
@@ -562,8 +562,24 @@ function shelf(bp: Blueprint, A: any) {
     hint('Pick mechanics from real card games and drop them into yours. Each one adds what it needs (stats, card types, keywords, rules and example cards); stack them freely and undo any time.'),
     groups.map((gname) => panel(gname, h('div', { class: 'mk-recipes' }, RECIPES.filter((r) => r.group === gname).map((r) => h('div', { class: cls('mk-recipe', used.has(r.id) && 'on') },
       h('span', { class: 'mk-recipe-icon' }, r.icon), h('strong', {}, r.name), h('span', { class: 'muted' }, r.desc),
+      used.has(r.id) && r.opts?.length ? h('div', { class: 'mk-opts' }, r.opts.map((o) => optRow(bp, A, o)))
+        : r.opts?.length ? h('span', { class: 'mk-opts-hint muted' }, `⚙ Tune after adding: ${r.opts.map((o) => o.label.toLowerCase()).join(' · ')}`) : null,
       h('button', { class: cls('chip', used.has(r.id) && 'on'), onclick: () => A.mkRecipe(r.id, r.name), 'data-recipe': r.id }, used.has(r.id) ? '✓ Added (add again)' : '+ Add to my game')))))),
   ];
+}
+/** One sub-option of an added mechanic: its label and ◀ value ▶ arrows that cycle through the choices. */
+function optRow(bp: Blueprint, A: any, o: RecipeOpt) {
+  const key = (v: unknown) => JSON.stringify(v ?? null);
+  const cur = o.get(bp);
+  let i = o.values.findIndex((v) => key(v) === key(cur));
+  const name = i < 0 ? (cur === undefined ? '—' : String(cur)) : o.names?.[i] ?? String(o.values[i] ?? '—');
+  const step = (d: number) => { const n = o.values.length; const j = i < 0 ? (d > 0 ? 0 : n - 1) : (i + d + n) % n; A.mkEdit((b: Blueprint) => setRecipeOpt(b, o, o.values[j])); };
+  return h('div', { class: 'mk-opt', 'data-opt': o.id },
+    h('span', { class: 'mk-opt-label' }, o.label),
+    h('span', { class: 'mk-opt-pick' },
+      h('button', { class: 'mk-opt-arrow', 'aria-label': `Previous ${o.label}`, onclick: () => step(-1) }, '◀'),
+      h('span', { class: 'mk-opt-val' }, name),
+      h('button', { class: 'mk-opt-arrow', 'aria-label': `Next ${o.label}`, onclick: () => step(1) }, '▶')));
 }
 
 // ---------------------------------------------------------------- 8. cards and the ability builder

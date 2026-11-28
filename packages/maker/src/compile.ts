@@ -213,7 +213,7 @@ const condText = (k: Cond | undefined, bp: Blueprint) => !k ? '' : k.k === 'unit
     : k.k === 'counter' ? `if this has ${k.n ?? 1} or more ${nm(bp, 'counters', k.counter)} counters, ` : k.k === 'zone' ? `if you have ${k.n ?? 1} or more cards in ${zoneName(bp, k.zone ?? 'grave')}, `
       : k.k === 'played' ? `if you played ${(k.n ?? 1) === 1 ? 'another card' : `${k.n} other cards`} this turn, `
         : k.k === 'attached' ? `if this has ${k.n ?? 1} or more ${bp.resource.name} given to it, ` : k.k === 'oppTurn' ? 'during your opponent\'s turn, '
-          : k.k === 'oppLife' ? `if your opponent has ${k.n ?? 2} or less life, ` : k.k === 'status' ? `if this is ${nm(bp, 'statuses', k.status)}, ` : k.k === 'kicked' ? 'if it was kicked, ' : k.k === 'linked' ? 'if this is linked, ' : k.k === 'charged' ? `if this has ${k.n ?? 1} or more charge, ` : k.k === 'under' ? `if this has ${k.n ?? 1} or more cards under it, ` : k.k === 'attacking' ? 'while you are attacking, ' : k.k === 'defending' ? 'while you are being attacked, ' : k.k === 'here' ? 'while this is at a location (or a location has a unit here), ' : 'if the custom condition holds, ';
+          : k.k === 'oppLife' ? `if your opponent has ${k.n ?? 2} or less life, ` : k.k === 'status' ? `if this is ${nm(bp, 'statuses', k.status)}, ` : k.k === 'kicked' ? 'if it was kicked, ' : k.k === 'linked' ? 'if this is linked, ' : k.k === 'charged' ? `if this has ${k.n ?? 1} or more charge, ` : k.k === 'under' ? `if this has ${k.n ?? 1} or more cards under it, ` : k.k === 'clock' ? `while it is ${bp.clock?.names?.[k.n ?? 0] ?? `time ${k.n ?? 0}`}, ` : k.k === 'heat' ? `if you have ${k.n ?? 1} or more heat, ` : k.k === 'attacking' ? 'while you are attacking, ' : k.k === 'defending' ? 'while you are being attacked, ' : k.k === 'here' ? 'while this is at a location (or a location has a unit here), ' : 'if the custom condition holds, ';
 /** How cards that attacked or used an ability this turn are drawn, and whether defense position is sideways. Defaults: games
  *  with positions, active duels and runs use a badge (they don't tap); everything else tilts (taps) them. */
 export function usedLook(bp: Blueprint): { tapVar?: string; usedStyle: 'tilt' | 'dim' | 'badge' | 'none'; defenseSideways: boolean } {
@@ -485,6 +485,8 @@ function condExpr(x: Ctx, k: Cond | undefined): X | null {
     case 'kicked': return eq(g('game', 'kick'), 1);
     case 'charged': return ge(g('$self', 'chg'), k.n ?? 1);
     case 'under': return ge(cnt(['linked', '$self', 'host']), k.n ?? 1);
+    case 'clock': return eq(g('game', 'clk'), k.n ?? 0);
+    case 'heat': return ge(g('$me', 'heat'), k.n ?? 1);
     case 'attacking': return AND(gt(g('game', 'bat'), 0), isObj('$win.attacker'), eq(ctrl('$win.attacker'), '$me'));
     case 'defending': return AND(gt(g('game', 'bat'), 0), isObj('$win.attacker'), ne(ctrl('$win.attacker'), '$me'));
     case 'here': return OR(AND(isObj(g('$self', 'at')), eq(g(g('$self', 'at'), 'zone'), 'locations')), ge(cnt(['linked', '$self', 'at']), k.n ?? 1));
@@ -876,9 +878,9 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
     // zone combat: block from hand with a card whose block zone is the attack's zone or next to it, passing a check of speed + its block modifier
     proc('block', [], [LET('$zA', g(A, 'azone')),
       choose({ who: D, from: flt(cards(D, 'hand'), AND(gt(def('$it', 'bzone'), 0), le(['abs', sub(def('$it', 'bzone'), '$zA')], 1))), min: 0, max: 1, as: '$bk', prompt: 'Block with which card? (none: take the hit)' }),
-      IF(isObj('$bk'), [LET('$bz', def('$bk', 'bzone')), LET('$need', add(g(A, 'speed'), mx(0, def('$bk', 'bmod')), cnt(cards(D, 'pool')))),
+      IF(isObj('$bk'), [LET('$bz', def('$bk', 'bzone')), LET('$need', add(g(A, 'speed'), mx(0, def('$bk', 'bmod')), ...(x.check ? [cnt(cards(D, 'pool'))] : []))),
         ['move', '$bk', x.check ? 'pool' : 'grave', { as: '$bp' }], ...(x.check ? [C('check', D, '$need')] : [SET('game', 'ck', 1)]),
-        IF(eq(g('game', 'ck'), 1), [['winSet', 'guard', Q(eq('$bz', '$zA'), 2, 1)], emit('blocked', { o: '$bp', p: D, full: eq('$bz', '$zA') }),
+        IF(eq(g('game', 'ck'), 1), [['winSet', 'guard', Q(eq('$bz', '$zA'), 2, c.nearBlock === 'full' ? 2 : c.nearBlock === 'none' ? 0 : 1)], emit('blocked', { o: '$bp', p: D, full: eq('$bz', '$zA') }),
           ...(x.hasRule('breaker') ? [IF(gt(def('$bp', 'kw_breaker'), 0), [INC(ctrl(A), 'pen', def('$bp', 'kw_breaker')), emit('breaker', { p: ctrl(A), n: def('$bp', 'kw_breaker') })])] : [])],
           [IF(isObj('$bp'), [['move', '$bp', 'grave']]), emit('blockFailed', { p: D })])])]);
     proc('battle', [], [LET('$dm', mx(0, C('pw', A))), LET('$hit', Q(eq('$win.guard', 2), 0, Q(eq('$win.guard', 1), ['/', add('$dm', 1), 2], '$dm'))),
@@ -1064,19 +1066,35 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
   // questing: Reckless units can't quest; units that may attack the turn they are played (rush) still can't quest that turn
   const canQuestFn = (u: X) => AND(C('canAtk', u), gt(g(u, c.quest ?? 'lore'), 0), ...(x.hasRule('reckless') ? [NOT(has(u, 'reckless'))] : []),
     ...(c.sickness ? [OR(lt(g(u, 'newT'), '$turn'), has(u, 'haste'))] : []));
+  // new mechanics at the start of each turn
+  const turnStart: X[] = [];
+  if (bp.clock?.names?.length) {
+    const n = bp.clock.names.length, every = Math.max(1, bp.clock.every ?? 1);
+    turnStart.push(LET('$ck', ['mod', ['/', sub('$turn', 1), every], n]), IF(ne('$ck', g('game', 'clk')), [SET('game', 'clk', '$ck'), emit('clock', { n: '$ck' })]));
+  }
+  if (bp.heat) turnStart.push(SET(ME, 'heat', mx(0, sub(g(ME, 'heat'), bp.heat.cool ?? 1))));
+  if (bp.aging) turnStart.push(EACH(units(x, ME), '$ag', [INC('$ag', 'age', 1),
+    ...(bp.aging.grow ? [INC('$ag', bp.aging.grow.stat, bp.aging.grow.n)] : []),
+    ...(bp.aging.dies ? [IF(ge(g('$ag', 'age'), bp.aging.dies), [emit('aged', { o: '$ag' }), ['destroy', '$ag']])] : [])]));
+  if (bp.comeback) {
+    const cb = bp.comeback, OPPm = ['opp', ME];
+    const gap = cb.by === 'life' ? sub(g(OPPm, 'life'), g(ME, 'life')) : cb.by === 'points' ? sub(g(OPPm, 'score'), g(ME, 'score')) : sub(cnt(units(x, OPPm)), cnt(units(x, ME)));
+    const bonus: X[] = cb.bonus === 'resource' && x.pool ? [C('gainRes', ME, 'c', cb.n)] : cb.bonus === 'heal' && x.life ? [INC(ME, 'life', cb.n)] : [['draw', ME, cb.n]];
+    turnStart.push(IF(ge(gap, Math.max(1, cb.gap)), [...bonus, emit('comeback', { p: ME, n: cb.n, bonus: cb.bonus })]));
+  }
   const phases: X[] = bp.turn.map((ph) => {
     switch (ph.kind) {
       case 'ready': return { id: ph.id, auto: true, do: [INC(ME, 'turns', 1), ...forPlayers(ph.each, (p) => [untapOf(p), ...(ap ? [SET(p, 'ap', r.actionsStat && x.leader ? mx(1, def(first(cards(p, 'leader')), r.actionsStat)) : r.actions)] : [])]),
         ...(usesPlayed ? [EACH(['players'], '$pq', [SET('$pq', 'plays', 0)])] : []), ...stTicks('ownerStart', units(x, ME)), ...limitedReset, ...(r.give ? [EACH(cat(units(x, ME), ...(x.leader ? [cards(ME, 'leader')] : [])), '$dq', [SET('$dq', 'don', 0)])] : []), ...temp, ...hold,
         ...(hasResPhase ? [] : resourceStep),
-        ...(x.hasRole('location') && c.quest ? [EACH(flt(cards(ME, 'locations'), gt(g('$it', c.quest), 0)), '$lo', [INC(ME, 'score', g('$lo', c.quest)), emit('locLore', { o: '$lo', p: ME, n: g('$lo', c.quest) })])] : []),
-        emit('turnStart', { p: ME })] };
+        ...(x.hasRole('location') && c.quest && c.placeLore !== false ? [EACH(flt(cards(ME, 'locations'), gt(g('$it', c.quest), 0)), '$lo', [INC(ME, 'score', g('$lo', c.quest)), emit('locLore', { o: '$lo', p: ME, n: g('$lo', c.quest) })])] : []),
+        ...turnStart, emit('turnStart', { p: ME })] };
       case 'draw': return { id: ph.id, auto: true, do: [IF(AND(NOT(AND(eq('$turn', 1), L(bp.setup.skipFirstDraw))), ph.side !== undefined ? eq(g(ME, 'side'), ph.side) : L(true)), forPlayers(ph.each, (p) =>
         [ph.drawTo ? ['draw', p, mx(0, sub(bp.setup.leaderHand && x.leader ? mx(1, def(first(cards(p, 'leader')), bp.setup.leaderHand)) : ph.drawTo, cnt(cards(p, 'hand'))))] : ['draw', p, ph.n ?? 1]]))] };
       case 'resource': return { id: ph.id, auto: true, do: resourceStep };
       case 'end': return { id: ph.id, auto: true, do: [emit('turnEnd', { p: ME }),
         ...(x.check ? [EACH(['players'], '$pq', [EACH(cards('$pq', 'pool'), '$pk', [IF(eq(g('$pk', 'role'), 'permanent'), [['move', '$pk', 'support', { as: '$pb' }], IF(isObj('$pb'), [SET('$pb', 'ex', g('$pk', 'ex'))])],
-          x.zonesC ? [IF(AND(eq(g('$pk', 'role'), 'attack'), eq(g('$pk', 'hitd'), 1)), [['move', '$pk', 'momentum'], emit('momentum', { p: '$pq' })], [['move', '$pk', 'grave']])] : [['move', '$pk', 'grave']])])])] : []), ...(bp.win.emptyEnd ? [IF(eq(cnt(cards(ME, 'deck')), 0), [emit('emptyDeck', { p: ME }), ['lose', ME]])] : []), ...stTicks('betweenTurns', allUnits(x)), ...stTicks('ownerEnd', units(x, ME)), ...stExpire,
+          x.zonesC && c.momentum !== false ? [IF(AND(eq(g('$pk', 'role'), 'attack'), eq(g('$pk', 'hitd'), 1)), [['move', '$pk', 'momentum'], emit('momentum', { p: '$pq' })], [['move', '$pk', 'grave']])] : [['move', '$pk', 'grave']])])])] : []), ...(bp.win.emptyEnd ? [IF(eq(cnt(cards(ME, 'deck')), 0), [emit('emptyDeck', { p: ME }), ['lose', ME]])] : []), ...stTicks('betweenTurns', allUnits(x)), ...stTicks('ownerEnd', units(x, ME)), ...stExpire,
         ...(c.damage === 'heal' && HP ? [EACH(allUnits(x), '$x', [SET('$x', 'dmg', 0)])] : []),
         ...(r.mode === 'pitch' ? [['move', cards(ME, 'pitch'), 'deck'], SET(ME, 'pp', 0)] : []),
         ...((bp.counters ?? []).some((k) => k.expires) ? [EACH(units(x, ME), '$x', (bp.counters ?? []).filter((k) => k.expires).map((k) => SET('$x', `c_${k.id}`, 0)))] : []),
@@ -1209,7 +1227,7 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
   if (x.hasRule('song')) {
     const singCost = (u: X) => (x.hasRule('singer') ? mx(def(u, 'cost'), def(u, 'kw_singer')) : def(u, 'cost'));
     const canSing = (u: X) => AND(eq(g(u, 'ex'), 0), c.sickness ? OR(lt(g(u, 'newT'), '$turn'), has(u, 'haste')) : L(true));
-    const singers = (card: X) => flt(units(x, '$me'), AND(canSing('$it'), ge(singCost('$it'), def(card, 'cost'))));
+    const singers = (card: X) => flt(units(x, '$me'), AND(canSing('$it'), r.songAny ? L(true) : ge(singCost('$it'), def(card, 'cost'))));
     if (x.hasRule('singTogether')) {
       const need = (cd: X) => def(cd, 'kw_singTogether');
       Aa.singTogether = { label: 'Sing together', phases: x.main, ...sp(1, true),
@@ -1317,12 +1335,12 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
       do: [choose({ from: cands, min: 1, max: mn(5, cnt(C('anyDest', '$me'))), as: '$pd', prompt: 'Pendulum summon which units?' }), emit('pendulum', { p: '$me' }),
         EACH(['concat', ['list'], '$pd'], '$pu', [IF(eq(g('$pu', 'zone'), 'pextra'), [C('place', '$pu', edDest, L([]))], [C('place', '$pu', C('mmz', '$me'), L([]))])])] };
   }
-  if (r.mode === 'cards' && x.hasRole('resource')) Aa.resource = { label: `Play ${r.name}`, phases: x.main, limit: { per: 'turn', group: 'res' }, ...sp(1),
+  if (r.mode === 'cards' && x.hasRole('resource')) Aa.resource = { label: `Play ${r.name}`, phases: x.main, limit: { per: 'turn', group: 'res', ...((r.plays ?? 1) !== 1 ? { n: r.plays } : {}) }, ...sp(1),
     source: flt(cards('$me', 'hand'), eq(g('$it', 'role'), 'resource')), do: [['move', '$self', 'resources', { as: '$rs' }], IF(NOT(has('$rs', 'entersExhausted')), [C('gainRes', '$me', g('$rs', 'res'), 1)])] };
-  if (r.mode === 'anycard') Aa.resource = { label: `Place as ${r.name}`, phases: x.main, limit: { per: 'turn', group: 'res' }, ...sp(1),
+  if (r.mode === 'anycard') Aa.resource = { label: `Place as ${r.name}`, phases: x.main, limit: { per: 'turn', group: 'res', ...((r.plays ?? 1) !== 1 ? { n: r.plays } : {}) }, ...sp(1),
     source: r.onlyKeyword ? flt(cards('$me', 'hand'), has('$it', x.kwKey(r.onlyKeyword))) : cards('$me', 'hand'),
     do: [['move', '$self', 'resources', { as: '$rs', ...(r.faceDown ? { faceDown: true } : {}) }], C('gainRes', '$me', r.faceDown ? 'c' : g('$rs', 'res'), 1)] };
-  if (r.mode === 'attach' && x.hasRole('resource')) Aa.energy = { label: `Attach ${r.name}`, phases: x.main, limit: { per: 'turn', group: 'res' }, ...sp(1),
+  if (r.mode === 'attach' && x.hasRole('resource')) Aa.energy = { label: `Attach ${r.name}`, phases: x.main, limit: { per: 'turn', group: 'res', ...((r.plays ?? 1) !== 1 ? { n: r.plays } : {}) }, ...sp(1),
     source: flt(cards('$me', 'hand'), AND(eq(g('$it', 'role'), 'resource'), gt(cnt(units(x, '$me')), 0))),
     targets: [{ as: '$b', from: units(x, '$me'), prompt: `Attach ${r.name} to which unit?` }],
     do: [['move', '$self', 'support', { as: '$en' }], ['link', '$en', 'bearer', '$b'], SET('$en', 'att', 1)] };
@@ -1450,9 +1468,9 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
     Aa.play = { label: 'Play', phases: x.atkPhases, ...sp(1), req: apReq,
       source: flt(cards('$me', 'hand'), AND(NOT(inl(g('$it', 'role'), ['resource', 'token', 'leader', 'extra'])), atkOK, comboOK, ...typeOK)),
       cost: apCost,
-      do: [LET('$need', add(C('costOf', '$self', '$me'), cnt(cards('$me', 'pool')))), ['move', '$self', 'pool', { as: '$pc' }], SET('$pc', 'newT', '$turn'),
+      do: [LET('$need', add(C('costOf', '$self', '$me'), ((r.checkStep ?? 1) === 1 ? cnt(cards('$me', 'pool')) : mul(r.checkStep ?? 1, cnt(cards('$me', 'pool')))))), ['move', '$self', 'pool', { as: '$pc' }], SET('$pc', 'newT', '$turn'),
         C('check', '$me', '$need'),
-        IF(eq(g('game', 'ck'), 1), roleBody('$pc'), [IF(isObj('$pc'), [['move', '$pc', 'grave']]), emit('checkFail', { p: '$me' }), ['gotoPhase', x.endP]])] };
+        IF(eq(g('game', 'ck'), 1), roleBody('$pc'), [IF(isObj('$pc'), [['move', '$pc', 'grave']]), emit('checkFail', { p: '$me' }), ...(r.failEnds === false ? [] : [['gotoPhase', x.endP]])])] };
   }
   // enhances (zone combat): spend momentum for speed or damage, stun the rival's foundations
   if (x.zonesC) {
@@ -1544,6 +1562,13 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
   else if (bp.win.deckOut) triggers.push({ on: 'drawFail', do: [['lose', '$e.player']] });
   triggers.push({ on: 'moved', if: AND(OR(eq(def('$e.card', 'role'), 'token'), ['in', 'token', def('$e.card', 'keywords')]), NOT(inl('$e.to', [...UZ, 'support'])), ne('$e.to', 'void')), do: [IF(isObj('$e.newObj'), [['move', '$e.newObj', 'void']])] });
   triggers.push({ on: 'moved', if: AND(inl('$e.to', UZ), NOT(inl('$e.from', UZ)), isObj('$e.newObj'), has('$e.newObj', 'entersExhausted')), do: [SET('$e.newObj', 'ex', 1)] });
+  if (bp.heat) {
+    const ht = bp.heat;
+    const pen: X[] = ht.penalty === 'discard' ? [C('discardN', '$hp', ht.amount)] : ht.penalty === 'exhaust' ? [EACH(units(x, '$hp'), '$hu', [SET('$hu', 'ex', 1)])] : [C('hitN', '$hp', 1, ht.amount, 0)];
+    triggers.push({ on: 'moved', if: AND(eq('$e.from', 'hand'), NOT(inl('$e.to', ['grave', 'deck', 'resources', 'hand', 'resdeck', 'life', 'banished'])), isObj('$e.newObj')),
+      do: [LET('$hp', '$e.fromPlayer'), INC('$hp', 'heat', ht.per === 'cost' ? mx(1, def('$e.card', 'cost')) : 1),
+        IF(ge(g('$hp', 'heat'), Math.max(1, ht.limit)), [emit('overheat', { p: '$hp' }), ...pen, SET('$hp', 'heat', 0)])] });
+  }
   if (x.hasRule('bodyguard')) triggers.push({ on: 'moved', if: AND(inl('$e.to', UZ), eq('$e.from', 'hand'), isObj('$e.newObj'), has('$e.newObj', 'bodyguard')),
     do: [choose({ who: ctrl('$e.newObj'), from: L(['Enter ready', 'Enter exhausted (Bodyguard)']), min: 1, max: 1, as: '$bgc', prompt: 'Bodyguard: enter exhausted, ready to protect?' }),
       IF(eq('$bgc', 'Enter exhausted (Bodyguard)'), [SET('$e.newObj', 'ex', 1)])] });
@@ -1584,6 +1609,8 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
   const kwStatic = (rule: string, flag: string) => ({ layer: 'add', text: rule, affects: flt(allUnits(x), AND(eq(g('$it', flag), 1), gt(def('$it', `kw_${rule}`), 0))), mods: [{ op: 'add', stat: POW, value: def('$it', `kw_${rule}`) }] });
   const statics: X[] = [...(x.battle ? [{ layer: 'add', text: 'battle', affects: flt(cat(allUnits(x), ...(x.leader ? [cards('*', 'leader')] : [])), ne(g('$it', 'bb'), 0)), mods: [{ op: 'add', stat: POW, value: g('$it', 'bb') }] }] : []),
     ...(conq && x.hasRule('challenger') ? [kwStatic('challenger', 'atk')] : []), ...(conq && x.hasRule('bulwark') ? [kwStatic('bulwark', 'dfn')] : [])];
+  if (bp.clock?.effect) statics.push({ layer: 'add', text: bp.clock.names[bp.clock.effect.at] ?? 'clock', affects: flt(allUnits(x), L(true)), if: eq(g('game', 'clk'), bp.clock.effect.at),
+    mods: [{ op: 'add', stat: bp.clock.effect.stat, value: bp.clock.effect.n }] });
   statics.push(...stStatics, ...counters.filter((k) => k.adds && Object.keys(k.adds).length).map((k) => ({ layer: 'add', text: k.name, affects: flt(allUnits(x), gt(g('$it', `c_${k.id}`), 0)),
     mods: Object.entries(k.adds!).map(([stat, n]) => ({ op: 'add', stat, value: mul(g('$it', `c_${k.id}`), n) })) })));
 
@@ -1599,9 +1626,9 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
   const statIds = bp.stats.map((s) => s.id).filter((s) => s !== 'cost');
   const rules: Record<string, any> = {
     players: { min: 2, max: 2 },
-    playerVars: { life: bp.win.life, score: 0, cap: 0, turns: 0, ap: 0, pp: 0, ...(x.sides ? { side: 0 } : {}), ...(x.runs ? { tags: 0 } : {}), ...(x.check ? { pen: 0 } : {}), ...(usesEff('drops') ? { drops: 0 } : {}), ...(usesPlayed ? { plays: 0 } : {}), ...(bp.setup.mulliganBonus ? { mull: 0 } : {}), ...(bp.setup.london ? { kept: 0, mulls: 0 } : {}), ...Object.fromEntries(bp.types.filter((t) => t.perTurn).map((t) => [`tp_${t.id}`, 0])) },
-    objectVars: { dmg: 0, ex: 0, ut: 0, newT: 0, pos: 0, shu: 0, att: 0, ...(x.runs ? { adv: 0 } : {}), ...(x.zonesC ? { hitd: 0 } : {}), ...(conq ? { atk: 0, dfn: 0, pd: 0 } : {}), ...(r.give ? { don: 0 } : {}), ...(x.battle ? { bb: 0 } : {}), mat: 0, xa: 0, ...(c.mode === 'block' && c.mass ? { atk: 0, blkd: 0, dtd: 0 } : {}), ...(x.hasRole('walker') ? { loy: 0 } : {}), ...(bp.cards.some((k) => k.crew) ? { crewT: 0 } : {}), ...(bp.cards.some((k) => k.station) ? { chg: 0 } : {}), ...Object.fromEntries((bp.statuses ?? []).flatMap((s) => [[`st_${s.id}`, 0], [`sT_${s.id}`, 0]])), ...Object.fromEntries(counters.map((k) => [`c_${k.id}`, 0])) },
-    gameVars: { first: 0, started: 0, bat: 0, rem: 0, hd: 0, af: 0, wf: 0, kick: 0, roll: 0, ...(x.runs ? { live: 0, nth: 0 } : {}), ...(x.check ? { ck: 0 } : {}), ...(x.hasRule('singTogether') ? { sgt: 0 } : {}), ...Object.fromEntries(lanes.map((_, i) => [`c${i + 1}`, 0])), ...(conq ? Object.fromEntries(lanes.map((_, i) => [`s${i + 1}`, 0])) : {}) },
+    playerVars: { life: bp.win.life, score: 0, cap: 0, turns: 0, ap: 0, pp: 0, ...(bp.heat ? { heat: 0 } : {}), ...(x.sides ? { side: 0 } : {}), ...(x.runs ? { tags: 0 } : {}), ...(x.check ? { pen: 0 } : {}), ...(usesEff('drops') ? { drops: 0 } : {}), ...(usesPlayed ? { plays: 0 } : {}), ...(bp.setup.mulliganBonus ? { mull: 0 } : {}), ...(bp.setup.london ? { kept: 0, mulls: 0 } : {}), ...Object.fromEntries(bp.types.filter((t) => t.perTurn).map((t) => [`tp_${t.id}`, 0])) },
+    objectVars: { dmg: 0, ex: 0, ut: 0, ...(bp.aging ? { age: 0 } : {}), newT: 0, pos: 0, shu: 0, att: 0, ...(x.runs ? { adv: 0 } : {}), ...(x.zonesC ? { hitd: 0 } : {}), ...(conq ? { atk: 0, dfn: 0, pd: 0 } : {}), ...(r.give ? { don: 0 } : {}), ...(x.battle ? { bb: 0 } : {}), mat: 0, xa: 0, ...(c.mode === 'block' && c.mass ? { atk: 0, blkd: 0, dtd: 0 } : {}), ...(x.hasRole('walker') ? { loy: 0 } : {}), ...(bp.cards.some((k) => k.crew) ? { crewT: 0 } : {}), ...(bp.cards.some((k) => k.station) ? { chg: 0 } : {}), ...Object.fromEntries((bp.statuses ?? []).flatMap((s) => [[`st_${s.id}`, 0], [`sT_${s.id}`, 0]])), ...Object.fromEntries(counters.map((k) => [`c_${k.id}`, 0])) },
+    gameVars: { first: 0, started: 0, bat: 0, rem: 0, hd: 0, af: 0, wf: 0, kick: 0, roll: 0, ...(bp.clock?.names?.length ? { clk: 0 } : {}), ...(x.runs ? { live: 0, nth: 0 } : {}), ...(x.check ? { ck: 0 } : {}), ...(x.hasRule('singTogether') ? { sgt: 0 } : {}), ...Object.fromEntries(lanes.map((_, i) => [`c${i + 1}`, 0])), ...(conq ? Object.fromEntries(lanes.map((_, i) => [`s${i + 1}`, 0])) : {}) },
     zones,
     deckZone: 'deck', handZone: 'hand', graveZone: 'grave',
     format: {
@@ -1659,6 +1686,7 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
   labels['mana:c'] = x.recycle ? 'Energy' : bp.resource.name;
   labels.drops = `Saved ${bp.resource.name}`;
   labels.pen = 'Check penalty';
+  if (bp.heat) labels.heat = 'Heat'; if (bp.aging) labels.age = 'Age';
   if (x.runs) { labels.tags = 'Tags'; labels.scored = 'Scored'; labels.adv = 'Advanced'; for (const v of runServers(bp)) { labels[v.ice] = `${v.name} guards`; if (v.content) labels[v.content] = v.name; } }
   for (const s of bp.statuses ?? []) labels[`st_${s.id}`] = `${s.icon ?? ''}${s.name}`;
   const kwFields = [...new Set(bp.cards.flatMap((k) => Object.keys(k.kwv ?? {}).map((id) => `kw_${x.kwKey(id)}`)))];
@@ -1666,7 +1694,7 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
     moduleId: bp.id, displayName: bp.name, semanticVersion: '1.0.0', engineApiRange: `^${ENGINE_API}`,
     licensing: `Made with the Universal Card Battles Game Maker${bp.author ? ` by ${bp.author}` : ''}.`,
     tagline: bp.tagline,
-    theme: { accent: bp.look.accent, accent2: bp.look.accent2, glyph: bp.look.glyph, ...usedLook(bp), combatView: { mode: c.mode, power: c.power, health: c.health, sickness: !!c.sickness && ['block', 'target', 'lanes'].includes(c.mode) }, labels, ...(bp.look.board ? { board: bp.look.board } : {}), ...(x.grid ? { mirror: true, mat: { rows: ['field', 'support'], center: x.emz ? 'emz' : null } } : {}),
+    theme: { accent: bp.look.accent, accent2: bp.look.accent2, glyph: bp.look.glyph, ...usedLook(bp), ...(bp.clock?.names?.length ? { clock: bp.clock.names } : {}), combatView: { mode: c.mode, power: c.power, health: c.health, sickness: !!c.sickness && ['block', 'target', 'lanes'].includes(c.mode) }, labels, ...(bp.look.board ? { board: bp.look.board } : {}), ...(x.grid ? { mirror: true, mat: { rows: ['field', 'support'], center: x.emz ? 'emz' : null } } : {}),
       ...(c.mode === 'lanes' ? { lanes: c.lanes.map((name, i) => ({ name, units: `lane${i + 1}`, ...(x.sites ? { site: `site${i + 1}` } : {}), ...(conq && x.hasRule('hidden') ? { hidden: `hid${i + 1}` } : {}), ctrl: `c${i + 1}` })) } : {}),
       hideStats: [...(x.zonesC ? ['azone', 'bzone', 'bmod'] : []), ...(x.runs ? ['side', 'iceType', 'breaks', 'bCost', 'bBy', 'brk', 'nsubs', 'hasAcc'] : []), 'base', 'shift', 'combo', 'role', 'res', 'trapOn', 'playTo', 'evolvesFrom', 'materials', 'retreat', 'hue', 'glyph', 'zone', 'family', 'hasEff', 'hasHit', 'hasConq', 'hasHold', 'traits', 'actsNow', 'evolvesFrom2', 'method', 'ritual', 'spd3', 'cont', 'linkN', 'arrows', 'actsQ', 'actsHand', 'actsGrave', 'prizes', 'resist', 'pv', 'rainbow', 'perUnit', 'kicker', 'flashback', 'cycling', 'equipCost', 'equipment', 'anyUnit', 'crew', 'station', 'loyalty', 'onConquer', 'onHold', 'en', 'pw', 'color2', 'cmN', 'cmType', ...kwFields, ...(c.mode === 'duel' ? [] : ['weakness'])],
       hideVars: [...(x.sides ? ['side'] : []), 'ex', 'ut', 'newT', 'pos', 'shu', 'att', 'bb', 'mat', 'xa', 'pd', 'hd', 'af', 'roll', 'mull', 'atkT', 'blk', 'blkd', 'dtd', 'crewT', 'wf', 'kick', 'kept', 'mulls', ...(bp.statuses ?? []).map((s) => `sT_${s.id}`), ...bp.types.map((t) => `tp_${t.id}`), 'cap', 'turns', 'first', 'started', 'bat', 'rem', 'atk', 'dfn', 'plays', ...lanes.map((_, i) => `s${i + 1}`), ...(x.points ? [] : ['score']), ...(x.life ? [] : ['life']), ...(ap ? [] : ['ap']), ...(r.mode === 'pitch' ? [] : ['pp'])],

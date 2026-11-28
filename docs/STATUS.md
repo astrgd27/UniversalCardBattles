@@ -452,6 +452,14 @@ A survey of about 30 published TCG rulebooks (`docs/COVERAGE.md`, second table) 
 - Combination bugs the wizard sweep found and fixed in the compiler: grid boards no longer reference extra-zone/overlay zones they don't have; grids are ignored with arenas; level gates and deployable leaders count turns when there are no resource cards. Surprise me no longer pairs pitching with battlefields.
 - Follow-ups: the heuristic AI sometimes passes forever with lands + battlefields + chains, and with active duels + resource decks.
 
+## Done: recipe sub-options and new-idea mechanics
+- Every Mechanics Shelf recipe (58) has ◀ ▶ sub-options, 103 in all. No recipe only emulates its source game. See MAKER.md, "Sub-options".
+- New mechanics in no source game: world clock, heat, aging and comeback, plus tunable zone combat. They are in the Wizard, with HUD and log lines on the battle screen.
+- Engine: `mustAct` never blocks passing when the player has no other legal action. This fixed a "must spend all actions" deadlock.
+- Compiler: zone combat without skill checks no longer references the pool zone.
+- Tests: `recipe-options.test.ts` sweeps every option value (build, play, round-trip, changes the module) and covers the four new mechanics.
+- Next ideas: a market row, initiative bidding, public objectives, a shared draft pool, weather.
+
 ## Possible next steps
 - NIGHTFALL: the remaining art; human playtests to confirm the AI-tuned numbers.
 - Shadow Earth: card art prompts, a tutorial, human playtests of the 2.0 numbers.

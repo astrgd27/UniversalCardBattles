@@ -163,6 +163,7 @@ function hud(c: C, mine: boolean) {
     h('button', { class: 'icon', 'aria-label': 'Menu', onclick: () => A.pause(true) }, '☰'),
     h('span', { class: 'hud-game' }, h('span', { class: 'hud-emblem' }, emblem(mod)), mod.manifest.displayName),
     h('span', { class: 'pill' }, `Turn ${v.turn}`),
+    (() => { const names = (mod.manifest.theme as any)?.clock as string[] | undefined; return names?.length ? h('span', { class: 'pill clock-pill', title: `Time: ${names.join(' → ')}` }, `🌗 ${names[v.vars.clk ?? 0] ?? names[0]}`) : null; })(),
     h('ol', { class: 'phase-strip', 'aria-label': 'Turn phases' }, mod.rules.phases.filter((ph) => !ph.auto || ph.id === v.phase).map((ph) => h('li', { class: cls(ph.id === v.phase && 'on') },
       mod.manifest.theme?.labels?.[ph.id] ?? title(ph.id))),
       v.window && h('li', { class: 'on window' }, `${title(v.window.step)}`)),
@@ -773,6 +774,10 @@ function friendly(e: Record<string, any>, c: C): string | null {
     case 'enhanced': return `${c.label(e.o)} gets +${e.n} ${e.what}`;
     case 'stunned': return `${who(e.p)} ${who(e.p) === 'You' ? 'are' : 'is'} stunned: ${e.n} foundation${e.n === 1 ? '' : 's'} committed`;
     case 'momentum': return `${who(e.p)} gain${s(e.p)} momentum`;
+    case 'clock': { const names = (c.mod.manifest.theme as any)?.clock as string[] | undefined; return `Time passes: it is now ${names?.[e.n] ?? `time ${e.n}`}`; }
+    case 'overheat': return `${who(e.p)} overheat${s(e.p)}!`;
+    case 'aged': return `${c.label(e.o)} crumbles with age`;
+    case 'comeback': return `${who(e.p)} ${who(e.p) === 'You' ? 'are' : 'is'} behind: comeback bonus (${e.bonus === 'draw' ? `draw ${e.n}` : e.bonus === 'heal' ? `heal ${e.n}` : `+${e.n} resource`})`;
     case 'installed': return `${who(e.p)} install${s(e.p)} a card in ${lbl(e.z)}`;
     case 'rezzed': return `${who(e.p)} rez${who(e.p) === 'You' ? '' : 'zes'} ${c.label(e.o)}`;
     case 'advanced': return `${who(e.p)} advance${s(e.p)} a card (${e.n})`;

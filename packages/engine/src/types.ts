@@ -88,7 +88,7 @@ export interface CardDef {
 }
 export interface FunctionDef { params: string[]; body: Expr }
 export interface ProcedureDef { params: string[]; do: EffectList }
-/** mustAct: while the stack is empty, the active player can't pass (end the phase) as long as one of these holds (e.g. "must attack if able"). */
+/** mustAct: while the stack is empty, the active player can't pass (end the phase) as long as one of these holds (e.g. "must attack if able") and it has some other legal action. */
 export interface PhaseDef { id: string; auto?: boolean; do?: EffectList; timing?: Timing; mustAct?: { if: Expr; why: string }[] }
 export interface Rules {
   players: { min: number; max: number };

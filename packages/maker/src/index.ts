@@ -7,13 +7,13 @@ import { UNIT_ROLES, compileBlueprint, context } from './compile.ts';
 export * from './blueprint.ts';
 export { compileBlueprint, cardText, abilityText, effectText, costLabel, costText, filterText, slug, UNIT_ROLES } from './compile.ts';
 export { BLUEPRINTS, fromBlueprint, blank } from './presets.ts';
-export { RECIPES, applyRecipe, surpriseRecipes } from './recipes.ts';
+export { RECIPES, applyRecipe, setRecipeOpt, surpriseRecipes } from './recipes.ts';
 export { WIZARD, THEMES, wizardBuild, optionsFor, randomAnswers } from './wizard.ts';
 export type { WizAnswers, WizStep, WizOption, WizField } from './wizard.ts';
 export { rulebook, rulebookMarkdown } from './rulebook.ts';
 export type { RuleSection } from './rulebook.ts';
 export { cardsToCsv, cardsFromCsv, parseCsv } from './csv.ts';
-export type { Recipe, RecipeGroup } from './recipes.ts';
+export type { Recipe, RecipeGroup, RecipeOpt } from './recipes.ts';
 
 export interface Problem { level: 'bug' | 'tip'; text: string; where?: string }
 

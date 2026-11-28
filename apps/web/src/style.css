@@ -671,6 +671,14 @@ button.chip { min-height: 34px; padding: 4px 12px; font-size: 13px; }
 .mk-recipe.on { border-color: var(--accent); background: linear-gradient(150deg, color-mix(in srgb, var(--accent) 22%, var(--panel-solid)), var(--panel-solid)); }
 .mk-recipe-icon { font-size: 26px; }
 .mk-recipe .chip { align-self: flex-start; margin-top: auto; }
+.mk-opts { display: flex; flex-direction: column; gap: 4px; padding: 6px 8px; border-radius: 10px; background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.mk-opt { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 12px; }
+.mk-opt-label { opacity: .85; }
+.mk-opt-pick { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.mk-opt-val { min-width: 64px; max-width: 140px; text-align: center; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mk-opt-arrow { border: 1px solid var(--line); background: var(--panel-solid); color: inherit; border-radius: 6px; width: 24px; height: 24px; padding: 0; cursor: pointer; font-size: 10px; }
+.mk-opt-arrow:hover { border-color: var(--accent); }
+.mk-opts-hint { font-size: 11px; }
 .mk-kwbox { padding: 6px 0 10px; border-bottom: 1px dashed var(--line); }
 .mk-kwab summary, .mk-filter summary { cursor: pointer; font-size: 13px; color: var(--muted); }
 .mk-kwab { padding: 6px 0 0 12px; display: flex; flex-direction: column; gap: 6px; }

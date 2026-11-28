@@ -20,7 +20,7 @@ export interface Beat {
 type Ev = Record<string, any>;
 const ICON: Record<Beat['kind'], string> = { play: '✦', attack: '⚔', block: '🛡', clash: '💥', hit: '♥', destroy: '✖', info: '•', stack: '⧗' };
 export const beatIcon = (k: Beat['kind']) => ICON[k];
-const BEAT_EVENTS = new Set(['quest', 'lifeLost', 'prize', 'conquer', 'hold', 'deployed', 'showdownFight', 'hit', 'marched', 'recalled', 'finalPoint', 'coin', 'status', 'attackFailed', 'evolved', 'switched', 'statusTick', 'dice', 'rolled', 'synchro', 'xyz', 'linkSummon', 'fusion', 'ritual', 'pendulum', 'hidden', 'burnOut', 'shifted', 'locLore', 'movedTo', 'vanished', 'checkFail', 'stunned', 'blockFailed', 'stolen', 'scoredAgenda', 'flatline', 'runEnded', 'rezzed', 'run']);
+const BEAT_EVENTS = new Set(['quest', 'lifeLost', 'prize', 'conquer', 'hold', 'deployed', 'showdownFight', 'hit', 'marched', 'recalled', 'finalPoint', 'coin', 'status', 'attackFailed', 'evolved', 'switched', 'statusTick', 'dice', 'rolled', 'synchro', 'xyz', 'linkSummon', 'fusion', 'ritual', 'pendulum', 'hidden', 'burnOut', 'shifted', 'locLore', 'movedTo', 'vanished', 'checkFail', 'stunned', 'blockFailed', 'stolen', 'scoredAgenda', 'flatline', 'runEnded', 'rezzed', 'run', 'clock', 'overheat', 'aged', 'comeback']);
 
 /** Beats for a slice of the viewer's events. `who(p)` names a player ("You" / "Opponent"). */
 export function beatsOf(events: Ev[], mod: Mod, viewer: string, who: (p: string) => string, cardOf: (id: string) => string | undefined): Beat[] {
@@ -137,7 +137,8 @@ export function beatsOf(events: Ev[], mod: Mod, viewer: string, who: (p: string)
                 : e.type === 'attackFailed' ? `${name(e.o)} is ${stl(e.s)}: the attack fails!` : e.type === 'evolved' ? `${name(e.o)} evolves!` : e.type === 'switched' ? `${who(p)} switch${who(p) === 'You' ? '' : 'es'} the active unit`
                 : e.type === 'statusTick' ? `${name(e.o)} takes ${e.n} damage (${stl(e.s)})`
                 : e.type === 'shifted' ? `${name(e.o)} shifts in!` : e.type === 'locLore' ? `${name(e.o)}: +${e.n} point${e.n === 1 ? '' : 's'}` : e.type === 'movedTo' ? `${name(e.o)} moves to ${name(e.loc)}`
-                : e.type === 'vanished' ? `${name(e.o)} vanishes!`
+                : e.type === 'vanished' ? `${name(e.o)} vanishes!` : e.type === 'clock' ? `It is now ${((mod.manifest.theme as any)?.clock ?? [])[e.n] ?? 'a new time'}` : e.type === 'overheat' ? `${who(p)} overheat${s}!`
+                : e.type === 'aged' ? `${name(e.o)} crumbles with age!` : e.type === 'comeback' ? `${who(p)} get${s} a comeback bonus`
                 : e.type === 'stolen' ? `${who(p)} steal${s} a scheme! (+${e.n})` : e.type === 'scoredAgenda' ? `${who(p)} score${s} a scheme! (+${e.n})` : e.type === 'flatline' ? `${who(p)} flatlined!`
                 : e.type === 'runEnded' ? 'The run is stopped!' : e.type === 'rezzed' ? `${name(e.o)} awakens!` : e.type === 'run' ? `${who(p)} start${s} a run…`
                 : e.type === 'checkFail' ? `${who(p)} fail${s} a check — turn over!` : e.type === 'stunned' ? `Stunned! ${e.n} foundation${e.n === 1 ? '' : 's'} committed` : e.type === 'blockFailed' ? 'The block slips!'
