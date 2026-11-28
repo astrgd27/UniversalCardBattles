@@ -69,14 +69,14 @@ export function context(bp0: Blueprint) {
   const combatP = bp.turn.filter((p) => p.kind === 'combat').map((p) => p.id);
   const endP = bp.turn.find((p) => p.kind === 'end')?.id ?? 'end';
   const battle = c.mode === 'block' || c.mode === 'target' || c.mode === 'cards';
-  const pool = ['ramp', 'cards', 'anycard', 'deck'].includes(r.mode);
+  const pool = ['ramp', 'cards', 'anycard', 'deck', 'bank'].includes(r.mode);
   const colorIds = bp.colors.map((k) => k.id);
   const leader = bp.setup.leader || hasRole('leader');
   const kw = new Map(bp.keywords.map((k) => [k.id, k]));
   const conq = c.mode === 'lanes' && !!c.conquest;
   const duals = [...new Set(bp.cards.filter((k) => roleOf.get(k.type) === 'resource' && k.color && k.color2).map((k) => [k.color!, k.color2!].sort().join('_')))];
   return {
-    check: r.mode === 'check', zonesC: c.mode === 'cards' && !!c.zones, CK: r.checkStat ?? 'check',
+    check: r.mode === 'check', zonesC: c.mode === 'cards' && !!c.zones, CK: r.checkStat ?? 'check', runs: c.mode === 'runs', sides: !!bp.setup.sides,
     bp, c, r, conq, duals, grid, emz, recycle: r.mode === 'deck' && !!r.recycle, sites: c.mode === 'lanes' && (bp.setup.sites ?? 0) > 0 && hasRole('battlefield'), roleOf, typesOf, hasRole, lanes, arenas, UZ, atkZ, main: main.length ? main : ['main'], combatP, endP, battle, pool, colorIds, leader, kw,
     atkPhases: combatP.length ? combatP : main.length ? main : ['main'],
     fast: [...new Set([...(main.length ? main : ['main']), ...combatP, ...(battle || conq ? ['respond'] : []), ...(c.mode === 'block' && c.mass ? ['respond2'] : [])])],
@@ -189,6 +189,9 @@ export function effectText(e: Effect, bp: Blueprint): string {
       case 'tutor': return `search your deck for up to ${n} ${ft ? `${ft} ` : ''}${e.type ? type : 'card'}${n === '1' ? '' : 's'}, put ${n === '1' ? 'it' : 'them'} ${e.to === 'play' ? 'into play' : 'into your hand'}, then shuffle`;
       case 'attachFrom': return `attach a ${ft ? `${ft} ` : ''}${bp.resource.name} card from your ${zoneName(bp, e.zone ?? 'deck')} to ${t}`;
       case 'drawTo': return `draw until you have ${n} cards in hand`;
+      case 'endRun': return 'end the run';
+      case 'wound': return `deal ${n} wound${n === '1' ? '' : 's'} (random discards from hand; more than the hand flatlines)`;
+      case 'tag': return `give your opponent ${n} tag${n === '1' ? '' : 's'}`;
       case 'drops': return `gain ${n} saved ${bp.resource.name} (spend each for 1 ${bp.resource.name} on any turn)`;
       case 'fight': return `one of your units fights ${t} (each deals damage equal to its power to the other)`;
       case 'surveil': return `look at the top ${n === '1' ? 'card' : `${n} cards`} of your deck; you may put ${n === '1' ? 'it' : 'any of them'} into your discard pile`;
@@ -201,7 +204,7 @@ export function effectText(e: Effect, bp: Blueprint): string {
   return body + xs;
 }
 const WHEN_TEXT: Record<string, string> = {
-  play: 'When played: ', leave: 'When destroyed: ', attack: 'When this attacks: ', hit: 'When this hits the opponent: ', quest: 'When this quests: ',
+  play: 'When played: ', access: 'When accessed: ', leave: 'When destroyed: ', attack: 'When this attacks: ', hit: 'When this hits the opponent: ', quest: 'When this quests: ',
   startTurn: 'At the start of your turn: ', endTurn: 'At the end of your turn: ', static: '', opAttack: 'Spring when an enemy attacks: ',
   conquer: 'When you conquer here: ', hold: 'When you hold here: ', block: 'When this blocks: ', flip: 'FLIP: ', castSpell: 'Whenever you cast a spell: ', landfall: 'Whenever a resource enters under your control: ',
 };
@@ -211,6 +214,12 @@ const condText = (k: Cond | undefined, bp: Blueprint) => !k ? '' : k.k === 'unit
       : k.k === 'played' ? `if you played ${(k.n ?? 1) === 1 ? 'another card' : `${k.n} other cards`} this turn, `
         : k.k === 'attached' ? `if this has ${k.n ?? 1} or more ${bp.resource.name} given to it, ` : k.k === 'oppTurn' ? 'during your opponent\'s turn, '
           : k.k === 'oppLife' ? `if your opponent has ${k.n ?? 2} or less life, ` : k.k === 'status' ? `if this is ${nm(bp, 'statuses', k.status)}, ` : k.k === 'kicked' ? 'if it was kicked, ' : k.k === 'linked' ? 'if this is linked, ' : k.k === 'charged' ? `if this has ${k.n ?? 1} or more charge, ` : k.k === 'under' ? `if this has ${k.n ?? 1} or more cards under it, ` : k.k === 'attacking' ? 'while you are attacking, ' : k.k === 'defending' ? 'while you are being attacked, ' : k.k === 'here' ? 'while this is at a location (or a location has a unit here), ' : 'if the custom condition holds, ';
+/** Servers in an asymmetric runs game: three central servers and N remotes, each with an ICE zone (outermost last). */
+export function runServers(bp: Blueprint): { name: string; ice: string; access: 'hq' | 'rd' | 'arc' | 'remote'; content?: string }[] {
+  const z = bp.zoneNames ?? {};
+  return [{ name: z.server_hq ?? 'HQ', ice: 'ice_hq', access: 'hq' }, { name: z.server_rd ?? 'R&D', ice: 'ice_rd', access: 'rd' }, { name: z.server_arc ?? 'Archives', ice: 'ice_arc', access: 'arc' },
+    ...Array.from({ length: Math.max(1, bp.combat.remotes ?? 3) }, (_, i) => ({ name: z[`srv${i + 1}`] ?? `Remote ${i + 1}`, ice: `ice_r${i + 1}`, access: 'remote' as const, content: `srv${i + 1}` }))];
+}
 /** A card's character name: the part before " - " ("Red Riding Hood - Wolf Hunter" -> "Red Riding Hood"). */
 export const baseName = (n: string) => n.split(/\s+[-–—]\s+/)[0].trim();
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -242,6 +251,8 @@ export function cardText(k: CardBP, bp: Blueprint): string {
     if (role === 'attack' && k.stats.azone) parts.unshift(`${Z[k.stats.azone] ?? '?'} attack.`);
   }
   if (k.combo) parts.unshift(`Combo (${k.combo}): play only right after a ${k.combo} card.`);
+  if (k.breaker) parts.unshift(`Breaks ${k.breaker.breaks === 'all' ? 'any guardian' : k.breaker.breaks}. ${k.breaker.boostCost}: +${k.breaker.boostBy} strength. ${k.breaker.breakCost} per subroutine: break them.`);
+  for (const e of k.subs ?? []) parts.push(`↳ ${cap(effectText(e, bp))}.`);
   if (role === 'extra' && k.materials) parts.unshift(`Summon from your extra deck by sending ${k.materials} of your units to the discard pile.`);
   const per: Record<string, string> = { energy: 'for each energy attached to this', targetDamage: 'for each damage counter on the target', benched: 'for each of your benched units', oppBenched: "for each of your opponent's benched units", heads: 'for each heads' };
   for (const mv of k.moves ?? []) parts.push(`${mv.name} [${costLabel(mv.cost, bp)}]: ${mv.damage} damage${mv.plus ? ` +${mv.plus.n} ${per[mv.plus.per]}${mv.plus.per === 'heads' ? ` (flip ${mv.plus.coins ?? 1} coin${(mv.plus.coins ?? 1) === 1 ? '' : 's'})` : ''}` : ''}`
@@ -442,6 +453,10 @@ function effect(x: Ctx, e: Effect, i: number): X[] {
       choose({ from: L(['Keep it on top', 'Put it on the bottom']), min: 1, max: 1, as: `$sk${i}`, prompt: 'You look at the top card of your deck (see the log). Keep it on top?' }),
       IF(eq(`$sk${i}`, 'Put it on the bottom'), [['move', `$tc${i}`, 'deck']])])])];
     case 'drops': return [INC('$me', 'drops', n), emit('drops', { p: '$me', n })];
+    case 'endRun': return [SET('game', 'live', 0), emit('runEnded', { p: '$opp' })];
+    case 'tag': return [INC('$opp', 'tags', n), emit('tagged', { p: '$opp', n })];
+    case 'wound': return [LET(`$wn${i}`, n), IF(gt(`$wn${i}`, cnt(cards('$opp', 'hand'))), [['move', cards('$opp', 'hand'), 'grave'], emit('flatline', { p: '$opp' }), ['lose', '$opp']],
+      [EACH(range(`$wn${i}`), `$wi${i}`, [['random', { from: cards('$opp', 'hand'), as: `$wc${i}` }], IF(isObj(`$wc${i}`), [['move', `$wc${i}`, 'grave']])]), emit('wounded', { p: '$opp', n: `$wn${i}` })])];
     case 'raw': return Array.isArray(e.raw) ? (e.raw as X[]) : [];
     default: return [];
   }
@@ -549,6 +564,7 @@ function compileCard(x: Ctx, k: CardBP): Record<string, X> {
   if (k.weakness) out.weakness = k.weakness;
   if (k.retreat !== undefined) out.retreat = k.retreat;
   const bundle = k.keywords.flatMap((id) => x.kw.get(id)?.abilities ?? []);
+  const onAcc: X[] = [];
   const abilities: X[] = [], statics: X[] = [], acts: X[] = [], actsNow: X[] = [], actsQ: X[] = [], actsHand: X[] = [], actsGrave: X[] = [], effs: X[] = [], onHit: X[] = [], replacements: X[] = [], onConq: X[] = [], onHold: X[] = [];
   for (const a of [...k.abilities, ...bundle]) {
     const cond = condExpr(x, a.if);
@@ -571,6 +587,7 @@ function compileCard(x: Ctx, k: CardBP): Record<string, X> {
       if (a.when === 'opAttack') out.trapOn = 'opAttack';
       continue;
     }
+    if (a.when === 'access') { onAcc.push(...(cond ? [IF(cond, body)] : body)); continue; }
     if (a.when === 'hit' && role === 'attack') { onHit.push(...(cond ? [IF(cond, body)] : body)); continue; }
     if (a.when === 'conquer' || a.when === 'hold') { (a.when === 'conquer' ? onConq : onHold).push(...(cond ? [IF(cond, body)] : body)); continue; }
     if (a.when === 'activated') {
@@ -609,6 +626,12 @@ function compileCard(x: Ctx, k: CardBP): Record<string, X> {
   if (k.bonus && Object.keys(k.bonus).length) statics.push({ layer: 'add', affects: flt(['list', g('$self', 'bearer')], isObj('$it')), mods: Object.entries(k.bonus).map(([stat, value]) => ({ op: 'add', stat, value })) });
   if (effs.length) { out.effects = effs; out.hasEff = 1; }
   if (onHit.length) { out.onHit = onHit; out.hasHit = 1; }
+  if (onAcc.length) { out.onAccess = onAcc; out.hasAcc = 1; }
+  if (k.subs?.length) { out.subs = k.subs.map((e, i) => IF(eq(g('game', 'live'), 1), effect(x, e, 200 + i))); out.nsubs = k.subs.length; }
+  if (k.iceType) out.iceType = k.iceType;
+  if (k.breaker) Object.assign(out, { breaks: k.breaker.breaks, bCost: k.breaker.boostCost, bBy: Math.max(1, k.breaker.boostBy), brk: k.breaker.breakCost });
+  const tside = x.bp.types.find((t) => t.id === k.type)?.side;
+  if (tside !== undefined) out.side = tside;
   if (onConq.length) { out.onConquer = onConq; out.hasConq = 1; }
   if (onHold.length) { out.onHold = onHold; out.hasHold = 1; }
   if (abilities.length) out.abilities = abilities;
@@ -753,7 +776,7 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
 
   // ---- procedures
   proc('gainRes', ['$p', '$t', '$n'], x.pool ? [['gain', '$p', 'mana', ['tally', range('$n'), '$t']]] : []);
-  proc('refill', ['$p'], x.pool ? [['empty', '$p', 'mana'],
+  proc('refill', ['$p'], x.pool && r.mode !== 'bank' ? [['empty', '$p', 'mana'],
     r.mode === 'ramp' ? ['gain', '$p', 'mana', ['tally', range(g('$p', 'cap')), 'c']] : ['gain', '$p', 'mana', ['tally', cards('$p', 'resources'), r.faceDown || x.recycle ? 'c' : g('$it', 'res')]]] : []);
   // skill checks: discard the top card of the deck and compare its check value with the need; ready foundations may make up the difference
   const foundT = bp.types.filter((t) => t.foundation).map((t) => t.id);
@@ -966,6 +989,8 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
   if (r.mode === 'pitch') zones.push({ id: 'pitch', vis: 'public', hideEmpty: true });
   if (x.check) zones.push({ id: 'pool', vis: 'public', abilities: true, ordered: true, showIf: L(true) });
   if (x.zonesC) zones.push({ id: 'momentum', vis: 'public', hideEmpty: true });
+  if (x.runs) { for (const v of runServers(bp)) { if (v.content) zones.push({ id: v.content, vis: 'public', abilities: true, hideEmpty: true }); zones.push({ id: v.ice, vis: 'public', abilities: true, hideEmpty: true }); }
+    zones.push({ id: 'scored', vis: 'public', hideEmpty: true }); }
   if (x.lifeCards) zones.push({ id: 'life', vis: 'hidden', ordered: true });
   if (x.prizes) zones.push({ id: 'prizes', vis: 'hidden' });
   if (x.hasRole('extra')) zones.push({ id: 'extra', vis: 'owner', hideEmpty: true });
@@ -980,6 +1005,8 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
       ['shuffle', P0, 'deck'], ...(r.mode === 'deck' ? [['shuffle', P0, 'resdeck']] : []),
       ...(r.mode === 'ramp' ? [SET(P0, 'cap', r.start - r.perTurn)] : []),
       ['draw', P0, H0],
+      ...(x.sides && x.leader ? [SET(P0, 'side', mx(0, def(first(cards(P0, 'leader')), 'side')))] : []),
+      ...(r.mode === 'bank' ? [C('gainRes', P0, 'c', r.start)] : []),
       ...(bp.setup.leaderLife && x.leader ? [SET(P0, 'life', mx(1, def(first(cards(P0, 'leader')), bp.setup.leaderLife)))] : []),
       ...(x.sites ? [['random', { from: cards(P0, 'sites'), as: '$sp' }], IF(isObj('$sp'), lanes.slice(0, 2).map((_, i) => IF(eq(seat(P0), i), [['move', '$sp', `site${i + 1}`]])))] : []),
       ...(bp.setup.mulligan && (bp.setup.mulliganN ?? 0) > 0 ? [choose({ who: P0, from: cards(P0, 'hand'), min: 0, max: bp.setup.mulliganN, as: '$mg', prompt: `Mulligan: choose up to ${bp.setup.mulliganN} cards to put on the bottom of your deck and redraw (or none to keep)` }),
@@ -1001,6 +1028,7 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
       ...(x.prizes ? [['move', ['top', P0, 'deck', bp.win.prizes], 'prizes']] : []),
     ]),
     ...(c.mode === 'duel' && bp.setup.mulliganBonus ? [EACH(['players'], '$p', [LET('$om', g(['opp', '$p'], 'mull')), IF(gt('$om', 0), [['draw', '$p', '$om'], emit('mulliganBonus', { p: '$p', n: '$om' })])])] : []),
+    ...(x.sides ? [LET('$s0', first(flt(['players'], eq(g('$it', 'side'), 0)))), IF(isP('$s0'), [['firstPlayer', '$s0'], SET('game', 'first', seat('$s0'))])] : []),
     SET('game', 'started', 1)];
 
   // ---- turn
@@ -1030,12 +1058,12 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
     ...(c.sickness ? [OR(lt(g(u, 'newT'), '$turn'), has(u, 'haste'))] : []));
   const phases: X[] = bp.turn.map((ph) => {
     switch (ph.kind) {
-      case 'ready': return { id: ph.id, auto: true, do: [INC(ME, 'turns', 1), ...forPlayers(ph.each, (p) => [untapOf(p), ...(ap ? [SET(p, 'ap', r.actions)] : [])]),
+      case 'ready': return { id: ph.id, auto: true, do: [INC(ME, 'turns', 1), ...forPlayers(ph.each, (p) => [untapOf(p), ...(ap ? [SET(p, 'ap', r.actionsStat && x.leader ? mx(1, def(first(cards(p, 'leader')), r.actionsStat)) : r.actions)] : [])]),
         ...(usesPlayed ? [EACH(['players'], '$pq', [SET('$pq', 'plays', 0)])] : []), ...stTicks('ownerStart', units(x, ME)), ...limitedReset, ...(r.give ? [EACH(cat(units(x, ME), ...(x.leader ? [cards(ME, 'leader')] : [])), '$dq', [SET('$dq', 'don', 0)])] : []), ...temp, ...hold,
         ...(hasResPhase ? [] : resourceStep),
         ...(x.hasRole('location') && c.quest ? [EACH(flt(cards(ME, 'locations'), gt(g('$it', c.quest), 0)), '$lo', [INC(ME, 'score', g('$lo', c.quest)), emit('locLore', { o: '$lo', p: ME, n: g('$lo', c.quest) })])] : []),
         emit('turnStart', { p: ME })] };
-      case 'draw': return { id: ph.id, auto: true, do: [IF(NOT(AND(eq('$turn', 1), L(bp.setup.skipFirstDraw))), forPlayers(ph.each, (p) =>
+      case 'draw': return { id: ph.id, auto: true, do: [IF(AND(NOT(AND(eq('$turn', 1), L(bp.setup.skipFirstDraw))), ph.side !== undefined ? eq(g(ME, 'side'), ph.side) : L(true)), forPlayers(ph.each, (p) =>
         [ph.drawTo ? ['draw', p, mx(0, sub(bp.setup.leaderHand && x.leader ? mx(1, def(first(cards(p, 'leader')), bp.setup.leaderHand)) : ph.drawTo, cnt(cards(p, 'hand'))))] : ['draw', p, ph.n ?? 1]]))] };
       case 'resource': return { id: ph.id, auto: true, do: resourceStep };
       case 'end': return { id: ph.id, auto: true, do: [emit('turnEnd', { p: ME }),
@@ -1059,6 +1087,7 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
       OR(NOT(has('$it', 'flying')), has('$ru', 'flying'), has('$ru', 'reach'))))])), why: 'A Reckless unit must attack first.' });
   }
   if (x.hasRule('adventurous') && c.quest) mustAct.push({ if: ANY(units(x, '$me'), AND(has('$it', 'adventurous'), canQuestFn('$it'))), why: 'An Adventurous unit must quest first.' });
+  if (r.spendAll && ap) mustAct.push({ if: gt(g('$me', 'ap'), 0), why: 'Spend all your actions first.' });
   if (mustAct.length) for (const ph of phases as Record<string, any>[]) if (x.atkPhases.includes(ph.id) && !ph.auto) ph.mustAct = mustAct;
 
   // ---- actions
@@ -1298,13 +1327,13 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
       IF(isObj('$ct'), [INC('$ct', 'bb', def('$self', 'counter'))])] };
   if (bp.cards.some((k) => k.abilities.some((a) => a.when === 'activated')) || bp.keywords.some((k) => k.abilities?.some((a) => a.when === 'activated')))
     if (bp.cards.some((k) => k.abilities.some((ab) => ab.when === 'activated' && ab.sacSelf))) Aa.actNow = { label: 'Use', phases: x.fast, activated: 'actsNow', ...sp(2),
-      source: cat(units(x, '$me'), cards('$me', 'support'), ...(x.check ? [cards('$me', 'pool')] : []), ...(x.leader ? [cards('$me', 'leader')] : [])), do: [] };
+      source: cat(units(x, '$me'), cards('$me', 'support'), ...(x.check ? [cards('$me', 'pool')] : []), ...(x.runs ? runServers(bp).flatMap((v) => [flt(cards('$me', v.ice), NOT(g('$it', 'faceDown'))), ...(v.content ? [flt(cards('$me', v.content), NOT(g('$it', 'faceDown')))] : [])]) : []), ...(x.leader ? [cards('$me', 'leader')] : [])), do: [] };
     const anyAb = (f: (a: Ability) => boolean) => bp.cards.some((k) => k.abilities.some((ab) => ab.when === 'activated' && f(ab)));
     if (anyAb((a) => !!a.quick && !a.from && !a.sacSelf)) Aa.actQ = { label: 'Use (quick)', phases: x.fast, activated: 'actsQ', ...sp(2, true),
-      source: cat(flt(units(x, '$me'), AND(NOT(g('$it', 'faceDown')), ...stopped('$it', 'abilities'))), cards('$me', 'support'), ...(x.check ? [cards('$me', 'pool')] : []), ...(x.leader ? [cards('$me', 'leader')] : [])), do: [] };
+      source: cat(flt(units(x, '$me'), AND(NOT(g('$it', 'faceDown')), ...stopped('$it', 'abilities'))), cards('$me', 'support'), ...(x.check ? [cards('$me', 'pool')] : []), ...(x.runs ? runServers(bp).flatMap((v) => [flt(cards('$me', v.ice), NOT(g('$it', 'faceDown'))), ...(v.content ? [flt(cards('$me', v.content), NOT(g('$it', 'faceDown')))] : [])]) : []), ...(x.leader ? [cards('$me', 'leader')] : [])), do: [] };
     if (anyAb((a) => a.from === 'hand')) Aa.actHand = { label: 'Use from hand', phases: x.fast, activated: 'actsHand', ...sp(2), source: cards('$me', 'hand'), do: [] };
     if (anyAb((a) => a.from === 'grave')) Aa.actGrave = { label: 'Use from discard pile', phases: x.main, activated: 'actsGrave', ...sp(1), source: cards('$me', 'grave'), do: [] };
-    Aa.act = { label: 'Use', phases: x.main, activated: 'acts', ...sp(1, true), source: cat(flt(units(x, '$me'), AND(L(true), ...stopped('$it', 'abilities'))), cards('$me', 'support'), ...(x.check ? [cards('$me', 'pool')] : []), ...(x.leader ? [cards('$me', 'leader')] : [])), do: [] };
+    Aa.act = { label: 'Use', phases: x.main, activated: 'acts', ...sp(1, true), source: cat(flt(units(x, '$me'), AND(L(true), ...stopped('$it', 'abilities'))), cards('$me', 'support'), ...(x.check ? [cards('$me', 'pool')] : []), ...(x.runs ? runServers(bp).flatMap((v) => [flt(cards('$me', v.ice), NOT(g('$it', 'faceDown'))), ...(v.content ? [flt(cards('$me', v.content), NOT(g('$it', 'faceDown')))] : [])]) : []), ...(x.leader ? [cards('$me', 'leader')] : [])), do: [] };
   if (arenas && atkZ.length < UZ.length) {
     const front = atkZ[0];
     Aa.advance = { label: `Move to ${arenas.find((a) => a.id === front)!.name}`, phases: x.main, limit: { per: 'turn', by: 'source' }, ...sp(1),
@@ -1430,6 +1459,76 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
         EACH('$st', '$sf', [SET('$sf', 'ex', 1)]), emit('stunned', { p: '$opp', n: '$sn' })] };
   }
 
+  // ---- asymmetric runs: servers guarded by ICE; the raider runs them, breaks subroutines and accesses cards
+  if (x.runs) {
+    const SV = runServers(bp);
+    const RZ = SV.filter((v) => v.content).map((v) => v.content!);
+    const POWs = POW;
+    const zn = (p: X, list: string[]) => cat(...list.map((z) => cards(p, z)));
+    const ceilDiv = (a: X, b: X) => ['/', add(a, sub(b, 1)), b];
+    const brCost = (b: X, ic: X) => add(mul(ceilDiv(mx(0, sub(g(ic, POWs), g(b, POWs))), mx(1, def(b, 'bBy'))), def(b, 'bCost')), mul(mx(1, def(ic, 'nsubs')), def(b, 'brk')));
+    const side = (n: number) => eq(g('$me', 'side'), n);
+    // the defender (side 0): install face down, rez, advance and score schemes
+    Aa.installC = { label: 'Install', phases: x.main, ...sp(1), req: [{ if: side(0), why: 'Only the defender installs here' }, ...apReq],
+      source: flt(cards('$me', 'hand'), OR(inl(g('$it', 'role'), ['ice', 'agenda']), AND(eq(g('$it', 'role'), 'permanent'), eq(def('$it', 'side'), 0)))), cost: apCost,
+      do: [IF(eq(g('$self', 'role'), 'ice'), [
+        choose({ from: cat(...SV.map((v) => Q(['canPay', '$me', 'mana', cnt(cards('$me', v.ice))], ['list', L(v.name)], ['list']))), min: 1, max: 1, as: '$isv', prompt: 'Install it in front of which server? (costs 1 per guardian already there)' }),
+        ...SV.map((v) => IF(eq('$isv', v.name), [['pay', '$me', 'mana', cnt(cards('$me', v.ice))], ['move', '$self', v.ice, { faceDown: true, as: '$ii' }], emit('installed', { p: '$me', z: v.ice })]))],
+        [choose({ from: L(SV.filter((v) => v.content).map((v) => v.name)), min: 1, max: 1, as: '$isv', prompt: 'Install it in which remote server? (anything already there is trashed)' }),
+          ...SV.filter((v) => v.content).map((v) => IF(eq('$isv', v.name), [['move', cards('$me', v.content!), 'grave'], ['move', '$self', v.content!, { faceDown: true, as: '$ii' }], emit('installed', { p: '$me', z: v.content })]))])] };
+    Aa.rez = { label: 'Rez', phases: x.main, ...sp(1), source: flt(zn('$me', RZ), AND(g('$it', 'faceDown'), ne(g('$it', 'role'), 'agenda'), ['canPay', '$me', 'mana', mx(0, def('$it', 'rez'))])),
+      do: [['pay', '$me', 'mana', mx(0, def('$self', 'rez'))], ['flip', '$self'], emit('rezzed', { o: '$self', p: '$me' })] };
+    Aa.advance = { label: 'Advance', phases: x.main, ...sp(1), req: apReq, source: flt(zn('$me', RZ), AND(eq(g('$it', 'role'), 'agenda'), ['canPay', '$me', 'mana', 1])),
+      cost: [...apCost, ['pay', '$me', 'mana', 1]], do: [INC('$self', 'adv', 1), emit('advanced', { o: '$self', p: '$me', n: g('$self', 'adv') })] };
+    Aa.scoreAg = { label: 'Score', phases: x.main, ...sp(1), source: flt(zn('$me', RZ), AND(eq(g('$it', 'role'), 'agenda'), ge(g('$it', 'adv'), mx(1, def('$it', 'req'))))),
+      do: [LET('$pts', def('$self', 'points')), LET('$scn', g('$self', 'card')), IF(g('$self', 'faceDown'), [['flip', '$self']]), ['move', '$self', 'scored'], INC('$me', 'score', '$pts'), emit('scoredAgenda', { p: '$me', n: '$pts', card: '$scn' })] };
+    // the raider (side 1): run a server, remove tags; the defender may trash tagged resources
+    Aa.run = { label: 'Run', phases: x.main, ...sp(1), req: [{ if: side(1), why: 'Only the raider runs' }, ...apReq], cost: apCost,
+      do: [choose({ from: cat(...SV.map((v) => (v.content ? Q(gt(add(cnt(cards(['opp', '$me'], v.content)), cnt(cards(['opp', '$me'], v.ice))), 0), ['list', L(v.name)], ['list']) : ['list', L(v.name)]))),
+        min: 1, max: 1, as: '$rsv', prompt: 'Run which server?' }), ...SV.map((v, i) => IF(eq('$rsv', v.name), [C('runOn', i)]))] };
+    Aa.untag = { label: 'Remove a tag', phases: x.main, ...sp(1), req: [{ if: gt(g('$me', 'tags'), 0), why: 'No tags' }, { if: ['canPay', '$me', 'mana', 2], why: 'Needs 2' }, ...apReq],
+      cost: [...apCost, ['pay', '$me', 'mana', 2]], do: [INC('$me', 'tags', -1), emit('untagged', { p: '$me' })] };
+    const tagT = bp.types.filter((t) => t.tagTarget).map((t) => t.id);
+    if (tagT.length) Aa.trashTagged = { label: 'Trash a tagged resource', phases: x.main, ...sp(1), req: [{ if: gt(g('$opp', 'tags'), 0), why: 'The opponent has no tags' }, { if: ['canPay', '$me', 'mana', 2], why: 'Needs 2' }, ...apReq],
+      source: flt(cards('$opp', 'support'), inl(g('$it', 'type'), tagT)), cost: [...apCost, ['pay', '$me', 'mana', 2]], do: [['move', '$self', 'grave'], emit('trashedTagged', { p: '$me' })] };
+    // runner installs need memory for programs; defender cards never go to the rig
+    const memT = bp.types.filter((t) => t.memory).map((t) => t.id);
+    const muUsed = SUM(flt(cards('$me', 'support'), inl(g('$it', 'type'), memT)), mx(0, def('$it', 'mu')));
+    const muMax = add(c.memory ?? 4, SUM(cards('$me', 'support'), mx(0, def('$it', 'muPlus'))));
+    if (Aa.deploy) Aa.deploy.source = flt(Aa.deploy.source, AND(ne(def('$it', 'side'), 0), OR(NOT(inl(g('$it', 'type'), memT)), le(add(muUsed, mx(0, def('$it', 'mu'))), muMax))));
+    // a run: approach each ICE from the outside in (the defender may rez it), encounter it (break or let it fire), then access
+    proc('runOn', ['$sv'], [LET('$co', ['opp', '$me']), SET('game', 'live', 1), SET('game', 'nth', 0), emit('run', { p: '$me' }),
+      ...SV.map((v, i) => IF(eq('$sv', i), [
+        EACH(['reverse', cards('$co', v.ice)], '$ic', [IF(eq(g('game', 'live'), 1), [
+          IF(gt(g('game', 'nth'), 0), [choose({ from: L(['Keep going', 'Jack out']), min: 1, max: 1, as: '$jo', prompt: 'Keep going, or jack out (end the run safely)?' }),
+            IF(eq('$jo', 'Jack out'), [SET('game', 'live', 0), emit('jackOut', { p: '$me' })])]),
+          IF(eq(g('game', 'live'), 1), [INC('game', 'nth', 1), emit('approach', { o: '$ic', p: '$me' }),
+            IF(AND(g('$ic', 'faceDown'), ['canPay', '$co', 'mana', mx(0, def('$ic', 'rez'))]), [
+              choose({ who: '$co', from: L(['Rez it', 'Leave it']), min: 1, max: 1, as: '$rz', prompt: 'Raiders approach: rez this guardian?' }),
+              IF(eq('$rz', 'Rez it'), [['pay', '$co', 'mana', mx(0, def('$ic', 'rez'))], ['flip', '$ic'], emit('rezzed', { o: '$ic', p: '$co' })])]),
+            IF(NOT(g('$ic', 'faceDown')), [C('encounter', '$ic')])])])]),
+        IF(eq(g('game', 'live'), 1), [emit('runSuccess', { p: '$me', z: v.name }),
+          ...(v.access === 'hq' ? [['random', { from: cards('$co', 'hand'), as: '$ah' }], IF(isObj('$ah'), [C('access', '$ah', 1)])]
+            : v.access === 'rd' ? [LET('$ar', first(['top', '$co', 'deck', 1])), IF(isObj('$ar'), [C('access', '$ar', 1)])]
+              : v.access === 'arc' ? [EACH(cards('$co', 'grave'), '$aa', [C('access', '$aa', 0)])]
+                : [EACH(cards('$co', v.content!), '$am', [C('access', '$am', 1)])])], [emit('runFailed', { p: '$me' })])])),
+      SET('game', 'live', 0)]);
+    proc('encounter', ['$ic'], [emit('encounter', { o: '$ic' }),
+      choose({ from: cat(flt(cards('$me', 'support'), AND(NOT(NOT(def('$it', 'breaks'))), OR(eq(def('$it', 'breaks'), def('$ic', 'iceType')), eq(def('$it', 'breaks'), 'all')), ['canPay', '$me', 'mana', brCost('$it', '$ic')])),
+        ['list', L('Let it fire')]), min: 1, max: 1, as: '$br', prompt: 'Encounter: break its subroutines with which breaker (or let them fire)?' }),
+      IF(isObj('$br'), [['pay', '$me', 'mana', brCost('$br', '$ic')], emit('broken', { o: '$ic', by: '$br' })], [emit('fired', { o: '$ic' }), ['run', '$ic', 'subs']])]);
+    proc('access', ['$ac', '$tr'], [emit('accessed', { p: '$me', o: '$ac', card: g('$ac', 'card') }),
+      IF(eq(g('$ac', 'role'), 'agenda'), [LET('$pts', def('$ac', 'points')), IF(g('$ac', 'faceDown'), [['flip', '$ac']]), ['move', '$ac', 'scored', { player: '$me' }], INC('$me', 'score', '$pts'), emit('stolen', { p: '$me', n: '$pts' })],
+        [IF(eq(def('$ac', 'hasAcc'), 1), [['run', '$ac', 'onAccess']]),
+          IF(AND(eq('$tr', 1), isObj('$ac'), gt(def('$ac', 'trash'), 0), ['canPay', '$me', 'mana', def('$ac', 'trash')]), [
+            choose({ from: L(['Trash it', 'Leave it']), min: 1, max: 1, as: '$tq', prompt: 'Pay its trash cost to trash it?' }),
+            IF(eq('$tq', 'Trash it'), [['pay', '$me', 'mana', def('$ac', 'trash')], ['move', '$ac', 'grave'], emit('trashedAccess', { p: '$me' })])])])]);
+  }
+  if (r.basicActions && ap) {
+    Aa.takeOne = { label: `Take 1 ${r.name}`, phases: x.main, ...sp(1), req: apReq, cost: apCost, do: [C('gainRes', '$me', 'c', 1), emit('tookOne', { p: '$me' })] };
+    Aa.drawOne = { label: 'Draw a card', phases: x.main, ...sp(1), req: [...apReq, { if: gt(cnt(cards('$me', 'deck')), 0), why: 'Your deck is empty' }], cost: apCost, do: [['draw', '$me', 1]] };
+  }
+
   // ---- triggers, state checks, replacements
   const triggers: X[] = [];
   if (bp.win.burnOut) triggers.push({ on: 'drawFail', do: [INC(['opp', '$e.player'], 'score', 1), emit('burnOut', { p: '$e.player' }), ['move', cards('$e.player', 'grave'), 'deck'], ['shuffle', '$e.player', 'deck'],
@@ -1492,9 +1591,9 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
   const statIds = bp.stats.map((s) => s.id).filter((s) => s !== 'cost');
   const rules: Record<string, any> = {
     players: { min: 2, max: 2 },
-    playerVars: { life: bp.win.life, score: 0, cap: 0, turns: 0, ap: 0, pp: 0, ...(x.check ? { pen: 0 } : {}), ...(usesEff('drops') ? { drops: 0 } : {}), ...(usesPlayed ? { plays: 0 } : {}), ...(bp.setup.mulliganBonus ? { mull: 0 } : {}), ...(bp.setup.london ? { kept: 0, mulls: 0 } : {}), ...Object.fromEntries(bp.types.filter((t) => t.perTurn).map((t) => [`tp_${t.id}`, 0])) },
-    objectVars: { dmg: 0, ex: 0, newT: 0, pos: 0, shu: 0, att: 0, ...(x.zonesC ? { hitd: 0 } : {}), ...(conq ? { atk: 0, dfn: 0, pd: 0 } : {}), ...(r.give ? { don: 0 } : {}), ...(x.battle ? { bb: 0 } : {}), mat: 0, xa: 0, ...(c.mode === 'block' && c.mass ? { atk: 0, blkd: 0, dtd: 0 } : {}), ...(x.hasRole('walker') ? { loy: 0 } : {}), ...(bp.cards.some((k) => k.crew) ? { crewT: 0 } : {}), ...(bp.cards.some((k) => k.station) ? { chg: 0 } : {}), ...Object.fromEntries((bp.statuses ?? []).flatMap((s) => [[`st_${s.id}`, 0], [`sT_${s.id}`, 0]])), ...Object.fromEntries(counters.map((k) => [`c_${k.id}`, 0])) },
-    gameVars: { first: 0, started: 0, bat: 0, rem: 0, hd: 0, af: 0, wf: 0, kick: 0, roll: 0, ...(x.check ? { ck: 0 } : {}), ...(x.hasRule('singTogether') ? { sgt: 0 } : {}), ...Object.fromEntries(lanes.map((_, i) => [`c${i + 1}`, 0])), ...(conq ? Object.fromEntries(lanes.map((_, i) => [`s${i + 1}`, 0])) : {}) },
+    playerVars: { life: bp.win.life, score: 0, cap: 0, turns: 0, ap: 0, pp: 0, ...(x.sides ? { side: 0 } : {}), ...(x.runs ? { tags: 0 } : {}), ...(x.check ? { pen: 0 } : {}), ...(usesEff('drops') ? { drops: 0 } : {}), ...(usesPlayed ? { plays: 0 } : {}), ...(bp.setup.mulliganBonus ? { mull: 0 } : {}), ...(bp.setup.london ? { kept: 0, mulls: 0 } : {}), ...Object.fromEntries(bp.types.filter((t) => t.perTurn).map((t) => [`tp_${t.id}`, 0])) },
+    objectVars: { dmg: 0, ex: 0, newT: 0, pos: 0, shu: 0, att: 0, ...(x.runs ? { adv: 0 } : {}), ...(x.zonesC ? { hitd: 0 } : {}), ...(conq ? { atk: 0, dfn: 0, pd: 0 } : {}), ...(r.give ? { don: 0 } : {}), ...(x.battle ? { bb: 0 } : {}), mat: 0, xa: 0, ...(c.mode === 'block' && c.mass ? { atk: 0, blkd: 0, dtd: 0 } : {}), ...(x.hasRole('walker') ? { loy: 0 } : {}), ...(bp.cards.some((k) => k.crew) ? { crewT: 0 } : {}), ...(bp.cards.some((k) => k.station) ? { chg: 0 } : {}), ...Object.fromEntries((bp.statuses ?? []).flatMap((s) => [[`st_${s.id}`, 0], [`sT_${s.id}`, 0]])), ...Object.fromEntries(counters.map((k) => [`c_${k.id}`, 0])) },
+    gameVars: { first: 0, started: 0, bat: 0, rem: 0, hd: 0, af: 0, wf: 0, kick: 0, roll: 0, ...(x.runs ? { live: 0, nth: 0 } : {}), ...(x.check ? { ck: 0 } : {}), ...(x.hasRule('singTogether') ? { sgt: 0 } : {}), ...Object.fromEntries(lanes.map((_, i) => [`c${i + 1}`, 0])), ...(conq ? Object.fromEntries(lanes.map((_, i) => [`s${i + 1}`, 0])) : {}) },
     zones,
     deckZone: 'deck', handZone: 'hand', graveZone: 'grave',
     format: {
@@ -1507,7 +1606,8 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
         ...(x.hasRole('extra') ? [{ zone: 'extra', min: 0, max: bp.setup.extraMax, types: types('extra') }] : []),
         ...(r.mode === 'deck' ? [{ zone: 'resdeck', min: r.deckSize, max: r.deckSize, types: types('resource'), maxCopies: r.deckSize }] : []),
       ] } : {}),
-      ...(bp.keywords.some((k) => k.deckMax) || (x.leader && bp.setup.leaderColors) || bp.setup.maxColors ? { rules: [
+      ...(bp.keywords.some((k) => k.deckMax) || (x.leader && bp.setup.leaderColors) || bp.setup.maxColors || (x.sides && x.leader) ? { rules: [
+        ...(x.sides && x.leader ? [{ if: ['all', '$sections.deck', OR(eq(def('$it', 'side'), null), eq(def('$it', 'side'), def(first('$sections.leader'), 'side')))], why: "Every card must belong to your identity's side" }] : []),
         ...(bp.setup.maxColors ? [{ if: le(cnt(['distinct', flt(['map', '$deck', def('$it', 'color')], NOT(NOT('$it')))]), bp.setup.maxColors), why: `A deck may use at most ${bp.setup.maxColors} color${bp.setup.maxColors === 1 ? '' : 's'}` }] : []),...bp.keywords.filter((k) => k.deckMax).map((k) => ({
         if: le(cnt(flt('$deck', ['in', L(x.kwKey(k.id)), def('$it', 'keywords')])), k.deckMax!), why: `At most ${k.deckMax} ${k.name} card${k.deckMax === 1 ? '' : 's'} per deck` })),
         ...(x.leader && bp.setup.leaderColors ? [{ if: ['all', cat('$sections.deck', ...(bp.setup.champion ? ['$sections.champion'] : []), ...(r.mode === 'deck' ? ['$sections.resdeck'] : [])),
@@ -1551,6 +1651,7 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
   labels['mana:c'] = x.recycle ? 'Energy' : bp.resource.name;
   labels.drops = `Saved ${bp.resource.name}`;
   labels.pen = 'Check penalty';
+  if (x.runs) { labels.tags = 'Tags'; labels.scored = 'Scored'; labels.adv = 'Advanced'; for (const v of runServers(bp)) { labels[v.ice] = `${v.name} guards`; if (v.content) labels[v.content] = v.name; } }
   for (const s of bp.statuses ?? []) labels[`st_${s.id}`] = `${s.icon ?? ''}${s.name}`;
   const kwFields = [...new Set(bp.cards.flatMap((k) => Object.keys(k.kwv ?? {}).map((id) => `kw_${x.kwKey(id)}`)))];
   const manifest = {
@@ -1558,8 +1659,8 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
     licensing: `Made with the Universal Card Battles Game Maker${bp.author ? ` by ${bp.author}` : ''}.`,
     tagline: bp.tagline,
     theme: { accent: bp.look.accent, accent2: bp.look.accent2, glyph: bp.look.glyph, tapVar: 'ex', labels, ...(x.grid ? { mirror: true } : {}),
-      hideStats: [...(x.zonesC ? ['azone', 'bzone', 'bmod'] : []), 'base', 'shift', 'combo', 'role', 'res', 'trapOn', 'playTo', 'evolvesFrom', 'materials', 'retreat', 'hue', 'glyph', 'zone', 'family', 'hasEff', 'hasHit', 'hasConq', 'hasHold', 'traits', 'actsNow', 'evolvesFrom2', 'method', 'ritual', 'spd3', 'cont', 'linkN', 'arrows', 'actsQ', 'actsHand', 'actsGrave', 'prizes', 'resist', 'pv', 'rainbow', 'perUnit', 'kicker', 'flashback', 'cycling', 'equipCost', 'equipment', 'anyUnit', 'crew', 'station', 'loyalty', 'onConquer', 'onHold', 'en', 'pw', 'color2', 'cmN', 'cmType', ...kwFields, ...(c.mode === 'duel' ? [] : ['weakness'])],
-      hideVars: ['ex', 'newT', 'pos', 'shu', 'att', 'bb', 'mat', 'xa', 'pd', 'hd', 'af', 'roll', 'mull', 'atkT', 'blk', 'blkd', 'dtd', 'crewT', 'wf', 'kick', 'kept', 'mulls', ...(bp.statuses ?? []).map((s) => `sT_${s.id}`), ...bp.types.map((t) => `tp_${t.id}`), 'cap', 'turns', 'first', 'started', 'bat', 'rem', 'atk', 'dfn', 'plays', ...lanes.map((_, i) => `s${i + 1}`), ...(x.points ? [] : ['score']), ...(x.life ? [] : ['life']), ...(ap ? [] : ['ap']), ...(r.mode === 'pitch' ? [] : ['pp'])],
+      hideStats: [...(x.zonesC ? ['azone', 'bzone', 'bmod'] : []), ...(x.runs ? ['side', 'iceType', 'breaks', 'bCost', 'bBy', 'brk', 'nsubs', 'hasAcc'] : []), 'base', 'shift', 'combo', 'role', 'res', 'trapOn', 'playTo', 'evolvesFrom', 'materials', 'retreat', 'hue', 'glyph', 'zone', 'family', 'hasEff', 'hasHit', 'hasConq', 'hasHold', 'traits', 'actsNow', 'evolvesFrom2', 'method', 'ritual', 'spd3', 'cont', 'linkN', 'arrows', 'actsQ', 'actsHand', 'actsGrave', 'prizes', 'resist', 'pv', 'rainbow', 'perUnit', 'kicker', 'flashback', 'cycling', 'equipCost', 'equipment', 'anyUnit', 'crew', 'station', 'loyalty', 'onConquer', 'onHold', 'en', 'pw', 'color2', 'cmN', 'cmType', ...kwFields, ...(c.mode === 'duel' ? [] : ['weakness'])],
+      hideVars: [...(x.sides ? ['side'] : []), 'ex', 'newT', 'pos', 'shu', 'att', 'bb', 'mat', 'xa', 'pd', 'hd', 'af', 'roll', 'mull', 'atkT', 'blk', 'blkd', 'dtd', 'crewT', 'wf', 'kick', 'kept', 'mulls', ...(bp.statuses ?? []).map((s) => `sT_${s.id}`), ...bp.types.map((t) => `tp_${t.id}`), 'cap', 'turns', 'first', 'started', 'bat', 'rem', 'atk', 'dfn', 'plays', ...lanes.map((_, i) => `s${i + 1}`), ...(x.points ? [] : ['score']), ...(x.life ? [] : ['life']), ...(ap ? [] : ['ap']), ...(r.mode === 'pitch' ? [] : ['pp'])],
       hideKeywords: ['token'] },
     presentation: { templates, byType },
   };
@@ -1583,6 +1684,13 @@ function aiEval(x: Ctx): X {
     ...(['cards', 'anycard', 'deck'].includes(bp.resource.mode) ? [mul(12, cnt(cards(p, 'resources')))] : []),
     ...(bp.resource.mode === 'ramp' ? [mul(8, g(p, 'cap'))] : []),
     mul(8, cnt(cards(p, 'support'))));
+  if (x.runs) {
+    const SV = runServers(bp);
+    const ices = (p: X) => cat(...SV.map((v) => cards(p, v.ice)));
+    const rside = (p: X): X => add(mul(150, g(p, 'score')), mul(4, g(p, 'mana:c')), mul(5, cnt(cards(p, 'hand'))), mul(14, cnt(ices(p))), mul(6, cnt(flt(ices(p), NOT(g('$it', 'faceDown'))))),
+      mul(30, SUM(cat(...SV.filter((v) => v.content).map((v) => cards(p, v.content!))), g('$it', 'adv'))), mul(10, cnt(cat(...SV.filter((v) => v.content).map((v) => cards(p, v.content!))))), mul(12, cnt(cards(p, 'support'))), mul(-20, g(p, 'tags')));
+    return sub(rside('$me'), rside('$opp'));
+  }
   return sub(side('$me'), side('$opp'));
 }
 

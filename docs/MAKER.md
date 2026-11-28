@@ -359,6 +359,18 @@ Built for Arcade Showdown (mechanics reference: UniVersus). They also work in ot
 - **Keyword rules:** `ex` N and `powerful` N (enhance: spend 1 momentum for +N speed or damage), `stun` N (enhance: the rival commits N ready foundations), `breaker` N (after you block with this, the attacker's next check gets -N), `flashAtk` (the attack skips the enhance step).
 - **Leaders:** `setup.leaderLife` and `setup.leaderHand` take starting life and the hand size (the draw-up-to number) from the leader's stats.
 
+## Asymmetric sides and runs (Advanced)
+Built for Lairbreakers (mechanics reference: Android: Netrunner).
+- **Sides** (`setup.sides: [name, name]`): each deck's leader is an identity whose card type has `side: 0` or `1`; every card type can belong to a side, and decks may only hold their identity's side. Side 0 goes first. Phases can be limited to one side (`phase.side`, e.g. the defender's mandatory draw).
+- **Actions and credits:** `resource.mode: 'bank'` keeps credits between turns (start with `resource.start`). `resource.actionsStat` reads actions per turn from the identity (3 and 4); `spendAll` forbids ending the turn with actions left; `basicActions` adds "Draw a card" and "Take 1" for one action each.
+- **Runs** (`combat.mode: 'runs'`, `combat.remotes`, `combat.memory`):
+  - Servers: three centrals (hand, deck, discard; names from `zoneNames.server_hq/rd/arc`) and N remotes (`srv1…`), each with an ICE zone (`ice_hq`, `ice_rd`, `ice_arc`, `ice_r1…`; outermost last).
+  - The defender (side 0) installs face down for an action: guardians (role `ice`) in front of any server for 1 credit per guardian already there; schemes (role `agenda`) and side-0 permanents into a remote (replacing what was there). Rez permanents by paying their `rez` stat. Advance a scheme (1 action + 1 credit, var `adv`); score it for free once `adv` reaches its `req`, for its `points`.
+  - The raider (side 1) runs a server for an action. Guardians are approached outside in, and the raider may jack out before each one after the first. The defender may rez an unrezzed guardian on approach. A rezzed guardian is encountered: the raider breaks it with a breaker (`card.breaker`: matching `iceType` or `all`; pay `boostCost` per `boostBy` strength it lacks, plus `breakCost` per subroutine) or lets its subroutines (`card.subs`) fire in order.
+  - A successful run accesses: a random card from the hand, the top of the deck, the whole discard pile, or everything in the remote. Schemes are stolen for their points; "When accessed" abilities fire; other cards can be trashed for their `trash` cost (not from the discard pile).
+  - Programs (types with `memory`) need memory (`mu`), up to `combat.memory` plus `muPlus` on installed gear.
+- **Effects:** `endRun`, `wound` N (random discards; more than the hand flatlines, losing the game) and `tag` N. The raider can pay an action and 2 credits to remove a tag; while the raider has tags, the defender can pay an action and 2 credits to trash a card of a `tagTarget` type.
+
 ## Mechanics Shelf (mix and match)
 A station listing 40 recipes in seven groups:
 - Resources

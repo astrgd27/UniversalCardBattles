@@ -35,6 +35,7 @@ const FRAMES: Record<Role, CardType['frame']> = {
   walker: { base: 'leader', cost: 'tl', stats: [], art: 52, text: true },
   battlefield: { base: 'spell', cost: 'none', stats: [], art: 52, text: true, layout: 'landscape' },
   location: { base: 'spell', cost: 'tl', stats: [], art: 52, text: true, layout: 'landscape' },
+  ice: { base: 'monster', cost: 'tl', stats: [], art: 48, text: true }, agenda: { base: 'spell', cost: 'none', stats: [], art: 48, text: true },
 };
 function ensureType(bp: Blueprint, id: string, name: string, role: Role, icon = '', zone?: string): CardType {
   let t = bp.types.find((x) => x.id === id);

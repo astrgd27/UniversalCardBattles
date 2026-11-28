@@ -1,0 +1,2073 @@
+{
+ "v": 1,
+ "id": "lairbreakers",
+ "name": "Lairbreakers",
+ "blueprint": "blank",
+ "author": "Universal Card Battles",
+ "tagline": "One player is a Dark Lord hatching schemes in a guarded lair. The other leads a party of adventurers breaking in to steal them.",
+ "look": {
+  "accent": "#7c3aed",
+  "accent2": "#f59e0b",
+  "glyph": "🏰"
+ },
+ "colors": [
+  {
+   "id": "undead",
+   "name": "Undead",
+   "hex": "#64748b",
+   "icon": "💀"
+  },
+  {
+   "id": "dragons",
+   "name": "Dragons",
+   "hex": "#dc2626",
+   "icon": "🐉"
+  },
+  {
+   "id": "goblins",
+   "name": "Goblins",
+   "hex": "#65a30d",
+   "icon": "👺"
+  },
+  {
+   "id": "demons",
+   "name": "Demons",
+   "hex": "#9333ea",
+   "icon": "😈"
+  },
+  {
+   "id": "warriors",
+   "name": "Warriors",
+   "hex": "#b45309",
+   "icon": "🪓"
+  },
+  {
+   "id": "rogues",
+   "name": "Rogues",
+   "hex": "#334155",
+   "icon": "🗝"
+  },
+  {
+   "id": "mages",
+   "name": "Mages",
+   "hex": "#2563eb",
+   "icon": "🔮"
+  }
+ ],
+ "stats": [
+  {
+   "id": "strength",
+   "name": "Strength",
+   "icon": "💪"
+  },
+  {
+   "id": "rez",
+   "name": "Rez cost",
+   "icon": "✨"
+  },
+  {
+   "id": "req",
+   "name": "Advancement needed",
+   "icon": "⏳"
+  },
+  {
+   "id": "points",
+   "name": "Scheme points",
+   "icon": "★"
+  },
+  {
+   "id": "trash",
+   "name": "Trash cost",
+   "icon": "🗑"
+  },
+  {
+   "id": "mu",
+   "name": "Memory",
+   "icon": "🧠"
+  },
+  {
+   "id": "muPlus",
+   "name": "Extra memory",
+   "icon": "🎒"
+  },
+  {
+   "id": "actions",
+   "name": "Actions",
+   "icon": "⏱"
+  }
+ ],
+ "types": [
+  {
+   "id": "lord",
+   "name": "Dark Lord",
+   "role": "leader",
+   "side": 0,
+   "frame": {
+    "base": "leader",
+    "cost": "none",
+    "stats": [
+     {
+      "stat": "actions",
+      "pos": "bl",
+      "icon": "⏱"
+     }
+    ],
+    "art": 54,
+    "text": true
+   },
+   "icon": "👑"
+  },
+  {
+   "id": "guardian",
+   "name": "Guardian",
+   "role": "ice",
+   "side": 0,
+   "frame": {
+    "base": "monster",
+    "cost": "none",
+    "stats": [
+     {
+      "stat": "rez",
+      "pos": "tl",
+      "icon": "✨"
+     },
+     {
+      "stat": "strength",
+      "pos": "br",
+      "icon": "💪"
+     }
+    ],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🛡"
+  },
+  {
+   "id": "scheme",
+   "name": "Scheme",
+   "role": "agenda",
+   "side": 0,
+   "frame": {
+    "base": "spell",
+    "cost": "none",
+    "stats": [
+     {
+      "stat": "req",
+      "pos": "tl",
+      "icon": "⏳"
+     },
+     {
+      "stat": "points",
+      "pos": "br",
+      "icon": "★"
+     }
+    ],
+    "art": 48,
+    "text": true
+   },
+   "icon": "📜"
+  },
+  {
+   "id": "minion",
+   "name": "Minion",
+   "role": "permanent",
+   "side": 0,
+   "frame": {
+    "base": "spell",
+    "cost": "none",
+    "stats": [
+     {
+      "stat": "rez",
+      "pos": "tl",
+      "icon": "✨"
+     },
+     {
+      "stat": "trash",
+      "pos": "br",
+      "icon": "🗑"
+     }
+    ],
+    "art": 48,
+    "text": true
+   },
+   "icon": "👹"
+  },
+  {
+   "id": "plot",
+   "name": "Plot",
+   "role": "spell",
+   "side": 0,
+   "frame": {
+    "base": "spell",
+    "cost": "tl",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🕯"
+  },
+  {
+   "id": "party",
+   "name": "Party",
+   "role": "leader",
+   "side": 1,
+   "frame": {
+    "base": "leader",
+    "cost": "none",
+    "stats": [
+     {
+      "stat": "actions",
+      "pos": "bl",
+      "icon": "⏱"
+     }
+    ],
+    "art": 54,
+    "text": true
+   },
+   "icon": "⚔"
+  },
+  {
+   "id": "breaker",
+   "name": "Breaker",
+   "role": "permanent",
+   "side": 1,
+   "memory": true,
+   "frame": {
+    "base": "skirmisher",
+    "cost": "tl",
+    "stats": [
+     {
+      "stat": "strength",
+      "pos": "bl",
+      "icon": "💪"
+     },
+     {
+      "stat": "mu",
+      "pos": "br",
+      "icon": "🧠"
+     }
+    ],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🗡"
+  },
+  {
+   "id": "gear",
+   "name": "Gear",
+   "role": "permanent",
+   "side": 1,
+   "frame": {
+    "base": "spell",
+    "cost": "tl",
+    "stats": [
+     {
+      "stat": "muPlus",
+      "pos": "br",
+      "icon": "🎒"
+     }
+    ],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🎒"
+  },
+  {
+   "id": "ally",
+   "name": "Ally",
+   "role": "permanent",
+   "side": 1,
+   "tagTarget": true,
+   "frame": {
+    "base": "spell",
+    "cost": "tl",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "🤝"
+  },
+  {
+   "id": "tactic",
+   "name": "Tactic",
+   "role": "spell",
+   "side": 1,
+   "frame": {
+    "base": "spell",
+    "cost": "tl",
+    "stats": [],
+    "art": 48,
+    "text": true
+   },
+   "icon": "⚡"
+  }
+ ],
+ "keywords": [],
+ "turn": [
+  {
+   "id": "ready",
+   "name": "Ready",
+   "kind": "ready"
+  },
+  {
+   "id": "draw",
+   "name": "Draw",
+   "kind": "draw",
+   "n": 1,
+   "side": 0
+  },
+  {
+   "id": "main",
+   "name": "Actions",
+   "kind": "main"
+  },
+  {
+   "id": "end",
+   "name": "End",
+   "kind": "end"
+  }
+ ],
+ "timing": "simple",
+ "resource": {
+  "mode": "bank",
+  "name": "Gold",
+  "icon": "🪙",
+  "start": 5,
+  "perTurn": 0,
+  "max": 99,
+  "deckSize": 0,
+  "boost": 0,
+  "summonsPerTurn": 0,
+  "tribute": [],
+  "actions": 4,
+  "actionsStat": "actions",
+  "spendAll": true,
+  "basicActions": true
+ },
+ "combat": {
+  "mode": "runs",
+  "remotes": 3,
+  "memory": 4,
+  "power": "strength",
+  "health": null,
+  "defense": null,
+  "damage": "persist",
+  "sickness": false,
+  "firstTurnAttack": true,
+  "targetUnits": "none",
+  "directOnlyIfEmpty": false,
+  "leaderDefends": false,
+  "leaderAttacks": false,
+  "compare": {
+   "ties": "defender",
+   "loser": false,
+   "overflow": false
+  },
+  "positions": false,
+  "counterStep": false,
+  "fieldSize": 0,
+  "benchSize": 0,
+  "attackEndsTurn": false,
+  "weakness": 1,
+  "lanes": []
+ },
+ "win": {
+  "life": 0,
+  "lifeCards": 0,
+  "prizes": 0,
+  "points": 7,
+  "deckOut": true,
+  "noUnits": false
+ },
+ "setup": {
+  "hand": 5,
+  "mulligan": true,
+  "handLimit": 5,
+  "deckMin": 39,
+  "deckMax": 50,
+  "maxCopies": 3,
+  "skipFirstDraw": false,
+  "leader": true,
+  "leaderColors": true,
+  "sides": [
+   "Dark Lord",
+   "Adventurers"
+  ],
+  "extraMax": 0,
+  "turnLimit": 80
+ },
+ "zoneNames": {
+  "server_hq": "Throne Room",
+  "server_rd": "Scheme Vault",
+  "server_arc": "Crypt",
+  "srv1": "Dungeon I",
+  "srv2": "Dungeon II",
+  "srv3": "Dungeon III",
+  "support": "Party gear",
+  "grave": "Discard",
+  "scored": "Trophies",
+  "tags": "Bounty",
+  "leader": "Leader",
+  "ap": "Actions"
+ },
+ "cards": [
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "rez": 2,
+    "strength": 3
+   },
+   "name": "Wall of Thorns",
+   "type": "guardian",
+   "cost": 0,
+   "iceType": "Wall",
+   "subs": [
+    {
+     "k": "endRun"
+    }
+   ],
+   "flavor": "Grown overnight. Pruned never.",
+   "id": "wall-of-thorns"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "rez": 4,
+    "strength": 5
+   },
+   "name": "Iron Portcullis",
+   "type": "guardian",
+   "cost": 0,
+   "iceType": "Wall",
+   "subs": [
+    {
+     "k": "endRun"
+    },
+    {
+     "k": "endRun"
+    }
+   ],
+   "flavor": "Rattles ominously. Does not budge.",
+   "id": "iron-portcullis"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "rez": 2,
+    "strength": 2
+   },
+   "name": "Skeleton Sentry",
+   "type": "guardian",
+   "cost": 0,
+   "iceType": "Monster",
+   "subs": [
+    {
+     "k": "wound",
+     "n": 1
+    },
+    {
+     "k": "endRun"
+    }
+   ],
+   "flavor": "Has stood guard for four centuries. Still has not been told it can go home.",
+   "id": "skeleton-sentry"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "req": 3,
+    "points": 2
+   },
+   "name": "Recruit the Horde",
+   "type": "scheme",
+   "cost": 0,
+   "flavor": "Every lair needs muscle. And a lot of it.",
+   "id": "recruit-the-horde"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "req": 4,
+    "points": 2
+   },
+   "name": "Forbidden Tome",
+   "type": "scheme",
+   "cost": 0,
+   "flavor": "Bound in something. Do not ask what.",
+   "id": "forbidden-tome"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "startTurn",
+     "do": [
+      {
+       "k": "gain",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "stats": {
+    "rez": 2,
+    "trash": 3
+   },
+   "name": "Tithe Collector",
+   "type": "minion",
+   "cost": 0,
+   "flavor": "Collects taxes from the villages. Mostly in turnips.",
+   "id": "tithe-collector"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "gain",
+       "n": 3
+      }
+     ]
+    }
+   ],
+   "stats": {},
+   "name": "Collect Tribute",
+   "type": "plot",
+   "cost": 0,
+   "flavor": "The peasants pay. They always pay.",
+   "id": "collect-tribute"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "rez": 3,
+    "strength": 4
+   },
+   "name": "Bone Wall",
+   "type": "guardian",
+   "cost": 0,
+   "color": "undead",
+   "iceType": "Wall",
+   "subs": [
+    {
+     "k": "endRun"
+    }
+   ],
+   "flavor": "Load-bearing skeletons. Do not tell the union.",
+   "id": "bone-wall"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "rez": 3,
+    "strength": 3
+   },
+   "name": "Wailing Banshee",
+   "type": "guardian",
+   "cost": 0,
+   "color": "undead",
+   "iceType": "Monster",
+   "subs": [
+    {
+     "k": "wound",
+     "n": 2
+    }
+   ],
+   "flavor": "Her song has three verses. Nobody has heard the third.",
+   "id": "wailing-banshee"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "rez": 3,
+    "strength": 3
+   },
+   "name": "Crypt Seal",
+   "type": "guardian",
+   "cost": 0,
+   "color": "undead",
+   "iceType": "Lock",
+   "subs": [
+    {
+     "k": "endRun"
+    },
+    {
+     "k": "wound",
+     "n": 1
+    }
+   ],
+   "flavor": "Sealed with old blood and a very good lock.",
+   "id": "crypt-seal"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "req": 5,
+    "points": 3
+   },
+   "name": "Raise the Dead Army",
+   "type": "scheme",
+   "cost": 0,
+   "color": "undead",
+   "flavor": "Ten thousand soldiers who never need lunch.",
+   "id": "raise-the-dead-army"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "req": 2,
+    "points": 1
+   },
+   "name": "Eternal Night",
+   "type": "scheme",
+   "cost": 0,
+   "color": "undead",
+   "flavor": "The sun was getting on everyone's nerves anyway.",
+   "id": "eternal-night"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "access",
+     "do": [
+      {
+       "k": "wound",
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "stats": {
+    "rez": 0,
+    "trash": 0
+   },
+   "name": "Haunted Ossuary",
+   "type": "minion",
+   "cost": 0,
+   "color": "undead",
+   "flavor": "The bones rattle. Then they bite.",
+   "id": "haunted-ossuary"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "startTurn",
+     "do": [
+      {
+       "k": "gain",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "stats": {
+    "rez": 1,
+    "trash": 2
+   },
+   "name": "Grave Robbers' Guild",
+   "type": "minion",
+   "cost": 0,
+   "color": "undead",
+   "flavor": "Recycles the deceased. Very eco-friendly.",
+   "id": "grave-robbers-guild"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "wound",
+       "n": 1
+      },
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "stats": {},
+   "name": "Plague Wind",
+   "type": "plot",
+   "cost": 2,
+   "color": "undead",
+   "flavor": "Smells like old cheese and doom.",
+   "id": "plague-wind"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "gain",
+       "n": 2
+      },
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "stats": {},
+   "name": "Necromantic Tithe",
+   "type": "plot",
+   "cost": 0,
+   "color": "undead",
+   "id": "necromantic-tithe"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "rez": 1,
+    "strength": 1
+   },
+   "name": "Drake Hatchling",
+   "type": "guardian",
+   "cost": 0,
+   "color": "dragons",
+   "iceType": "Monster",
+   "subs": [
+    {
+     "k": "wound",
+     "n": 1
+    }
+   ],
+   "flavor": "Small. Angry. On fire.",
+   "id": "drake-hatchling"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "rez": 5,
+    "strength": 5
+   },
+   "name": "Dragonfire Gate",
+   "type": "guardian",
+   "cost": 0,
+   "color": "dragons",
+   "iceType": "Lock",
+   "subs": [
+    {
+     "k": "endRun"
+    },
+    {
+     "k": "destroy",
+     "target": "enemyUnit",
+     "filter": {
+      "zone": "support",
+      "type": "breaker"
+     }
+    }
+   ],
+   "flavor": "Opens for dragons. Melts everything else.",
+   "id": "dragonfire-gate"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "rez": 7,
+    "strength": 6
+   },
+   "name": "Elder Wyrm",
+   "type": "guardian",
+   "cost": 0,
+   "color": "dragons",
+   "iceType": "Monster",
+   "subs": [
+    {
+     "k": "destroy",
+     "target": "enemyUnit",
+     "filter": {
+      "zone": "support",
+      "type": "breaker"
+     }
+    },
+    {
+     "k": "wound",
+     "n": 2
+    },
+    {
+     "k": "endRun"
+    }
+   ],
+   "flavor": "Has eaten three kingdoms and one very persistent bard.",
+   "id": "elder-wyrm"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "req": 5,
+    "points": 3
+   },
+   "name": "Hoard of Ages",
+   "type": "scheme",
+   "cost": 0,
+   "color": "dragons",
+   "flavor": "Every coin is counted. Every coin is named.",
+   "id": "hoard-of-ages"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "req": 4,
+    "points": 2
+   },
+   "name": "Dragon Egg",
+   "type": "scheme",
+   "cost": 0,
+   "color": "dragons",
+   "flavor": "Keep warm. Keep hidden. Keep away from adventurers.",
+   "id": "dragon-egg"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "startTurn",
+     "do": [
+      {
+       "k": "gain",
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "stats": {
+    "rez": 3,
+    "trash": 4
+   },
+   "name": "Gold Mine",
+   "type": "minion",
+   "cost": 0,
+   "color": "dragons",
+   "flavor": "The kobolds dig. The queen collects.",
+   "id": "gold-mine"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "access",
+     "do": [
+      {
+       "k": "tag",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "stats": {
+    "rez": 0,
+    "trash": 3
+   },
+   "name": "Treasure Pile",
+   "type": "minion",
+   "cost": 0,
+   "color": "dragons",
+   "flavor": "Touch one coin and the whole pile remembers your face.",
+   "id": "treasure-pile"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "gain",
+       "n": 9
+      }
+     ]
+    }
+   ],
+   "stats": {},
+   "name": "Hoard Gathering",
+   "type": "plot",
+   "cost": 5,
+   "color": "dragons",
+   "flavor": "Accept tribute. Accept more tribute.",
+   "id": "hoard-gathering"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "gain",
+       "n": 2
+      },
+      {
+       "k": "draw",
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "stats": {},
+   "name": "Wings Over the Valley",
+   "type": "plot",
+   "cost": 1,
+   "color": "dragons",
+   "id": "wings-over-the-valley"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "rez": 1,
+    "strength": 1
+   },
+   "name": "Goblin Lookout",
+   "type": "guardian",
+   "cost": 0,
+   "color": "goblins",
+   "iceType": "Monster",
+   "subs": [
+    {
+     "k": "tag",
+     "n": 1
+    }
+   ],
+   "flavor": "\"INTRUDERS! Also, lunch is ready.\"",
+   "id": "goblin-lookout"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "rez": 1,
+    "strength": 2
+   },
+   "name": "Rickety Barricade",
+   "type": "guardian",
+   "cost": 0,
+   "color": "goblins",
+   "iceType": "Wall",
+   "subs": [
+    {
+     "k": "endRun"
+    }
+   ],
+   "flavor": "Held together with string and optimism.",
+   "id": "rickety-barricade"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "rez": 2,
+    "strength": 2
+   },
+   "name": "Spiked Pit Lock",
+   "type": "guardian",
+   "cost": 0,
+   "color": "goblins",
+   "iceType": "Lock",
+   "subs": [
+    {
+     "k": "tag",
+     "n": 1
+    },
+    {
+     "k": "endRun"
+    }
+   ],
+   "flavor": "The pit is the lock. The lock is a pit.",
+   "id": "spiked-pit-lock"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "req": 3,
+    "points": 2
+   },
+   "name": "Goblin Tunnels",
+   "type": "scheme",
+   "cost": 0,
+   "color": "goblins",
+   "flavor": "Dug with spoons. Thousands of spoons.",
+   "id": "goblin-tunnels"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "req": 4,
+    "points": 2
+   },
+   "name": "Mob Rule",
+   "type": "scheme",
+   "cost": 0,
+   "color": "goblins",
+   "flavor": "Democracy, but louder.",
+   "id": "mob-rule"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "access",
+     "do": [
+      {
+       "k": "tag",
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "stats": {
+    "rez": 0,
+    "trash": 2
+   },
+   "name": "Snare Net",
+   "type": "minion",
+   "cost": 0,
+   "color": "goblins",
+   "flavor": "Goblin engineering: crude, cheap, and surprisingly effective.",
+   "id": "snare-net"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "startTurn",
+     "do": [
+      {
+       "k": "gain",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "stats": {
+    "rez": 1,
+    "trash": 2
+   },
+   "name": "Goblin Market",
+   "type": "minion",
+   "cost": 0,
+   "color": "goblins",
+   "flavor": "Everything is for sale. Most of it is stolen.",
+   "id": "goblin-market"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "tag",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "stats": {},
+   "name": "Bounty Hunters",
+   "type": "plot",
+   "cost": 2,
+   "color": "goblins",
+   "flavor": "Paid by the head. Not fussy about whose.",
+   "id": "bounty-hunters"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "gain",
+       "n": 2
+      },
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "stats": {},
+   "name": "Scavenge",
+   "type": "plot",
+   "cost": 0,
+   "color": "goblins",
+   "id": "scavenge"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "rez": 3,
+    "strength": 3
+   },
+   "name": "Hellhound",
+   "type": "guardian",
+   "cost": 0,
+   "color": "demons",
+   "iceType": "Monster",
+   "subs": [
+    {
+     "k": "tag",
+     "n": 1
+    },
+    {
+     "k": "wound",
+     "n": 1
+    }
+   ],
+   "flavor": "Three heads, all of them hungry.",
+   "id": "hellhound"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "rez": 4,
+    "strength": 4
+   },
+   "name": "Infernal Sigil",
+   "type": "guardian",
+   "cost": 0,
+   "color": "demons",
+   "iceType": "Lock",
+   "subs": [
+    {
+     "k": "endRun"
+    },
+    {
+     "k": "gain",
+     "n": 2
+    }
+   ],
+   "flavor": "Signed in fire. Notarized in brimstone.",
+   "id": "infernal-sigil"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "rez": 3,
+    "strength": 4
+   },
+   "name": "Brimstone Wall",
+   "type": "guardian",
+   "cost": 0,
+   "color": "demons",
+   "iceType": "Wall",
+   "subs": [
+    {
+     "k": "wound",
+     "n": 1
+    },
+    {
+     "k": "endRun"
+    }
+   ],
+   "flavor": "Warm to the touch. Very warm. Too warm.",
+   "id": "brimstone-wall"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "req": 5,
+    "points": 3
+   },
+   "name": "Summoning Circle",
+   "type": "scheme",
+   "cost": 0,
+   "color": "demons",
+   "flavor": "Chalk, candles, and a strict no-refunds policy.",
+   "id": "summoning-circle"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "req": 2,
+    "points": 1
+   },
+   "name": "Pact of Ash",
+   "type": "scheme",
+   "cost": 0,
+   "color": "demons",
+   "flavor": "Read the fine print. It is on fire.",
+   "id": "pact-of-ash"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "access",
+     "do": [
+      {
+       "k": "tag",
+       "n": 1
+      },
+      {
+       "k": "wound",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "stats": {
+    "rez": 0,
+    "trash": 2
+   },
+   "name": "Soul Ledger",
+   "type": "minion",
+   "cost": 0,
+   "color": "demons",
+   "flavor": "Every bargain recorded. Every debt collected.",
+   "id": "soul-ledger"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "startTurn",
+     "do": [
+      {
+       "k": "gain",
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "stats": {
+    "rez": 2,
+    "trash": 4
+   },
+   "name": "Infernal Bank",
+   "type": "minion",
+   "cost": 0,
+   "color": "demons",
+   "flavor": "Interest rates are eternal.",
+   "id": "infernal-bank"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "draw",
+       "n": 3
+      }
+     ]
+    }
+   ],
+   "stats": {},
+   "name": "Hellish Contract",
+   "type": "plot",
+   "cost": 1,
+   "color": "demons",
+   "flavor": "Sign here. And here. And here, in blood.",
+   "id": "hellish-contract"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "wound",
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "stats": {},
+   "name": "Brimstone Rain",
+   "type": "plot",
+   "cost": 3,
+   "color": "demons",
+   "id": "brimstone-rain"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "strength": 1,
+    "mu": 1
+   },
+   "name": "Hireling Sellsword",
+   "type": "breaker",
+   "cost": 3,
+   "breaker": {
+    "breaks": "Wall",
+    "boostCost": 2,
+    "boostBy": 2,
+    "breakCost": 1
+   },
+   "flavor": "Paid by the hour. Takes a lot of breaks.",
+   "id": "hireling-sellsword"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "strength": 1,
+    "mu": 1
+   },
+   "name": "Street Rat Picklock",
+   "type": "breaker",
+   "cost": 3,
+   "breaker": {
+    "breaks": "Lock",
+    "boostCost": 1,
+    "boostBy": 1,
+    "breakCost": 2
+   },
+   "flavor": "Has never met a lock. Has met many locksmiths, briefly.",
+   "id": "street-rat-picklock"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "strength": 1,
+    "mu": 1
+   },
+   "name": "Monster Hunter",
+   "type": "breaker",
+   "cost": 4,
+   "breaker": {
+    "breaks": "Monster",
+    "boostCost": 2,
+    "boostBy": 1,
+    "breakCost": 1
+   },
+   "flavor": "Silver for werewolves, stakes for vampires, a stick for everything else.",
+   "id": "monster-hunter"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "strength": 0,
+    "mu": 1
+   },
+   "name": "Wandering Bard",
+   "type": "breaker",
+   "cost": 5,
+   "breaker": {
+    "breaks": "all",
+    "boostCost": 1,
+    "boostBy": 1,
+    "breakCost": 2
+   },
+   "flavor": "Talks his way past anything. Slowly. With a lute.",
+   "id": "wandering-bard"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "gain",
+       "n": 9
+      }
+     ]
+    }
+   ],
+   "stats": {},
+   "name": "Treasure Hunt",
+   "type": "tactic",
+   "cost": 5,
+   "flavor": "X marks the spot. Y marks the other spot. Z is a trap.",
+   "id": "treasure-hunt"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "draw",
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "stats": {},
+   "name": "Healing Potion",
+   "type": "tactic",
+   "cost": 1,
+   "flavor": "Tastes like cherries and regret.",
+   "id": "healing-potion"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "startTurn",
+     "do": [
+      {
+       "k": "gain",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "stats": {},
+   "name": "Tavern Contacts",
+   "type": "ally",
+   "cost": 1,
+   "flavor": "Knows a guy. The guy knows a guy.",
+   "id": "tavern-contacts"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "muPlus": 1
+   },
+   "name": "Bag of Holding",
+   "type": "gear",
+   "cost": 2,
+   "flavor": "Bigger on the inside. Smells like old socks on the inside, too.",
+   "id": "bag-of-holding"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "strength": 2,
+    "mu": 1
+   },
+   "name": "Battleaxe Berserker",
+   "type": "breaker",
+   "cost": 3,
+   "color": "warriors",
+   "breaker": {
+    "breaks": "Wall",
+    "boostCost": 1,
+    "boostBy": 1,
+    "breakCost": 1
+   },
+   "flavor": "Walls are just doors that have not met her yet.",
+   "id": "battleaxe-berserker"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "gain",
+       "n": 4
+      }
+     ]
+    }
+   ],
+   "stats": {},
+   "name": "War Cry",
+   "type": "tactic",
+   "cost": 1,
+   "color": "warriors",
+   "flavor": "AAAAAAAAAAAAH! (Translated: \"We are ready.\")",
+   "id": "war-cry"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "draw",
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "stats": {},
+   "name": "Berserker's Brew",
+   "type": "tactic",
+   "cost": 0,
+   "color": "warriors",
+   "flavor": "One sip: courage. Two sips: a nap.",
+   "id": "berserkers-brew"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "startTurn",
+     "do": [
+      {
+       "k": "gain",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "stats": {},
+   "name": "Mercenary Captain",
+   "type": "ally",
+   "cost": 2,
+   "color": "warriors",
+   "flavor": "Fights for gold. Also for glory, if glory pays.",
+   "id": "mercenary-captain"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "muPlus": 1
+   },
+   "name": "Dwarven Pack",
+   "type": "gear",
+   "cost": 1,
+   "color": "warriors",
+   "flavor": "Fits an anvil. Has fit an anvil. Still has the anvil.",
+   "id": "dwarven-pack"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "strength": 2,
+    "mu": 1
+   },
+   "name": "Master Lockpick",
+   "type": "breaker",
+   "cost": 2,
+   "color": "rogues",
+   "breaker": {
+    "breaks": "Lock",
+    "boostCost": 1,
+    "boostBy": 1,
+    "breakCost": 1
+   },
+   "flavor": "Opened the Royal Vault on a dare. Closed it again out of politeness.",
+   "id": "master-lockpick"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "gain",
+       "n": 3
+      }
+     ]
+    }
+   ],
+   "stats": {},
+   "name": "Pickpocket",
+   "type": "tactic",
+   "cost": 0,
+   "color": "rogues",
+   "flavor": "Your purse looked lonely.",
+   "id": "pickpocket"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      },
+      {
+       "k": "gain",
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "stats": {},
+   "name": "Smoke Bomb",
+   "type": "tactic",
+   "cost": 1,
+   "color": "rogues",
+   "flavor": "Now you see me. Now you cough.",
+   "id": "smoke-bomb"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "startTurn",
+     "do": [
+      {
+       "k": "gain",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "stats": {},
+   "name": "The Fence",
+   "type": "ally",
+   "cost": 1,
+   "color": "rogues",
+   "flavor": "No questions asked. Some answers given.",
+   "id": "the-fence"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "muPlus": 1
+   },
+   "name": "Shadow Cloak",
+   "type": "gear",
+   "cost": 2,
+   "color": "rogues",
+   "flavor": "Black as midnight, quiet as a cat, smells faintly of cat.",
+   "id": "shadow-cloak"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "strength": 2,
+    "mu": 1
+   },
+   "name": "Spellblade Adept",
+   "type": "breaker",
+   "cost": 3,
+   "color": "mages",
+   "breaker": {
+    "breaks": "Monster",
+    "boostCost": 1,
+    "boostBy": 1,
+    "breakCost": 1
+   },
+   "flavor": "Half sword, half spell, all showing off.",
+   "id": "spellblade-adept"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "draw",
+       "n": 3
+      }
+     ]
+    }
+   ],
+   "stats": {},
+   "name": "Arcane Study",
+   "type": "tactic",
+   "cost": 1,
+   "color": "mages",
+   "flavor": "Chapter one: how not to explode.",
+   "id": "arcane-study"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "play",
+     "do": [
+      {
+       "k": "gain",
+       "n": 5
+      }
+     ]
+    }
+   ],
+   "stats": {},
+   "name": "Mana Surge",
+   "type": "tactic",
+   "cost": 2,
+   "color": "mages",
+   "id": "mana-surge"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "startTurn",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "stats": {},
+   "name": "Familiar Owl",
+   "type": "ally",
+   "cost": 2,
+   "color": "mages",
+   "flavor": "Delivers scrolls. Judges your posture.",
+   "id": "familiar-owl"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "muPlus": 2
+   },
+   "name": "Spellbook",
+   "type": "gear",
+   "cost": 3,
+   "color": "mages",
+   "flavor": "Twice the memory. Half the shelf space.",
+   "id": "spellbook"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "cost": 2,
+     "once": true,
+     "do": [
+      {
+       "k": "wound",
+       "n": 1
+      }
+     ],
+     "label": "Once a turn, pay 2: deal 1 wound"
+    }
+   ],
+   "stats": {
+    "actions": 3
+   },
+   "name": "Morthul, the Lich Sovereign",
+   "type": "lord",
+   "cost": 0,
+   "color": "undead",
+   "flavor": "Died once. Did not care for it. Came back.",
+   "id": "morthul-the-lich-sovereign"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "startTurn",
+     "do": [
+      {
+       "k": "gain",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "stats": {
+    "actions": 3
+   },
+   "name": "Queen Cinderscale",
+   "type": "lord",
+   "cost": 0,
+   "color": "dragons",
+   "flavor": "Sleeps on a mountain of gold. Counts it in her dreams.",
+   "id": "queen-cinderscale"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "cost": 3,
+     "once": true,
+     "do": [
+      {
+       "k": "tag",
+       "n": 1
+      }
+     ],
+     "label": "Once a turn, pay 3: give the party 1 tag"
+    }
+   ],
+   "stats": {
+    "actions": 3
+   },
+   "name": "Grizzlegut the Goblin King",
+   "type": "lord",
+   "cost": 0,
+   "color": "goblins",
+   "flavor": "Crowned himself. Twice, for emphasis.",
+   "id": "grizzlegut-the-goblin-king"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "activated",
+     "cost": 2,
+     "once": true,
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ],
+     "label": "Once a turn, pay 2: draw a card"
+    }
+   ],
+   "stats": {
+    "actions": 3
+   },
+   "name": "The Hollow Prince",
+   "type": "lord",
+   "cost": 0,
+   "color": "demons",
+   "flavor": "Has no heart. Keeps it in a jar anyway.",
+   "id": "the-hollow-prince"
+  },
+  {
+   "keywords": [],
+   "abilities": [],
+   "stats": {
+    "actions": 4
+   },
+   "name": "Grimhold Company",
+   "type": "party",
+   "cost": 0,
+   "color": "warriors",
+   "flavor": "Five warriors, one tactic: through the wall.",
+   "id": "grimhold-company"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "startTurn",
+     "do": [
+      {
+       "k": "gain",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "stats": {
+    "actions": 4
+   },
+   "name": "The Shadow Guild",
+   "type": "party",
+   "cost": 0,
+   "color": "rogues",
+   "flavor": "If it is locked, it is theirs. If it is not locked, it was already theirs.",
+   "id": "the-shadow-guild"
+  },
+  {
+   "keywords": [],
+   "abilities": [
+    {
+     "when": "startTurn",
+     "do": [
+      {
+       "k": "draw",
+       "n": 1
+      }
+     ]
+    }
+   ],
+   "stats": {
+    "actions": 4
+   },
+   "name": "The Arcane Circle",
+   "type": "party",
+   "cost": 0,
+   "color": "mages",
+   "flavor": "Wizards, sorcerers and one guy who is very good at card tricks.",
+   "id": "the-arcane-circle"
+  }
+ ],
+ "decks": [
+  {
+   "id": "the-lich-lair",
+   "name": "The Lich's Lair",
+   "leader": "morthul-the-lich-sovereign",
+   "main": {
+    "wall-of-thorns": 3,
+    "iron-portcullis": 3,
+    "skeleton-sentry": 3,
+    "recruit-the-horde": 3,
+    "forbidden-tome": 3,
+    "tithe-collector": 3,
+    "collect-tribute": 3,
+    "bone-wall": 3,
+    "wailing-banshee": 3,
+    "crypt-seal": 3,
+    "raise-the-dead-army": 3,
+    "eternal-night": 3,
+    "haunted-ossuary": 3,
+    "grave-robbers-guild": 2,
+    "plague-wind": 2,
+    "necromantic-tithe": 2
+   }
+  },
+  {
+   "id": "grimhold-company",
+   "name": "Grimhold Company",
+   "leader": "grimhold-company",
+   "main": {
+    "hireling-sellsword": 3,
+    "street-rat-picklock": 3,
+    "monster-hunter": 3,
+    "wandering-bard": 3,
+    "treasure-hunt": 3,
+    "healing-potion": 3,
+    "tavern-contacts": 3,
+    "bag-of-holding": 3,
+    "battleaxe-berserker": 3,
+    "war-cry": 3,
+    "berserkers-brew": 3,
+    "mercenary-captain": 3,
+    "dwarven-pack": 3
+   }
+  },
+  {
+   "id": "dragons-hoard",
+   "name": "The Dragon's Hoard",
+   "leader": "queen-cinderscale",
+   "main": {
+    "wall-of-thorns": 3,
+    "iron-portcullis": 3,
+    "skeleton-sentry": 3,
+    "recruit-the-horde": 3,
+    "forbidden-tome": 3,
+    "tithe-collector": 3,
+    "collect-tribute": 3,
+    "drake-hatchling": 3,
+    "dragonfire-gate": 3,
+    "elder-wyrm": 3,
+    "hoard-of-ages": 3,
+    "dragon-egg": 3,
+    "gold-mine": 3,
+    "treasure-pile": 2,
+    "hoard-gathering": 2,
+    "wings-over-the-valley": 2
+   }
+  },
+  {
+   "id": "shadow-guild",
+   "name": "The Shadow Guild",
+   "leader": "the-shadow-guild",
+   "main": {
+    "hireling-sellsword": 3,
+    "street-rat-picklock": 3,
+    "monster-hunter": 3,
+    "wandering-bard": 3,
+    "treasure-hunt": 3,
+    "healing-potion": 3,
+    "tavern-contacts": 3,
+    "bag-of-holding": 3,
+    "master-lockpick": 3,
+    "pickpocket": 3,
+    "smoke-bomb": 3,
+    "the-fence": 3,
+    "shadow-cloak": 3
+   }
+  },
+  {
+   "id": "goblin-warren",
+   "name": "The Goblin Warren",
+   "leader": "grizzlegut-the-goblin-king",
+   "main": {
+    "wall-of-thorns": 3,
+    "iron-portcullis": 3,
+    "skeleton-sentry": 3,
+    "recruit-the-horde": 3,
+    "forbidden-tome": 3,
+    "tithe-collector": 3,
+    "collect-tribute": 3,
+    "goblin-lookout": 3,
+    "rickety-barricade": 3,
+    "spiked-pit-lock": 3,
+    "goblin-tunnels": 3,
+    "mob-rule": 3,
+    "snare-net": 3,
+    "goblin-market": 2,
+    "bounty-hunters": 2,
+    "scavenge": 2
+   }
+  },
+  {
+   "id": "arcane-circle",
+   "name": "The Arcane Circle",
+   "leader": "the-arcane-circle",
+   "main": {
+    "hireling-sellsword": 3,
+    "street-rat-picklock": 3,
+    "monster-hunter": 3,
+    "wandering-bard": 3,
+    "treasure-hunt": 3,
+    "healing-potion": 3,
+    "tavern-contacts": 3,
+    "bag-of-holding": 3,
+    "spellblade-adept": 3,
+    "arcane-study": 3,
+    "mana-surge": 3,
+    "familiar-owl": 3,
+    "spellbook": 3
+   }
+  },
+  {
+   "id": "infernal-court",
+   "name": "The Infernal Court",
+   "leader": "the-hollow-prince",
+   "main": {
+    "wall-of-thorns": 3,
+    "iron-portcullis": 3,
+    "skeleton-sentry": 3,
+    "recruit-the-horde": 3,
+    "forbidden-tome": 3,
+    "tithe-collector": 3,
+    "collect-tribute": 3,
+    "hellhound": 3,
+    "infernal-sigil": 3,
+    "brimstone-wall": 3,
+    "summoning-circle": 3,
+    "pact-of-ash": 3,
+    "soul-ledger": 3,
+    "infernal-bank": 2,
+    "hellish-contract": 2,
+    "brimstone-rain": 2
+   }
+  }
+ ]
+}

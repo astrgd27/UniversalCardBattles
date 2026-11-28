@@ -17,7 +17,7 @@ export interface Beat {
 type Ev = Record<string, any>;
 const ICON: Record<Beat['kind'], string> = { play: '✦', attack: '⚔', block: '🛡', clash: '💥', hit: '♥', destroy: '✖', info: '•', stack: '⧗' };
 export const beatIcon = (k: Beat['kind']) => ICON[k];
-const BEAT_EVENTS = new Set(['quest', 'lifeLost', 'prize', 'conquer', 'hold', 'deployed', 'showdownFight', 'hit', 'marched', 'recalled', 'finalPoint', 'coin', 'status', 'attackFailed', 'evolved', 'switched', 'statusTick', 'dice', 'rolled', 'synchro', 'xyz', 'linkSummon', 'fusion', 'ritual', 'pendulum', 'hidden', 'burnOut', 'shifted', 'locLore', 'movedTo', 'vanished', 'checkFail', 'stunned', 'blockFailed']);
+const BEAT_EVENTS = new Set(['quest', 'lifeLost', 'prize', 'conquer', 'hold', 'deployed', 'showdownFight', 'hit', 'marched', 'recalled', 'finalPoint', 'coin', 'status', 'attackFailed', 'evolved', 'switched', 'statusTick', 'dice', 'rolled', 'synchro', 'xyz', 'linkSummon', 'fusion', 'ritual', 'pendulum', 'hidden', 'burnOut', 'shifted', 'locLore', 'movedTo', 'vanished', 'checkFail', 'stunned', 'blockFailed', 'stolen', 'scoredAgenda', 'flatline', 'runEnded', 'rezzed', 'run']);
 
 /** Beats for a slice of the viewer's events. `who(p)` names a player ("You" / "Opponent"). */
 export function beatsOf(events: Ev[], mod: Mod, viewer: string, who: (p: string) => string, cardOf: (id: string) => string | undefined): Beat[] {
@@ -94,6 +94,8 @@ export function beatsOf(events: Ev[], mod: Mod, viewer: string, who: (p: string)
                 : e.type === 'statusTick' ? `${name(e.o)} takes ${e.n} damage (${stl(e.s)})`
                 : e.type === 'shifted' ? `${name(e.o)} shifts in!` : e.type === 'locLore' ? `${name(e.o)}: +${e.n} point${e.n === 1 ? '' : 's'}` : e.type === 'movedTo' ? `${name(e.o)} moves to ${name(e.loc)}`
                 : e.type === 'vanished' ? `${name(e.o)} vanishes!`
+                : e.type === 'stolen' ? `${who(p)} steal${s} a scheme! (+${e.n})` : e.type === 'scoredAgenda' ? `${who(p)} score${s} a scheme! (+${e.n})` : e.type === 'flatline' ? `${who(p)} flatlined!`
+                : e.type === 'runEnded' ? 'The run is stopped!' : e.type === 'rezzed' ? `${name(e.o)} awakens!` : e.type === 'run' ? `${who(p)} start${s} a run…`
                 : e.type === 'checkFail' ? `${who(p)} fail${s} a check — turn over!` : e.type === 'stunned' ? `Stunned! ${e.n} foundation${e.n === 1 ? '' : 's'} committed` : e.type === 'blockFailed' ? 'The block slips!'
                 : e.type === 'recalled' ? 'Both sides survive: the attackers fall back to base' : e.type === 'finalPoint' ? `${who(p)} can't win by conquest without scoring every battlefield this turn: draw${s} a card instead` : '';
           if (text) out.push({ kind: e.type === 'lifeLost' ? 'hit' : 'info', mine: p === viewer, ms: 800, text });

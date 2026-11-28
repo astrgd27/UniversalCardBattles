@@ -3,10 +3,10 @@
 // The vocabulary is small on purpose: zones (arenas), counters, keywords (optionally with a number and an ability
 // bundle), and When → If → Do ability blocks whose targets take filters and whose activations take cost blocks.
 
-export type Role = 'unit' | 'spell' | 'fast' | 'permanent' | 'attachment' | 'resource' | 'trap' | 'leader' | 'evolution' | 'extra' | 'token' | 'attack' | 'battlefield' | 'walker' | 'location';
+export type Role = 'unit' | 'spell' | 'fast' | 'permanent' | 'attachment' | 'resource' | 'trap' | 'leader' | 'evolution' | 'extra' | 'token' | 'attack' | 'battlefield' | 'walker' | 'location' | 'ice' | 'agenda';
 export type Pos = 'tl' | 'tr' | 'bl' | 'br' | 'line';
 export type PhaseKind = 'ready' | 'draw' | 'resource' | 'main' | 'combat' | 'end' | 'custom';
-export type When = 'play' | 'leave' | 'attack' | 'hit' | 'quest' | 'startTurn' | 'endTurn' | 'activated' | 'static' | 'opAttack' | 'conquer' | 'hold' | 'block' | 'castSpell' | 'landfall' | 'flip';
+export type When = 'play' | 'leave' | 'attack' | 'hit' | 'quest' | 'startTurn' | 'endTurn' | 'activated' | 'static' | 'opAttack' | 'conquer' | 'hold' | 'block' | 'castSpell' | 'landfall' | 'flip' | 'access';
 export type TargetKind =
   | 'self' | 'enemyUnit' | 'anyUnit' | 'ownUnit' | 'otherOwnUnit' | 'enemyAny' | 'opponent' | 'you' | 'eachPlayer'
   | 'allEnemyUnits' | 'allUnits' | 'allOwnUnits' | 'randomEnemyUnit' | 'attacker' | 'battleTarget' | 'ownLeader' | 'ownAny';
@@ -16,7 +16,7 @@ export type EffectKind =
   | 'addCounter' | 'removeCounter' | 'strike' | 'deploy'
   | 'restrict' | 'prevent' | 'costMod' | 'insteadDestroy' | 'moveTo' | 'scry'
   | 'dig' | 'putIntoPlay' | 'addRes' | 'readyRes' | 'giveRes' | 'lifeToHand' | 'handToLife'
-  | 'inflict' | 'cure' | 'flip' | 'switch' | 'tutor' | 'attachFrom' | 'drawTo' | 'skipEvolve' | 'fight' | 'surveil' | 'roll' | 'fusion' | 'ritual' | 'drops';
+  | 'inflict' | 'cure' | 'flip' | 'switch' | 'tutor' | 'attachFrom' | 'drawTo' | 'skipEvolve' | 'fight' | 'surveil' | 'roll' | 'fusion' | 'ritual' | 'drops' | 'endRun' | 'wound' | 'tag';
 export type KeywordRule = 'none' | 'haste' | 'guard' | 'blocker' | 'flying' | 'vigilance' | 'lifesteal' | 'deadly' | 'shield' | 'double' | 'overflow' | 'ward'
   | 'firstStrike' | 'resist' | 'challenger' | 'saboteur' | 'goAgain' | 'trigger' | 'song'
   | 'noAttack' | 'noBlock' | 'noBeAttacked' | 'unblockable' | 'entersExhausted'
@@ -49,16 +49,19 @@ export interface Arena { id: string; name: string; size: number; attack: boolean
 export interface StatSlot { stat: string; pos: Pos; icon?: string; label?: string }
 export interface FrameDef { base: string; cost: 'tl' | 'tr' | 'none'; stats: StatSlot[]; art: number; level?: string; text: boolean; layout?: 'portrait' | 'landscape' }
 export interface CardType { id: string; name: string; role: Role; frame: FrameDef; icon?: string; zone?: string; playTo?: string; perTurn?: number; notFirstTurn?: boolean; perUnit?: number; anyUnit?: boolean; equipment?: boolean;
-  method?: 'materials' | 'fusion' | 'synchro' | 'xyz' | 'link'; ritual?: boolean; foundation?: boolean; showdown?: boolean; settable?: boolean; speed3?: boolean; continuous?: boolean }
+  method?: 'materials' | 'fusion' | 'synchro' | 'xyz' | 'link'; ritual?: boolean; foundation?: boolean;
+  side?: 0 | 1; memory?: boolean; tagTarget?: boolean; showdown?: boolean; settable?: boolean; speed3?: boolean; continuous?: boolean }
+// side (asymmetric games): the side that uses this type; memory: programs that use memory; tagTarget: the opponent may trash it while you have tags
 // method (extra-deck types): how it is summoned; ritual: summoned only by a ritual effect; settable (quick spells): can be set and used from the next turn;
 // speed3 (traps): responds to anything; continuous (traps): stays face up after it is sprung
 // anyUnit (attachments): may go on any unit, yours or the opponent's (auras, curses); equipment: stays when its unit leaves and can be moved with equipCost
 // perTurn: at most N of this type per turn; notFirstTurn: not on the first turn of the game; perUnit (attachments): at most N on one unit // zone: the arena its units enter; playTo: a custom zone permanents go to
 export interface Keyword { id: string; name: string; rule: KeywordRule; text: string; valued?: boolean; abilities?: Ability[]; deckMax?: number } // deckMax: at most N cards with it per deck
-export interface Phase { id: string; name: string; kind: PhaseKind; n?: number; raw?: unknown[]; each?: boolean; drawTo?: number; alternate?: boolean }
+export interface Phase { id: string; name: string; kind: PhaseKind; side?: 0 | 1; n?: number; raw?: unknown[]; each?: boolean; drawTo?: number; alternate?: boolean }
 
 export interface Resource {
-  mode: 'ramp' | 'cards' | 'anycard' | 'deck' | 'attach' | 'pitch' | 'check' | 'none'; // check: play cards by passing a skill check (top card's check value vs difficulty + cards already played this turn); foundations help
+  mode: 'ramp' | 'cards' | 'anycard' | 'deck' | 'attach' | 'pitch' | 'check' | 'bank' | 'none'; // bank: credits carry over; start with `start`
+  actionsStat?: string; spendAll?: boolean; basicActions?: boolean; // actions per turn from the leader's stat; no ending the turn with actions left; 'draw a card' and 'take 1' actions // check: play cards by passing a skill check (top card's check value vs difficulty + cards already played this turn); foundations help
   name: string; icon: string;
   start: number; perTurn: number; max: number; // ramp: capacity; deck: cards revealed per turn (start = first player's first turn)
   deckSize: number; // deck mode: size of the resource deck section
@@ -77,7 +80,8 @@ export interface Resource {
   give?: boolean; // boost becomes "give": in your main phase, attach 1 unspent resource to your leader or a unit for +boost power this turn (counted for 'attached' conditions; returns at your next turn)
 }
 export interface Combat {
-  mode: 'block' | 'target' | 'duel' | 'lanes' | 'cards' | 'none';
+  mode: 'block' | 'target' | 'duel' | 'lanes' | 'cards' | 'runs' | 'none'; // runs: asymmetric server raids (see docs)
+  remotes?: number; memory?: number; // runs: remote servers per defender, memory for the raider's programs
   power: string; health: string | null; defense: string | null; // stat ids
   damage: 'heal' | 'persist'; // marked damage heals at end of turn, or stays
   sickness: boolean; firstTurnAttack: boolean;
@@ -106,6 +110,7 @@ export interface Combat {
 }
 export interface Win { life: number; lifeCards: number; prizes: number; points: number; deckOut: boolean; noUnits: boolean; lifeTriggers?: boolean; burnOut?: boolean; emptyEnd?: boolean } // emptyEnd: a player who ends their turn with an empty deck loses // burnOut: drawing from an empty deck gives the opponent a point and shuffles the discard pile back
 export interface Setup { hand: number; mulligan: boolean; handLimit: number; deckMin: number; deckMax: number; maxCopies: number; skipFirstDraw: boolean; leader: boolean; extraMax: number; turnLimit: number;
+  sides?: [string, string]; // asymmetric game: side names; each deck's leader (identity) type decides its side, side 0 goes first
   maxColors?: number;
   leaderLife?: string; leaderHand?: string; // the leader's stats that set your starting life and your hand size (draw-up-to) // a deck may use at most this many colors
   mulliganN?: number; // > 0: mulligan by setting aside up to N cards (to the bottom) and drawing that many
@@ -147,6 +152,8 @@ export interface CardBP {
   kwv?: Record<string, number>; // numbers for valued keywords (Resist 2)
   family?: string; // a shared base name (evolution/shift onto any card of this family)
   text?: string; flavor?: string; art?: string;
+  subs?: Effect[]; iceType?: string; // guardians (ICE): subroutines that fire unless broken, and its kind for breakers
+  breaker?: { breaks: string; boostCost: number; boostBy: number; breakCost: number }; // breaks this ICE kind ('all' = any): pay boostCost for +boostBy strength, breakCost per subroutine
   combo?: string; // check mode: playable only right after a card with this trait (or type) in your card pool
   shift?: number; // Shift N: may be played for N on top of your unit with the same name (the part before " - "), keeping its state
   moves?: Move[]; evolvesFrom?: string; materials?: number; weakness?: string; retreat?: number;
@@ -281,6 +288,8 @@ export const ROLES: Record<Role, { label: string; hint: string }> = {
   evolution: { label: 'Evolution', hint: 'Played on top of a named unit (or a family), keeping its damage and attachments.' },
   extra: { label: 'Extra-deck unit', hint: 'Waits in a separate deck; summon it by giving up units.' },
   token: { label: 'Token', hint: 'Made by effects; never in a deck.' },
+  ice: { label: 'Guardian (ICE)', hint: 'Asymmetric runs: installed face down in front of a server; rezzed when approached; its subroutines fire unless broken.' },
+  agenda: { label: 'Scheme (agenda)', hint: 'Asymmetric runs: installed in a server and advanced; scored for its points, or stolen when accessed.' },
   location: { label: 'Location', hint: 'A place you play into the board: units move there for its move cost, it scores its lore at the start of your turn, and enemies can attack it.' },
   walker: { label: 'Walker (loyalty permanent)', hint: 'A permanent with loyalty: use one + or - loyalty ability per turn; enemies can attack it, and damage removes loyalty.' },
   battlefield: { label: 'Battlefield', hint: 'A place to fight over. Each deck brings some; one is chosen for each player. Gives its effects to whoever conquers or holds it.' },

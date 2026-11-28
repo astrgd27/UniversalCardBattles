@@ -17,7 +17,7 @@
   | Looboo | Pokémon TCG | cute alien creatures; nutrients as resources |
   | Storyweavers | Disney Lorcana | public-domain fables and fairy tales; nursery rhymes as songs |
   | Arcade Showdown | UniVersus | an original fighting-game cast, serious to goofy |
-  | (planned) | Android: Netrunner | evil lords and their dungeons against a party of adventurers |
+  | Lairbreakers | Android: Netrunner | evil lords and their dungeons against a party of adventurers |
 
 - **Order:**
   1. Clean slate (done).
@@ -122,6 +122,12 @@
   - Keywords: EX, Powerful, Stun, Breaker, Flash, Combo.
   - Tests: `tests/arcade-showdown.test.ts` (7 tests: knockouts in AI games, and set pieces for each rule).
   - Not modeled yet: Multiple, Throw, Desperation, Reversal, Gauge, power tokens, transforms, and abilities that respond to specific card types.
+- **Lairbreakers (eighth clone, playable; mechanics reference: Android: Netrunner):** `packages/modules/lairbreakers`. Dark Lords guard their lairs; adventuring parties break in.
+  - 73 cards: four Dark Lords with their own kinds of baddies (the Lich's undead, Queen Cinderscale's dragons, the Goblin King's traps, the Hollow Prince's demons) and three parties (Warriors, Rogues, Mages), plus neutral cards for each side; seven decks (45 for a Lord, 39 for a party).
+  - Rules: asymmetric sides; the Lord goes first with 3 actions and a mandatory draw, the party has 4; banked gold; no ending a turn with actions left; servers (Throne Room, Scheme Vault, Crypt, three Dungeons) with face-down guardians and an install tax; rezzing; advancing and scoring schemes; runs with jack-out, encounters, breakers by kind (Walls, Locks, Monsters), subroutines; access, stealing and trashing; trap minions; wounds and flatline; tags and trashing tagged allies; memory; 7 points to win; the Lord loses on an empty Scheme Vault.
+  - Tests: `tests/lairbreakers.test.ts` (10 tests).
+  - Not modeled yet: traces, upgrades in central servers, virus counters, meat and brain damage, rezzing ICE outside runs, paid abilities during runs, and agenda point minimums for decks.
+  - AI note: the heuristic Dark Lord seldom scores, because a face-down scheme is worth little until it is advanced. Most AI games end in steals, flatlines or the Lord running out of cards. That is for the later AI and balance pass.
 - **Taste Dimension (fifth clone, playable; mechanics reference: Yu-Gi-Oh!):** `packages/modules/taste-dimension`.
   - Content:
     - 46 cards (a content pass comes later): four kitchens (Dim Sum Dynasty, Inferno Noodle House, Patisserie Royale, Spice Market);

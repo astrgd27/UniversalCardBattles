@@ -302,7 +302,7 @@ function frames(bp: Blueprint, A: any, mk: MakerUI, mod: Mod | null) {
 
 // ---------------------------------------------------------------- 3. types & stats
 const ROLE_OPTS = Object.entries(ROLES).map(([k, v]) => [k, v.label] as [string, string]);
-const FRAME_FOR: Record<Role, string> = { location: 'spell', attack: 'classic', unit: 'skirmisher', spell: 'spell', fast: 'spell', permanent: 'spell', attachment: 'spell', resource: 'resource', trap: 'spell', leader: 'leader', evolution: 'vital', extra: 'monster', token: 'token', battlefield: 'spell', walker: 'leader' };
+const FRAME_FOR: Record<Role, string> = { ice: 'monster', agenda: 'spell', location: 'spell', attack: 'classic', unit: 'skirmisher', spell: 'spell', fast: 'spell', permanent: 'spell', attachment: 'spell', resource: 'resource', trap: 'spell', leader: 'leader', evolution: 'vital', extra: 'monster', token: 'token', battlefield: 'spell', walker: 'leader' };
 function types(bp: Blueprint, A: any) {
   const used = (id: string) => bp.cards.some((c) => c.type === id);
   return [
@@ -318,6 +318,8 @@ function types(bp: Blueprint, A: any) {
         t.role === 'extra' && sel(bp, A, ['types', i, 'method'], [['materials', 'Send N units'], ['fusion', 'Fusion (recipe, via a fusion effect)'], ['synchro', 'Synchro (tuner + levels)'], ['xyz', 'Xyz (same-level materials attached)'], ['link', 'Link (materials = arrows)']], { label: 'Summoned by' }),
         t.role === 'unit' && chk(bp, A, ['types', i, 'ritual'], 'Ritual (only by a ritual effect)'), t.role === 'spell' && bp.combat.conquest && chk(bp, A, ['types', i, 'showdown'], 'Action: also playable in showdowns on your focus'), t.role === 'fast' && chk(bp, A, ['types', i, 'settable'], 'Can be set, used from next turn'),
         t.role === 'trap' && chk(bp, A, ['types', i, 'speed3'], 'Counter speed (responds to anything)'), t.role === 'trap' && chk(bp, A, ['types', i, 'continuous'], 'Continuous (stays face up)'),
+        bp.setup.sides && sel(bp, A, ['types', i, 'side'], [['', 'Both sides'], ['0', bp.setup.sides[0]], ['1', bp.setup.sides[1]]], { label: 'Side', map: (v) => (v === '' ? undefined : Number(v)) }),
+        t.role === 'permanent' && bp.setup.sides && [chk(bp, A, ['types', i, 'memory'], 'Program (uses memory)'), chk(bp, A, ['types', i, 'tagTarget'], 'Trashable while its owner has tags')],
         t.role === 'permanent' && chk(bp, A, ['types', i, 'foundation'], 'Foundation (commit it to help skill checks)'), t.role === 'attachment' && chk(bp, A, ['types', i, 'anyUnit'], 'Can go on enemy units too'), t.role === 'attachment' && chk(bp, A, ['types', i, 'equipment'], 'Equipment (stays; re-equip for a cost)'),
         !!bp.combat.arenas?.length && UNIT_ROLES.includes(t.role) && sel(bp, A, ['types', i, 'zone'], bp.combat.arenas.map((z) => [z.id, z.name] as [string, string]), { label: 'Enters' }),
         h('button', { class: 'x', disabled: used(t.id), title: used(t.id) ? 'Cards still use this type' : 'Remove', onclick: () => A.mkEdit((b: Blueprint) => { b.types.splice(i, 1); }) }, '🗑'))),
@@ -412,9 +414,13 @@ function rules(bp: Blueprint, A: any) {
       ['ramp', '📈', 'Growing energy', 'Your pool grows by itself each turn.'], ['cards', '⛰', 'Resource cards', 'Play one resource card a turn (lands); they make colored mana.'],
       ['anycard', '🔄', 'Any card as energy', 'Once a turn, put any card from hand into your energy area.'], ['deck', '🪙', 'Resource deck', 'A second deck feeds resources into play each turn.'],
       ['attach', '🔋', 'Attach to units', 'Attach one energy card a turn to a unit; attacks need energy.'], ['pitch', '◆', 'Pitch from hand', 'Pay by pitching cards from hand, each worth its pitch value.'],
+      ['bank', '🏦', 'Banked credits', 'Credits carry over between turns; start with some and earn more with actions and cards.'],
       ['check', '🎯', 'Skill checks', 'Play any card by passing a check: the top card of your deck against its difficulty plus the cards already played this turn. Foundations help; a failed check ends your turn.'],
       ['none', '∅', 'Free', 'Cards are free; limit summons per turn instead.'],
     ], (v) => A.mkSet([...R, 'mode'], v, 'rules')),
+    r.mode === 'bank' && row(num(bp, A, [...R, 'start'], { label: 'Starting credits', min: 0, max: 50 })),
+    (r.actions ?? 0) > 0 && row(sel(bp, A, [...R, 'actionsStat'], [['', 'Same for everyone'], ...stats], { label: 'Actions per turn from the leader stat', map: (v) => v || undefined }),
+      chk(bp, A, [...R, 'spendAll'], "Can't end the turn with actions left"), chk(bp, A, [...R, 'basicActions'], "Basic actions: 'draw a card' and 'take 1'")),
     r.mode === 'check' && row(sel(bp, A, [...R, 'checkStat'], stats, { label: 'Check value stat' }), hint('Mark a permanent type as Foundation (Types station) so it can be committed to help checks.')),
     r.mode === 'anycard' && row(chk(bp, A, [...R, 'faceDown'], 'Placed face down (generic resource)'),
       sel(bp, A, [...R, 'onlyKeyword'], [['', 'Any card can be a resource'], ...bp.keywords.map((k) => [k.id, `Only cards with ${k.name}`] as [string, string])], { label: 'Which cards', map: (v) => v || undefined })),
@@ -439,10 +445,12 @@ function rules(bp: Blueprint, A: any) {
     panel('Combat: how fights work', modeCards(c.mode, [
       ['block', '🛡', 'Attack & block', 'Attackers hit the player; the defender may block with a unit.'], ['target', '🎯', 'Pick a target', 'Attack a unit, the leader or the player directly.'],
       ['duel', '⚔', 'Active duel', 'One active unit fights; the rest wait on the bench. Units use printed attacks.'], ['lanes', '⟁', 'Battlefields', 'Move units onto shared battlefields; conquer and hold for points.'],
-      ['cards', '🗡', 'Attack cards', 'Play attack cards from hand; the defender blocks with cards from hand.'], ['none', '☮', 'No combat', 'Win through card effects, points or races.'],
+      ['cards', '🗡', 'Attack cards', 'Play attack cards from hand; the defender blocks with cards from hand.'], ['runs', '🏰', 'Runs (asymmetric)', 'One side guards servers with face-down guardians and advances schemes; the other runs the servers, breaks guardians and steals schemes.'], ['none', '☮', 'No combat', 'Win through card effects, points or races.'],
     ], (v) => A.mkSet([...Cb, 'mode'], v, 'rules')),
     c.mode === 'cards' && row(chk(bp, A, [...Cb, 'zones'], 'Attack zones (high/mid/low), speed, enhance step and blocks with a check; hits become momentum'),
       !c.zones && sel(bp, A, [...Cb, 'blockStat'], stats, { label: 'Blocking stat (cards discarded to defend)' })),
+    c.mode === 'runs' && row(num(bp, A, [...Cb, 'remotes'], { label: 'Remote servers', min: 1, max: 6 }), num(bp, A, [...Cb, 'memory'], { label: 'Memory for programs', min: 1, max: 10 }),
+      hint('Needs two sides (Setup), guardian (ICE) and scheme (agenda) types for side 0, and breaker programs for side 1. Stats: rez, trash, req, points, mu, muPlus.')),
     c.mode === 'cards' && c.zones && hint('Zone combat reads the stats azone (attack zone: 1 low, 2 mid, 3 high), speed, bzone (block zone) and bmod (block modifier).'),
     more('combat', 'More combat options', count(c.conquest, c.grid, c.mass, c.quest, c.finalPoint), c.mode === 'lanes' && c.conquest && row(chk(bp, A, [...Cb, 'playToControlled'], 'Units may be played to a battlefield you control'), chk(bp, A, [...Cb, 'assignDamage'], 'Players assign fight damage (Tank first)')),
     c.mode === 'lanes' && row(chk(bp, A, [...Cb, 'conquest'], 'Conquest: group moves, showdowns, fights with Tank, recall on a tie'), chk(bp, A, [...Cb, 'finalPoint'], 'The winning point needs every battlefield scored this turn'),
@@ -480,6 +488,9 @@ function rules(bp: Blueprint, A: any) {
         num(bp, A, [...S, 'deckMax'], { label: 'Deck max', min: 5, max: 120 }), num(bp, A, [...S, 'maxCopies'], { label: 'Copies per card', min: 1, max: 20 }), num(bp, A, [...S, 'turnLimit'], { label: 'Turn limit', min: 10, max: 400 })),
       more('setup', 'More setup options', count(bp.setup.mulliganN, bp.setup.london, bp.setup.maxColors, bp.setup.leaderLife, bp.setup.champion, bp.setup.leaderColors, bp.setup.benchSetup, bp.setup.mulliganBonus, bp.setup.noEvolveFirstTurn, bp.setup.leader),
       row(chk(bp, A, [...S, 'mulligan'], 'Free mulligan'), bp.setup.mulligan && num(bp, A, [...S, 'mulliganN'], { label: 'Mulligan: set aside up to N (0 = whole hand)', min: 0, max: 10 }),
+        bp.setup.leader && h('label', { class: 'fld' }, h('span', {}, 'Sides'), h('select', { 'aria-label': 'Sides', onchange: (e: Event) => A.mkSet([...S, 'sides'], (e.target as HTMLSelectElement).value ? ['Defender', 'Raider'] : undefined, 'rules') },
+          h('option', { value: '', selected: !bp.setup.sides }, 'Both players play the same way'), h('option', { value: 'on', selected: !!bp.setup.sides }, 'Two different sides (asymmetric)'))),
+        bp.setup.sides && [txt(bp, A, [...S, 'sides', 0], { label: 'Side 1 (goes first)' }), txt(bp, A, [...S, 'sides', 1], { label: 'Side 2' })],
         bp.setup.leader && sel(bp, A, [...S, 'leaderLife'], [['', 'Fixed starting life'], ...bp.stats.map((st) => [st.id, `Life = leader's ${st.name}`] as [string, string])], { label: 'Starting life', map: (v) => v || undefined }),
         bp.setup.leader && sel(bp, A, [...S, 'leaderHand'], [['', 'Fixed hand size'], ...bp.stats.map((st) => [st.id, `Hand size = leader's ${st.name}`] as [string, string])], { label: 'Hand size', map: (v) => v || undefined }),
         bp.setup.mulligan && chk(bp, A, [...S, 'london'], 'London mulligan (redraw, then bottom 1 per mulligan)'), bp.colors.length > 1 && num(bp, A, [...S, 'maxColors'], { label: 'Colors per deck (0 = any)', min: 0, max: bp.colors.length }), chk(bp, A, [...S, 'champion'], 'Each deck names a champion (playable from its own zone)'), bp.setup.leader && chk(bp, A, [...S, 'leaderColors'], "Cards must match the leader's two colors")),
@@ -564,7 +575,7 @@ const EFF: [EffectKind, string, string[]][] = [
   ['lifeToHand', 'Top life card to hand', ['n']], ['handToLife', 'A card from hand to the top of life', []],
   ['inflict', 'Give a status', ['status', 'n', 'target']], ['cure', 'Cure a status', ['statusAll', 'target']], ['flip', 'Flip coins (heads / tails)', ['n', 'flip']],
   ['switch', 'Switch the active unit', ['side']], ['tutor', 'Search your deck (choose)', ['n', 'type', 'dest', 'dfilter']], ['attachFrom', 'Attach a resource card from a zone', ['src', 'target', 'dfilter']],
-  ['drawTo', 'Draw up to N in hand', ['n']], ['skipEvolve', 'Evolve two stages at once', []], ['fight', 'Fight (one of your units)', ['target']], ['roll', 'Roll dice', ['n', 'roll']], ['fusion', 'Fusion summon (from extra deck)', []], ['ritual', 'Ritual summon (from hand)', []], ['surveil', 'Surveil (top cards to discard)', ['n']], ['drops', 'Save resources for later (ink drops)', ['n']], ['raw', 'Custom script (JSON)', ['raw']],
+  ['drawTo', 'Draw up to N in hand', ['n']], ['endRun', 'End the run', []], ['wound', 'Wound (random discards)', ['n']], ['tag', 'Give tags', ['n']], ['skipEvolve', 'Evolve two stages at once', []], ['fight', 'Fight (one of your units)', ['target']], ['roll', 'Roll dice', ['n', 'roll']], ['fusion', 'Fusion summon (from extra deck)', []], ['ritual', 'Ritual summon (from hand)', []], ['surveil', 'Surveil (top cards to discard)', ['n']], ['drops', 'Save resources for later (ink drops)', ['n']], ['raw', 'Custom script (JSON)', ['raw']],
 ];
 const TGT: [TargetKind, string][] = [['enemyUnit', 'an enemy unit (choose)'], ['anyUnit', 'any unit (choose)'], ['ownUnit', 'one of your units'], ['otherOwnUnit', 'another of your units'], ['enemyAny', 'enemy unit or opponent'],
   ['opponent', 'the opponent'], ['you', 'you'], ['self', 'this card'], ['randomEnemyUnit', 'a random enemy unit'], ['allEnemyUnits', 'all enemy units'], ['allUnits', 'all units'], ['allOwnUnits', 'all your units'],
@@ -698,6 +709,12 @@ function cardEditor(bp: Blueprint, A: any, mk: MakerUI, ci: number, c: CardBP, m
           txt(bp, A, [...cp, 'art'], { label: 'Art glyph', ph: t?.icon || '◆' })),
         h('label', { class: 'fld' }, h('span', {}, 'Traits (comma-separated affiliations)'), h('input', { type: 'text', value: (c.traits ?? []).join(', '), placeholder: 'e.g. Sky Pirates, Royal Navy', 'aria-label': 'Traits',
           onchange: (e: Event) => { const v = (e.target as HTMLInputElement).value.split(',').map((s) => s.trim()).filter(Boolean); A.mkSet([...cp, 'traits'], v.length ? v : undefined, 'cards'); } })),
+        role === 'ice' && txt(bp, A, [...cp, 'iceType'], { label: 'Guardian kind (breakers match it)', ph: 'e.g. Wall' }),
+        role === 'ice' && h('div', { class: 'mk-sub' }, h('strong', {}, 'Subroutines (fire in order unless broken)'),
+          (c.subs ?? []).map((f, fi) => effectRow(bp, A, [...cp, 'subs', fi], f, () => A.mkEdit((b: Blueprint) => { b.cards[ci].subs!.splice(fi, 1); }))),
+          h('button', { class: 'chip', onclick: () => A.mkEdit((b: Blueprint) => { (b.cards[ci].subs ??= []).push({ k: 'endRun' }); }, 'cards') }, '+ Subroutine')),
+        bp.combat.mode === 'runs' && role === 'permanent' && row(txt(bp, A, [...cp, 'breaker', 'breaks'], { label: "Breaks (guardian kind, 'all', or empty)", onval: (v: string) => A.mkEdit((b: Blueprint) => { const k = b.cards[ci]; if (!v) delete k.breaker; else k.breaker = { boostCost: 1, boostBy: 1, breakCost: 1, ...(k.breaker ?? {}), breaks: v }; }, 'cards') }),
+          c.breaker && [num(bp, A, [...cp, 'breaker', 'boostCost'], { label: 'Boost cost', min: 0, max: 9 }), num(bp, A, [...cp, 'breaker', 'boostBy'], { label: '+Strength per boost', min: 1, max: 9 }), num(bp, A, [...cp, 'breaker', 'breakCost'], { label: 'Cost per subroutine', min: 0, max: 9 })]),
         bp.resource.mode === 'check' && txt(bp, A, [...cp, 'combo'], { label: 'Combo: only right after a card with this trait or type', ph: 'e.g. Punch' }),
         !['resource', 'leader', 'token'].includes(role) && bp.resource.mode !== 'none' && bp.resource.mode !== 'attach' && h('div', { class: 'mk-cost' }, h('span', { class: 'muted' }, `Cost (${costLabel(c.cost, bp)})`),
           typed ? [h('label', { class: 'fld' }, h('span', {}, 'Any'), h('input', { type: 'number', min: 0, max: 20, value: costMap.any ?? 0, onchange: (e: Event) => setCost('any', Number((e.target as HTMLInputElement).value)) })),

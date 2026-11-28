@@ -28,7 +28,7 @@ export function lint(bp: Blueprint): Problem[] {
   const x = context(bp);
   const typeIds = new Set(bp.types.map((t) => t.id));
   const statIds = new Set(bp.stats.map((s) => s.id));
-  if (!bp.types.some((t) => UNIT_ROLES.includes(t.role) && t.role !== 'token') && bp.combat.mode !== 'none' && !(bp.combat.mode === 'cards' && bp.types.some((t) => t.role === 'attack'))) bug('Your game has combat but no card type that fights. Add a Unit type.', 'types');
+  if (!bp.types.some((t) => UNIT_ROLES.includes(t.role) && t.role !== 'token') && bp.combat.mode !== 'none' && bp.combat.mode !== 'runs' && !(bp.combat.mode === 'cards' && bp.types.some((t) => t.role === 'attack'))) bug('Your game has combat but no card type that fights. Add a Unit type.', 'types');
   if (!statIds.has(bp.combat.power)) bug(`Combat uses the stat "${bp.combat.power}", which your game doesn't have.`, 'rules');
   if (bp.combat.health && !statIds.has(bp.combat.health)) bug(`Combat uses the health stat "${bp.combat.health}", which your game doesn't have.`, 'rules');
   if (!x.life && !x.lifeCards && !x.prizes && !x.points) bug('Nobody can win! Turn on life, life cards, prizes or points.', 'rules');
