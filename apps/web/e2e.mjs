@@ -31,6 +31,9 @@ try {
   await page.click('.mk-grid .card >> nth=2');
   await page.click('[data-act=mk-ability]');
   ok(await page.isVisible('.mk-bugs.good'), 'still builds after adding an ability');
+  // ability builder lists: most used first, and options the game can't use (meters, here) are left out
+  ok((await page.getAttribute('select[aria-label="Do"] optgroup >> nth=0', 'label')) === 'Most used', 'effects list starts with the most used');
+  ok((await page.locator('select[aria-label="Do"] option[value="meter"]').count()) === 0, 'no meter effect without a meter');
   // mechanic sub-options: add a recipe, then cycle one of its options with the arrows
   await page.click('[data-station=shelf]');
   await page.click('[data-recipe=heat]');
@@ -38,6 +41,9 @@ try {
   const before = await heatVal();
   await page.click('[data-opt="meter.heat.limit"] [aria-label^=Next]');
   ok((await heatVal()) !== before && await page.isVisible('.mk-bugs.good'), 'recipe sub-option arrows change the value');
+  await page.click('[data-station=cards]');
+  if (!(await page.locator('select[aria-label="Do"]').count())) await page.click('.mk-grid .card >> nth=2');
+  ok((await page.locator('select[aria-label="Do"] option[value="meter"]').count()) > 0, 'the meter effect appears once the game has a meter');
   // Script Lab: import pasted script JSON
   await page.click('[data-station=lab]');
   await page.click('.mk-script-io summary');

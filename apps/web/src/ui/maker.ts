@@ -2,7 +2,7 @@
 // previews, the ability builder, playtests, the AI lab, publishing and the Script Lab). Everything edits a blueprint.
 import type { Mod } from '#engine';
 import {
-  type Ability, type Blueprint, type CardBP, type Cond, type Effect, type EffectKind, type Phase, type Role, type TargetKind, type When,
+  type Ability, type Blueprint, type CardBP, type Cond, type Effect, USAGE, type EffectKind, type Phase, type Role, type TargetKind, type When,
   KEYWORD_RULES, RECIPES, ROLES, setRecipeOpt, featuresOf, fitIssues, COND_OP, EVENT_TEXT, UNIT_ROLES, cardText, costLabel, effectText, rulebook, slug,
   type RecipeOpt, type LibraryScript, STARTER_SCRIPTS, type WizAnswers, type WizStep, WIZARD, optionsFor, wizardBuild,
 } from '#maker';
@@ -29,8 +29,8 @@ function area(bp: Blueprint, A: any, path: Path, o: { ph?: string; label?: strin
     oninput: (e: Event) => A.mkSet(path, (e.target as HTMLTextAreaElement).value || undefined, o.q) }, get(bp, path) ?? '');
   return o.label ? h('label', { class: 'fld wide' }, h('span', {}, o.label), t) : t;
 }
-function num(bp: Blueprint, A: any, path: Path, o: { min?: number; max?: number; step?: number; label?: string; q?: Station; title?: string } = {}) {
-  const inp = h('input', { type: 'number', value: get(bp, path) ?? 0, min: o.min ?? 0, max: o.max, step: o.step ?? 1, 'aria-label': o.label ?? String(path[path.length - 1]), title: o.title,
+function num(bp: Blueprint, A: any, path: Path, o: { min?: number; max?: number; step?: number; label?: string; q?: Station; title?: string; dflt?: number } = {}) {
+  const inp = h('input', { type: 'number', value: get(bp, path) ?? o.dflt ?? 0, min: o.min ?? 0, max: o.max, step: o.step ?? 1, 'aria-label': o.label ?? String(path[path.length - 1]), title: o.title,
     onchange: (e: Event) => { const v = Number((e.target as HTMLInputElement).value); if (!Number.isNaN(v)) A.mkSet(path, v, o.q); } });
   return o.label ? h('label', { class: 'fld' }, h('span', {}, o.label), inp) : inp;
 }
@@ -646,10 +646,59 @@ function optRow(bp: Blueprint, A: any, o: RecipeOpt) {
       h('button', { class: 'mk-opt-arrow', 'aria-label': `Next ${o.label}`, onclick: () => step(1) }, '▶')));
 }
 
+
+// ---------------------------------------------------------------- context-aware, most-used-first option lists
+/** Which ability-builder options make sense in this game. An option the game can't use is hidden (unless it is the one already picked). */
+const pool = (bp: Blueprint) => ['ramp', 'cards', 'anycard', 'deck', 'bank'].includes(bp.resource.mode);
+const lifeish = (bp: Blueprint) => bp.win.life > 0 || bp.win.lifeCards > 0;
+const battles = (bp: Blueprint) => ['block', 'target', 'cards'].includes(bp.combat.mode);
+const hasRole = (bp: Blueprint, role: Role) => bp.types.some((t) => t.role === role);
+const STATIC_EFF = new Set(['aura', 'costMod', 'insteadDestroy', 'prevent', 'restrict']);
+const EFF_OK: Partial<Record<EffectKind, (bp: Blueprint) => boolean>> = {
+  meter: (bp) => !!bp.meters?.length, addCounter: (bp) => !!bp.counters?.length, removeCounter: (bp) => !!bp.counters?.length,
+  inflict: (bp) => !!bp.statuses?.length, cure: (bp) => !!bp.statuses?.length, token: (bp) => hasRole(bp, 'token'),
+  gain: pool, readyRes: pool, addRes: (bp) => bp.resource.mode === 'deck', giveRes: (bp) => !!bp.resource.give, drops: (bp) => bp.resource.mode === 'bank',
+  lifeGain: lifeish, lifeLoss: lifeish, score: (bp) => bp.win.points > 0, addLife: (bp) => bp.win.lifeCards > 0, lifeToHand: (bp) => bp.win.lifeCards > 0, handToLife: (bp) => bp.win.lifeCards > 0,
+  strike: battles, deploy: (bp) => hasRole(bp, 'leader'), switch: (bp) => bp.combat.mode === 'duel', attachFrom: (bp) => bp.combat.mode === 'duel', skipEvolve: (bp) => hasRole(bp, 'evolution'),
+  endRun: (bp) => bp.combat.mode === 'runs', wound: (bp) => bp.combat.mode === 'runs', tag: (bp) => bp.combat.mode === 'runs', fusion: (bp) => hasRole(bp, 'extra'), ritual: (bp) => hasRole(bp, 'extra'),
+  counter: (bp) => bp.timing === 'stack' || bp.timing === 'chain', fight: (bp) => bp.combat.mode !== 'none',
+};
+const effOk = (bp: Blueprint, isStatic: boolean) => (k: string) => (isStatic ? STATIC_EFF.has(k) : !STATIC_EFF.has(k) || k === 'restrict') && (EFF_OK[k as EffectKind]?.(bp) ?? true);
+const WHEN_OK: Partial<Record<When, (bp: Blueprint) => boolean>> = {
+  quest: (bp) => !!bp.combat.quest, conquer: (bp) => bp.combat.mode === 'lanes', hold: (bp) => bp.combat.mode === 'lanes', access: (bp) => bp.combat.mode === 'runs',
+  landfall: (bp) => ['cards', 'anycard'].includes(bp.resource.mode), attack: (bp) => bp.combat.mode !== 'none', opAttack: (bp) => bp.combat.mode !== 'none',
+  hit: (bp) => bp.combat.mode !== 'none', block: (bp) => bp.combat.mode === 'block', flip: (bp) => hasRole(bp, 'trap') || bp.types.some((t) => t.settable), castSpell: (bp) => hasRole(bp, 'spell') || hasRole(bp, 'fast'),
+};
+const COND_OK: Record<string, (bp: Blueprint) => boolean> = {
+  counter: (bp) => !!bp.counters?.length, status: (bp) => !!bp.statuses?.length, meter: (bp) => !!bp.meters?.length, kicked: (bp) => bp.cards.some((c) => c.kicker),
+  linked: (bp) => !!bp.combat.grid && !!bp.combat.emz, here: (bp) => hasRole(bp, 'location'), attached: (bp) => !!bp.resource.give, res: (bp) => bp.resource.mode !== 'none',
+  life: lifeish, oppLife: lifeish, attacking: (bp) => bp.combat.mode !== 'none', defending: (bp) => bp.combat.mode !== 'none', under: (bp) => bp.cards.some((c) => c.shift) || bp.keywords.some((k) => k.rule === 'boost') || hasRole(bp, 'extra'),
+};
+const TGT_OK: Partial<Record<TargetKind, (bp: Blueprint) => boolean>> = { attacker: battles, battleTarget: battles, ownLeader: (bp) => hasRole(bp, 'leader'), ownAny: (bp) => hasRole(bp, 'leader') };
+const AMOUNT_OK: Record<string, (bp: Blueprint) => boolean> = { meter: (bp) => !!bp.meters?.length, counter: (bp) => !!bp.counters?.length, life: lifeish, oppLife: lifeish };
+/** <option>s for a list: blank choices first, then the most used in the default games ("Most used"), then the rest ("More").
+ *  Options the game can't use are left out, except the one already picked. */
+function rankedOpts(kind: keyof typeof USAGE, items: [string, string][], cur: string, ok?: (id: string) => boolean): HTMLElement[] {
+  const shown = items.filter(([v]) => !v || v === cur || !ok || ok(v));
+  const blank = shown.filter(([v]) => !v), rest = shown.filter(([v]) => v);
+  const u = USAGE[kind] ?? {};
+  const top = rest.filter(([v]) => (u[v] ?? 0) > 0).sort((a, b) => (u[b[0]] ?? 0) - (u[a[0]] ?? 0)).slice(0, 8);
+  const topIds = new Set(top.map(([v]) => v));
+  const opt = ([v, l]: [string, string]) => h('option', { value: v, selected: v === cur }, l);
+  const more = rest.filter(([v]) => !topIds.has(v));
+  return [...blank.map(opt), ...(top.length && more.length ? [h('optgroup', { label: 'Most used' }, top.map(opt)), h('optgroup', { label: 'More' }, more.map(opt))] : [...top, ...more].map(opt))];
+}
+/** A select like sel(), with a ranked, context-aware option list. */
+function rsel(bp: Blueprint, A: any, path: Path, items: [string, string][], kind: keyof typeof USAGE, o: { label?: string; q?: Station; ok?: (id: string) => boolean } = {}) {
+  const s = h('select', { 'aria-label': o.label ?? String(path[path.length - 1]), onchange: (e: Event) => A.mkSet(path, (e.target as HTMLSelectElement).value, o.q) },
+    rankedOpts(kind, items, String(get(bp, path) ?? ''), o.ok));
+  return o.label ? h('label', { class: 'fld' }, h('span', {}, o.label), s) : s;
+}
+
 // ---------------------------------------------------------------- conditions (nestable with all / any / not)
 const COND_KINDS: [string, string][] = [['units', 'if you control N+ units'], ['life', 'if your life is N or less'], ['hand', 'if your hand has N or fewer'], ['yourTurn', 'during your turn'], ['res', 'if you have N+ resources'], ['counter', 'if this has N+ counters'], ['zone', 'if you have N+ cards in a zone'],
   ['played', 'if you played N other cards this turn'], ['status', 'if this has a status'], ['kicked', 'if it was kicked'], ['linked', 'if this is linked (arrows)'], ['charged', 'if this has N+ charge'], ['under', 'if this has N+ cards under it'], ['here', 'if this is at a location (or a unit is here)'],
-  ['attached', 'if this was given N+ resources'], ['oppTurn', "during the opponent's turn"], ['oppLife', 'if the opponent has N or less life'], ['attacking', 'while you are attacking'], ['defending', 'while you are being attacked']];
+  ['attached', 'if this was given N+ resources'], ['oppTurn', "during the opponent's turn"], ['oppLife', 'if the opponent has N or less life'], ['attacking', 'while you are attacking'], ['defending', 'while you are being attacked'], ['raw', 'a custom condition (script)']];
 /** One condition picker. "All of", "any of" and "not" open nested pickers, so conditions combine without scripting. */
 function condEditor(bp: Blueprint, A: any, path: Path, k: Cond | undefined, depth: number): HTMLElement {
   const meters = bp.meters ?? [];
@@ -659,7 +708,7 @@ function condEditor(bp: Blueprint, A: any, path: Path, k: Cond | undefined, dept
     const v = (e.target as HTMLSelectElement).value;
     A.mkSet(path, !v ? undefined : v === 'all' || v === 'any' ? { k: v, of: k?.k && !['all', 'any'].includes(k.k) ? [k] : k?.of ?? [{ k: 'yourTurn' }] } : v === 'not' ? { k: v, of: [k?.k ? k : { k: 'yourTurn' }] }
       : v === 'meter' ? { k: v, meter: meters[0]?.id, n: 1, op: 'ge' } : { k: v, n: k?.n ?? 1 });
-  } }, opts.map(([v, l]) => h('option', { value: v, selected: (k?.k ?? '') === v }, l))));
+  } }, rankedOpts('cond', opts, k?.k ?? '', (id) => ['all', 'any', 'not'].includes(id) || (COND_OK[id]?.(bp) ?? true))));
   const kids = (k?.k === 'all' || k?.k === 'any' || k?.k === 'not') ? h('div', { class: 'mk-cond-group' },
     (k.of ?? []).map((q, i) => h('div', { class: 'mk-cond-item' }, condEditor(bp, A, [...path, 'of', i], q, depth + 1),
       k.k !== 'not' && h('button', { class: 'x', onclick: () => A.mkEdit((b: Blueprint) => { get(b, [...path, 'of']).splice(i, 1); }), 'aria-label': 'Remove condition' }, '🗑'))),
@@ -671,6 +720,7 @@ function condEditor(bp: Blueprint, A: any, path: Path, k: Cond | undefined, dept
     k?.k === 'status' && sel(bp, A, [...path, 'status'], (bp.statuses ?? []).map((q) => [q.id, q.name] as [string, string]), { label: 'Status' }),
     k?.k === 'counter' && sel(bp, A, [...path, 'counter'], (bp.counters ?? []).map((q) => [q.id, q.name] as [string, string]), { label: 'Counter' }),
     k?.k === 'meter' && sel(bp, A, [...path, 'meter'], meters.map((q) => [q.id, q.name] as [string, string]), { label: 'Meter' }),
+    k?.k === 'raw' && h('textarea', { class: 'code', rows: 2, 'aria-label': 'Custom condition JSON', placeholder: '[">=", "$turn", 5]', onchange: (ev: Event) => A.mkRaw(path.join('.'), [...path, 'raw'], (ev.target as HTMLTextAreaElement).value) }, k.raw !== undefined ? JSON.stringify(k.raw) : ''),
     k?.k && COND_OP[k.k] && h('label', { class: 'fld' }, h('span', {}, 'Is'), h('select', { 'aria-label': 'Comparison', onchange: (e: Event) => A.mkSet([...path, 'op'], (e.target as HTMLSelectElement).value) },
       [['ge', 'at least'], ['le', 'at most'], ['eq', 'exactly']].map(([v, l]) => h('option', { value: v, selected: shownOp === v }, l)))),
     k?.k === 'meter' && m?.names?.length ? sel(bp, A, [...path, 'n'], m.names.map((nm, i) => [String(i), nm] as [string, string]), { label: 'Value', map: Number })
@@ -701,6 +751,7 @@ const EFF: [EffectKind, string, string[]][] = [
 const TGT: [TargetKind, string][] = [['enemyUnit', 'an enemy unit (choose)'], ['anyUnit', 'any unit (choose)'], ['ownUnit', 'one of your units'], ['otherOwnUnit', 'another of your units'], ['enemyAny', 'enemy unit or opponent'],
   ['opponent', 'the opponent'], ['you', 'you'], ['self', 'this card'], ['randomEnemyUnit', 'a random enemy unit'], ['allEnemyUnits', 'all enemy units'], ['allUnits', 'all units'], ['allOwnUnits', 'all your units'],
   ['eachPlayer', 'each player'], ['attacker', 'the attacker (in a battle)'], ['battleTarget', 'the attacked card (in a battle)'], ['ownLeader', 'your leader'], ['ownAny', 'your leader or one of your units']];
+const CHOOSE_TGT = new Set(['enemyUnit', 'anyUnit', 'ownUnit', 'otherOwnUnit', 'enemyAny', 'ownAny']);
 const SCOPE: [TargetKind, string][] = [['allOwnUnits', 'your units'], ['otherOwnUnit', 'your other units'], ['allEnemyUnits', 'enemy units'], ['allUnits', 'all units'], ['self', 'this card']];
 const zoneOpts = (bp: Blueprint): [string, string][] => [['banished', 'Banished pile'], ['grave', 'Discard pile'], ['hand', 'Hand'], ['deck', 'Deck (bottom)'], ...(bp.zones ?? []).map((z) => [z.id, z.name] as [string, string])];
 const RESTRICT: [string, string][] = [['noAttack', "can't attack"], ['noBlock', "can't block"], ['noBeAttacked', "can't be attacked"], ['unblockable', "can't be blocked"], ['entersExhausted', 'enters exhausted']];
@@ -732,11 +783,11 @@ function amountPicker(bp: Blueprint, A: any, ep: Path, e: Effect) {
   return h('span', { class: 'mk-amount' },
     h('label', { class: 'fld' }, h('span', {}, 'Amount is'), h('select', { 'aria-label': 'Amount is', onchange: (ev: Event) => { const v = (ev.target as HTMLSelectElement).value;
       A.mkSet([...ep, 'amount'], v ? { of: v, times: 1, ...(v === 'meter' ? { meter: bp.meters?.[0]?.id } : v === 'counter' ? { counter: bp.counters?.[0]?.id } : v === 'stat' ? { stat: bp.combat.power } : {}) } : undefined); } },
-      AMOUNT_OF.filter(([v]) => v !== 'meter' || bp.meters?.length).filter(([v]) => v !== 'counter' || bp.counters?.length).map(([v, l]) => h('option', { value: v, selected: (a?.of ?? '') === v }, l)))),
+      rankedOpts('amount', AMOUNT_OF, a?.of ?? '', (v) => AMOUNT_OK[v]?.(bp) ?? true))),
     a?.of === 'meter' && sel(bp, A, [...ep, 'amount', 'meter'], (bp.meters ?? []).map((m) => [m.id, m.name] as [string, string]), { label: 'Meter' }),
     a?.of === 'counter' && sel(bp, A, [...ep, 'amount', 'counter'], (bp.counters ?? []).map((k) => [k.id, k.name] as [string, string]), { label: 'Counter' }),
     a?.of === 'stat' && sel(bp, A, [...ep, 'amount', 'stat'], bp.stats.map((x) => [x.id, x.name] as [string, string]), { label: 'Stat' }),
-    a && num(bp, A, [...ep, 'amount', 'times'], { label: '× (times)', min: 0, max: 100, step: 0.5 }),
+    a && num(bp, A, [...ep, 'amount', 'times'], { label: '× (times)', min: 0, max: 100, step: 0.5, dflt: 1 }),
     a && num(bp, A, [...ep, 'amount', 'plus'], { label: '+ (plus)', min: -100, max: 100 }));
 }
 function effectRow(bp: Blueprint, A: any, ep: Path, e: Effect, onDel: () => void, kwId?: string, isStatic = false): HTMLElement {
@@ -745,7 +796,7 @@ function effectRow(bp: Blueprint, A: any, ep: Path, e: Effect, onDel: () => void
   const roleOf = new Map(bp.types.map((t) => [t.id, t.role]));
   const tokens = bp.cards.filter((c) => roleOf.get(c.type) === 'token');
   return h('div', { class: 'mk-eff' },
-    sel(bp, A, [...ep, 'k'], EFF.map(([k, l]) => [k, l]), { label: 'Do' }),
+    rsel(bp, A, [...ep, 'k'], EFF.map(([k, l]) => [k, l]), 'effect', { label: 'Do', ok: effOk(bp, isStatic) }),
     P.has('n') && !e.kw && !e.amount && num(bp, A, [...ep, 'n'], { label: 'Amount', min: -100000, max: 100000 }),
     P.has('n') && !e.kw && !e.fromRoll && amountPicker(bp, A, ep, e),
     P.has('n') && kwId && chk(bp, A, [...ep, 'kw'], 'Amount = keyword N'),
@@ -755,7 +806,9 @@ function effectRow(bp: Blueprint, A: any, ep: Path, e: Effect, onDel: () => void
     P.has('meterId') && chk(bp, A, [...ep, 'set'], 'Set it to the amount (instead of adding)'),
     P.has('meterWho') && bp.meters?.find((m) => m.id === e.meter)?.on === 'player' && sel(bp, A, [...ep, 'who'], [['me', 'yours'], ['opp', "the opponent's"]], { label: 'Whose' }),
     P.has('stat') && sel(bp, A, [...ep, 'stat'], bp.stats.map((s) => [s.id, s.name]), { label: 'Stat' }),
-    P.has('target') && sel(bp, A, [...ep, 'target'], isStatic ? SCOPE : TGT, { label: isStatic ? 'Affects' : 'Target' }),
+    P.has('target') && rsel(bp, A, [...ep, 'target'], isStatic ? SCOPE : TGT, 'target', { label: isStatic ? 'Affects' : 'Target', ok: (t) => TGT_OK[t as TargetKind]?.(bp) ?? true }),
+    P.has('target') && !isStatic && CHOOSE_TGT.has(e.target ?? 'enemyUnit') && num(bp, A, [...ep, 'count'], { label: 'Up to (targets)', min: 1, max: 10, dflt: 1, title: 'Choose up to this many targets' }),
+    !isStatic && num(bp, A, [...ep, 'repeat'], { label: 'Times', min: 1, max: 10, dflt: 1, title: 'Do this several times (choosing again each time)' }),
     P.has('rule') && sel(bp, A, [...ep, 'rule'], [...RESTRICT, ...bp.keywords.filter((k) => !RESTRICT.some(([r]) => r === k.rule) && k.rule !== 'none').map((k) => [k.rule, `gains ${k.name}`] as [string, string])], { label: 'Rule' }),
     P.has('zone') && sel(bp, A, [...ep, 'zone'], zoneOpts(bp), { label: 'To' }),
     P.has('to') && sel(bp, A, [...ep, 'to'], [['hand', 'return it to hand'], ['deck', 'put it on the bottom of the deck']], { label: 'Instead' }),
@@ -789,9 +842,15 @@ function effectRow(bp: Blueprint, A: any, ep: Path, e: Effect, onDel: () => void
       bp.colors.length > 0 && sel(bp, A, [...ep, 'filter', 'color'], [['', 'any color'], ...bp.colors.map((k) => [k.id, k.name] as [string, string])], { label: 'Color', map: (v) => v || undefined }),
       sel(bp, A, [...ep, 'filter', 'keyword'], [['', 'any keyword'], ...bp.keywords.map((k) => [k.id, k.name] as [string, string])], { label: 'Keyword', map: (v) => v || undefined }),
       sel(bp, A, [...ep, 'filter', 'stat'], [['', 'no stat limit'], ...bp.stats.map((s) => [s.id, s.name] as [string, string])], { label: 'Stat', map: (v) => v || undefined }),
-      e.filter?.stat && sel(bp, A, [...ep, 'filter', 'op'], [['le', 'or less'], ['ge', 'or more']], { label: 'Compare' }),
+      e.filter?.stat && sel(bp, A, [...ep, 'filter', 'op'], [['le', 'or less'], ['ge', 'or more'], ['eq', 'exactly']], { label: 'Compare' }),
       e.filter?.stat && num(bp, A, [...ep, 'filter', 'val'], { label: 'Value', min: -100000, max: 100000 }),
-      chk(bp, A, [...ep, 'filter', 'exhausted'], 'Only exhausted'),
+      h('label', { class: 'fld' }, h('span', {}, 'Ready or exhausted'), h('select', { 'aria-label': 'Ready or exhausted', onchange: (ev: Event) => { const v = (ev.target as HTMLSelectElement).value; A.mkSet([...ep, 'filter', 'exhausted'], v === 'ex' ? true : v === 'ready' ? false : undefined); } },
+        [['', 'either'], ['ex', 'exhausted only'], ['ready', 'ready only']].map(([v, l]) => h('option', { value: v, selected: (e.filter?.exhausted === true ? 'ex' : e.filter?.exhausted === false ? 'ready' : '') === v }, l)))),
+      chk(bp, A, [...ep, 'filter', 'damaged'], 'Only damaged'),
+      bp.keywords.length > 0 && sel(bp, A, [...ep, 'filter', 'notKeyword'], [['', '—'], ...bp.keywords.map((k) => [k.id, k.name] as [string, string])], { label: 'Without keyword', map: (v) => v || undefined }),
+      (bp.counters ?? []).length > 0 && sel(bp, A, [...ep, 'filter', 'counter'], [['', 'any'], ...bp.counters!.map((k) => [k.id, `with a ${k.name} counter`] as [string, string])], { label: 'Counters', map: (v) => v || undefined }),
+      (bp.meters ?? []).some((m) => m.on === 'unit') && sel(bp, A, [...ep, 'filter', 'meter'], [['', 'any'], ...bp.meters!.filter((m) => m.on === 'unit').map((m) => [m.id, m.name] as [string, string])], { label: 'Meter at least', map: (v) => v || undefined }),
+      e.filter?.meter && num(bp, A, [...ep, 'filter', 'meterN'], { label: 'Value', min: 1, max: 1000 }),
       sel(bp, A, [...ep, 'filter', 'zone'], [['', 'in play'], ...zoneOpts(bp).filter(([z]) => z !== 'deck')], { label: 'Where', map: (v) => v || undefined }),
       txt(bp, A, [...ep, 'filter', 'name'], { label: 'Named', ph: 'name or family' }), txt(bp, A, [...ep, 'filter', 'trait'], { label: 'Trait', ph: 'e.g. Sky Pirates' }),
       bp.types.some((t) => t.role === 'location') && chk(bp, A, [...ep, 'filter', 'here'], 'At this location'),
@@ -805,8 +864,10 @@ function abilityBox(bp: Blueprint, A: any, cp: Path, a: Ability, ai: number, rol
   const ap: Path = [...cp, 'abilities', ai];
   return h('div', { class: 'mk-ability' },
     h('div', { class: 'mk-ab-head' },
-      sel(bp, A, [...ap, 'when'], WHEN.filter(([w]) => (['conquer', 'hold'].includes(w) ? bp.combat.mode === 'lanes' : true)), { label: 'When', q: 'cards' }),
+      rsel(bp, A, [...ap, 'when'], WHEN, 'when', { label: 'When', q: 'cards', ok: (w) => WHEN_OK[w as When]?.(bp) ?? true }),
       a.when === 'event' && eventPicker(bp, A, [...ap, 'event'], a.event),
+      !['static', 'activated'].includes(a.when) && chk(bp, A, [...ap, 'may'], 'You may (optional)'),
+      a.when === 'activated' && txt(bp, A, [...ap, 'label'], { label: 'Button name', ph: 'e.g. Exhaust: draw a card' }),
       a.when === 'event' && sel(bp, A, [...ap, 'eventWho'], [['any', 'anyone\'s'], ['me', 'yours'], ['opp', "your opponent's"]], { label: 'Whose' }),
       a.when === 'activated' && [chk(bp, A, [...ap, 'quick'], 'Quick (either turn)'), sel(bp, A, [...ap, 'from'], [['', 'from play'], ['hand', 'from hand'], ['grave', 'from discard pile']], { label: 'Used', map: (v) => v || undefined }),
         num(bp, A, [...ap, 'detach'], { label: 'Detach materials', min: 0, max: 5 }), chk(bp, A, [...ap, 'oncePerName'], 'Once per turn per name'), role === 'walker' && num(bp, A, [...ap, 'loyalty'], { label: 'Loyalty (+/-)', min: -20, max: 20 }), chk(bp, A, [...ap, 'sacSelf'], 'Sacrifice this'), chk(bp, A, [...ap, 'tap'], 'Exhaust this'), num(bp, A, [...ap, 'cost'], { label: 'Pay', min: 0, max: 20 }), num(bp, A, [...ap, 'discard'], { label: 'Discard', min: 0, max: 5 }),

@@ -169,3 +169,19 @@ test('generalized blocks: X amounts, comparisons on every number, event triggers
   assert.ok(g.s.events.some((e: any) => e.type === 'mt_heat_0'), 'overheats');
   assert.ok(g.s.events.some((e: any) => e.type === 'comeback'), 'comeback with custom effects');
 });
+
+test('ability builder options: up to N targets, repeat, "you may", and the new filters compile, read well and play', async () => {
+  const { USAGE } = await import('#maker');
+  const bp = withRecipes(['aging', 'growth']);
+  const u = bp.cards.find((c) => bp.types.find((t) => t.id === c.type)?.role === 'unit')!;
+  u.abilities.push({ when: 'play', may: true, do: [{ k: 'damage', n: 1, target: 'enemyUnit', count: 2 }, { k: 'draw', n: 1, repeat: 2 }] });
+  u.abilities.push({ when: 'activated', tap: true, label: 'Rally', do: [{ k: 'buff', n: 1, target: 'allOwnUnits', filter: { exhausted: false, notKeyword: 'flying', damaged: true, counter: 'growth', meter: 'age', meterN: 2, stat: bp.combat.power, op: 'eq', val: 2 } }] });
+  const def = compileBlueprint(bp) as any;
+  const text = def.cards.find((c: any) => c.id === u.id).text;
+  assert.match(text, /You may deal 1 damage to up to 2 enemy units, then draw a card \(2 times\)/);
+  assert.match(text, /ready damaged.*without .*with a Growth counter.*with 2 or more Age.*exactly 2/);
+  const { mod, problems } = build(bp);
+  assert.ok(mod, problems.map((p) => p.text).join('; '));
+  assert.ok(play(mod!, 8).s.result, 'finishes');
+  assert.ok(USAGE.effect.buff > 0 && USAGE.when.play > 0, 'usage counts are generated');
+});

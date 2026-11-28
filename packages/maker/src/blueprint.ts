@@ -167,13 +167,16 @@ export interface Setup { hand: number; mulligan: boolean; handLimit: number; dec
 export interface Cond { k: 'units' | 'life' | 'hand' | 'yourTurn' | 'res' | 'counter' | 'zone' | 'played' | 'attached' | 'oppTurn' | 'oppLife' | 'status' | 'kicked' | 'charged' | 'linked' | 'under' | 'here' | 'attacking' | 'defending' | 'meter' | 'all' | 'any' | 'not' | 'raw'; n?: number; counter?: string; zone?: string; status?: string; raw?: unknown;
   meter?: string; op?: 'ge' | 'le' | 'eq'; // meter: compare the meter (this unit's, your, or the game's) with n (default at least)
   of?: Cond[] } // all / any / not: combine other conditions (not uses the first)
-export interface Filter { type?: string; color?: string; keyword?: string; stat?: string; op?: 'le' | 'ge'; val?: number; exhausted?: boolean; zone?: string; name?: string; trait?: string; status?: string;
+export interface Filter { type?: string; color?: string; keyword?: string; notKeyword?: string; stat?: string; op?: 'le' | 'ge' | 'eq'; val?: number; exhausted?: boolean; // exhausted false: ready ones only
+  damaged?: boolean; counter?: string; meter?: string; meterN?: number; // damaged; has a counter of this kind; a unit meter at meterN or more
+  zone?: string; name?: string; trait?: string; status?: string;
   adjacent?: boolean; opposite?: boolean; pointed?: boolean; here?: boolean } // here: at this location (locations' abilities) // grid boards: in a neighboring column of this; in the column facing this; pointed at by this card's link arrows
 /** A changing amount: X = how many of something there are (your units, cards in hand…), a meter, this card's counters or a stat,
  *  times `times`, plus `plus` (never below 0). Any effect with an amount can use it instead of a fixed number. */
 export interface Amount { of: 'units' | 'enemyUnits' | 'allUnits' | 'hand' | 'oppHand' | 'grave' | 'deck' | 'life' | 'oppLife' | 'meter' | 'counter' | 'stat' | 'turn';
   meter?: string; counter?: string; stat?: string; times?: number; plus?: number }
-export interface Effect { k: EffectKind; n?: number; amount?: Amount; meter?: string; set?: boolean; // meter: add n (or set it to n) on a meter (yours / the opponent's with who, this unit's, or the game's)
+export interface Effect { k: EffectKind; n?: number; amount?: Amount; count?: number; repeat?: number; // count: choose up to N targets; repeat: do it N times (choosing again each time)
+  meter?: string; set?: boolean; // meter: add n (or set it to n) on a meter (yours / the opponent's with who, this unit's, or the game's)
    kw?: string; target?: TargetKind; filter?: Filter; stat?: string; until?: 'turn' | 'forever' | 'battle'; who?: 'me' | 'opp' | 'each'; card?: string; type?: string; rule?: KeywordRule; to?: 'hand' | 'deck' | 'play'; zone?: string; raw?: unknown[];
   status?: string; // inflict / cure (cure: empty = every status)
   heads?: Effect[]; tails?: Effect[]; perHeads?: boolean; // flip: n coins; heads/tails effects (several coins: heads only if all are heads, or once per heads with perHeads)
@@ -181,7 +184,8 @@ export interface Effect { k: EffectKind; n?: number; amount?: Amount; meter?: st
   fromRoll?: boolean; // the amount is the last roll's total
 }
 export interface Ability {
-  when: When; if?: Cond; do: Effect[]; once?: boolean | 'game'; label?: string;
+  when: When; if?: Cond; do: Effect[]; once?: boolean | 'game'; label?: string; // label: the activated ability's button name
+  may?: boolean; // "you may": the player chooses whether it happens
   event?: string; eventWho?: 'any' | 'me' | 'opp'; // when 'event': the event type (a meter step mt_<id>_<n>, a named value mv_<id>_<n>, any game or script event) and whose it must be
   loyalty?: number; sacSelf?: boolean;
   quick?: boolean; from?: 'hand' | 'grave'; detach?: number; oncePerName?: boolean; // quick: speed 2, usable on either turn; from: used from hand or discard pile; detach: remove N attached materials; oncePerName: once per turn for all copies // loyalty: walkers' +N / -N cost (once per turn per walker, main phase); sacSelf: sacrifice this card as a cost

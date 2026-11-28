@@ -106,11 +106,16 @@ export function filterText(f: Filter | undefined, bp: Blueprint): string {
   if (!f) return '';
   const bits: string[] = [];
   if (f.exhausted) bits.push('exhausted');
+  if (f.exhausted === false) bits.push('ready');
+  if (f.damaged) bits.push('damaged');
   if (f.color) bits.push(nm(bp, 'colors', f.color));
   if (f.type) bits.push(nm(bp, 'types', f.type));
   const tail: string[] = [];
   if (f.keyword) tail.push(`with ${nm(bp, 'keywords', f.keyword)}`);
-  if (f.stat && f.val !== undefined) tail.push(`with ${f.val} or ${f.op === 'ge' ? 'more' : 'less'} ${nm(bp, 'stats', f.stat)}`);
+  if (f.notKeyword) tail.push(`without ${nm(bp, 'keywords', f.notKeyword)}`);
+  if (f.counter) tail.push(`with a ${nm(bp, 'counters', f.counter)} counter`);
+  if (f.meter) tail.push(`with ${f.meterN ?? 1} or more ${bp.meters?.find((m) => m.id === f.meter)?.name ?? 'meter'}`);
+  if (f.stat && f.val !== undefined) tail.push(f.op === 'eq' ? `with exactly ${f.val} ${nm(bp, 'stats', f.stat)}` : `with ${f.val} or ${f.op === 'ge' ? 'more' : 'less'} ${nm(bp, 'stats', f.stat)}`);
   if (f.name) tail.push(`named ${f.name}`);
   if (f.trait) bits.push(`{${f.trait}}`);
   if (f.status) tail.push(`that is ${nm(bp, 'statuses', f.status)}`);
@@ -119,8 +124,12 @@ export function filterText(f: Filter | undefined, bp: Blueprint): string {
   return [bits.length ? `(${bits.join(' ')})` : '', ...tail].filter(Boolean).join(' ');
 }
 const zoneName = (bp: Blueprint, z: string) => bp.zones?.find((k) => k.id === z)?.name ?? bp.zoneNames[z] ?? ({ grave: 'the discard pile', hand: 'hand', deck: 'the deck', banished: 'the banished pile', resources: 'resources' } as Record<string, string>)[z] ?? z;
+const TGT_MANY: Partial<Record<TargetKind, string>> = { enemyUnit: 'enemy units', anyUnit: 'units', ownUnit: 'of your units', otherOwnUnit: 'of your other units', enemyAny: 'enemy units or the opponent', ownAny: 'of your units or your leader' };
 export function effectText(e: Effect, bp: Blueprint): string {
-  const t = effectText0(e, bp);
+  const many = (e.count ?? 1) > 1 && TGT_MANY[e.target ?? 'enemyUnit'];
+  let t = effectText0(many ? { ...e, count: undefined } : e, bp);
+  if (many) t = t.replace(TGT_TEXT[e.target ?? 'enemyUnit'], `up to ${e.count} ${TGT_MANY[e.target ?? 'enemyUnit']}`);
+  if ((e.repeat ?? 1) > 1) t = `${t} (${e.repeat} times)`;
   return e.amount && t ? `${t}, where X is ${amountText(e.amount, bp)}` : t;
 }
 function effectText0(e: Effect, bp: Blueprint): string {
@@ -301,7 +310,7 @@ export function abilityText(a: Ability, bp: Blueprint, role: Role): string {
     : a.when === 'opAttack' && !SPELLISH.includes(role) ? 'When your opponent attacks: '
     : a.when === 'event' ? `Whenever ${eventLabel(bp, a.event)}${a.eventWho === 'me' ? ' (yours)' : a.eventWho === 'opp' ? " (your opponent's)" : ''}: `
     : (a.when === 'conquer' || a.when === 'hold') && role !== 'battlefield' ? (a.when === 'conquer' ? 'When this conquers a battlefield: ' : 'When you hold its battlefield: ') : WHEN_TEXT[a.when] ?? '';
-  const body = a.do.map((e) => effectText(e, bp)).join(', then ');
+  const body = (a.may && !['static', 'activated'].includes(a.when) ? 'you may ' : '') + a.do.map((e) => effectText(e, bp)).join(', then ');
   return `${head}${cap(condText(a.if, bp) + body)}.${a.oncePerName ? ' (Once per turn per name.)' : a.once === 'game' ? ' (Once per game.)' : a.once ? ' (Once per turn.)' : ''}`;
 }
 export function cardText(k: CardBP, bp: Blueprint): string {
@@ -355,8 +364,13 @@ function filterExpr(x: Ctx, f: Filter | undefined): X | null {
   if (f.type) parts.push(eq(g('$it', 'type'), f.type));
   if (f.color) parts.push(eq(g('$it', 'color'), f.color));
   if (f.keyword) parts.push(has('$it', x.kwKey(f.keyword)));
-  if (f.stat && f.val !== undefined) parts.push(f.op === 'ge' ? ge(g('$it', f.stat), f.val) : le(g('$it', f.stat), f.val));
+  if (f.notKeyword) parts.push(NOT(has('$it', x.kwKey(f.notKeyword))));
+  if (f.stat && f.val !== undefined) parts.push(f.op === 'ge' ? ge(g('$it', f.stat), f.val) : f.op === 'eq' ? eq(g('$it', f.stat), f.val) : le(g('$it', f.stat), f.val));
   if (f.exhausted) parts.push(eq(g('$it', 'ex'), 1));
+  if (f.exhausted === false) parts.push(eq(g('$it', 'ex'), 0));
+  if (f.damaged) parts.push(gt(g('$it', 'dmg'), 0));
+  if (f.counter) parts.push(gt(g('$it', `c_${f.counter}`), 0));
+  if (f.meter) { const m = x.bp.meters?.find((q) => q.id === f.meter && q.on === 'unit'); if (m) parts.push(ge(g('$it', meterVar(m)), f.meterN ?? 1)); }
   if (f.name) parts.push(OR(eq(g('$it', 'name'), f.name), eq(g('$it', 'family'), f.name)));
   if (f.trait) parts.push(['in', L(f.trait), def('$it', 'traits')]);
   if (f.status) parts.push(gt(g('$it', `st_${f.status}`), 0));
@@ -366,7 +380,7 @@ function filterExpr(x: Ctx, f: Filter | undefined): X | null {
   if (f.here) parts.push(['in', '$it', ['linked', '$self', 'at']]);
   return parts.length ? AND(...parts) : null;
 }
-function target(x: Ctx, kind: TargetKind | undefined, v: string, prompt: string, f?: Filter): { pre: X[]; ref: X; many: boolean } {
+function target(x: Ctx, kind: TargetKind | undefined, v: string, prompt: string, f?: Filter, count = 1): { pre: X[]; ref: X; many: boolean } {
   const fe = filterExpr(x, f);
   const narrow = (l: X) => (fe ? flt(l, fe) : l);
   const units = (xx: Ctx, p: X) => (f?.zone ? cards(p, f.zone) : unitsOf(xx, p));
@@ -384,7 +398,8 @@ function target(x: Ctx, kind: TargetKind | undefined, v: string, prompt: string,
     choose({ from: L(['Pay the ward cost', 'Let it fizzle']), min: 1, max: 1, as: `${v}w`, prompt: 'That target has ward: pay its cost?' }),
     IF(eq(`${v}w`, 'Pay the ward cost'), payAmt(x, def(v, 'kw_wardTax')), [SET('game', 'wf', 1)])], [SET('game', 'wf', 1)]), IF(eq(g('game', 'wf'), 1), [emit('warded', { o: v })])]),
     ...(vanish ? [IF(AND(isObj(v), ne(ctrl(v), '$me'), has(v, 'vanish'), inl(def('$self', 'role'), ['spell', 'fast'])), [['destroy', v], emit('vanished', { o: v }), SET('game', 'wf', 1)])] : [])] : [];
-  const one = (from: X) => ({ pre: [choose({ from: narrow(from), min: 1, max: 1, as: v, prompt }), ...wardPre], ref: ward ? Q(eq(g('game', 'wf'), 1), 0, v) : v, many: false });
+  const one = (from: X) => (count > 1 ? { pre: [choose({ from: narrow(from), min: 1, max: count, as: v, prompt: `${prompt} (up to ${count})` })], ref: v, many: true } // up to N targets
+    : { pre: [choose({ from: narrow(from), min: 1, max: 1, as: v, prompt }), ...wardPre], ref: ward ? Q(eq(g('game', 'wf'), 1), 0, v) : v, many: false });
   switch (kind ?? 'enemyUnit') {
     case 'self': return { pre: [], ref: '$self', many: false };
     case 'opponent': return { pre: [], ref: '$opp', many: false };
@@ -411,7 +426,7 @@ function effect(x: Ctx, e: Effect, i: number): X[] {
   const per = (body: (who: X) => X[]) => (e.who === 'each' ? [EACH(['players'], '$pl', body('$pl'))] : body(p));
   const needsTarget = ['damage', 'heal', 'buff', 'destroy', 'bounce', 'exhaust', 'ready', 'addCounter', 'removeCounter', 'restrict', 'moveTo', 'giveRes', 'inflict', 'cure', 'attachFrom', 'fight'].includes(e.k);
   if (needsTarget) {
-    const t = target(x, e.target, `$t${i}`, cap(`${effectText(e, x.bp)}: choose`), e.filter);
+    const t = target(x, e.target, `$t${i}`, cap(`${effectText(e, x.bp)}: choose`), e.filter, e.count ?? 1);
     const cv = `c_${e.card ?? 'x'}`;
     const one = (r: X): X[] => {
       switch (e.k) {
@@ -627,8 +642,10 @@ function condExpr(x: Ctx, k: Cond | undefined): X | null {
     case 'raw': return k.raw ?? true;
   }
 }
-const effects = (x: Ctx, list: Effect[]) => list.flatMap((e, i) => effect(x, e, i));
-const effectsAt = (x: Ctx, list: Effect[], base: number) => list.flatMap((e, i) => effect(x, e, base + i));
+/** One effect, done `repeat` times when asked (each time chooses again). */
+const effectN = (x: Ctx, e: Effect, i: number): X[] => ((e.repeat ?? 1) > 1 ? [EACH(range(e.repeat), `$rp${i}`, effect(x, e, i))] : effect(x, e, i));
+const effects = (x: Ctx, list: Effect[]) => list.flatMap((e, i) => effectN(x, e, i));
+const effectsAt = (x: Ctx, list: Effect[], base: number) => list.flatMap((e, i) => effectN(x, e, base + i));
 /** Puts status `sid` on unit r (clearing others in its group), level n (stacking statuses add). */
 function statusApply(x: Ctx, r: X, sid: string, n: X): X[] {
   const s = x.bp.statuses?.find((k) => k.id === sid);
@@ -709,7 +726,8 @@ function compileCard(x: Ctx, k: CardBP): Record<string, X> {
   const abilities: X[] = [], statics: X[] = [], acts: X[] = [], actsNow: X[] = [], actsQ: X[] = [], actsHand: X[] = [], actsGrave: X[] = [], effs: X[] = [], onHit: X[] = [], replacements: X[] = [], onConq: X[] = [], onHold: X[] = [];
   for (const a of [...k.abilities, ...bundle]) {
     const cond = condExpr(x, a.if);
-    const body = effects(x, a.do);
+    const body0 = effects(x, a.do);
+    const body = a.may && !['static', 'activated'].includes(a.when) ? [choose({ from: L(['Yes', 'No']), min: 1, max: 1, as: '$may', prompt: `${k.name}: ${cap(a.do.map((e) => effectText(e, bp)).join(', then '))}?` }), IF(eq('$may', 'Yes'), body0)] : body0;
     const lim = a.once ? { limit: { per: a.once === 'game' ? 'game' : 'turn', by: 'source' } } : {};
     if (a.when === 'static') {
       for (const e of a.do) {

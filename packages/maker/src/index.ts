@@ -98,3 +98,4 @@ export type { LibraryScript } from './library.ts';
 export { FITS, featuresOf, fitIssues, fits, featureName } from './fits.ts';
 export type { Fit, FitIssue } from './fits.ts';
 export { answerFeatures } from './wizard.ts';
+export { USAGE } from './usage.ts';
