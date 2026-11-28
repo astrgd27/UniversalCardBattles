@@ -185,3 +185,70 @@ test('ability builder options: up to N targets, repeat, "you may", and the new f
   assert.ok(play(mod!, 8).s.result, 'finishes');
   assert.ok(USAGE.effect.buff > 0 && USAGE.when.play > 0, 'usage counts are generated');
 });
+
+test('card text: choose one, X costs, later, until your next turn, ally/enemy triggers, steal and copy', () => {
+  const bp = withRecipes(['ramp']);
+  const pw = bp.combat.power;
+  const units = bp.cards.filter((c) => bp.types.find((t) => t.id === c.type)?.role === 'unit');
+  const spell = bp.cards.find((c) => bp.types.find((t) => t.id === c.type)?.role === 'spell')!;
+  spell.xCost = true;
+  spell.abilities = [{ when: 'play', do: [{ k: 'choose', modes: [{ label: 'Blast', do: [{ k: 'damage', amount: { of: 'x', plus: 1 }, target: 'enemyAny' }] }, { do: [{ k: 'draw', n: 2 }] }] },
+    { k: 'later', at: 'yourNextTurn', do: [{ k: 'draw', n: 1 }] }] }];
+  units[0].abilities.push({ when: 'allyDies', do: [{ k: 'buff', n: 1, stat: pw, target: 'self', until: 'yourNextTurn' }] });
+  units[1].abilities.push({ when: 'enemyEnters', once: true, do: [{ k: 'restrict', rule: 'noAttack', target: 'enemyUnit', until: 'yourNextTurn' }] });
+  units[2].abilities.push({ when: 'play', do: [{ k: 'steal', target: 'enemyUnit' }, { k: 'later', at: 'endOfTurn', do: [{ k: 'bounce', target: 'self' }] }] });
+  units[3].abilities.push({ when: 'enemyDies', do: [{ k: 'copy', target: 'ownUnit' }] });
+  const def = compileBlueprint(bp) as any;
+  const tx = (id: string) => def.cards.find((c: any) => c.id === id).text;
+  assert.match(tx(spell.id), /X cost [\s\S]*Choose one — Blast; or draw 2 cards[\s\S]*at the start of your next turn, draw a card/i);
+  assert.match(tx(units[0].id), /Whenever another of your units is destroyed: This gets \+1 .* until your next turn/);
+  assert.match(tx(units[1].id), /Whenever a unit enters play on your opponent's side/);
+  assert.match(tx(units[2].id), /take control of an enemy unit, then at the end of this turn, return this/i);
+  assert.match(tx(units[3].id), /create a copy of one of your units under your control/i);
+  assert.ok(['turnStart', 'turnEnd'].every((on) => def.rules.triggers.some((t: any) => t.on === on && JSON.stringify(t).includes('dlf_'))), 'delayed effects fire at turn start and turn end');
+  const { mod, problems } = build(bp);
+  assert.ok(mod, problems.map((p) => p.text).join('; '));
+  for (const seed of [1, 2, 3]) assert.ok(play(mod!, seed).s.result, `seed ${seed} finishes`);
+});
+
+test('engine: an "until your next turn" effect survives the opponent\'s turn and ends when its maker\'s next turn starts; delayed effects fire', async () => {
+  const { commitAction, submitDecision } = await import('#engine');
+  const bp = fromBlueprint('blank');
+  const u = bp.cards.find((c) => bp.types.find((t) => t.id === c.type)?.role === 'unit')!;
+  u.abilities.push({ when: 'play', do: [{ k: 'later', at: 'yourNextTurn', do: [{ k: 'raw', raw: [['emit', 'dlFired', { p: '$me' }]] }] }, { k: 'later', at: 'endOfTurn', do: [{ k: 'raw', raw: [['emit', 'dlEnd', { p: '$me' }]] }] }] });
+  const mod = build(bp).mod!;
+  let g = createMatch(mod, { decks: decks(mod), seed: 4 });
+  const me = g.s.players[g.s.turn.active].id;
+  const target = Object.values(g.s.objects)[0].id;
+  g.s.effects.push({ id: 'cX', ts: g.s.nextId++, layer: 'add', targets: [target], mods: [], until: 'nextTurn', untilP: me });
+  const turns: [string, boolean][] = [];
+  for (let i = 0; i < 200 && turns.length < 3 && !g.s.result; i++) {
+    const p = g.s.players[g.s.turn.active].id;
+    if (!turns.length || turns[turns.length - 1][0] !== `${g.s.turn.n}`) turns.push([`${g.s.turn.n}`, g.s.effects.some((e) => e.id === 'cX')]);
+    const pd = g.s.pending as any;
+    g = pd ? submitDecision(g, pd.player, pd.id, pd.options.slice(0, pd.min)) : commitAction(g, g.s.priority ?? p, { action: 'pass' });
+  }
+  assert.deepEqual(turns.map((t) => t[1]), [true, true, false], 'on during my turn and the opponent\'s, gone at my next turn');
+  // delayed effects fire in real games
+  const ev = new Set<string>();
+  for (const seed of [1, 2, 3, 4]) for (const e of play(mod, seed).s.events) ev.add(e.type);
+  assert.ok(ev.has('dlFired') && ev.has('dlEnd'), 'later: next turn and end of turn both fire');
+});
+
+test('composable targets: whose + what + how read naturally, compile and play', async () => {
+  const { pickText } = await import('#maker');
+  assert.equal(pickText({ side: 'enemy', what: 'unit', how: 'choose' }), 'an enemy unit');
+  assert.equal(pickText({ side: 'own', what: 'unit', how: 'choose', n: 2, other: true }), 'up to 2 other units you control');
+  assert.equal(pickText({ side: 'any', what: 'unitOrPlayer', how: 'all' }), 'each unit or player');
+  assert.equal(pickText({ side: 'enemy', what: 'permanent', how: 'random', n: 2 }), '2 random enemy permanents');
+  assert.equal(pickText({ side: 'enemy', what: 'player', how: 'choose' }), 'the opponent');
+  const bp = withRecipes(['items']);
+  const u = bp.cards.find((c) => bp.types.find((t) => t.id === c.type)?.role === 'unit')!;
+  u.abilities.push({ when: 'play', do: [{ k: 'damage', n: 1, pick: { side: 'any', what: 'unitOrPlayer', how: 'random', n: 2 } }, { k: 'destroy', pick: { side: 'enemy', what: 'permanent', how: 'choose' } },
+    { k: 'buff', n: 1, pick: { side: 'own', what: 'unit', how: 'choose', n: 2, other: true } }] });
+  const def = compileBlueprint(bp) as any;
+  assert.match(def.cards.find((c: any) => c.id === u.id).text, /deal 1 damage to 2 random units or players, then destroy an enemy permanent, then up to 2 other units you control get \+1/i);
+  const { mod, problems } = build(bp);
+  assert.ok(mod, problems.map((p) => p.text).join('; '));
+  for (const seed of [1, 2, 3]) assert.ok(play(mod!, seed).s.result, `seed ${seed}`);
+});

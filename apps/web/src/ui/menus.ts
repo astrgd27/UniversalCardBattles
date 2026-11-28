@@ -140,7 +140,7 @@ export function setup(ui: UI, A: any) {
     h('div', { class: 'seats' }, ui.seats.map((s, i) => h('div', { class: 'seat-card', 'data-seat': i + 1, style: `--h:${(i * 97 + 200) % 360}` },
       h('div', { class: 'avatar' }, String(i + 1)),
       h('div', { class: 'seat-name' }, `Player ${i + 1}`),
-      segmented(s, [['human', 'Human'], ['heuristic', 'AI'], ['random', 'Random']], (v) => A.setSeat(i, v), `Player ${i + 1} seat`),
+      segmented(s, [['human', 'Human'], ['heuristic', 'AI'], ['planner', 'Strong AI'], ['random', 'Random']], (v) => A.setSeat(i, v), `Player ${i + 1} seat`),
       select(ui.decks[i], names.map((d) => [d, d in custom ? `★ ${d}` : title(d)]), (v) => A.setDeck(i, v), `Player ${i + 1} deck`, 'deck-select')))),
     h('label', { class: 'toggle' }, h('input', { type: 'checkbox', checked: ui.fast, onchange: (e: Event) => A.setFast((e.target as HTMLInputElement).checked) }), ' Fast AI'),
     battleSettings(A),

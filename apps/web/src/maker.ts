@@ -26,7 +26,7 @@ export interface MakerUI {
   rawErr: Record<string, string>;
   confirm?: { id: string; name: string; why: string[] }; // a mechanic that would break the game, waiting for "add anyway"
   script?: { mode: 'merge' | 'replace'; report?: string[]; err?: string }; // Script Lab import/export
-  test: { a: string; b: string; opp: 'heuristic' | 'random' | 'human' };
+  test: { a: string; b: string; opp: 'heuristic' | 'random' | 'human' | 'planner'; lab?: 'heuristic' | 'planner' };
 }
 export const newMakerUI = (): MakerUI => ({ project: null, station: 'identity', card: null, deck: null, type: null, filter: null, picker: false, wiz: null, toast: null, celebrate: 0, sim: null, rawErr: {}, test: { a: '', b: '', opp: 'heuristic' }, undo: [], redo: [], lastEdit: 0 });
 
@@ -189,6 +189,7 @@ export function makerActions(ui: any, redraw: () => void, A: any) {
   const out = {
     mkOpen() { mk().project = null; mk().picker = false; mk().wiz = null; ui.mod = null; A.go('maker'); },
     mkPicker(open: boolean) { mk().picker = open; redraw(); },
+    mkOpenCard(id: string) { Object.assign(mk(), { station: 'cards', card: id }); redraw(); },
     mkNew(blueprintId: string) {
       const src = blueprintId.startsWith('mod:') ? SOURCES.get(blueprintId.slice(4)) : null;
       const bp: Blueprint = src ? normalize(structuredClone(src)) : fromBlueprint(blueprintId);
@@ -341,7 +342,7 @@ export function makerActions(ui: any, redraw: () => void, A: any) {
         if (bp.resource.mode === 'deck' && !Object.keys(d.res ?? {}).length) { const r = bp.cards.find((c) => roles.get(c.type) === 'resource'); if (r) d.res = { [r.id]: bp.resource.deckSize }; }
       }, 'decks');
     },
-    mkSetTest(k: 'a' | 'b' | 'opp', v: string) { (mk().test as any)[k] = v; redraw(); },
+    mkSetTest(k: 'a' | 'b' | 'opp' | 'lab', v: string) { (mk().test as any)[k] = v; redraw(); },
     mkPlaytest() {
       const p = cur();
       if (!p) return;
@@ -395,7 +396,8 @@ export function makerActions(ui: any, redraw: () => void, A: any) {
         const order = s.done % 2 ? [b, a] : [a, b];
         try {
           let g = createMatch(mod, { decks: order.map((d) => structuredClone(mod.decks![d])), seed: 1000 + s.done });
-          const agents = [makeAgent('heuristic', s.done), makeAgent('heuristic', s.done + 7)];
+          const kind = mk().test.lab ?? 'heuristic';
+          const agents = [makeAgent(kind, s.done), makeAgent(kind, s.done + 7)];
           for (let i = 0; !g.s.result && i < 20000; i++) g = aiStep(g, agents);
           turns += g.s.turn.n;
           for (const d of order) games[d] = (games[d] ?? 0) + 1;

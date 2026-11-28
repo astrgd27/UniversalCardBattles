@@ -973,3 +973,8 @@ svg.sel-arrows { color: var(--accent2); }
 .mk-fit.warns { color: var(--warn, #d9a40a); }
 .mk-confirm { position: sticky; top: 8px; z-index: 5; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--bad, #e5484d); background: var(--panel-solid); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
 .mk-confirm ul { margin: 6px 0; padding-left: 18px; font-size: 13px; }
+.mk-balance { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.mk-balance li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-solid); }
+.mk-bal-tag { font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 6px; }
+.mk-balance li.strong .mk-bal-tag { background: color-mix(in srgb, var(--bad, #e5484d) 25%, transparent); }
+.mk-balance li.weak .mk-bal-tag { background: color-mix(in srgb, var(--accent) 25%, transparent); }

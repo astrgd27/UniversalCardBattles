@@ -5,7 +5,7 @@ import type { Blueprint, Cond } from './blueprint.ts';
 import { UNIT_ROLES, compileBlueprint, context } from './compile.ts';
 
 export * from './blueprint.ts';
-export { compileBlueprint, cardText, abilityText, effectText, costLabel, costText, filterText, slug, UNIT_ROLES, COND_OP, COND_N, EVENT_TEXT, eventLabel, amountText } from './compile.ts';
+export { compileBlueprint, cardText, abilityText, effectText, costLabel, costText, filterText, slug, UNIT_ROLES, COND_OP, COND_N, EVENT_TEXT, eventLabel, amountText, pickText } from './compile.ts';
 export { BLUEPRINTS, fromBlueprint, blank } from './presets.ts';
 export { RECIPES, applyRecipe, setRecipeOpt, surpriseRecipes } from './recipes.ts';
 export { WIZARD, THEMES, wizardBuild, optionsFor, randomAnswers } from './wizard.ts';
@@ -46,6 +46,11 @@ export function lint(bp: Blueprint): Problem[] {
   for (const k of bp.cards) for (const a of k.abilities) {
     for (const id of condMeters(a.if)) if (!meterIds.has(id)) bug(`${k.name}: its condition uses a meter that doesn't exist ("${id}").`, `card:${k.id}`);
     for (const e of a.do) if (e.k === 'meter' && !meterIds.has(e.meter ?? '')) bug(`${k.name}: "Change a meter" needs a meter (make one under Keywords → Meters).`, `card:${k.id}`);
+    if (k.xCost && !['ramp', 'cards', 'anycard', 'deck', 'bank'].includes(bp.resource.mode)) tip(`${k.name}: X costs need a resource pool; here X is always 0.`, `card:${k.id}`);
+    for (const e of a.do) {
+      if (e.k === 'choose' && (e.modes?.length ?? 0) < 2) tip(`${k.name}: "Choose one" works best with two or more modes.`, `card:${k.id}`);
+      if (e.k === 'later' && !e.do?.length) tip(`${k.name}: a "later" block has nothing in it.`, `card:${k.id}`);
+    }
     if (a.when === 'event' && !a.event) bug(`${k.name}: a "whenever an event happens" ability needs an event.`, `card:${k.id}`);
     if ((a.if?.k === 'all' || a.if?.k === 'any' || a.if?.k === 'not') && !a.if.of?.length) tip(`${k.name}: a combined condition has nothing in it.`, `card:${k.id}`);
   }
@@ -99,3 +104,5 @@ export { FITS, featuresOf, fitIssues, fits, featureName } from './fits.ts';
 export type { Fit, FitIssue } from './fits.ts';
 export { answerFeatures } from './wizard.ts';
 export { USAGE } from './usage.ts';
+export { balanceReport, cardValue, effectValue, abilityValue, setCardCost } from './balance.ts';
+export type { BalanceNote, PlayStat } from './balance.ts';

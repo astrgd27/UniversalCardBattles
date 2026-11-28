@@ -19,7 +19,7 @@ import { render } from './ui/render.ts';
 import { cardZoom } from './ui/kit.ts';
 import { type MakerUI, makerActions, registerPublished } from './maker.ts';
 
-export type Seat = 'human' | 'heuristic' | 'random';
+export type Seat = 'human' | 'heuristic' | 'random' | 'planner';
 export type Screen = 'library' | 'home' | 'setup' | 'game' | 'decks' | 'gallery' | 'campaign' | 'encounter' | 'reward' | 'shop' | 'saves' | 'tutorials' | 'maker';
 /** Choosing targets for an action template, or answering a pending decision. */
 export interface Selection { tpl?: Template; slot: number; picks: Record<string, string[]> }
@@ -401,7 +401,7 @@ export const actions = {
       ui.note = { title: 'Cannot start', text: String((e as Error).message) };
       return redraw();
     }
-    ui.agents = ui.seats.map((s, i) => makeAgent(s === 'random' ? 'random' : 'heuristic', seed + i));
+    ui.agents = ui.seats.map((s, i) => makeAgent(s === 'random' ? 'random' : s === 'planner' ? 'planner' : 'heuristic', seed + i));
     ui.viewer = `p${Math.max(0, ui.seats.indexOf('human'))}`;
     Object.assign(ui, { camp: null, dialogSeen: -1, fxFrom: 0, counts: {}, screen: 'game', cover: null, note: null, inspect: null, drawer: null, pile: null, paused: false });
     advance();
@@ -416,7 +416,7 @@ export const actions = {
       ui.match = restore(m, d.state);
       ui.camp = d.camp ?? null;
       const s0 = ui.match!.s.cmds.length * 31;
-      ui.agents = ui.seats.map((s, i) => (ui.camp && i === 1 ? encounterAgent(campaign()!.encounters[ui.camp.enc], s0 + i) : makeAgent(s === 'random' ? 'random' : 'heuristic', s0 + i)));
+      ui.agents = ui.seats.map((s, i) => (ui.camp && i === 1 ? encounterAgent(campaign()!.encounters[ui.camp.enc], s0 + i) : makeAgent(s === 'random' ? 'random' : s === 'planner' ? 'planner' : 'heuristic', s0 + i)));
       ui.dialogSeen = ui.match!.s.events.length - 1;
       ui.viewer = `p${Math.max(0, ui.seats.indexOf('human'))}`;
       autoAt = autoKey(ui.match!);

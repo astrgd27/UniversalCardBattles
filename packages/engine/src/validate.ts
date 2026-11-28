@@ -245,7 +245,7 @@ export function validateIssues(def: ModuleDef): Issue[] {
           X(1);
           const sp = eff[2] as any;
           if (!isRec(sp) || !layers.has(sp.layer)) { err(`${p}/2`, `modify needs a layer from rules.layers (got "${sp?.layer}")`); return; }
-          if (sp.until !== undefined && sp.until !== 'turn' && sp.until !== null) err(`${p}/2/until`, 'until must be "turn" or null');
+          if (sp.until !== undefined && sp.until !== 'turn' && sp.until !== 'nextTurn' && sp.until !== null) err(`${p}/2/until`, 'until must be "turn", "nextTurn" or null');
           (Array.isArray(sp.mods) ? sp.mods : []).forEach((md: any, j: number) => mod(md, `${p}/2/mods/${j}`, err));
           return;
         }

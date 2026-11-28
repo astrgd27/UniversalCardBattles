@@ -515,6 +515,34 @@ A meter is a number kept on each player, each unit or the whole game (`bp.meters
     - a stat at exactly N.
   - The runs-only *when accessed* trigger.
 
+## More card text
+- **Choose one —** (`{k: 'choose', modes: [{label?, do}]}`): the player picks one mode. Each mode is a list of ability blocks.
+- **X costs** (`card.xCost`): after the printed cost, the player chooses X up to what's left in their pool and pays it. Amounts can use **X = the X paid**. In games without a resource pool, X is 0 (lint says so).
+- **Later** (`{k: 'later', at: 'yourNextTurn' | 'endOfTurn', do}`): delayed effects.
+  - Effects aimed at "this card" mark the card. Others count on the player.
+  - A turn-start or turn-end trigger fires them, e.g. "take control of an enemy unit, then at the end of this turn, return this to hand".
+- **Until your next turn:** a duration for boosts and restrictions. Engine `modify {until: "nextTurn"}` ends when its maker's next turn starts (DSL.md).
+- **Other cards' triggers:** whenever another of your units is destroyed, an enemy unit is destroyed, another unit enters on your side, or a unit enters on the opponent's side.
+- **Take control** (`steal`: the unit moves to your side) and **Copy** (`copy`: a token copy for you).
+- Each of these has a Workshop editor (modes, the "later" list, an X-cost checkbox on the card) and context rules.
+
+## Composable targets
+Any targeted effect can **✎ build target** instead of using a preset (`Effect.pick`):
+- **whose:** enemy, your, or anyone's;
+- **what:** units, units or players, players, leaders, leaders or units, or permanents (non-units);
+- **how:** you choose up to N, all of them, or N at random;
+- **not this card** (for your own).
+
+The text reads naturally, e.g. "2 random enemy permanents", "up to 2 other units you control", "each unit or player". The 23 presets remain as shortcuts, and **presets** switches back.
+
+## Balance check (Test station)
+`packages/maker/src/balance.ts`:
+- **Card value:** each card gets a value in stat points, from its stats, keywords and abilities. Each effect has a weight, scaled by how often its trigger fires and by conditions and costs.
+- **Cost curve:** value against cost is fitted with a straight line for units and for spells, from the game's own cards. A card off the line by more than a point and 1.5 standard deviations is flagged *strong* or *weak*, e.g. "plays like a 5-cost card at cost 3". It gets a suggested cost, at most 3 away and within the game's range.
+- **AI-lab data:** after a run, a card won in ≥ 70% (or ≤ 30%) of 8+ games it was played in is flagged too. When the curve and the games agree, the note is marked ✔✔.
+- **Set cost to N** applies the fix, keeping the colored part of typed costs. **Open** jumps to the card.
+- These are estimates; the panel says to trust playtests over them.
+
 ## Changing amounts (X)
 Any effect with an amount can use **X** instead of a fixed number (`Effect.amount`). X can be:
 - your units, the opponent's units, or all units;

@@ -503,6 +503,23 @@ A survey of about 30 published TCG rulebooks (`docs/COVERAGE.md`, second table) 
   - script conditions;
   - more filters: ready/exhausted, damaged, without a keyword, has a counter, unit meter, stat exactly.
 
+## Done: richer card text, composable targets, balance check, planner AI
+- **Card text:**
+  - choose one (modes);
+  - X costs (X = the X paid);
+  - "later" delayed effects (start of your next turn, end of this turn);
+  - "until your next turn";
+  - triggers on other units dying or entering (yours or the opponent's);
+  - take control and copy.
+
+  Engine: `modify {until: "nextTurn"}` (DSL.md).
+- **Composable targets:** whose × what × how (choose up to N, all, N at random), with natural text. The presets remain.
+- **Balance check** (Test station): a value model plus the game's own cost curve flags strong and weak cards with suggested costs, and AI-lab win rates add evidence (`balance.ts`, `balance.test.ts`).
+- **Planner AI** (`plannerAgent`, kind `planner`): the top 4 one-ply moves are each played out to the end of the turn on a sampled world, and the best wins.
+  - Tuned on Crystal Circuit: 70% against the one-ply AI there, at about 6× its time.
+  - Across five games it won 56 of 100: clearly ahead on Crystal Circuit and Generation Wars, about even on Storyweavers, Looboo and Arcade Showdown.
+  - It's available as "Strong AI" in seats, in the Workshop playtest and in the AI lab. The evaluation function is now the limit.
+
 ## Possible next steps
 - NIGHTFALL: the remaining art; human playtests to confirm the AI-tuned numbers.
 - Shadow Earth: card art prompts, a tutorial, human playtests of the 2.0 numbers.

@@ -6,7 +6,7 @@
 export type Role = 'unit' | 'spell' | 'fast' | 'permanent' | 'attachment' | 'resource' | 'trap' | 'leader' | 'evolution' | 'extra' | 'token' | 'attack' | 'battlefield' | 'walker' | 'location' | 'ice' | 'agenda';
 export type Pos = 'tl' | 'tr' | 'bl' | 'br' | 'line';
 export type PhaseKind = 'ready' | 'draw' | 'resource' | 'main' | 'combat' | 'end' | 'custom';
-export type When = 'play' | 'leave' | 'attack' | 'hit' | 'quest' | 'startTurn' | 'endTurn' | 'activated' | 'static' | 'opAttack' | 'conquer' | 'hold' | 'block' | 'castSpell' | 'landfall' | 'flip' | 'access' | 'event'; // event: whenever a named event happens (see Ability.event)
+export type When = 'play' | 'leave' | 'attack' | 'hit' | 'quest' | 'startTurn' | 'endTurn' | 'activated' | 'static' | 'opAttack' | 'conquer' | 'hold' | 'block' | 'castSpell' | 'landfall' | 'flip' | 'access' | 'event' | 'allyDies' | 'enemyDies' | 'allyEnters' | 'enemyEnters'; // event: whenever a named event happens (see Ability.event)
 export type TargetKind =
   | 'self' | 'enemyUnit' | 'anyUnit' | 'ownUnit' | 'otherOwnUnit' | 'enemyAny' | 'opponent' | 'you' | 'eachPlayer'
   | 'allEnemyUnits' | 'allUnits' | 'allOwnUnits' | 'randomEnemyUnit' | 'attacker' | 'battleTarget' | 'ownLeader' | 'ownAny';
@@ -16,7 +16,7 @@ export type EffectKind =
   | 'addCounter' | 'removeCounter' | 'strike' | 'deploy'
   | 'restrict' | 'prevent' | 'costMod' | 'insteadDestroy' | 'moveTo' | 'scry'
   | 'dig' | 'putIntoPlay' | 'addRes' | 'readyRes' | 'giveRes' | 'lifeToHand' | 'handToLife'
-  | 'inflict' | 'cure' | 'flip' | 'switch' | 'tutor' | 'attachFrom' | 'drawTo' | 'skipEvolve' | 'fight' | 'surveil' | 'roll' | 'fusion' | 'ritual' | 'drops' | 'endRun' | 'wound' | 'tag' | 'meter';
+  | 'inflict' | 'cure' | 'flip' | 'switch' | 'tutor' | 'attachFrom' | 'drawTo' | 'skipEvolve' | 'fight' | 'surveil' | 'roll' | 'fusion' | 'ritual' | 'drops' | 'endRun' | 'wound' | 'tag' | 'meter' | 'choose' | 'later' | 'steal' | 'copy';
 export type KeywordRule = 'none' | 'haste' | 'guard' | 'blocker' | 'flying' | 'vigilance' | 'lifesteal' | 'deadly' | 'shield' | 'double' | 'overflow' | 'ward'
   | 'firstStrike' | 'resist' | 'challenger' | 'saboteur' | 'goAgain' | 'trigger' | 'song'
   | 'noAttack' | 'noBlock' | 'noBeAttacked' | 'unblockable' | 'entersExhausted'
@@ -173,11 +173,17 @@ export interface Filter { type?: string; color?: string; keyword?: string; notKe
   adjacent?: boolean; opposite?: boolean; pointed?: boolean; here?: boolean } // here: at this location (locations' abilities) // grid boards: in a neighboring column of this; in the column facing this; pointed at by this card's link arrows
 /** A changing amount: X = how many of something there are (your units, cards in hand…), a meter, this card's counters or a stat,
  *  times `times`, plus `plus` (never below 0). Any effect with an amount can use it instead of a fixed number. */
-export interface Amount { of: 'units' | 'enemyUnits' | 'allUnits' | 'hand' | 'oppHand' | 'grave' | 'deck' | 'life' | 'oppLife' | 'meter' | 'counter' | 'stat' | 'turn';
+export interface Amount { of: 'x' | 'units' | 'enemyUnits' | 'allUnits' | 'hand' | 'oppHand' | 'grave' | 'deck' | 'life' | 'oppLife' | 'meter' | 'counter' | 'stat' | 'turn';
   meter?: string; counter?: string; stat?: string; times?: number; plus?: number }
-export interface Effect { k: EffectKind; n?: number; amount?: Amount; count?: number; repeat?: number; // count: choose up to N targets; repeat: do it N times (choosing again each time)
+/** A target built from parts: whose (enemy / your / anyone's), what (units, players, leaders, permanents or a mix) and how
+ *  (you choose up to n, all of them, or n at random). Overrides the preset `target` when set. */
+export interface TargetPick { side: 'enemy' | 'own' | 'any'; what: 'unit' | 'unitOrPlayer' | 'player' | 'leader' | 'unitOrLeader' | 'permanent'; how: 'choose' | 'all' | 'random'; n?: number; other?: boolean }
+export interface Effect { k: EffectKind; n?: number; amount?: Amount; pick?: TargetPick;
+  modes?: { label?: string; do: Effect[] }[]; // choose: "choose one —" (the player picks one mode)
+  at?: 'yourNextTurn' | 'endOfTurn'; do?: Effect[]; // later: delayed effects (at the start of your next turn / at the end of this turn)
+  count?: number; repeat?: number; // count: choose up to N targets; repeat: do it N times (choosing again each time)
   meter?: string; set?: boolean; // meter: add n (or set it to n) on a meter (yours / the opponent's with who, this unit's, or the game's)
-   kw?: string; target?: TargetKind; filter?: Filter; stat?: string; until?: 'turn' | 'forever' | 'battle'; who?: 'me' | 'opp' | 'each'; card?: string; type?: string; rule?: KeywordRule; to?: 'hand' | 'deck' | 'play'; zone?: string; raw?: unknown[];
+   kw?: string; target?: TargetKind; filter?: Filter; stat?: string; until?: 'turn' | 'forever' | 'battle' | 'yourNextTurn'; who?: 'me' | 'opp' | 'each'; card?: string; type?: string; rule?: KeywordRule; to?: 'hand' | 'deck' | 'play'; zone?: string; raw?: unknown[];
   status?: string; // inflict / cure (cure: empty = every status)
   heads?: Effect[]; tails?: Effect[]; perHeads?: boolean; // flip: n coins; heads/tails effects (several coins: heads only if all are heads, or once per heads with perHeads)
   sides?: number; ranges?: { min: number; max: number; do: Effect[] }[]; then?: Effect[]; // roll: n dice with this many sides; effects for the total's range; effects after every roll
@@ -198,6 +204,7 @@ export interface Move {
 }
 export interface CardBP {
   id: string; name: string; type: string;
+  xCost?: boolean; // X cost: as you play it, choose X and pay X more (amounts can use X = the chosen X)
   tag?: string; // a stable handle for cards a mechanic added ("heat:cool-down"), so its options still find them after renames
   cost?: number | Record<string, number>;
   stats: Record<string, number>;

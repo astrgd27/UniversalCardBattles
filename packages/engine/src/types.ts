@@ -164,7 +164,7 @@ export interface StackItem {
   countered?: EffectList;
   action?: string;
 }
-export interface TempEffect { id: string; ts: number; layer: string; targets: string[]; mods: { op: string; stat?: string; kw?: string; value?: any }[]; until: 'turn' | null }
+export interface TempEffect { id: string; ts: number; layer: string; targets: string[]; mods: { op: string; stat?: string; kw?: string; value?: any }[]; until: 'turn' | 'nextTurn' | null; untilP?: string } // nextTurn: lasts until untilP's next turn starts
 export interface Pending {
   id: string;
   kind: 'choose' | 'order' | 'divide'; // divide: sel repeats ids, one entry per point (min = max = amount)

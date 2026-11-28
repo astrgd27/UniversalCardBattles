@@ -34,6 +34,9 @@ try {
   // ability builder lists: most used first, and options the game can't use (meters, here) are left out
   ok((await page.getAttribute('select[aria-label="Do"] optgroup >> nth=0', 'label')) === 'Most used', 'effects list starts with the most used');
   ok((await page.locator('select[aria-label="Do"] option[value="meter"]').count()) === 0, 'no meter effect without a meter');
+  await page.selectOption('select[aria-label="Do"] >> nth=0', 'damage');
+  await page.click('[data-act=mk-build-target] >> nth=0');
+  ok(await page.isVisible('.mk-pick') && await page.isVisible('.mk-bugs.good'), 'target builder opens and the game still builds');
   // mechanic sub-options: add a recipe, then cycle one of its options with the arrows
   await page.click('[data-station=shelf]');
   await page.click('[data-recipe=heat]');
@@ -52,6 +55,7 @@ try {
   ok((await page.textContent('.mk-script-report')).includes('1 trigger added') && await page.isVisible('.mk-bugs.good'), 'Script Lab imports pasted scripts');
   ok(!(await page.isDisabled('[data-act=mk-export-scripts]')), 'Script Lab export is enabled once there are scripts');
   await page.click('[data-station=test]');
+  ok((await page.textContent('.mk-main')).includes('Balance check'), 'balance check panel');
   await page.click('[data-act=mk-sim]');
   await page.waitForSelector('.mk-report', { timeout: 180000 });
   ok((await page.textContent('.mk-report')).includes('10 AI games'), 'AI lab report');

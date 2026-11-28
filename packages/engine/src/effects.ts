@@ -351,7 +351,7 @@ export function apply(m: Mod, s: State, eff: Effect, f: Frame) {
       if (!targets.length) return;
       const mods = (spec.mods ?? []).map((md: any) => ({ ...md, value: md.value === undefined ? undefined : ev(m, s, md.value, ctx) }));
       const ts = s.nextId++;
-      s.effects.push({ id: `c${ts}`, ts, layer: spec.layer, targets, mods, until: spec.until ?? null });
+      s.effects.push({ id: `c${ts}`, ts, layer: spec.layer, targets, mods, until: spec.until ?? null, ...(spec.until === 'nextTurn' ? { untilP: one(ctx.$me) } : {}) });
       const hidden = targets.some((t) => objViewers(m, s.objects[t]) !== null);
       const shown = mods.filter((md: any) => md.op === 'add' && md.stat && typeof md.value === 'number').map((md: any) => ({ stat: md.stat, value: md.value }));
       emit(m, s, { type: 'modified', id: `c${ts}`, targets, ...(shown.length ? { mods: shown } : {}), ...masks([hidden ? [] : null, ['targets']]) });

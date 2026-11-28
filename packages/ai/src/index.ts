@@ -1,7 +1,7 @@
 // Agents see only a View, the legal action templates and (optionally) possible worlds built by `determinize`.
 // They never read the real match state, so they cannot use hidden information.
 import type { ActionCmd, Match, Mod, Template, View } from '#engine';
-import { IllegalAction, commitAction, rand, randInt, sample, scoreFor, seedRng, submitDecision } from '#engine';
+import { IllegalAction, commitAction, listActions, observe, rand, randInt, sample, scoreFor, seedRng, submitDecision } from '#engine';
 
 export interface AgentInfo {
   player: string;
@@ -48,7 +48,7 @@ export interface HeuristicOpts {
  * (assuming no responses) and the resulting position is scored with the module's ai.eval (see scoreFor).
  * Deterministic for a given seed; the simulation count, not wall-clock time, is the budget.
  */
-export function heuristicAgent(seed: number, opts: HeuristicOpts = {}): Agent {
+export function heuristicAgent(seed: number, opts: HeuristicOpts = {}): Agent & { rank(tpls: Template[], info: AgentInfo): { cmd: ActionCmd; score: number }[] } {
   const st = seedRng(seed);
   const fallback = randomAgent((seed ^ 0x2545f491) >>> 0, 0);
   const cap = opts.maxCandidates ?? 24;
@@ -133,6 +133,14 @@ export function heuristicAgent(seed: number, opts: HeuristicOpts = {}): Agent {
       };
       return pickBest(candidates(tpls), (cmd, base) => evaluate(info, run(cmd), n, base) + (bias[cmd.action] ?? 0));
     },
+    /** Every candidate with its one-ply score, best first (used by the planner to pick lines worth looking further at). */
+    rank(tpls, info) {
+      const n = opts.samples ?? info.mod.ai?.samples ?? 2;
+      const bias = { ...(info.mod.ai?.bias ?? {}), ...(opts.bias ?? {}) };
+      const base = randInt(st, 1 << 30);
+      return candidates(tpls).map((cmd) => ({ cmd, score: evaluate(info, (g) => commitAction(g, info.player, cmd), n, base) + (bias[cmd.action] ?? 0) + rand(st) * 1e-3 }))
+        .filter((r) => r.score > -Infinity).sort((a, b) => b.score - a.score);
+    },
     decide(view, info) {
       const pd = view.pending as Pending;
       if (!info || pd.options.length <= 1) return fallback.decide(view);
@@ -164,11 +172,64 @@ export function scriptedAgent(script: (view: View, actions: Template[]) => Actio
   return agent;
 }
 
+export interface PlannerOpts { top?: number; samples?: number; steps?: number; horizon?: 'turn' | 'reply'; width?: number } // horizon: play out to the end of this turn, or through the opponent's reply turn too
+/**
+ * Turn-level lookahead: the most promising candidates by one-ply score are each played out on a possible world through
+ * the rest of this turn (horizon 'turn', the default) or the opponent's reply turn too ('reply'), with every side played
+ * by a fast greedy policy; the line with the best position afterwards wins. It sees sequences (play this, then attack). Much stronger than one-ply at seeing attacks, blocks and counter-play coming;
+ * several times slower. Like every agent it only ever simulates worlds built from its own information.
+ */
+export function plannerAgent(seed: number, opts: PlannerOpts = {}): Agent {
+  const base = heuristicAgent(seed);
+  const fast = heuristicAgent((seed ^ 0x9e3779b9) >>> 0, { samples: 1, maxCandidates: opts.width ?? 6 });
+  const ahead = (opts.horizon ?? 'turn') === 'reply' ? 1 : 0;
+  const st = seedRng((seed ^ 0x5bd1e995) >>> 0);
+  // defaults from a sweep on Crystal Circuit: 4 lines played out to the end of the turn on 1 world won 70% against one-ply, at ~6x its time
+  const top = opts.top ?? 4, worlds = opts.samples ?? 1, steps = opts.steps ?? 160;
+  const rollout = (g: Match, me: string): number => {
+    const start = g.s.turn.n;
+    for (let i = 0; i < steps && !g.s.result && g.s.turn.n <= start + ahead; i++) {
+      const world = g;
+      const inf = (p: string): AgentInfo => ({ player: p, mod: world.m, sample: () => world }); // inside an imagined world, everyone plays it as it is
+      const pd = g.s.pending;
+      if (pd) { g = submitDecision(g, pd.player, pd.id, fast.decide(observe(g, pd.player), inf(pd.player))); continue; }
+      const p = g.s.priority;
+      if (!p) break;
+      try { g = commitAction(g, p, fast.act(observe(g, p), listActions(g, p), inf(p))); } catch { try { g = commitAction(g, p, { action: 'pass' }); } catch { break; } }
+    }
+    return scoreFor(g, me);
+  };
+  return {
+    act(view, tpls, info) {
+      if (!info || tpls.length <= 1) return base.act(view, tpls, info);
+      const ranked = base.rank(tpls, info).slice(0, top);
+      if (ranked.length <= 1) return ranked[0]?.cmd ?? base.act(view, tpls, info);
+      const b0 = randInt(st, 1 << 30);
+      let best = ranked[0].cmd, bs = -Infinity;
+      for (const r of ranked) {
+        let tot = 0;
+        for (let k = 0; k < worlds; k++) {
+          try { tot += rollout(commitAction(info.sample(b0 + k), info.player, r.cmd), info.player); } catch { tot -= 1e9; }
+        }
+        const sc = tot / worlds + rand(st) * 1e-3;
+        if (sc > bs) { bs = sc; best = r.cmd; }
+      }
+      return best;
+    },
+    decide: (view, info) => base.decide(view, info),
+  };
+}
+
 /** Agent kinds by name (CLI, UI, tournaments). */
 export function makeAgent(kind: string, seed: number): Agent {
   if (kind === 'random') return randomAgent(seed);
   if (kind === 'heuristic') return heuristicAgent(seed);
-  throw new Error(`Unknown agent "${kind}" (random, heuristic)`);
+  if (kind === 'planner') return plannerAgent(seed);
+  if (kind.startsWith('planner:')) { // planner:<horizon>:<top>:<samples>:<width>, for experiments
+    const [, horizon, top, samples, width] = kind.split(':');
+    return plannerAgent(seed, { horizon: horizon as 'turn' | 'reply', top: top ? +top : undefined, samples: samples ? +samples : undefined, width: width ? +width : undefined });
+  }
+  throw new Error(`Unknown agent "${kind}" (random, heuristic, planner)`);
 }
 
 /**

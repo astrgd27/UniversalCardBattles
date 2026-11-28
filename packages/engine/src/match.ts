@@ -146,7 +146,8 @@ function nextPhase(m: Mod, s: State) {
   s.turn.phase = 0;
   s.turn.n++;
   s.turn.active = s.players.findIndex((p) => p.id === nextPlayer(s, activeId(s)));
-  const keep = s.effects.filter((e) => e.until !== 'turn' && e.targets.some((t) => s.objects[t]));
+  const now = activeId(s);
+  const keep = s.effects.filter((e) => e.until !== 'turn' && !(e.until === 'nextTurn' && e.untilP === now) && e.targets.some((t) => s.objects[t]));
   const keepId = s.idfx.filter((e) => e.until !== 'turn' && e.targets.some((t) => s.objects[t]));
   if (keep.length !== s.effects.length || keepId.length !== s.idfx.length) {
     s.effects = keep;

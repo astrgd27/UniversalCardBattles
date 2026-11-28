@@ -69,7 +69,7 @@ Effects run in effect lists `[[op...], [op...]]`.
 | `run obj field` | runs the card definition's effect list `field` with `$self` = obj and `$me` = its controller |
 | `emit type {k: expr} {to?: players}`, `log msg`, `endPhase` | custom events (with `to`, only those players see the fields: a private look), a log line, and ending the current phase |
 | `counter items` | removes stack items and runs their action's `countered` effects |
-| `modify objs {layer, mods, until?: "turn"}` | a temporary continuous effect. Values are fixed when it's created, and it applies only to those object ids |
+| `modify objs {layer, mods, until?: "turn" \| "nextTurn"}` | a temporary continuous effect. Values are fixed when it's created, and it applies only to those object ids. `"nextTurn"` lasts until the start of the next turn of the player who made it (`$me`) |
 | `link objs rel target`, `unlink objs rel` | relationships (attachments and so on). A zone change clears them |
 | `call proc args...` | runs a script procedure (`rules.procedures`) |
 | `commit {who?, from, min?, max?, as, prompt?, reveal?}` | simultaneous secret choice. Each player in `who` (default: all living players) picks from `from`, evaluated with `$p` set to them. Picks are masked from everyone else, then bound as `{playerId: pick}`. A public `revealed` event follows unless `reveal: false`, which keeps the picks secret for a later commit. Note: it binds `$p` |

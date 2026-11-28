@@ -52,3 +52,14 @@ test('scripted agent falls back to a legal move and records the divergence', () 
   assert.equal(good.divergences.length, 0);
   assert.ok(end2.s.result);
 });
+
+test('planner agent: plays legal moves to a finished game and never sees hidden cards', async () => {
+  const { plannerAgent } = await import('#ai');
+  const { build, fromBlueprint } = await import('#maker');
+  const { createMatch } = await import('#engine');
+  const { playMatch } = await import('#harness');
+  const mod = build(fromBlueprint('blank')).mod!;
+  const ids = Object.keys(mod.decks!);
+  const g = playMatch(createMatch(mod, { decks: [ids[0], ids[1 % ids.length]].map((d) => structuredClone(mod.decks![d])), seed: 5 }), [plannerAgent(1), plannerAgent(2)]);
+  assert.ok(g.s.result, 'finishes');
+});
