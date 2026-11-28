@@ -5,7 +5,7 @@ import type { Blueprint, CardBP, CardType, Keyword, KeywordRule, Role } from './
 import { normalize } from './blueprint.ts';
 import { slug } from './compile.ts';
 
-export type RecipeGroup = 'Resources' | 'Combat' | 'Board' | 'Winning' | 'Timing & turns' | 'Card types' | 'Keywords & counters' | 'New ideas';
+export type RecipeGroup = 'Resources' | 'Combat' | 'Board' | 'Winning' | 'Timing & turns' | 'Card types' | 'Keywords & counters';
 /** A sub-option of a shelf recipe: a short list of values you step through with arrows; it reads and writes the live blueprint. */
 export interface RecipeOpt { id: string; label: string; values: unknown[]; names?: string[]; get: (bp: Blueprint) => unknown; set: (bp: Blueprint, v: any) => void }
 export interface Recipe { id: string; name: string; icon: string; group: RecipeGroup; desc: string; apply: (bp: Blueprint) => void; opts?: RecipeOpt[] }
@@ -400,7 +400,7 @@ export const RECIPES: Recipe[] = [
 ];
 
 /** Applies a recipe and records it on the blueprint (so the shelf can show what is in the game). */
-// ---------------------------------------------------------------- new ideas (not taken from any one game)
+// ---------------------------------------------------------------- mechanics not taken from any one game (each listed in its own group)
 RECIPES.push(
   { id: 'zoneCombat', name: 'Zone combat', icon: '↕', group: 'Combat', desc: 'Attack cards strike high, mid or low with a speed; defenders block from hand with a card for that zone. Same zone stops it, the zone next to it halves it.',
     apply: (bp) => {
@@ -413,22 +413,22 @@ RECIPES.push(
       for (const [name, z, sp, d] of [['Low Sweep', 1, 4, s], ['Body Blow', 2, 3, Math.round(s * 1.4)], ['Overhead Smash', 3, 2, s * 2]] as const)
         addCard(bp, { name, type: at.id, cost: Math.max(1, Math.round(d / Math.max(1, s))), stats: { [bp.combat.power]: d, speed: sp, azone: z, bzone: z, bmod: 1 } }, 3);
     } },
-  { id: 'worldClock', name: 'World clock', icon: '🌗', group: 'New ideas', desc: 'Time moves on as turns pass (day and night, seasons…). Each time can change every unit, and cards can do more at certain times.',
+  { id: 'worldClock', name: 'World clock', icon: '🌗', group: 'Timing & turns', desc: 'Time moves on as turns pass (day and night, seasons…). Each time can change every unit, and cards can do more at certain times.',
     apply: (bp) => {
       bp.clock ??= { names: ['Day', 'Night'], every: 1, effect: { at: 1, stat: bp.combat.power, n: Math.max(1, Math.round(scale(bp) / 3)) } };
       const unit = bp.types.find((t) => t.role === 'unit');
       if (unit) addCard(bp, { name: 'Night Prowler', type: unit.id, cost: 2, stats: { [bp.combat.power]: scale(bp), ...(bp.combat.health ? { [bp.combat.health]: scale(bp) } : {}) },
         abilities: [{ when: 'static', if: { k: 'clock', n: bp.clock.names.length - 1 }, do: [{ k: 'aura', n: Math.max(1, scale(bp)), target: 'self' }] }] }, 2);
     } },
-  { id: 'heat', name: 'Heat', icon: '🌡', group: 'New ideas', desc: 'Every card you play builds heat. Reach the limit and you overheat (a penalty), then it resets; heat cools at the start of your turn.',
+  { id: 'heat', name: 'Heat', icon: '🌡', group: 'Resources', desc: 'Every card you play builds heat. Reach the limit and you overheat (a penalty), then it resets; heat cools at the start of your turn.',
     apply: (bp) => {
       bp.heat ??= { per: 'card', limit: 5, penalty: 'damage', amount: Math.max(1, Math.round(scale(bp) / 2)), cool: 2 };
       addCard(bp, { name: 'Cool Down', type: (bp.types.find((t) => t.role === 'spell') ?? ensureType(bp, 'spell', 'Spell', 'spell', '✦')).id, cost: 1, stats: {},
         abilities: [{ when: 'play', do: [{ k: 'raw', raw: [['set', '$me', 'heat', 0]] }, { k: 'draw', n: 1 }] }] }, 2);
     } },
-  { id: 'aging', name: 'Aging', icon: '⌛', group: 'New ideas', desc: 'Units grow older each of your turns: they can grow stronger with age, crumble at a set age, or both.',
+  { id: 'aging', name: 'Aging', icon: '⌛', group: 'Keywords & counters', desc: 'Units grow older each of your turns: they can grow stronger with age, crumble at a set age, or both.',
     apply: (bp) => { bp.aging ??= { dies: 5 }; } },
-  { id: 'comeback', name: 'Comeback', icon: '🔄', group: 'New ideas', desc: 'A player who falls behind (in life, points or units) gets a bonus at the start of each turn until they catch up.',
+  { id: 'comeback', name: 'Comeback', icon: '🔄', group: 'Winning', desc: 'A player who falls behind (in life, points or units) gets a bonus at the start of each turn until they catch up.',
     apply: (bp) => { bp.comeback ??= { by: bp.win.points ? 'points' : bp.win.life ? 'life' : 'units', gap: bp.win.points ? 3 : bp.win.life ? Math.max(2, Math.round(bp.win.life / 4)) : 2, bonus: 'draw', n: 1 }; } },
 );
 

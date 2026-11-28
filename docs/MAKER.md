@@ -382,7 +382,7 @@ Built for Lairbreakers (mechanics reference: Android: Netrunner).
 - Default games: tilt in Crystal Circuit, Storyweavers, Ringworld Rumble, Generation Wars and Arcade Showdown; badge in Taste Dimension (defense sideways), Looboo and Lairbreakers.
 
 ## Mechanics Shelf (mix and match)
-A station listing 58 recipes in eight groups:
+A station listing 58 recipes in seven groups:
 - Resources
 - Combat
 - Board
@@ -390,7 +390,6 @@ A station listing 58 recipes in eight groups:
 - Timing & turns
 - Card types
 - Keywords & counters
-- New ideas
 
 Each recipe is a one-click edit that adds a whole mechanic to any game: its stats, types, keywords, rules settings and example cards. Examples:
 - colored lands; inkwell; any card as mana; face-down resources;
@@ -411,7 +410,8 @@ Every recipe has 1–4 sub-options (103 in all, in `OPTS` in `packages/maker/src
   - the game builds and an AI game finishes;
   - at least one value changes the compiled module, so no option is decorative.
 
-### New ideas (mechanics no source game has)
+### Mechanics no source game has
+Each of these sits in the group it belongs to, next to the borrowed mechanics: World clock in Timing & turns, Heat in Resources, Aging in Keywords & counters, Comeback in Winning, and Zone combat in Combat.
 - **World clock** (`bp.clock`): named times (Day/Night, four seasons, Calm/Storm) that move on every N turns. The last time can boost or weaken every unit; the condition `{k:'clock', n}` gates abilities ("Night Prowler"). The battle HUD shows the current time, and the log announces changes.
 - **Heat** (`bp.heat`): each card played (or each point of cost) adds heat. At the limit you overheat and take damage, discard or exhaust your units, then reset. It cools each turn. The condition `{k:'heat', n}` and the "Cool Down" card interact with it.
 - **Aging** (`bp.aging`): units gain an age counter each of their owner's turns. They can grow stronger with age, crumble at a set age, or both.

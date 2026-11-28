@@ -156,10 +156,10 @@ export const WIZARD: WizStep[] = [
       { id: 'places', name: 'Places (locations)', icon: '🏰', desc: 'Location cards units move to for bonuses (and lore, with questing).', when: (a) => ['target', 'block', 'compare'].includes(combatOf(a)) && !['pitch', 'free', 'attachEnergy', 'skillChecks'].includes(one(a, 'resources', 'ramp')) },
       { id: 'shift', name: 'Shift (upgraded versions)', icon: '⇪', desc: 'Legendary versions you can play on top of a unit for a shift cost.', when: (a) => !['pitch', 'free', 'attachEnergy', 'skillChecks'].includes(one(a, 'resources', 'ramp')) && combatOf(a) !== 'duel' },
       { id: 'chance', name: 'Coins & dice', icon: '🎲', desc: 'Cards that flip coins or roll dice.' },
-      { id: 'worldClock', name: 'World clock (new idea)', icon: '🌗', desc: 'Day and night (or seasons) turn as the game goes on; some times change every unit.', when: (a) => combatOf(a) !== 'cards' },
-      { id: 'heat', name: 'Heat (new idea)', icon: '🔥', desc: 'Every card you play builds heat; too much and you overheat and pay a price.' },
-      { id: 'aging', name: 'Aging (new idea)', icon: '⌛', desc: 'Units grow older each turn and crumble at a set age.', when: (a) => combatOf(a) !== 'cards' },
-      { id: 'comeback', name: 'Comeback (new idea)', icon: '🔄', desc: 'A player who falls behind gets a bonus each turn until they catch up.' }] },
+      { id: 'worldClock', name: 'World clock', icon: '🌗', desc: 'Day and night (or seasons) turn as the game goes on; some times change every unit.', when: (a) => combatOf(a) !== 'cards' },
+      { id: 'heat', name: 'Heat', icon: '🔥', desc: 'Every card you play builds heat; too much and you overheat and pay a price.' },
+      { id: 'aging', name: 'Aging', icon: '⌛', desc: 'Units grow older each turn and crumble at a set age.', when: (a) => combatOf(a) !== 'cards' },
+      { id: 'comeback', name: 'Comeback', icon: '🔄', desc: 'A player who falls behind gets a bonus each turn until they catch up.' }] },
   { id: 'review', title: 'Review & create', icon: '✅', help: 'Here is your game. Create it, then playtest straight away or keep shaping it in the Workshop.', options: [] },
 ];
 
