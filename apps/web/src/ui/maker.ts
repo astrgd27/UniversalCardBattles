@@ -867,6 +867,30 @@ function publishView(bp: Blueprint, A: any, bugs: number) {
 }
 
 // ---------------------------------------------------------------- 12. script lab
+/** Export the game's scripts as one file, or import a script file (or pasted JSON), merged in or replacing what is there. */
+function scriptIO(bp: Blueprint, A: any, mk: MakerUI) {
+  const mode = mk.script?.mode ?? 'merge';
+  const adv = bp.advanced ?? {};
+  const counts = [adv.rules && 'rules patch', adv.triggers?.length && `${adv.triggers.length} trigger${adv.triggers.length === 1 ? '' : 's'}`,
+    adv.functions && `${Object.keys(adv.functions).length} function(s)`, adv.procedures && `${Object.keys(adv.procedures).length} procedure(s)`, adv.ai && 'AI hints',
+    bp.cards.some((c) => c.raw && Object.keys(c.raw).length) && `${bp.cards.filter((c) => c.raw && Object.keys(c.raw).length).length} card patch(es)`].filter(Boolean);
+  let paste = '';
+  return h('div', { class: 'mk-sub mk-script-io' }, h('strong', {}, 'Import & export'),
+    hint('Save this game\'s scripts to a .script.json file and load them into another game, or share them. Card patches apply to cards with the same id.'),
+    row(h('button', { onclick: A.mkExportScripts, disabled: !counts.length, 'data-act': 'mk-export-scripts' }, '⬇ Export scripts (.script.json)'),
+      h('button', { class: 'ghost', onclick: A.mkExportRules }, '⬇ Export compiled rules (rules.json)')),
+    h('p', { class: 'muted' }, counts.length ? `In this game: ${counts.join(', ')}.` : 'This game has no scripts yet.'),
+    h('div', { class: 'mk-seg', role: 'radiogroup', 'aria-label': 'Import mode' },
+      ...(['merge', 'replace'] as const).map((m) => h('button', { class: cls('chip', mode === m && 'on'), role: 'radio', 'aria-checked': String(mode === m), onclick: () => A.mkScriptMode(m) },
+        m === 'merge' ? 'Merge into my scripts' : 'Replace my scripts'))),
+    h('label', { class: 'mk-file' }, '⬆ Import a script file ',
+      h('input', { type: 'file', accept: '.json,application/json', 'data-act': 'mk-import-scripts', onchange: (e: Event) => { const el = e.target as HTMLInputElement; const f = el.files?.[0]; if (f) A.mkImportScripts(f); el.value = ''; } })),
+    h('details', {}, h('summary', {}, 'Or paste script JSON'),
+      h('textarea', { class: 'code', rows: 5, 'aria-label': 'Paste script JSON', placeholder: '{"format": "ucb-script", "v": 1, "advanced": {"triggers": [...]}}', oninput: (e: Event) => { paste = (e.target as HTMLTextAreaElement).value; } }),
+      h('button', { onclick: () => paste.trim() && A.mkImportScripts(paste), 'data-act': 'mk-paste-scripts' }, 'Import pasted JSON')),
+    mk.script?.err && h('p', { class: 'mk-prob bug' }, `Could not import: ${mk.script.err}`),
+    mk.script?.report && h('ul', { class: 'mk-script-report' }, mk.script.report.map((l) => h('li', {}, l))));
+}
 function labView(bp: Blueprint, A: any, mk: MakerUI, mod: Mod | null) {
   const box = (key: string, path: Path, title: string, help: string, sample: string) => h('div', { class: 'mk-sub' }, h('strong', {}, title), hint(help),
     h('textarea', { class: 'code', rows: 6, placeholder: sample, 'aria-label': title, onchange: (e: Event) => A.mkRaw(key, path, (e.target as HTMLTextAreaElement).value) }, get(bp, path) !== undefined ? JSON.stringify(get(bp, path), null, 1) : ''),
@@ -878,6 +902,7 @@ function labView(bp: Blueprint, A: any, mk: MakerUI, mod: Mod | null) {
     box('lab-fn', ['advanced', 'functions'], 'Functions', 'Pure expressions callable with ["call", name, ...].', '{"double": {"params": ["$x"], "body": ["*", "$x", 2]}}'),
     box('lab-proc', ['advanced', 'procedures'], 'Procedures', 'Effect lists callable with ["call", name, ...].', '{"chaos": {"params": [], "do": [["each", ["players"], "$p", [["draw", "$p", 1]]]]}}'),
     box('lab-ai', ['advanced', 'ai'], 'AI hints', 'Override the AI evaluation: {eval, bias, samples}.', '{"bias": {"attack": 2}}'),
+    scriptIO(bp, A, mk),
     h('details', { class: 'mk-sub' }, h('summary', {}, 'View the compiled rules'), h('pre', { class: 'code mk-compiled' }, mod ? JSON.stringify(mod.rules, null, 1).slice(0, 60000) : 'Not built.')),
   ];
 }

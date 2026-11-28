@@ -953,3 +953,8 @@ svg.sel-arrows { color: var(--accent2); }
 :root[data-anim=off] .beat-spot, :root[data-anim=off] .stat-float, :root[data-anim=off] .dmg-float, :root[data-anim=off] .turn-banner { animation: none !important; }
 :root[data-anim=reduced] .card.beat-target, :root[data-anim=reduced] .avatar.beat-target { animation: none; }
 .card.tapped .preview-badge, .card.tapped .used-badge, .card.tapped .sick-badge, .card.tapped .def-badge { rotate: -90deg; }
+/* Script Lab import / export */
+.mk-script-io .mk-seg { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0; }
+.mk-script-io .mk-file { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 600; }
+.mk-script-report { margin: 6px 0 0; padding-left: 18px; font-size: 13px; }
+.mk-script-io details { margin-top: 6px; }

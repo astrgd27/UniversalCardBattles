@@ -460,6 +460,11 @@ A survey of about 30 published TCG rulebooks (`docs/COVERAGE.md`, second table) 
 - Tests: `recipe-options.test.ts` sweeps every option value (build, play, round-trip, changes the module) and covers the four new mechanics.
 - Next ideas: a market row, initiative bidding, public objectives, a shared draft pool, weather.
 
+## Done: Script Lab import & export
+- Export a game's scripts as `.script.json` (rules patch, triggers, functions, procedures, AI hints, card patches), or the compiled `rules.json`.
+- Import from a file or pasted JSON, merged in or replacing what is there, with validation and a change report.
+- See MAKER.md, "Deeper scripting". Tests: `scripts.test.ts`; the e2e run covers the recipe arrows and the paste import.
+
 ## Possible next steps
 - NIGHTFALL: the remaining art; human playtests to confirm the AI-tuned numbers.
 - Shadow Earth: card art prompts, a tutorial, human playtests of the 2.0 numbers.

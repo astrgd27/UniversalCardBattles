@@ -451,7 +451,16 @@ The recipes cover the structures needed for future starter games:
   - extra rule triggers;
   - functions and procedures;
   - AI hints;
-  - a read-only view of the compiled rules.
+  - a read-only view of the compiled rules;
+  - **Import & export** (`packages/maker/src/scripts.ts`):
+    - *Export scripts* saves one `.script.json` holding the rules patch, triggers, functions, procedures, AI hints, and every card's Advanced box keyed by card id: `{format: "ucb-script", v: 1, from, advanced, cards?}`.
+    - *Import* reads a file, or JSON pasted on the page. It also accepts a bare `{rules?, triggers?, functions?, procedures?, ai?, cards?}` object.
+    - It checks the shape and gives a readable reason for anything wrong, e.g. a trigger without `on`/`do`, a function without `body`, or a newer version.
+    - **Merge** deep-merges the rules patch and appends triggers, skipping exact duplicates. Functions, procedures and AI hints are added or replaced by name. Card patches merge into cards with the same id, and the import lists the ids it skipped.
+    - **Replace** swaps only the parts the file contains.
+    - A report lists what changed.
+    - *Export compiled rules* downloads the full compiled `rules.json`.
+    - `scripts.test.ts` covers the round trip, merge and replace, and rejection of bad files.
 
 Everything here is the engine DSL (`docs/DSL.md`), so a Maker game can grow into anything an official module does.
 

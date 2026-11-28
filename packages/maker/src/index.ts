@@ -75,3 +75,5 @@ export function build(bp: Blueprint): { mod: Mod | null; problems: Problem[] } {
   for (const d of bp.decks) for (const e of deckErrors(mod, mod.decks![d.id])) problems.push({ level: 'bug', text: `Deck "${d.name}": ${e}`, where: `deck:${d.id}` });
   return { mod: problems.some((p) => p.level === 'bug') ? null : mod, problems };
 }
+export { SCRIPT_FORMAT, SCRIPT_PARTS, exportScripts, importScripts, readScripts } from './scripts.ts';
+export type { ScriptBundle, ScriptPart } from './scripts.ts';

@@ -5,7 +5,7 @@ import type { Match } from '#engine';
 import { IllegalAction, commitAction, createMatch, determinize, listActions, observe, submitDecision } from '#engine';
 import { makeAgent } from '#ai';
 import { packFiles } from '#sdk';
-import { type Blueprint, type CardBP, type Problem, BLUEPRINTS, RECIPES, applyRecipe, build, surpriseRecipes, type WizAnswers, WIZARD, optionsFor, wizardBuild, cardsFromCsv, cardsToCsv, compileBlueprint, fromBlueprint, normalize, rulebookMarkdown, slug } from '#maker';
+import { type Blueprint, type CardBP, type Problem, BLUEPRINTS, RECIPES, applyRecipe, build, surpriseRecipes, type WizAnswers, WIZARD, optionsFor, wizardBuild, cardsFromCsv, cardsToCsv, compileBlueprint, fromBlueprint, normalize, rulebookMarkdown, slug, exportScripts, importScripts, readScripts } from '#maker';
 import { MODULES, SOURCES } from './modules.ts';
 import { store } from './storage.ts';
 
@@ -24,6 +24,7 @@ export interface MakerUI {
   sim: { done: number; total: number; lines: string[]; running: boolean; cards?: { id: string; name: string; games: number; wins: number }[] } | null;
   undo: string[]; redo: string[]; lastEdit: number;
   rawErr: Record<string, string>;
+  script?: { mode: 'merge' | 'replace'; report?: string[]; err?: string }; // Script Lab import/export
   test: { a: string; b: string; opp: 'heuristic' | 'random' | 'human' };
 }
 export const newMakerUI = (): MakerUI => ({ project: null, station: 'identity', card: null, deck: null, type: null, filter: null, picker: false, wiz: null, toast: null, celebrate: 0, sim: null, rawErr: {}, test: { a: '', b: '', opp: 'heuristic' }, undo: [], redo: [], lastEdit: 0 });
@@ -438,6 +439,22 @@ export function makerActions(ui: any, redraw: () => void, A: any) {
       const errs = mk().rawErr;
       if (!text.trim()) { delete errs[key]; return edit((bp) => setPath(bp, path, undefined), 'lab'); }
       try { const v = JSON.parse(text); delete errs[key]; edit((bp) => setPath(bp, path, v), 'lab'); } catch (e) { errs[key] = (e as Error).message; redraw(); }
+    },
+    // Script Lab import / export
+    mkScriptMode(mode: 'merge' | 'replace') { mk().script = { ...mk().script, mode }; redraw(); },
+    mkExportScripts() { const p = cur(); if (p) download(`${p.bp.id}.script.json`, JSON.stringify(exportScripts(p.bp), null, 1), 'application/json'); },
+    mkExportRules() { const p = cur(); if (!p) return; const def = compileBlueprint(p.bp) as any; download(`${p.bp.id}.rules.json`, JSON.stringify(def.rules, null, 1), 'application/json'); },
+    async mkImportScripts(src: File | string) {
+      const m = mk();
+      const mode = m.script?.mode ?? 'merge';
+      try {
+        const bundle = readScripts(JSON.parse(typeof src === 'string' ? src : await src.text()));
+        let report: string[] = [];
+        edit((bp) => { report = importScripts(bp, bundle, mode); }, 'lab');
+        m.rawErr = {};
+        m.script = { mode, report: bundle.from ? [`From "${bundle.from}":`, ...report] : report };
+      } catch (e) { m.script = { mode, err: (e as Error).message }; }
+      redraw();
     },
     mkToast() { mk().toast = null; redraw(); },
   };
