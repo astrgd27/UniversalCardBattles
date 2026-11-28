@@ -10,6 +10,8 @@ export interface Beat {
   card?: string; // card id to spotlight
   from?: string; to?: string; // object or player ids for the arrow
   clash?: { a?: { card: string; dealt: number; took: number; dead: boolean }; b?: { card: string; dealt: number; took: number; dead: boolean }; player?: string; playerTook?: number };
+  results?: string[]; // what a played card or ability did (damage, destroyed, drew, +stats...)
+  targets?: string[]; // objects or players it chose, highlighted while the beat plays
   mine: boolean; // caused by the viewer
   ms: number;
   at?: number;
@@ -45,16 +47,56 @@ export function beatsOf(events: Ev[], mod: Mod, viewer: string, who: (p: string)
     }
     battle = null;
   };
+  // the latest play collects what it did until the next action, phase or battle
+  let play: (Beat & { results: string[]; src?: string; hitP: Set<string>; drew: Map<string, number> }) | null = null;
+  const labels = ((mod.manifest.theme as any)?.labels ?? {}) as Record<string, string>;
+  const hidden = new Set<string>(((mod.manifest.theme as any)?.hideVars ?? []) as string[]);
+  const statName = (k: string) => labels[k] ?? k;
+  const closePlay = () => {
+    if (!play) return;
+    for (const [p, n] of play.drew) play.results.push(`${who(p)} draw${who(p) === 'You' ? '' : 's'} ${n === 1 ? 'a card' : `${n} cards`}`);
+    if (play.results.length) play.ms += Math.min(900, play.results.length * 250);
+    play = null;
+  };
+  const result = (line: string) => { if (play && !play.results.includes(line) && play.results.length < 6) play.results.push(line); };
+  const boardZone = (z?: string) => !!z && !['deck', 'hand', 'grave', 'limbo', 'look', 'banished', 'resdeck', 'life', 'prizes', 'void'].includes(z);
   for (const e of events) {
     const mine = (e.player ?? e.p) === viewer;
+    if (play && !battle) {
+      if (e.type === 'damage') { result(/^p\d+$/.test(e.target) ? `${who(e.target)} take${who(e.target) === 'You' ? '' : 's'} ${e.amount} damage` : `${name(e.target)} takes ${e.amount} damage`); if (/^p\d+$/.test(e.target)) play.hitP.add(e.target); continue; }
+      if (e.type === 'destroyed') { result(`${mod.card.get(e.card)?.name ?? 'A card'} is destroyed`); continue; }
+      if (e.type === 'modified' && e.mods && e.targets) { for (const t of e.targets) for (const md of e.mods) result(`${name(t)} ${md.value >= 0 ? '+' : ''}${md.value} ${statName(md.stat)}`); continue; }
+      if (e.type === 'moved' && e.to === 'hand' && e.from === 'deck' && e.toPlayer) { play.drew.set(e.toPlayer, (play.drew.get(e.toPlayer) ?? 0) + 1); continue; }
+      if (e.type === 'moved' && e.to === 'hand' && boardZone(e.from)) { result(`${mod.card.get(e.card)?.name ?? 'A card'} returns to hand`); continue; }
+      if (e.type === 'moved' && e.to === 'grave' && e.from === 'hand' && e.obj !== play.src) { result(`${who(e.fromPlayer)} discard${who(e.fromPlayer) === 'You' ? '' : 's'} ${mod.card.get(e.card)?.name ?? 'a card'}`); continue; }
+      if (e.type === 'created' && e.card) { result(`${mod.card.get(e.card)?.name ?? 'A token'} appears`); continue; }
+      if (e.type === 'moved' && e.from === 'deck' && e.to !== 'hand' && e.to !== 'grave' && e.obj !== play.src) { result(`${e.card ? mod.card.get(e.card)?.name ?? 'A card' : 'A card'} goes from the deck to ${labels[e.to] ?? e.to}`); continue; }
+      if (e.type === 'moved' && e.from === 'deck' && e.to === 'grave') { result(`${who(e.fromPlayer)} mill${who(e.fromPlayer) === 'You' ? '' : 's'} ${e.card ? mod.card.get(e.card)?.name ?? 'a card' : 'a card'}`); continue; }
+      if (e.type === 'moved' && e.to === 'banished' && e.obj !== play.src) { result(`${mod.card.get(e.card)?.name ?? 'A card'} is banished`); continue; }
+      if (e.type === 'changed' && /^p\d+$/.test(e.ref) && !hidden.has(e.name) && e.name !== 'ap' && typeof e.to === 'number' && typeof e.from === 'number') {
+        const d = e.to - e.from;
+        if (d && !(e.name === 'life' && play.hitP.has(e.ref)) && !(String(e.name).startsWith('mana:') && d < 0)) result(`${who(e.ref)}: ${d > 0 ? '+' : ''}${d} ${statName(e.name)}`);
+        continue;
+      }
+      if (e.type === 'changed' && e.name === 'ex' && e.to === 1 && e.ref !== play.src && !/^p\d+$/.test(e.ref)) { result(`${name(e.ref)} is exhausted`); continue; }
+    }
+    if (['action', 'phase', 'attack', 'windowOpened', 'turnEnd'].includes(e.type)) closePlay();
     switch (e.type) {
       case 'action': {
         if (e.action === 'pass' || !e.card) break;
         const base = String(e.action).split('#')[0];
         const label = (mod.rules.actions[base]?.label ?? base).toLowerCase();
         if (/attack|move|march|quest/i.test(base)) break; // their own beats follow
-        if (base === 'boost' && /^Give/.test(mod.rules.actions[base]?.label ?? '')) { if (!mine) out.push({ kind: 'play', mine, ms: 700, card: e.card, text: `${who(e.player)} power${who(e.player) === 'You' ? '' : 's'} up ${mod.card.get(e.card)?.name ?? 'a card'} with ${(mod.manifest.theme as any)?.labels?.resources ?? 'a resource'}` }); break; }
-        if (!mine) out.push({ kind: 'play', mine, ms: 1100, card: e.card, text: `${who(e.player)} ${label === 'play' || label === 'summon' ? 'play' + (who(e.player) === 'You' ? '' : 's') : label.replace(/^(\w+)/, '$1' + (who(e.player) === 'You' ? '' : 's'))} ${mod.card.get(e.card)?.name ?? 'a card'}` });
+        if (base === 'boost' && /^Give/.test(mod.rules.actions[base]?.label ?? '')) { if (!mine) out.push({ kind: 'play', mine, ms: 700, card: e.card, text: `${who(e.player)} power${who(e.player) === 'You' ? '' : 's'} up ${mod.card.get(e.card)?.name ?? 'a card'}` }); break; }
+        const verb = label === 'play' || label === 'summon' || label === 'cast' ? 'play' : label.split(' ')[0];
+        const rest = label === 'play' || label === 'summon' || label === 'cast' ? '' : label.split(' ').slice(1).join(' ').replace(/\([^)]*\)/g, '').trim();
+        const you = who(e.player) === 'You';
+        const targets = Object.values((e.targets ?? {}) as Record<string, string[]>).flat().filter((t) => typeof t === 'string');
+        const tgt = targets.length ? ` → ${targets.map((t) => name(t)).join(', ')}` : '';
+        play = { kind: 'play', mine, ms: mine ? 900 : 1400, card: e.card, results: [], src: e.source ?? undefined, hitP: new Set(), drew: new Map(),
+          targets, from: e.source ?? undefined, to: targets[0],
+          text: `${who(e.player)} ${verb}${you ? '' : /(s|sh|ch|x)$/.test(verb) ? 'es' : 's'} ${mod.card.get(e.card)?.name ?? 'a card'}${rest ? ` ${rest}` : ''}${tgt}` };
+        out.push(play);
         break;
       }
       case 'attack': {
@@ -102,6 +144,7 @@ export function beatsOf(events: Ev[], mod: Mod, viewer: string, who: (p: string)
         } else if (e.type === 'lifeLost' && battle) battle.dmg.set(e.p, (battle.dmg.get(e.p) ?? 0) + 1);
     }
   }
+  closePlay();
   flush();
   return out;
 }

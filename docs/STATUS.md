@@ -33,6 +33,13 @@
 
   The AI waits for its beats to finish before moving again (Fast AI shortens them). Also new: a phase strip in the HUD, players named "You" and "Opponent", a glow when counters or stats change, and the playtest Workshop button moved bottom-left.
 
+- **Battle screen, part 3 (done): clarity and defined boards.**
+  - Every action, yours and the opponent's, plays as a beat: the card, what it chose (a pulsing ring on each target, an arrow from its source) and a short list of what it did: damage, destroyed, drew N, +N to a stat, returned to hand, discarded, banished, milled, tokens, cards from the deck into play, and life, points or resource changes. Your own beats are shorter and smaller.
+  - Floating labels on cards for buffs and debuffs (from `modified` events, which now carry their stat changes), heals, and damage; floating +N / -N beside player counters.
+  - A "Last turn / This turn" recap beside the opponent's name lists the cards they played and used (hover or long-press to zoom).
+  - Slot boards (Taste Dimension) draw as a fixed mat: the 5-slot monster row nearest the middle, the spell/trap row behind, the shared extra zones in a middle row, piles in a side column. Slot size comes from the screen height, so the whole board and your hand fit an iPad in landscape.
+  - Battlefield games (Generation Wars) draw the battlefields as a central strip: the opponent's units above, yours below, the battlefield card and who controls it in the middle. Each seat keeps one compact row (legend, base, runes).
+  - The compiler describes these shapes in `manifest.theme.mat` and `manifest.theme.lanes`.
 - **Battle screen, part 2 (done):**
   - a log docked beside the table: plain language by default, with a Details switch for every engine event, remembered between games;
   - hover zoom on desktop (a large live card beside the pointer);

@@ -157,6 +157,7 @@ Effects run in effect lists `[[op...], [op...]]`.
 ## Events
 - Every event has `seq` and `type`. Types: `moved`, `changed`, `damage`, `destroyed`, `drawFail`, `shuffled`, `lost`, `phase`, `pass`, `action`, `chose`, `gameOver`, plus custom ones.
 - `masks: [[viewers], [fields]]` removes fields for everyone else. Use `eventsFor(match, p)`.
+- `modified` carries `targets` and, for numeric `add` mods, `mods: [{stat, value}]` (so clients can show "+2 power").
 
 ## Scripts
 - **Functions** are pure expressions: `rules.functions{name: {params: ["$a", ...], body: expr}}`.

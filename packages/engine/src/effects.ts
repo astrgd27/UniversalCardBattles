@@ -353,7 +353,8 @@ export function apply(m: Mod, s: State, eff: Effect, f: Frame) {
       const ts = s.nextId++;
       s.effects.push({ id: `c${ts}`, ts, layer: spec.layer, targets, mods, until: spec.until ?? null });
       const hidden = targets.some((t) => objViewers(m, s.objects[t]) !== null);
-      emit(m, s, { type: 'modified', id: `c${ts}`, targets, ...masks([hidden ? [] : null, ['targets']]) });
+      const shown = mods.filter((md: any) => md.op === 'add' && md.stat && typeof md.value === 'number').map((md: any) => ({ stat: md.stat, value: md.value }));
+      emit(m, s, { type: 'modified', id: `c${ts}`, targets, ...(shown.length ? { mods: shown } : {}), ...masks([hidden ? [] : null, ['targets']]) });
       return;
     }
     case 'link':

@@ -13,6 +13,8 @@ interface Fx {
   pulse: Map<string, Set<string>>; // player -> vars that just changed
   bump: Set<string>; // zone keys whose size just grew
   glow: Set<string>; // objects whose counters or stats just changed
+  float: Map<string, { text: string; kind: 'buff' | 'heal' | 'debuff' }[]>; // object -> floating labels (+2 Power, healed 3)
+  chip: Map<string, number>; // 'p0:life' -> change just made (floats beside the chip)
   banners: string[]; // announcements in order: module events (theme.announce), then a new turn
 }
 interface C {
@@ -20,6 +22,7 @@ interface C {
   sources: Set<string>; targets: Set<string>; picked: Set<string>;
   label: (x: string) => string;
   fx: Fx;
+  beatTargets: Set<string>; // what the beat playing now points at
 }
 
 const BANNER_MS = 1400, BANNER_GAP = 1250;
@@ -39,14 +42,17 @@ function beatView(c: C, b: Beat & { at: number }) {
     face(s.card), h('div', { class: 'clash-nums' }, s.took ? h('span', { class: 'took' }, `-${s.took}`) : null, s.dead ? h('span', { class: 'stamp' }, 'DESTROYED') : null));
   return h('div', { class: cls('beat', `beat-${b.kind}`, b.mine ? 'mine' : 'theirs'), role: 'status', 'aria-live': 'polite', style: `--ms:${b.ms}ms;animation-delay:${(b.at - Date.now()) / 1000}s` },
     h('div', { class: 'beat-cap' }, h('span', { class: 'beat-icon' }, beatIcon(b.kind)), b.text),
-    (b.kind === 'play' || b.kind === 'stack' || b.kind === 'destroy') && b.card && h('div', { class: 'beat-spot' }, face(b.card, b.kind === 'destroy' ? 'gone' : '')),
+    (b.kind === 'play' || b.kind === 'stack' || b.kind === 'destroy') && b.card && h('div', { class: cls('beat-spot', b.kind === 'play' && b.mine && 'small') }, face(b.card, b.kind === 'destroy' ? 'gone' : '')),
+    b.results?.length ? h('ul', { class: 'beat-results' }, b.results.map((r) => h('li', {}, r))) : null,
     b.kind === 'clash' && b.clash && h('div', { class: 'beat-clash' }, side(b.clash.a), h('span', { class: 'vs' }, 'VS'),
       b.clash.b ? side(b.clash.b) : h('div', { class: 'clash-side player' }, h('div', { class: 'clash-avatar' }, '♥'), h('span', { class: 'took' }, `-${b.clash.playerTook ?? 0}`))));
 }
 /** Animations come only from the viewer's redacted event log since the previous render. */
 function effectsSince(ui: UI, v: View): Fx {
   const m = ui.match!;
-  const fx: Fx = { entered: new Set(), hit: new Map(), flipped: new Set(), tapped: new Map(), pulse: new Map(), bump: new Set(), glow: new Set(), banners: [] };
+  const fx: Fx = { entered: new Set(), hit: new Map(), flipped: new Set(), tapped: new Map(), pulse: new Map(), bump: new Set(), glow: new Set(), banners: [], float: new Map(), chip: new Map() };
+  const labels = (m.m.manifest.theme?.labels ?? {}) as Record<string, string>;
+  const addFloat = (id: string, text: string, kind: 'buff' | 'heal' | 'debuff') => { if (!fx.float.has(id)) fx.float.set(id, []); fx.float.get(id)!.push({ text, kind }); };
 
   const tapVar = m.m.manifest.theme?.tapVar;
   const announce = m.m.manifest.theme?.announce ?? {};
@@ -59,9 +65,9 @@ function effectsSince(ui: UI, v: View): Fx {
     else if (e.type === 'damage' && e.target) fx.hit.set(e.target, (fx.hit.get(e.target) ?? 0) + e.amount);
     else if (e.type === 'flipped') fx.flipped.add(e.obj);
     else if (e.type === 'changed' && tapVar && e.name === tapVar && e.ref && !/^p\d+$/.test(e.ref)) fx.tapped.set(e.ref, (e.to ?? 0) > 0);
-    else if (e.type === 'changed' && e.ref && !/^p\d+$/.test(e.ref) && e.name !== 'newT') fx.glow.add(e.ref);
-    else if (e.type === 'modified' && e.targets) for (const t of e.targets) fx.glow.add(t);
-    else if (e.type === 'changed' && /^p\d+$/.test(e.ref)) { if (!fx.pulse.has(e.ref)) fx.pulse.set(e.ref, new Set()); fx.pulse.get(e.ref)!.add(e.name); }
+    else if (e.type === 'changed' && e.ref && !/^p\d+$/.test(e.ref) && e.name !== 'newT') { fx.glow.add(e.ref); if (e.name === 'dmg' && typeof e.from === 'number' && typeof e.to === 'number' && e.to < e.from) addFloat(e.ref, `+${e.from - e.to} healed`, 'heal'); }
+    else if (e.type === 'modified' && e.targets) for (const t of e.targets) { fx.glow.add(t); for (const md of (e as any).mods ?? []) addFloat(t, `${md.value >= 0 ? '+' : ''}${md.value} ${labels[md.stat] ?? md.stat}`, md.value >= 0 ? 'buff' : 'debuff'); }
+    else if (e.type === 'changed' && /^p\d+$/.test(e.ref)) { if (!fx.pulse.has(e.ref)) fx.pulse.set(e.ref, new Set()); fx.pulse.get(e.ref)!.add(e.name); if (typeof e.to === 'number' && typeof e.from === 'number') fx.chip.set(`${e.ref}:${e.name}`, (fx.chip.get(`${e.ref}:${e.name}`) ?? 0) + e.to - e.from); }
     else if (announce[e.type] && from > 0) fx.banners.push(announce[e.type].replace(/\{(\w+)\}/g, (_: string, k: string) => (typeof e[k] === 'string' ? (/^p\d+$/.test(e[k]) ? who(e[k]) : m.m.card.get(e[k])?.name ?? e[k]) : String(e[k] ?? ''))));
     else if (e.type === 'phase' && e.phase === first && from > 0) fx.banners.push(who(e.active) === 'You' ? 'Your turn' : `${who(e.active)}'s turn`);
   }
@@ -111,16 +117,19 @@ export function table(ui: UI, A: any) {
     picked: new Set(step ? ui.sel!.picks[step.key] ?? [] : []),
     label: (x) => (/^p\d+$/.test(x) ? whoOf(ui)(x) : /^[ok]\d+$/.test(x) && !names.has(x) ? 'a card' : names.get(x) ?? (/^[a-z][a-z-]*$/.test(x) ? title(x) : x)),
     fx: effectsSince(ui, v),
+    beatTargets: new Set(currentBeat(ui)?.targets ?? []),
   };
   const onGrid = new Set(mod.rules.grid?.zones ?? []);
   const shared = mod.rules.zones.filter((z) => z.shared && !onGrid.has(z.id) && !z.offTable);
   // while choosing targets, arrows run from the card being used to each pick
   const selSrc = ui.sel?.tpl?.source;
   requestAnimationFrame(() => drawSelArrows(selSrc ?? undefined, step ? ui.sel!.picks[step.key] ?? [] : []));
-  return h('div', { class: cls('screen table', ui.logDock && 'with-log'), style: themeStyle(mod) },
+  return h('div', { class: cls('screen table', ui.logDock && 'with-log', matOf(mod) && 'has-mat', lanesOf(mod) && 'has-lanes'), style: themeStyle(mod) },
     hud(c, mine),
     h('div', { class: 'felt' },
       h('div', { class: 'opponents' }, v.players.filter((p) => p.id !== ui.viewer).map((p) => seat(c, p.id, false))),
+      matOf(mod)?.center && matCenter(c, matOf(mod)!.center!),
+      lanesOf(mod) && laneStrip(c, lanesOf(mod)!),
       mod.rules.grid && gridBoard(c),
       (shared.length > 0 || v.stack.length > 0) && h('div', { class: 'center' },
         shared.map((z) => zoneBlock(c, `shared:${z.id}`, z)),
@@ -168,6 +177,8 @@ function obj(c: C, o: ObjView, size: 'sm' | 'md') {
     ? cardFace(c.mod, o.card, { size, state, onclick, obj: o.id, stats: o.stats, vars: o.vars, baseVars: c.mod.rules.objectVars, keywords: o.blank ? [] : o.keywords, faceDown: o.faceDown, note: noteOf(c.mod, o) })
     : cardBack(c.mod, { size, state, onclick });
   if (hit) el.append(h('span', { class: 'dmg-float', 'aria-hidden': 'true' }, `-${hit}`));
+  (c.fx.float.get(o.id) ?? []).forEach((f, i) => el.append(h('span', { class: cls('stat-float', f.kind), style: `--i:${i + (hit ? 1 : 0)}`, 'aria-hidden': 'true' }, f.text)));
+  if (c.beatTargets.has(o.id)) el.classList.add('beat-target');
   return el;
 }
 
@@ -208,6 +219,66 @@ function gridBoard(c: C) {
   return h('div', { class: 'gridboard', style: `--cols:${g.cols}`, 'aria-label': `${g.cols} by ${g.rows} board` }, cells);
 }
 
+interface Mat { rows: string[]; center: string | null }
+interface Lane { name: string; units: string; site?: string; hidden?: string; ctrl: string }
+const matOf = (mod: Mod) => (mod.manifest.theme as any)?.mat as Mat | undefined;
+const lanesOf = (mod: Mod) => (mod.manifest.theme as any)?.lanes as Lane[] | undefined;
+const TEMP_ZONES = new Set(['limbo', 'look']);
+
+/** One slot of a fixed board: the card in it, or its name (and a target while choosing). */
+function slotEl(c: C, sp: { id: string }, here: ObjView[], mine: boolean, size: 'sm' | 'md' = 'sm') {
+  const t = mine && c.targets.has(sp.id);
+  return h('div', {
+    class: cls('slot', t && 'target', mine && c.picked.has(sp.id) && 'picked', here.length > 0 && 'full'), 'data-slot': sp.id,
+    role: t ? 'button' : null, tabindex: t ? 0 : null, 'aria-label': `${title(sp.id)} slot${t ? ', can be chosen' : ''}`, onclick: t ? () => c.A.choose(sp.id) : null,
+  }, here.length ? here.map((o) => obj(c, o, size)) : h('span', { class: 'slot-l' }, title(sp.id)));
+}
+/** A slot-board mat (monster row nearest the middle, then spells/traps): fixed card-sized slots, piles at the side. */
+function matField(c: C, p: string, me: boolean, rowsZ: ZoneDef[], sidePiles: ZoneDef[], tempZ: ZoneDef[]) {
+  const mirror = !me;
+  const order = me ? rowsZ : [...rowsZ].reverse();
+  return h('div', { class: 'mat-wrap' },
+    h('div', { class: 'mat', style: `--rows:${order.length}` },
+      order.map((z) => {
+        const cards = c.v.zones[`${p}:${z.id}`]?.cards ?? [];
+        const slots = mirror ? [...(z.slots ?? [])].reverse() : z.slots ?? [];
+        return h('div', { class: 'mat-row', 'data-zone': z.id }, h('span', { class: 'mat-l' }, c.mod.manifest.theme?.labels?.[z.id] ?? title(z.id)),
+          slots.map((sp) => slotEl(c, sp, cards.filter((o) => o.slot === sp.id), me)));
+      }),
+      h('div', { class: 'mat-side' }, sidePiles.map((z) => pile(c, `${p}:${z.id}`, z)))),
+    tempZ.map((z) => zoneBlock(c, `${p}:${z.id}`, z)));
+}
+/** The shared middle row of a slot board (extra zones): your left zone is the opponent's right one. */
+function matCenter(c: C, zid: string) {
+  const me = c.ui.viewer, opp = c.v.players.find((x) => x.id !== me)?.id ?? me;
+  const mineZ = c.v.zones[`${me}:${zid}`]?.cards ?? [], theirZ = c.v.zones[`${opp}:${zid}`]?.cards ?? [];
+  const cell = (mySlot: string, theirSlot: string) => slotEl(c, { id: mySlot }, [...mineZ.filter((o) => o.slot === mySlot), ...theirZ.filter((o) => o.slot === theirSlot)], true);
+  return h('div', { class: 'mat-wrap' }, h('div', { class: 'mat mat-center', style: '--rows:1' },
+    h('div', { class: 'mat-row' }, h('span', { class: 'mat-l' }, c.mod.manifest.theme?.labels?.[zid] ?? 'Extra'),
+      h('div', { class: 'slot gap' }), cell('L', 'R'), h('div', { class: 'slot gap' }), cell('R', 'L'), h('div', { class: 'slot gap' })),
+    h('div', { class: 'mat-side' })));
+}
+/** Shared battlefields between the players: the opponent's units above, yours below, the battlefield card and its controller between. */
+function laneStrip(c: C, lanes: Lane[]) {
+  const me = c.ui.viewer, opp = c.v.players.find((x) => x.id !== me)?.id ?? me;
+  const units = (p: string, l: Lane) => {
+    const hid = l.hidden ? c.v.zones[`${p}:${l.hidden}`] : undefined;
+    return [...(c.v.zones[`${p}:${l.units}`]?.cards ?? []).map((o) => withAtts(c, o)),
+      ...(hid?.cards ? hid.cards.map((o) => obj(c, o, 'sm')) : Array.from({ length: hid?.count ?? 0 }, () => cardBack(c.mod, { size: 'sm' })))];
+  };
+  return h('div', { class: 'lanes', style: `--n:${lanes.length}`, 'aria-label': 'Battlefields' }, lanes.map((l) => {
+    const site = l.site ? [...(c.v.zones[`${me}:${l.site}`]?.cards ?? []), ...(c.v.zones[`${opp}:${l.site}`]?.cards ?? [])][0] : undefined;
+    const ctrl = c.v.vars[l.ctrl] ?? 0;
+    const owner = ctrl ? c.v.players[ctrl - 1]?.id : null;
+    const them = units(opp, l), mine = units(me, l);
+    return h('div', { class: cls('lane', owner === me && 'mine', owner === opp && 'theirs'), 'data-lane': l.name },
+      h('div', { class: cls('lane-units', 'opp', them.length > 4 && 'crowd') }, them.length ? them : h('span', { class: 'lane-empty' }, 'No enemy units')),
+      h('div', { class: 'lane-mid' }, site ? obj(c, site, 'sm') : null,
+        h('div', { class: 'lane-info' }, h('strong', {}, l.name), h('span', { class: cls('chip', owner === me && 'good', owner === opp && 'bad') }, owner === me ? '⚑ You control it' : owner === opp ? '⚑ Opponent controls it' : 'Uncontrolled'))),
+      h('div', { class: cls('lane-units', 'me', mine.length > 4 && 'crowd') }, mine.length ? mine : h('span', { class: 'lane-empty' }, 'No units of yours')));
+  }));
+}
+
 function layout(mod: Mod) {
   const zones = mod.rules.zones.filter((z) => !z.shared && !z.offTable);
   const hand = zones.find((z) => z.id === mod.rules.handZone);
@@ -222,17 +293,50 @@ function seat(c: C, p: string, me: boolean) {
   const L = layout(mod);
   const bar = h('div', { class: 'seat-bar' },
     h('button', {
-      class: cls('avatar', targets.has(p) && 'target', picked.has(p) && 'picked', c.fx.hit.has(p) && 'fx-hit'), style: `--h:${(+p.slice(1) * 97 + 200) % 360}`,
+      class: cls('avatar', targets.has(p) && 'target', picked.has(p) && 'picked', c.fx.hit.has(p) && 'fx-hit', c.beatTargets.has(p) && 'beat-target'), style: `--h:${(+p.slice(1) * 97 + 200) % 360}`,
       'aria-label': `${whoOf(c.ui)(p)}${targets.has(p) ? ', can be chosen' : ''}`, 'data-player': p, onclick: () => (c.ui.sel ? A.pick(p) : A.view(p)),
     }, String(+p.slice(1) + 1), c.fx.hit.has(p) && h('span', { class: 'dmg-float', 'aria-hidden': 'true' }, `-${c.fx.hit.get(p)}`)),
     h('span', { class: 'seat-name' }, whoOf(c.ui)(p) === 'You' ? 'You' : whoOf(c.ui)(p), v.active === p ? h('span', { class: 'turn-dot', title: 'Active player' }, ' ●') : null, pl.lost ? ' — out' : ''),
-    h('span', { class: 'vars' }, Object.entries(pl.vars).filter(([k]) => !mod.manifest.theme?.hideVars?.includes(k)).map(([k, n]) => h('span', { class: cls('chip', c.fx.pulse.get(p)?.has(k) && 'fx-pulse') }, h('b', {}, String(n)), ` ${mod.manifest.theme?.labels?.[k] ?? k}`))),
-    h('span', { class: 'piles' }, L.piles.map((z) => pile(c, `${p}:${z.id}`, z))));
+    h('span', { class: 'vars' }, Object.entries(pl.vars).filter(([k]) => !mod.manifest.theme?.hideVars?.includes(k)).map(([k, n]) => h('span', { class: cls('chip', c.fx.pulse.get(p)?.has(k) && 'fx-pulse') }, h('b', {}, String(n)), ` ${mod.manifest.theme?.labels?.[k] ?? k}`, (() => { const d = c.fx.chip.get(`${p}:${k}`); return d ? h('span', { class: cls('chip-float', d < 0 && 'neg'), 'aria-hidden': 'true' }, `${d > 0 ? '+' : ''}${d}`) : null; })()))),
+    !me && recap(c, p),
+    !matOf(mod) && h('span', { class: 'piles' }, L.piles.map((z) => pile(c, `${p}:${z.id}`, z))));
   const mirror = !me && !!(mod.manifest.theme as any)?.mirror; // grid boards: the opponent's side is drawn as seen across the table
-  const field = h('div', { class: 'field' }, (mirror ? [...L.field].reverse() : L.field).map((z) => zoneBlock(c, `${p}:${z.id}`, z)));
+  const mat = matOf(mod), lanes = lanesOf(mod);
+  const laneZ = new Set((lanes ?? []).flatMap((l) => [l.units, l.site, l.hidden].filter(Boolean) as string[]));
+  const fieldZ = L.field.filter((z) => !laneZ.has(z.id));
+  let field: HTMLElement;
+  if (mat) {
+    const rowsZ = mat.rows.map((id) => fieldZ.find((z) => z.id === id)).filter(Boolean) as ZoneDef[];
+    const others = fieldZ.filter((z) => !mat.rows.includes(z.id) && z.id !== mat.center && !TEMP_ZONES.has(z.id));
+    field = matField(c, p, me, rowsZ, [...L.piles, ...others], fieldZ.filter((z) => TEMP_ZONES.has(z.id)));
+  } else field = h('div', { class: 'field' }, (mirror ? [...fieldZ].reverse() : fieldZ).map((z) => zoneBlock(c, `${p}:${z.id}`, z)));
   const hand = L.hand ? handRow(c, `${p}:${L.hand.id}`, me) : null;
   return h('section', { class: cls('seat-area', me ? 'me' : 'opp', pl.lost && 'lost', v.active === p && 'active') },
     me ? [field, hand, bar] : [bar, hand, field]);
+}
+
+/** What a player did on their latest turn (cards played and abilities used), newest last. */
+function recap(c: C, p: string) {
+  const m = c.ui.match!;
+  const evs = eventsFor(m, c.ui.viewer, Math.max(0, m.s.events.length - 600)) as Record<string, any>[];
+  const first = m.m.rules.phases[0].id;
+  let start = -1;
+  for (let i = evs.length - 1; i >= 0; i--) if (evs[i].type === 'phase' && evs[i].phase === first && evs[i].active === p) { start = i; break; }
+  if (start < 0) return null;
+  const items: { card: string; verb: string }[] = [];
+  for (const e of evs.slice(start)) {
+    if (e.type === 'phase' && e.phase === first && e.active !== p) break;
+    if (e.type === 'action' && e.player === p && e.card && e.action !== 'pass') {
+      const base = String(e.action).split('#')[0];
+      const label = (m.m.rules.actions[base]?.label ?? base).toLowerCase();
+      items.push({ card: e.card, verb: /attack/.test(label) ? '⚔' : /quest/.test(label) ? '◆' : /move|march/.test(label) ? '➜' : /use|activate|act/.test(label) ? '↻' : '✦' });
+    }
+  }
+  if (!items.length) return null;
+  const turnNow = c.v.active === p;
+  return h('span', { class: 'recap', 'aria-label': `${turnNow ? 'This turn' : 'Last turn'}: ${items.map((x) => c.mod.card.get(x.card)?.name ?? x.card).join(', ')}` },
+    h('span', { class: 'recap-l' }, turnNow ? 'This turn' : 'Last turn'),
+    items.slice(-8).map((x) => h('span', { class: 'chip recap-i', 'data-card': x.card, title: c.mod.card.get(x.card)?.name ?? x.card }, `${x.verb} ${c.mod.card.get(x.card)?.name ?? x.card}`)));
 }
 
 function pile(c: C, key: string, z: ZoneDef) {
