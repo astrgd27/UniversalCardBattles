@@ -11,7 +11,8 @@ export interface Beat {
   from?: string; to?: string; // object or player ids for the arrow
   clash?: { a?: { card: string; dealt: number; took: number; dead: boolean }; b?: { card: string; dealt: number; took: number; dead: boolean }; player?: string; playerTook?: number };
   results?: string[]; // what a played card or ability did (damage, destroyed, drew, +stats...)
-  targets?: string[]; // objects or players it chose, highlighted while the beat plays
+  targets?: string[]; // objects or players it chose or affected, highlighted (and hit by a bolt) while the beat plays
+  dying?: string[]; // objects destroyed in this beat (they burn away on the table)
   mine: boolean; // caused by the viewer
   ms: number;
   at?: number;
@@ -32,7 +33,7 @@ export function beatsOf(events: Ev[], mod: Mod, viewer: string, who: (p: string)
     if (battle.multi) {
       const lost = [...dmg].filter(([k]) => /^p\d+$/.test(k)).map(([k, n]) => `${who(k)} take${who(k) === 'You' ? '' : 's'} ${n}`);
       const outcome = [...dead].map((d) => `${mod.card.get(cardOf(d) ?? deadCards.get(d) ?? '')?.name ?? 'A card'} is destroyed`);
-      if (lost.length || outcome.length) out.push({ kind: 'clash', mine: battle.mine, ms: 1300, text: [...lost, ...outcome].join(', ') || 'Combat is over' });
+      if (lost.length || outcome.length) out.push({ kind: 'clash', mine: battle.mine, ms: 1700, dying: [...dead], text: [...lost, ...outcome].join(', ') || 'Combat is over' });
       battle = null;
       return;
     }
@@ -42,13 +43,14 @@ export function beatsOf(events: Ev[], mod: Mod, viewer: string, who: (p: string)
       const sa = side(a, t), sb = side(t, a);
       const outcome = [...dead].map((d) => `${mod.card.get(cardOf(d) ?? deadCards.get(d) ?? '')?.name ?? 'A card'} is destroyed`).join(', ');
       const playerHit = t && /^p\d+$/.test(t) ? dmg.get(t) : undefined;
-      out.push({ kind: 'clash', mine: battle.mine, ms: 1300, clash: { a: sa, b: sb, ...(playerHit ? { player: t, playerTook: playerHit } : {}) },
+      out.push({ kind: 'clash', mine: battle.mine, ms: 1700, dying: [...dead], clash: { a: sa, b: sb, ...(playerHit ? { player: t, playerTook: playerHit } : {}) },
         text: outcome || (playerHit ? `${who(t!)} take${who(t!) === 'You' ? '' : 's'} ${playerHit} damage` : 'The battle is over') });
     }
     battle = null;
   };
   // the latest play collects what it did until the next action, phase or battle
-  let play: (Beat & { results: string[]; src?: string; hitP: Set<string>; drew: Map<string, number> }) | null = null;
+  let play: (Beat & { results: string[]; src?: string; hitP: Set<string>; drew: Map<string, number>; targets: string[]; dying: string[] }) | null = null;
+  const touch = (id?: string) => { if (play && id && id !== play.src && !play.targets.includes(id)) { play.targets.push(id); play.to ??= id; } };
   const labels = ((mod.manifest.theme as any)?.labels ?? {}) as Record<string, string>;
   const hidden = new Set<string>(((mod.manifest.theme as any)?.hideVars ?? []) as string[]);
   const statName = (k: string) => labels[k] ?? k;
@@ -63,11 +65,11 @@ export function beatsOf(events: Ev[], mod: Mod, viewer: string, who: (p: string)
   for (const e of events) {
     const mine = (e.player ?? e.p) === viewer;
     if (play && !battle) {
-      if (e.type === 'damage') { result(/^p\d+$/.test(e.target) ? `${who(e.target)} take${who(e.target) === 'You' ? '' : 's'} ${e.amount} damage` : `${name(e.target)} takes ${e.amount} damage`); if (/^p\d+$/.test(e.target)) play.hitP.add(e.target); continue; }
-      if (e.type === 'destroyed') { result(`${mod.card.get(e.card)?.name ?? 'A card'} is destroyed`); continue; }
-      if (e.type === 'modified' && e.mods && e.targets) { for (const t of e.targets) for (const md of e.mods) result(`${name(t)} ${md.value >= 0 ? '+' : ''}${md.value} ${statName(md.stat)}`); continue; }
+      if (e.type === 'damage') { touch(e.target); result(/^p\d+$/.test(e.target) ? `${who(e.target)} take${who(e.target) === 'You' ? '' : 's'} ${e.amount} damage` : `${name(e.target)} takes ${e.amount} damage`); if (/^p\d+$/.test(e.target)) play.hitP.add(e.target); continue; }
+      if (e.type === 'destroyed') { touch(e.obj); if (e.obj) play.dying.push(e.obj); result(`${mod.card.get(e.card)?.name ?? 'A card'} is destroyed`); continue; }
+      if (e.type === 'modified' && e.mods && e.targets) { for (const t of e.targets) touch(t); for (const t of e.targets) for (const md of e.mods) result(`${name(t)} ${md.value >= 0 ? '+' : ''}${md.value} ${statName(md.stat)}`); continue; }
       if (e.type === 'moved' && e.to === 'hand' && e.from === 'deck' && e.toPlayer) { play.drew.set(e.toPlayer, (play.drew.get(e.toPlayer) ?? 0) + 1); continue; }
-      if (e.type === 'moved' && e.to === 'hand' && boardZone(e.from)) { result(`${mod.card.get(e.card)?.name ?? 'A card'} returns to hand`); continue; }
+      if (e.type === 'moved' && e.to === 'hand' && boardZone(e.from)) { touch(e.obj); result(`${mod.card.get(e.card)?.name ?? 'A card'} returns to hand`); continue; }
       if (e.type === 'moved' && e.to === 'grave' && e.from === 'hand' && e.obj !== play.src) { result(`${who(e.fromPlayer)} discard${who(e.fromPlayer) === 'You' ? '' : 's'} ${mod.card.get(e.card)?.name ?? 'a card'}`); continue; }
       if (e.type === 'created' && e.card) { result(`${mod.card.get(e.card)?.name ?? 'A token'} appears`); continue; }
       if (e.type === 'moved' && e.from === 'deck' && e.to !== 'hand' && e.to !== 'grave' && e.obj !== play.src) { result(`${e.card ? mod.card.get(e.card)?.name ?? 'A card' : 'A card'} goes from the deck to ${labels[e.to] ?? e.to}`); continue; }
@@ -78,7 +80,7 @@ export function beatsOf(events: Ev[], mod: Mod, viewer: string, who: (p: string)
         if (d && !(e.name === 'life' && play.hitP.has(e.ref)) && !(String(e.name).startsWith('mana:') && d < 0)) result(`${who(e.ref)}: ${d > 0 ? '+' : ''}${d} ${statName(e.name)}`);
         continue;
       }
-      if (e.type === 'changed' && e.name === 'ex' && e.to === 1 && e.ref !== play.src && !/^p\d+$/.test(e.ref)) { result(`${name(e.ref)} is exhausted`); continue; }
+      if (e.type === 'changed' && e.name === 'ex' && e.to === 1 && e.ref !== play.src && !/^p\d+$/.test(e.ref)) { touch(e.ref); result(`${name(e.ref)} is exhausted`); continue; }
     }
     if (['action', 'phase', 'attack', 'windowOpened', 'turnEnd'].includes(e.type)) closePlay();
     switch (e.type) {
@@ -93,18 +95,18 @@ export function beatsOf(events: Ev[], mod: Mod, viewer: string, who: (p: string)
         const you = who(e.player) === 'You';
         const targets = Object.values((e.targets ?? {}) as Record<string, string[]>).flat().filter((t) => typeof t === 'string');
         const tgt = targets.length ? ` → ${targets.map((t) => name(t)).join(', ')}` : '';
-        play = { kind: 'play', mine, ms: mine ? 900 : 1400, card: e.card, results: [], src: e.source ?? undefined, hitP: new Set(), drew: new Map(),
+        play = { kind: 'play', mine, ms: mine ? 1100 : 1700, card: e.card, results: [], src: e.source ?? undefined, hitP: new Set(), drew: new Map(), dying: [],
           targets, from: e.source ?? undefined, to: targets[0],
           text: `${who(e.player)} ${verb}${you ? '' : /(s|sh|ch|x)$/.test(verb) ? 'es' : 's'} ${mod.card.get(e.card)?.name ?? 'a card'}${rest ? ` ${rest}` : ''}${tgt}` };
         out.push(play);
         break;
       }
       case 'attack': {
-        if (battle && !battle.dmg.size && !battle.dead.size && battle.mine === mine) { battle.multi = true; out.push({ kind: 'attack', mine, ms: mine ? 500 : 800, from: e.o ?? e.attacker, to: e.t ?? e.target, card: e.o ? cardOf(e.o) : undefined, text: `${name(e.o ?? e.attacker)} attacks ${name(e.t ?? e.target)}` }); break; }
+        if (battle && !battle.dmg.size && !battle.dead.size && battle.mine === mine) { battle.multi = true; out.push({ kind: 'attack', mine, ms: 1000, from: e.o ?? e.attacker, to: e.t ?? e.target, card: e.o ? cardOf(e.o) : undefined, text: `${name(e.o ?? e.attacker)} attacks ${name(e.t ?? e.target)}` }); break; }
         flush();
         const a = e.o ?? e.attacker, t = e.t ?? e.target;
         battle = { a, t, mine, dmg: new Map(), dead: new Set(), deadCards: new Map() };
-        out.push({ kind: 'attack', mine, ms: mine ? 700 : 1000, from: a, to: t, card: a ? cardOf(a) : undefined, text: `${name(a)} attacks ${name(t)}` });
+        out.push({ kind: 'attack', mine, ms: 1200, from: a, to: t, targets: t ? [t] : [], card: a ? cardOf(a) : undefined, text: `${name(a)} attacks ${name(t)}` });
         break;
       }
       case 'blocked': if (e.o) { out.push({ kind: 'block', mine: !(battle?.mine ?? false), ms: 800, from: e.o, to: e.a ?? battle?.a, text: `${name(e.o)} blocks ${e.a ? name(e.a) : 'the attack'}!` }); if (battle && !e.a) battle.t = e.o; } break;
@@ -115,7 +117,7 @@ export function beatsOf(events: Ev[], mod: Mod, viewer: string, who: (p: string)
         break;
       case 'destroyed':
         if (battle) { battle.dead.add(e.obj); if (e.card) battle.deadCards.set(e.obj, e.card); }
-        else out.push({ kind: 'destroy', mine: e.controller !== viewer, ms: 800, card: e.card, text: `${mod.card.get(e.card)?.name ?? 'A card'} is destroyed` });
+        else out.push({ kind: 'destroy', mine: e.controller !== viewer, ms: 1100, dying: e.obj ? [e.obj] : [], card: e.card, text: `${mod.card.get(e.card)?.name ?? 'A card'} is destroyed` });
         break;
       case 'windowClosed': flush(); break;
       case 'stacked': if (e.ctrl && e.ctrl !== viewer && e.card) out.push({ kind: 'stack', mine: false, ms: 900, card: e.card, text: `${who(e.ctrl)} casts ${mod.card.get(e.card)?.name ?? 'something'}: you may respond` }); break;

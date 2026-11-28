@@ -906,3 +906,19 @@ svg.sel-arrows { color: var(--accent2); }
   border: 1px solid rgba(253,230,138,.6); animation: used-in .3s ease-out both; pointer-events: none; }
 @keyframes used-in { from { transform: scale(1.8); opacity: 0; } }
 .def-badge { position: absolute; bottom: 30%; left: 50%; transform: translateX(-50%); z-index: 2; font-size: 10px; font-weight: 900; padding: 1px 6px; border-radius: 6px; background: #1d4ed8; color: #fff; pointer-events: none; }
+
+/* ---- combat animation layer (ui/anim.ts) */
+#fx-layer { position: fixed; inset: 0; pointer-events: none; z-index: 6; }
+.fx-copy { position: fixed; pointer-events: none; }
+.fx-attacker { z-index: 2; filter: drop-shadow(0 16px 24px rgba(0,0,0,.65)) drop-shadow(0 0 14px color-mix(in srgb, var(--target, #f59e0b) 80%, transparent)); }
+.fx-burst { position: fixed; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; pointer-events: none; animation: fx-burst .7s ease-out forwards; }
+.fx-burst.hit { background: radial-gradient(circle, #fff 0 20%, #fbbf24 35%, rgba(239,68,68,.75) 60%, transparent 72%); }
+.fx-burst.bolt { background: radial-gradient(circle, #fff 0 18%, #a5f3fc 35%, rgba(124,58,237,.75) 60%, transparent 72%); }
+.fx-burst.boom { background: radial-gradient(circle, #fff 0 15%, #fb923c 32%, rgba(220,38,38,.8) 58%, transparent 72%); animation-duration: .9s; }
+@keyframes fx-burst { 0% { transform: scale(.3); opacity: 1; } 60% { opacity: .9; } 100% { transform: scale(7); opacity: 0; } }
+.fx-bolt { position: fixed; width: 22px; height: 22px; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, #fff 0 25%, #67e8f9 45%, rgba(124,58,237,.6) 70%, transparent 75%);
+  box-shadow: 0 0 18px #67e8f9, 0 0 36px rgba(124,58,237,.8); }
+.fx-spark { position: fixed; width: 8px; height: 8px; border-radius: 50%; background: radial-gradient(circle, #fff, #fb923c 60%, transparent 70%); pointer-events: none; }
+.fx-dying { z-index: 1; }
+.fx-dying::after { content: ''; position: absolute; inset: 0; border-radius: 10px; background:
+  linear-gradient(115deg, transparent 46%, rgba(0,0,0,.85) 47%, transparent 49%), linear-gradient(35deg, transparent 58%, rgba(0,0,0,.8) 59%, transparent 61%), linear-gradient(160deg, transparent 30%, rgba(0,0,0,.75) 31%, transparent 33%); }

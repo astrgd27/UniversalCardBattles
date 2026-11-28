@@ -4,6 +4,7 @@ import { eventsFor, listActions, observe } from '#engine';
 import { actor, current, pendingDialogue, playable, tutCoach, tutorial, type UI } from '../main.ts';
 import { cardBack, cardFace, cls, emblem, h, noteEl, pname, segmented, select, themeStyle, title } from './kit.ts';
 import { type Beat, beatIcon, beatsOf, drawArrows } from './director.ts';
+import { animateTable } from './anim.ts';
 
 interface Fx {
   entered: Set<string>; // objects that just arrived in a visible zone
@@ -87,7 +88,7 @@ function effectsSince(ui: UI, v: View): Fx {
   if (from > 0) {
     const cardOf = new Map<string, string>();
     for (const z of Object.values(v.zones)) for (const o of z.cards ?? []) if (o.card) cardOf.set(o.id, o.card);
-    const speed = ui.fast ? 0.35 : 1;
+    const speed = ui.fast ? 0.4 : 1.3; // the default pace is unhurried so every move can be followed
     const beats = (ui.beats ?? []).filter((b) => now < b.at + b.ms);
     let t = Math.max(now, ...beats.map((b) => b.at + b.ms));
     for (const b of beatsOf(evs as any[], m.m, ui.viewer, who, (id) => cardOf.get(id))) {
@@ -137,7 +138,7 @@ export function table(ui: UI, A: any) {
       seat(c, ui.viewer, true)]),
     ui.logDock && h('aside', { class: 'logdock', 'aria-label': 'Game log' }, h('div', { class: 'logdock-head' }, h('strong', {}, 'Log'), h('button', { class: 'x', onclick: A.toggleLog, 'aria-label': 'Hide log' }, '×')), log(c).slice(1)),
     dock(c, mine, tpls, step),
-    (() => { const b = currentBeat(ui); requestAnimationFrame(() => drawArrows(document.body, b)); return b && beatView(c, b); })(),
+    (() => { const b = currentBeat(ui); requestAnimationFrame(() => { drawArrows(document.body, b); animateTable(ui.beats ?? []); }); return b && beatView(c, b); })(),
     (c.ui.banners ?? []).map((b) => h('div', { class: 'turn-banner', style: `animation-delay:${(b.at - Date.now()) / 1000}s`, 'aria-hidden': 'true' }, b.text)),
     ui.drawer && drawer(c),
     ui.paused && pause(c),

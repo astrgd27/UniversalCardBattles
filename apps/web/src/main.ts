@@ -188,7 +188,7 @@ function advance() {
   if (!p || pendingDialogue()) return redraw();
   if (seatOf(p) !== 'human') {
     redraw();
-    timer = setTimeout(aiStep, ui.fast ? Math.min(beatsDone(), 400) : Math.max(500, beatsDone() + 250));
+    timer = setTimeout(aiStep, ui.fast ? Math.min(beatsDone(), 400) : Math.max(900, beatsDone() + 600));
     return;
   }
   if (p !== ui.viewer) {

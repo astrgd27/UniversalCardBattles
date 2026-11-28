@@ -33,6 +33,11 @@
 
   The AI waits for its beats to finish before moving again (Fast AI shortens them). Also new: a phase strip in the HUD, players named "You" and "Opponent", a glow when counters or stats change, and the playtest Workshop button moved bottom-left.
 
+- **Battle screen, part 4 (done): combat animations** (`apps/web/src/ui/anim.ts`, a layer above the table timed to the director's beats):
+  - an attacker leaves its spot, flies at its target (which gets a pulsing ring), hits it with an impact burst and shake, and flies back;
+  - a played card or used ability fires a bolt at every card or player it damaged, changed, moved, exhausted or destroyed (including targets picked while it resolved);
+  - a destroyed card stays where it stood until its beat, then cracks, flashes red and burns away with sparks;
+  - the default pace is slower (beats ×1.3, at least 0.9 s between AI moves); "Fast AI" in the match setup speeds it up. Reduced-motion users get the bursts without the movement.
 - **Battle screen, part 3 (done): clarity and defined boards.**
   - Every action, yours and the opponent's, plays as a beat: the card, what it chose (a pulsing ring on each target, an arrow from its source) and a short list of what it did: damage, destroyed, drew N, +N to a stat, returned to hand, discarded, banished, milled, tokens, cards from the deck into play, and life, points or resource changes. Your own beats are shorter and smaller.
   - Floating labels on cards for buffs and debuffs (from `modified` events, which now carry their stat changes), heals, and damage; floating +N / -N beside player counters.
