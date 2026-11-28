@@ -8,7 +8,7 @@ type Beatish = { kind: string; at: number; ms: number; from?: string; to?: strin
 const last = new Map<string, { rect: DOMRect; html: string }>(); // board objects as last drawn
 const started = new Set<string>();
 const ghosts = new Map<string, HTMLElement>(); // destroyed object id -> its stand-in
-const reduced = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reduced = () => document.documentElement.dataset.anim === 'reduced' || (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches);
 
 function layer(): HTMLElement {
   let l = document.getElementById('fx-layer');
@@ -118,7 +118,7 @@ function destroy(id: string) {
 /** Called after every table render: starts animations for beats that just began, keeps destroyed cards on screen until their beat,
  *  and remembers where every board card is for the next render. */
 export function animateTable(beats: Beatish[]) {
-  if (typeof document === 'undefined') return;
+  if (typeof document === 'undefined' || document.documentElement.dataset.anim === 'off') return;
   const now = Date.now();
   // destroyed cards: a stand-in at their last position until their beat
   for (const b of beats) for (const id of b.dying ?? []) {

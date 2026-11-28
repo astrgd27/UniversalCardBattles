@@ -1,5 +1,6 @@
 // Menu screens: library (all games), game home, match setup, deckbuilder, card gallery.
 import type { Deck, Mod } from '#engine';
+import { battleSettings } from './table.ts';
 import { deckErrors } from '#engine';
 import { MODULES, SOURCES } from '../modules.ts';
 import { allDecks, campaign, customDecks, hasSave, sections, slots, storageInfo, sync, type UI } from '../main.ts';
@@ -142,5 +143,6 @@ export function setup(ui: UI, A: any) {
       segmented(s, [['human', 'Human'], ['heuristic', 'AI'], ['random', 'Random']], (v) => A.setSeat(i, v), `Player ${i + 1} seat`),
       select(ui.decks[i], names.map((d) => [d, d in custom ? `★ ${d}` : title(d)]), (v) => A.setDeck(i, v), `Player ${i + 1} deck`, 'deck-select')))),
     h('label', { class: 'toggle' }, h('input', { type: 'checkbox', checked: ui.fast, onchange: (e: Event) => A.setFast((e.target as HTMLInputElement).checked) }), ' Fast AI'),
+    battleSettings(A),
     h('button', { class: 'cta', onclick: A.newGame }, 'Start match'));
 }

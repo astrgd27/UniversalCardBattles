@@ -33,6 +33,15 @@
 
   The AI waits for its beats to finish before moving again (Fast AI shortens them). Also new: a phase strip in the HUD, players named "You" and "Opponent", a glow when counters or stats change, and the playtest Workshop button moved bottom-left.
 
+- **Battle screen, part 5 (done): quality pass against modern digital clients** (Arena, Hearthstone, Master Duel, Snap):
+  - Names: the table remembers every card the viewer has seen this match, so beats and the log name cards that have since moved (no more "→ a card").
+  - Battle settings (pause menu and match setup, saved per device): speed (slow, normal, fast), animations (full, reduced, off), and toggles for the three features below.
+  - Auto-pass (on by default): when passing is the only thing you can do (a response window, the opponent's turn), it passes for you; your own main phases always wait.
+  - Combat preview (on by default): while choosing an attack target, each target shows the predicted damage, with ✖ when a card would be destroyed and ↩ for damage back to the attacker. Games that compare power show win, lose or tie.
+  - Confirm ending the turn with attacks left (off by default).
+  - 💤 on units that just arrived and can't attack yet (games with summoning sickness; Haste/Rush excepted).
+  - The stack is drawn as small cards with their targets.
+  - The end-turn button glows green when you have nothing left to do and shows "(N left)" when you still have moves.
 - **Battle screen, part 4 (done): combat animations** (`apps/web/src/ui/anim.ts`, a layer above the table timed to the director's beats):
   - an attacker leaves its spot, flies at its target (which gets a pulsing ring), hits it with an impact burst and shake, and flies back;
   - a played card or used ability fires a bolt at every card or player it damaged, changed, moved, exhausted or destroyed (including targets picked while it resolved);

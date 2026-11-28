@@ -1,7 +1,7 @@
 // The game table. Renders strictly from observe()/eventsFor()/listActions() for the viewing player.
 import type { GEvent, Mod, ObjView, Template, View, ZoneDef } from '#engine';
 import { eventsFor, listActions, observe } from '#engine';
-import { actor, current, pendingDialogue, playable, tutCoach, tutorial, type UI } from '../main.ts';
+import { actor, current, pendingDialogue, playable, prefs, tutCoach, tutorial, type UI } from '../main.ts';
 import { cardBack, cardFace, cls, emblem, h, noteEl, pname, segmented, select, themeStyle, title } from './kit.ts';
 import { type Beat, beatIcon, beatsOf, drawArrows } from './director.ts';
 import { animateTable } from './anim.ts';
@@ -24,6 +24,7 @@ interface C {
   label: (x: string) => string;
   fx: Fx;
   beatTargets: Set<string>; // what the beat playing now points at
+  preview?: (id: string) => HTMLElement | null; // predicted combat result on an attack target
 }
 
 const BANNER_MS = 1400, BANNER_GAP = 1250;
@@ -61,6 +62,11 @@ function effectsSince(ui: UI, v: View): Fx {
   const first = m.m.rules.phases[0].id;
   const who = whoOf(ui);
   const evs = eventsFor(m, ui.viewer, from);
+  // every card the viewer has seen this match, so beats and the log can name cards that have since moved
+  if (from === 0 || !ui.known) ui.known = new Map();
+  const known = ui.known;
+  for (const z of Object.values(v.zones)) for (const o of z.cards ?? []) if (o.card) known.set(o.id, o.card);
+  for (const e of evs as Record<string, any>[]) if (e.card && typeof e.card === 'string') { for (const k of ['obj', 'newObj', 'o', 'item']) if (typeof e[k] === 'string') known.set(e[k], e.card); }
   for (const e of evs) {
     if ((e.type === 'moved' || e.type === 'created') && e.newObj) fx.entered.add(e.newObj);
     else if (e.type === 'damage' && e.target) fx.hit.set(e.target, (fx.hit.get(e.target) ?? 0) + e.amount);
@@ -86,9 +92,8 @@ function effectsSince(ui: UI, v: View): Fx {
   ui.banners = q.slice(-4);
   // the director: opponent moves (and battles) as beats, played one after another
   if (from > 0) {
-    const cardOf = new Map<string, string>();
-    for (const z of Object.values(v.zones)) for (const o of z.cards ?? []) if (o.card) cardOf.set(o.id, o.card);
-    const speed = ui.fast ? 0.4 : 1.3; // the default pace is unhurried so every move can be followed
+    const cardOf = known;
+    const speed = { slow: 1.75, normal: 1.3, fast: 0.4 }[prefs().speed]; // the default pace is unhurried so every move can be followed
     const beats = (ui.beats ?? []).filter((b) => now < b.at + b.ms);
     let t = Math.max(now, ...beats.map((b) => b.at + b.ms));
     for (const b of beatsOf(evs as any[], m.m, ui.viewer, who, (id) => cardOf.get(id))) {
@@ -116,10 +121,11 @@ export function table(ui: UI, A: any) {
     sources: new Set(tpls.map((t) => t.source).filter(Boolean) as string[]),
     targets: new Set(step?.options ?? []),
     picked: new Set(step ? ui.sel!.picks[step.key] ?? [] : []),
-    label: (x) => (/^p\d+$/.test(x) ? whoOf(ui)(x) : /^[ok]\d+$/.test(x) && !names.has(x) ? 'a card' : names.get(x) ?? (/^[a-z][a-z-]*$/.test(x) ? title(x) : x)),
+    label: (x) => (/^p\d+$/.test(x) ? whoOf(ui)(x) : /^[ok]\d+$/.test(x) && !names.has(x) ? (ui.known?.get(x) ? mod.card.get(ui.known.get(x)!)?.name ?? 'a card' : 'a card') : names.get(x) ?? (/^[a-z][a-z-]*$/.test(x) ? title(x) : x)),
     fx: effectsSince(ui, v),
     beatTargets: new Set(currentBeat(ui)?.targets ?? []),
   };
+  c.preview = combatPreview(c);
   const onGrid = new Set(mod.rules.grid?.zones ?? []);
   const shared = mod.rules.zones.filter((z) => z.shared && !onGrid.has(z.id) && !z.offTable);
   // while choosing targets, arrows run from the card being used to each pick
@@ -169,6 +175,32 @@ function hud(c: C, mine: boolean) {
       h('button', { class: cls('icon', ui.drawer === 'card' && 'on'), onclick: () => A.drawer('card'), 'aria-label': 'Card details' }, '🔍')));
 }
 
+/** Predicted result of attacking each target (from printed and current stats, before keywords and responses). */
+function combatPreview(c: C): C['preview'] {
+  const cv = (c.mod.manifest.theme as any)?.combatView;
+  const tpl = c.ui.sel?.tpl;
+  if (!prefs().preview || !cv || !tpl || !/attack/i.test(tpl.action) || !tpl.source) return undefined;
+  const all = new Map<string, ObjView>();
+  for (const z of Object.values(c.v.zones)) for (const o of z.cards ?? []) all.set(o.id, o);
+  const a = all.get(tpl.source);
+  if (!a) return undefined;
+  const num = (o: ObjView, k: string | null) => (k ? Number(o.stats?.[k] ?? 0) : 0);
+  const atk = num(a, cv.power);
+  return (id: string) => {
+    if (!c.targets.has(id)) return null;
+    const t = all.get(id);
+    if (!t) return null;
+    if (!cv.health) { // power duels: the stronger one wins
+      const d = num(t, cv.power);
+      const txt = atk > d ? '✔ wins' : atk < d ? '✖ loses' : '= tie';
+      return h('span', { class: cls('preview-badge', atk > d ? 'good' : atk < d ? 'bad' : ''), title: `Your ${atk} against its ${d}` }, txt);
+    }
+    const left = num(t, cv.health) - (t.vars?.dmg ?? 0), back = num(t, cv.power), mine = num(a, cv.health) - (a.vars?.dmg ?? 0);
+    return h('span', { class: 'preview-badge', title: 'Predicted result (before keywords and responses)' },
+      h('b', { class: cls(atk >= left && 'lethal') }, `−${atk}${atk >= left ? ' ✖' : ''}`), back > 0 ? h('span', { class: cls('back', back >= mine && 'lethal') }, ` ↩ −${back}${back >= mine ? ' ✖' : ''}`) : null);
+  };
+}
+
 function obj(c: C, o: ObjView, size: 'sm' | 'md') {
   const hit = c.fx.hit.get(o.id);
   const state = cls(c.sources.has(o.id) && 'legal', c.targets.has(o.id) && 'target', c.picked.has(o.id) && 'picked', c.ui.inspect === o.id && 'inspected',
@@ -190,6 +222,13 @@ function obj(c: C, o: ObjView, size: 'sm' | 'md') {
       el.append(h('span', { class: 'used-badge', title: exhausted ? 'Attacked or exhausted this turn' : 'Used an ability this turn', 'aria-label': 'used this turn' }, exhausted ? '⚔✓' : '↻✓'));
   }
   if (th?.defenseSideways === false && (o.vars?.pos ?? 0) > 0) el.append(h('span', { class: 'def-badge', title: 'Defense position' }, 'DEF'));
+  // just arrived: can't attack yet (games with summoning sickness)
+  const cv = th?.combatView;
+  if (size === 'sm' && cv?.sickness && o.stats?.[cv.power] !== undefined && (o.vars?.newT ?? -1) === c.v.turn && !(o.keywords ?? []).some((k) => ['haste', 'rushUnits'].includes(k)))
+    el.append(h('span', { class: 'sick-badge', title: "Just arrived: can't attack this turn" }, '💤'));
+  // combat preview while choosing what to attack
+  const pv = c.preview?.(o.id);
+  if (pv) el.append(pv);
   if (c.beatTargets.has(o.id)) el.classList.add('beat-target');
   return el;
 }
@@ -366,7 +405,7 @@ function seat(c: C, p: string, me: boolean) {
     h('button', {
       class: cls('avatar', targets.has(p) && 'target', picked.has(p) && 'picked', c.fx.hit.has(p) && 'fx-hit', c.beatTargets.has(p) && 'beat-target'), style: `--h:${(+p.slice(1) * 97 + 200) % 360}`,
       'aria-label': `${whoOf(c.ui)(p)}${targets.has(p) ? ', can be chosen' : ''}`, 'data-player': p, onclick: () => (c.ui.sel ? A.pick(p) : A.view(p)),
-    }, String(+p.slice(1) + 1), c.fx.hit.has(p) && h('span', { class: 'dmg-float', 'aria-hidden': 'true' }, `-${c.fx.hit.get(p)}`)),
+    }, String(+p.slice(1) + 1), c.fx.hit.has(p) && h('span', { class: 'dmg-float', 'aria-hidden': 'true' }, `-${c.fx.hit.get(p)}`), c.preview?.(p)),
     h('span', { class: 'seat-name' }, whoOf(c.ui)(p) === 'You' ? 'You' : whoOf(c.ui)(p), v.active === p ? h('span', { class: 'turn-dot', title: 'Active player' }, ' ●') : null, pl.lost ? ' — out' : ''),
     h('span', { class: 'vars' }, Object.entries(pl.vars).filter(([k]) => !mod.manifest.theme?.hideVars?.includes(k)).map(([k, n]) => h('span', { class: cls('chip', c.fx.pulse.get(p)?.has(k) && 'fx-pulse') }, h('b', {}, String(n)), ` ${mod.manifest.theme?.labels?.[k] ?? k}`, (() => { const d = c.fx.chip.get(`${p}:${k}`); return d ? h('span', { class: cls('chip-float', d < 0 && 'neg'), 'aria-hidden': 'true' }, `${d > 0 ? '+' : ''}${d}`) : null; })()))),
     !me && recap(c, p),
@@ -476,8 +515,9 @@ function handRow(c: C, key: string, me: boolean) {
 function stack(c: C) {
   return h('div', { class: 'stack' }, h('span', { class: 'zone-l' }, 'Stack — top resolves first'),
     [...c.v.stack].reverse().map((it, i) => h('button', {
-      class: cls('stack-item', i === 0 && 'top', c.targets.has(it.id) && 'target', c.picked.has(it.id) && 'picked'), onclick: () => c.A.pick(it.id),
-    }, h('b', {}, it.label), ` · ${pname(it.ctrl)}`)));
+      class: cls('stack-item', i === 0 && 'top', c.targets.has(it.id) && 'target', c.picked.has(it.id) && 'picked'), onclick: () => c.A.pick(it.id), 'data-card': it.card ?? undefined,
+    }, it.card && c.mod.card.has(it.card) ? cardFace(c.mod, it.card, { size: 'sm' }) : null,
+      h('span', { class: 'stack-text' }, h('b', {}, it.label), ` · ${whoOf(c.ui)(it.ctrl)}`, it.targets?.length ? h('span', { class: 'muted' }, ` → ${it.targets.map((t) => c.label(t)).join(', ')}`) : null))));
 }
 
 /** The tutorial guide: the current coaching line; read-only steps pause the game until Continue. */
@@ -550,7 +590,15 @@ function actionsBar(A: any, tpls: Template[], c?: C) {
     h('span', { class: 'muted hint' }, n ? `${n} playable — glowing cards. Tap a dim card to see why it can't be used.` : 'Nothing to play with cards right now.'),
     h('div', { class: 'opts end' },
       free.filter((t) => t !== pass).map((t) => h('button', { class: 'opt', onclick: () => A.start(t) }, t.label)),
-      pass && h('button', { class: 'cta small pass', onclick: () => A.start(pass), 'data-act': 'pass' }, c ? passLabel(c) : pass.label)));
+      pass && (() => {
+        const label = c ? passLabel(c) : pass.label;
+        const ends = /End turn/.test(label);
+        const attacksLeft = tpls.filter((t) => /attack|quest|march|run/i.test(t.action)).length;
+        return h('button', { class: cls('cta small pass', n === 0 && free.length === 1 && 'ready', ends && n > 0 && 'moves-left'), 'data-act': 'pass',
+          title: ends && n > 0 ? `${n} move${n === 1 ? '' : 's'} still available` : '',
+          onclick: () => { if (ends && attacksLeft && prefs().confirmEnd && !confirm(`You can still make ${attacksLeft} attack${attacksLeft === 1 ? '' : 's'} or similar moves. End your turn?`)) return; A.start(pass); } },
+          label, ends && n > 0 ? h('span', { class: 'moves-n' }, ` (${n} left)`) : null);
+      })()));
 }
 
 /** What passing does right now, in the player's words: finish responding, go to the next phase, or end the turn. */
@@ -599,6 +647,18 @@ function drawer(c: C) {
   return h('aside', { class: 'drawer' }, h('button', { class: 'x drawer-x', 'aria-label': 'Close panel', onclick: () => A.drawer(null) }, '×'), body);
 }
 
+/** Battle settings: speed, animations, auto-pass, combat preview, end-turn confirmation (remembered on this device). */
+export function battleSettings(A: any) {
+  const p = prefs();
+  const tog = (k: 'autoPass' | 'preview' | 'confirmEnd', label: string, hint: string) => h('label', { class: 'toggle', title: hint },
+    h('input', { type: 'checkbox', checked: p[k], onchange: (e: Event) => A.setPref(k, (e.target as HTMLInputElement).checked) }), ` ${label}`);
+  return h('div', { class: 'battle-settings' }, h('strong', {}, 'Battle settings'),
+    h('div', { class: 'bs-row' }, h('span', { class: 'muted' }, 'Speed'), segmented(p.speed, [['slow', 'Slow'], ['normal', 'Normal'], ['fast', 'Fast']], (v) => A.setPref('speed', v), 'Game speed')),
+    h('div', { class: 'bs-row' }, h('span', { class: 'muted' }, 'Animations'), segmented(p.anim, [['full', 'Full'], ['reduced', 'Reduced'], ['off', 'Off']], (v) => A.setPref('anim', v), 'Animations')),
+    tog('autoPass', 'Skip response windows when I have nothing to play', 'Passes for you when passing is the only thing you can do (never in your own main phases).'),
+    tog('preview', 'Preview combat results when choosing an attack target', 'Shows the damage each side would take, and ✖ when a card would be destroyed.'),
+    tog('confirmEnd', 'Ask before ending my turn with attacks left', 'A confirmation when you end the turn while units could still attack, quest or run.'));
+}
 function pause(c: C) {
   const { ui, A } = c;
   return h('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' },
@@ -606,7 +666,7 @@ function pause(c: C) {
       h('h2', {}, 'Paused'),
       h('button', { class: 'cta', onclick: () => A.pause(false) }, 'Resume'),
       h('button', { onclick: A.save }, 'Save game'),
-      h('label', { class: 'toggle' }, h('input', { type: 'checkbox', checked: ui.fast, onchange: (e: Event) => A.setFast((e.target as HTMLInputElement).checked) }), ' Fast AI'),
+      battleSettings(A),
       segmented(ui.theme, [['dark', 'Dark'], ['light', 'Light']], A.setTheme, 'Theme'),
       segmented(ui.cardSize, [['s', 'Compact'], ['m', 'Large'], ['l', 'Huge']], A.setCardSize, 'Card size'),
       h('button', { class: 'ghost', onclick: A.quit }, 'Quit to game menu')));

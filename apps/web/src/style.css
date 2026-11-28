@@ -922,3 +922,26 @@ svg.sel-arrows { color: var(--accent2); }
 .fx-dying { z-index: 1; }
 .fx-dying::after { content: ''; position: absolute; inset: 0; border-radius: 10px; background:
   linear-gradient(115deg, transparent 46%, rgba(0,0,0,.85) 47%, transparent 49%), linear-gradient(35deg, transparent 58%, rgba(0,0,0,.8) 59%, transparent 61%), linear-gradient(160deg, transparent 30%, rgba(0,0,0,.75) 31%, transparent 33%); }
+
+/* ---- battle quality pass: markers, previews, stack cards, end-turn states, settings */
+.sick-badge { position: absolute; top: 3px; left: 3px; z-index: 2; font-size: 12px; line-height: 1; padding: 2px 4px; border-radius: 999px; background: rgba(0,0,0,.7); pointer-events: none; }
+.preview-badge { position: absolute; left: 50%; bottom: 18%; transform: translateX(-50%); z-index: 4; white-space: nowrap; font-size: 12px; font-weight: 800; padding: 3px 8px; border-radius: 999px;
+  background: rgba(10,12,18,.92); border: 1px solid var(--target); box-shadow: 0 4px 14px rgba(0,0,0,.6); pointer-events: none; animation: used-in .25s ease-out both; }
+.preview-badge .lethal { color: #f87171; }
+.preview-badge .back { color: #fbbf24; font-weight: 700; }
+.preview-badge.good { border-color: var(--good); color: #86efac; } .preview-badge.bad { border-color: var(--bad); color: #fca5a5; }
+.avatar .preview-badge { bottom: -26px; }
+.stack-item { display: flex; align-items: center; gap: 8px; text-align: left; }
+.stack-item .card { --w: 46px !important; flex: none; }
+.stack-item .stack-text { display: flex; flex-wrap: wrap; gap: 2px 4px; font-size: 13px; }
+.stack-item.top { box-shadow: 0 0 0 2px var(--accent2); }
+.dock .pass.ready { animation: pass-ready 1.6s ease-in-out infinite; background: linear-gradient(135deg, #16a34a, #22c55e); }
+@keyframes pass-ready { 50% { box-shadow: 0 0 0 4px rgba(34,197,94,.35), 0 0 24px rgba(34,197,94,.55); } }
+.dock .pass.moves-left { background: linear-gradient(135deg, #475569, #64748b); }
+.dock .pass .moves-n { font-weight: 600; opacity: .85; font-size: 12px; }
+.battle-settings { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 14px; text-align: left; width: 100%; }
+.battle-settings .bs-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.battle-settings .toggle { font-size: 13px; }
+:root[data-anim=off] .beat-spot, :root[data-anim=off] .stat-float, :root[data-anim=off] .dmg-float, :root[data-anim=off] .turn-banner { animation: none !important; }
+:root[data-anim=reduced] .card.beat-target, :root[data-anim=reduced] .avatar.beat-target { animation: none; }
+.card.tapped .preview-badge, .card.tapped .used-badge, .card.tapped .sick-badge, .card.tapped .def-badge { rotate: -90deg; }

@@ -24,6 +24,10 @@ export type Screen = 'library' | 'home' | 'setup' | 'game' | 'decks' | 'gallery'
 /** Choosing targets for an action template, or answering a pending decision. */
 export interface Selection { tpl?: Template; slot: number; picks: Record<string, string[]> }
 export interface DeckEdit { name: string; original: string | null; deck: Record<string, string[]>; section: string; campaign?: boolean }
+/** Battle settings (pause menu and match setup), remembered on this device. */
+export interface BattlePrefs { speed: 'slow' | 'normal' | 'fast'; anim: 'full' | 'reduced' | 'off'; autoPass: boolean; preview: boolean; confirmEnd: boolean }
+const PREFS0: BattlePrefs = { speed: 'normal', anim: 'full', autoPass: true, preview: true, confirmEnd: false };
+export const prefs = (): BattlePrefs => ({ ...PREFS0, ...store.get<Partial<BattlePrefs>>('ucb-battle', {}) });
 export interface UI {
   screen: Screen;
   mod: Mod | null;
@@ -45,6 +49,8 @@ export interface UI {
   fast: boolean;
   theme: 'light' | 'dark';
   cardSize: 's' | 'm' | 'l'; // table card size (default m)
+  autoPassed?: number; // responses skipped for you (auto-pass)
+  known?: Map<string, string>; // object id -> card id, for every card this viewer has seen this match (names in beats and the log)
   edit: DeckEdit | null;
   filter: string;
   gallery: string | null; // card id enlarged in the gallery
@@ -127,10 +133,11 @@ function seatsFor(m: Mod, n = Math.max(2, m.rules.players.min)): Pick<UI, 'seats
 
 export const ui: UI = {
   screen: 'library', mod: null, seats: [], decks: [], match: null, agents: [], viewer: 'p0', cover: null, sel: null, menu: null,
-  note: null, inspect: null, peek: null, tut: null, drawer: null, pile: null, paused: false, fast: false, theme: store.get<'light' | 'dark'>('ucb-theme', 'dark') === 'light' ? 'light' : 'dark', cardSize: 'm', edit: null,
+  note: null, inspect: null, peek: null, tut: null, drawer: null, pile: null, paused: false, fast: prefs().speed === 'fast', theme: store.get<'light' | 'dark'>('ucb-theme', 'dark') === 'light' ? 'light' : 'dark', cardSize: 'm', edit: null,
   filter: '', gallery: null, profile: null, camp: null, encounter: null, campDeck: '', dialog: null, dialogSeen: -1, reward: null, reveal: null, fxFrom: 0, counts: {}, sort: 'cost', sample: null, io: null,
 };
 (window as any).__ucb = ui; // test hook
+if (typeof document !== 'undefined') document.documentElement.dataset.anim = prefs().anim;
 
 let timer: ReturnType<typeof setTimeout> | undefined;
 const seatOf = (p: string) => ui.seats[+p.slice(1)];
@@ -188,7 +195,8 @@ function advance() {
   if (!p || pendingDialogue()) return redraw();
   if (seatOf(p) !== 'human') {
     redraw();
-    timer = setTimeout(aiStep, ui.fast ? Math.min(beatsDone(), 400) : Math.max(900, beatsDone() + 600));
+    const sp = prefs().speed;
+    timer = setTimeout(aiStep, sp === 'fast' ? Math.min(beatsDone(), 400) : sp === 'slow' ? Math.max(1300, beatsDone() + 900) : Math.max(900, beatsDone() + 600));
     return;
   }
   if (p !== ui.viewer) {
@@ -196,6 +204,16 @@ function advance() {
     ui.viewer = p;
   }
   redraw();
+  // auto-pass: when the only thing you could do is pass (a response window, the opponent's turn), pass for you;
+  // your own main phases always wait for you
+  if (prefs().autoPass && !m.s.pending && !ui.tut && ui.seats.filter((x) => x === 'human').length < 2) {
+    const tpls = playable(m);
+    const ownMain = m.s.players[m.s.turn.active]?.id === p && !m.s.windows.length && !m.s.stack.length;
+    if (tpls.length && tpls.every((t) => t.action === 'pass') && !ownMain) {
+      const here = m;
+      timer = setTimeout(() => { if (ui.match === here && !ui.paused && !ui.sel) { ui.autoPassed = (ui.autoPassed ?? 0) + 1; commit({ action: 'pass' }); } }, Math.max(450, beatsDone() + 150));
+    }
+  }
 }
 
 function aiStep() {
@@ -372,7 +390,8 @@ export const actions = {
   setPlayers(n: number) { Object.assign(ui, seatsFor(ui.mod!, n)); redraw(); },
   setSeat(i: number, s: Seat) { ui.seats = ui.seats.map((x, j) => (j === i ? s : x)); if (ui.match && ui.screen === 'game') advance(); else redraw(); },
   setDeck(i: number, d: string) { ui.decks = ui.decks.map((x, j) => (j === i ? d : x)); redraw(); },
-  setFast(f: boolean) { ui.fast = f; redraw(); },
+  setFast(f: boolean) { actions.setPref('speed', f ? 'fast' : 'normal'); },
+  setPref<K extends keyof BattlePrefs>(k: K, v: BattlePrefs[K]) { const p = { ...prefs(), [k]: v }; store.set('ucb-battle', p); ui.fast = p.speed === 'fast'; document.documentElement.dataset.anim = p.anim; redraw(); },
   newGame() {
     const m = ui.mod!;
     const seed = Math.floor(Math.random() * 1e9);
