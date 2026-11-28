@@ -2,7 +2,7 @@
 // The blueprint picks systems (resources, combat, winning, turn) and the compiler writes the DSL for each one.
 import type { ModuleDef } from '#engine';
 import { ENGINE_API } from '#engine';
-import type { Ability, Blueprint, CardBP, Cond, Effect, Filter, Meter, Role, TargetKind } from './blueprint.ts';
+import type { Ability, Amount, Blueprint, CardBP, Cond, Effect, Filter, Meter, Role, TargetKind } from './blueprint.ts';
 import { normalize } from './blueprint.ts';
 
 type X = unknown;
@@ -120,7 +120,11 @@ export function filterText(f: Filter | undefined, bp: Blueprint): string {
 }
 const zoneName = (bp: Blueprint, z: string) => bp.zones?.find((k) => k.id === z)?.name ?? bp.zoneNames[z] ?? ({ grave: 'the discard pile', hand: 'hand', deck: 'the deck', banished: 'the banished pile', resources: 'resources' } as Record<string, string>)[z] ?? z;
 export function effectText(e: Effect, bp: Blueprint): string {
-  const n = e.kw || e.fromRoll ? 'X' : String(e.n ?? 1);
+  const t = effectText0(e, bp);
+  return e.amount && t ? `${t}, where X is ${amountText(e.amount, bp)}` : t;
+}
+function effectText0(e: Effect, bp: Blueprint): string {
+  const n = e.kw || e.fromRoll || e.amount ? 'X' : String(e.n ?? 1);
   const ft = filterText(e.filter, bp);
   const t = TGT_TEXT[e.target ?? 'enemyUnit'] + (ft ? ` ${ft}` : '');
   const stat = nm(bp, 'stats', e.stat) || 'power';
@@ -226,12 +230,36 @@ function comboText(k: Cond, bp: Blueprint): string {
   if (k.k === 'not') return `unless ${parts[0]}, `;
   return `if ${parts.join(k.k === 'all' ? ' and ' : ' or ')}, `;
 }
-const condText = (k: Cond | undefined, bp: Blueprint): string => !k ? '' : k.k === 'units' ? `if you control ${k.n ?? 1} or more units, ` : k.k === 'life' ? `if you have ${k.n ?? 5} or less life, `
-  : k.k === 'hand' ? `if you have ${k.n ?? 0} or fewer cards in hand, ` : k.k === 'yourTurn' ? 'during your turn, ' : k.k === 'res' ? `if you have ${k.n ?? 1} or more ${bp.resource.name}, `
-    : k.k === 'counter' ? `if this has ${k.n ?? 1} or more ${nm(bp, 'counters', k.counter)} counters, ` : k.k === 'zone' ? `if you have ${k.n ?? 1} or more cards in ${zoneName(bp, k.zone ?? 'grave')}, `
-      : k.k === 'played' ? `if you played ${(k.n ?? 1) === 1 ? 'another card' : `${k.n} other cards`} this turn, `
-        : k.k === 'attached' ? `if this has ${k.n ?? 1} or more ${bp.resource.name} given to it, ` : k.k === 'oppTurn' ? 'during your opponent\'s turn, '
-          : k.k === 'oppLife' ? `if your opponent has ${k.n ?? 2} or less life, ` : k.k === 'status' ? `if this is ${nm(bp, 'statuses', k.status)}, ` : k.k === 'kicked' ? 'if it was kicked, ' : k.k === 'linked' ? 'if this is linked, ' : k.k === 'charged' ? `if this has ${k.n ?? 1} or more charge, ` : k.k === 'under' ? `if this has ${k.n ?? 1} or more cards under it, ` : k.k === 'meter' || k.k === 'all' || k.k === 'any' || k.k === 'not' ? comboText(k, bp) : k.k === 'attacking' ? 'while you are attacking, ' : k.k === 'defending' ? 'while you are being attacked, ' : k.k === 'here' ? 'while this is at a location (or a location has a unit here), ' : 'if the custom condition holds, ';
+/** Numeric conditions compare with at least / at most / exactly (op); each kind keeps its usual default. */
+export const COND_OP: Record<string, 'ge' | 'le'> = { units: 'ge', life: 'le', hand: 'le', res: 'ge', counter: 'ge', zone: 'ge', played: 'ge', attached: 'ge', oppLife: 'le', charged: 'ge', under: 'ge', meter: 'ge' };
+export const COND_N: Record<string, number> = { units: 1, life: 5, hand: 0, res: 1, counter: 1, zone: 1, played: 1, attached: 1, oppLife: 2, charged: 1, under: 1, meter: 1 };
+const qty = (k: Cond, fewer = false) => { const n = k.n ?? COND_N[k.k] ?? 1; const op = k.op ?? COND_OP[k.k] ?? 'ge'; return op === 'eq' ? `exactly ${n}` : op === 'le' ? `${n} or ${fewer ? 'fewer' : 'less'}` : `${n} or more`; };
+function condText(k: Cond | undefined, bp: Blueprint): string {
+  if (!k) return '';
+  switch (k.k) {
+    case 'units': return `if you control ${qty(k, true)} units, `;
+    case 'life': return `if you have ${qty(k)} life, `;
+    case 'hand': return `if you have ${qty(k, true)} cards in hand, `;
+    case 'yourTurn': return 'during your turn, ';
+    case 'oppTurn': return "during your opponent's turn, ";
+    case 'res': return `if you have ${qty(k)} ${bp.resource.name}, `;
+    case 'counter': return `if this has ${qty(k, true)} ${nm(bp, 'counters', k.counter)} counters, `;
+    case 'zone': return `if you have ${qty(k, true)} cards in ${zoneName(bp, k.zone ?? 'grave')}, `;
+    case 'played': return !k.op || k.op === 'ge' ? `if you played ${(k.n ?? 1) === 1 ? 'another card' : `${k.n} or more other cards`} this turn, ` : `if you played ${qty(k, true)} other cards this turn, `;
+    case 'attached': return `if this has ${qty(k)} ${bp.resource.name} given to it, `;
+    case 'oppLife': return `if your opponent has ${qty(k)} life, `;
+    case 'status': return `if this is ${nm(bp, 'statuses', k.status)}, `;
+    case 'kicked': return 'if it was kicked, ';
+    case 'linked': return 'if this is linked, ';
+    case 'charged': return `if this has ${qty(k)} charge, `;
+    case 'under': return `if this has ${qty(k, true)} cards under it, `;
+    case 'meter': case 'all': case 'any': case 'not': return comboText(k, bp);
+    case 'attacking': return 'while you are attacking, ';
+    case 'defending': return 'while you are being attacked, ';
+    case 'here': return 'while this is at a location (or a location has a unit here), ';
+    default: return 'if the custom condition holds, ';
+  }
+}
 /** How cards that attacked or used an ability this turn are drawn, and whether defense position is sideways. Defaults: games
  *  with positions, active duels and runs use a badge (they don't tap); everything else tilts (taps) them. */
 export function usedLook(bp: Blueprint): { tapVar?: string; usedStyle: 'tilt' | 'dim' | 'badge' | 'none'; defenseSideways: boolean } {
@@ -256,9 +284,22 @@ export function costText(a: Ability, bp: Blueprint): string {
     a.uncount && `remove ${a.uncount.n} ${nm(bp, 'counters', a.uncount.id)} counter${a.uncount.n === 1 ? '' : 's'}`, a.banish && `banish ${a.banish} from your discard pile`,
     a.returnRes && `return ${a.returnRes} ${bp.resource.name}${bp.resource.mode === 'deck' ? ` to your ${bp.resource.name} deck` : ''}`].filter(Boolean).join(', ');
 }
+/** Readable names for events an ability or meter can react to. */
+export const EVENT_TEXT: Record<string, string> = { damage: 'damage is dealt', destroyed: 'a card is destroyed', lifeLost: 'a life card is taken', quest: 'a unit quests', conquer: 'a battlefield is conquered',
+  hold: 'a battlefield is held', comeback: 'a comeback bonus is given', coin: 'a coin is flipped', rolled: 'dice are rolled', attack: 'a unit attacks', blocked: 'a unit blocks', enter: 'a card enters play',
+  turnStart: 'a turn starts', turnEnd: 'a turn ends', status: 'a status is given', evolved: 'a unit evolves', shifted: 'a unit shifts', drawFail: 'a player draws from an empty deck', prize: 'a prize is taken',
+  checkFail: 'a skill check fails', momentum: 'momentum is gained', scoredAgenda: 'a scheme is scored', stolen: 'a scheme is stolen' };
+export function eventLabel(bp: Blueprint, ev?: string): string {
+  if (!ev) return 'an event happens';
+  const m = /^m([tv])_(.+)_(\d+)$/.exec(ev);
+  if (m) { const mt = bp.meters?.find((q) => q.id === m[2]); const i = Number(m[3]);
+    if (mt) return m[1] === 't' ? `${mt.name} reaches ${mt.steps?.[i]?.n ?? '?'}` : `it becomes ${mt.names?.[i] ?? i}`; }
+  return EVENT_TEXT[ev] ?? `"${ev}" happens`;
+}
 export function abilityText(a: Ability, bp: Blueprint, role: Role): string {
   const head = a.when === 'activated' ? `${a.from === 'hand' ? 'From your hand — ' : a.from === 'grave' ? 'From your discard pile — ' : ''}${a.quick ? '(Quick) ' : ''}${cap(costText(a, bp)) || 'Activate'}: ` : a.when === 'play' && SPELLISH.includes(role) ? ''
     : a.when === 'opAttack' && !SPELLISH.includes(role) ? 'When your opponent attacks: '
+    : a.when === 'event' ? `Whenever ${eventLabel(bp, a.event)}${a.eventWho === 'me' ? ' (yours)' : a.eventWho === 'opp' ? " (your opponent's)" : ''}: `
     : (a.when === 'conquer' || a.when === 'hold') && role !== 'battlefield' ? (a.when === 'conquer' ? 'When this conquers a battlefield: ' : 'When you hold its battlefield: ') : WHEN_TEXT[a.when] ?? '';
   const body = a.do.map((e) => effectText(e, bp)).join(', then ');
   return `${head}${cap(condText(a.if, bp) + body)}.${a.oncePerName ? ' (Once per turn per name.)' : a.once === 'game' ? ' (Once per game.)' : a.once ? ' (Once per turn.)' : ''}`;
@@ -365,7 +406,7 @@ function target(x: Ctx, kind: TargetKind | undefined, v: string, prompt: string,
   }
 }
 function effect(x: Ctx, e: Effect, i: number): X[] {
-  const n: X = e.fromRoll ? g('game', 'roll') : e.kw ? def('$self', `kw_${x.kwKey(e.kw)}`) : e.n ?? 1;
+  const n: X = e.amount ? amountExpr(x, e.amount) : e.fromRoll ? g('game', 'roll') : e.kw ? def('$self', `kw_${x.kwKey(e.kw)}`) : e.n ?? 1;
   const p = e.who === 'opp' ? '$opp' : '$me';
   const per = (body: (who: X) => X[]) => (e.who === 'each' ? [EACH(['players'], '$pl', body('$pl'))] : body(p));
   const needsTarget = ['damage', 'heal', 'buff', 'destroy', 'bounce', 'exhaust', 'ready', 'addCounter', 'removeCounter', 'restrict', 'moveTo', 'giveRes', 'inflict', 'cure', 'attachFrom', 'fight'].includes(e.k);
@@ -502,7 +543,7 @@ function meterTheme(bp: Blueprint): Record<string, unknown> {
 function gameLog(bp: Blueprint): Record<string, unknown> {
   const cb = bp.comeback;
   const log: Record<string, string> = { ...meterLog(bp),
-    ...(cb ? { comeback: `{p} {is} behind: comeback bonus (${cb.bonus === 'draw' ? `draw ${cb.n}` : cb.bonus === 'heal' ? `heal ${cb.n}` : `+${cb.n} ${bp.resource.name}`})` } : {}),
+    ...(cb ? { comeback: `{p} {is} behind: comeback bonus (${cb.bonus === 'effects' ? (cb.do ?? []).map((e) => effectText(e, bp)).join(', then ') || 'nothing' : cb.bonus === 'draw' ? `draw ${cb.n}` : cb.bonus === 'heal' ? `heal ${cb.n}` : `+${cb.n} ${bp.resource.name}`})` } : {}),
     ...(bp.advanced?.log ?? {}) };
   return Object.keys(log).length ? { log } : {};
 }
@@ -531,25 +572,49 @@ function stubZones(rules: Record<string, any>, cards: unknown[]) {
 /** Paying a plain amount: from the mana pool when the game has one; free in games without a pool (pitch, actions, skill checks…). */
 const canAmt = (x: Ctx, n: X): X => (x.pool ? ['canPay', '$me', 'mana', n] : L(true));
 const payAmt = (x: Ctx, n: X): X[] => (x.pool ? [['pay', '$me', 'mana', n]] : []);
+/** The value of a changing amount (see Amount), for player `me` (statics pass the card's controller). */
+function amountExpr(x: Ctx, a: Amount, me: X = '$me'): X {
+  const opp: X = ['opp', me];
+  const m = a.of === 'meter' ? x.bp.meters?.find((q) => q.id === a.meter) : undefined;
+  const base: X = a.of === 'units' ? cnt(units(x, me)) : a.of === 'enemyUnits' ? cnt(units(x, opp)) : a.of === 'allUnits' ? cnt(allUnits(x))
+    : a.of === 'hand' ? cnt(cards(me, 'hand')) : a.of === 'oppHand' ? cnt(cards(opp, 'hand')) : a.of === 'grave' ? cnt(cards(me, 'grave')) : a.of === 'deck' ? cnt(cards(me, 'deck'))
+    : a.of === 'life' ? (x.life ? g(me, 'life') : cnt(cards(me, 'life'))) : a.of === 'oppLife' ? (x.life ? g(opp, 'life') : cnt(cards(opp, 'life')))
+    : a.of === 'meter' ? (!m ? 0 : m.on === 'game' ? g('game', meterVar(m)) : m.on === 'player' ? g(me, meterVar(m)) : g('$self', meterVar(m)))
+    : a.of === 'counter' ? g('$self', `c_${a.counter ?? 'x'}`) : a.of === 'stat' ? mx(0, def('$self', a.stat ?? x.POW)) : '$turn';
+  const t = a.times ?? 1, p = a.plus ?? 0;
+  return t === 1 && !p ? base : mx(0, add(t === 1 ? base : mul(t, base), p));
+}
+const AMOUNT_TEXT: Record<Amount['of'], string> = { units: 'the number of units you control', enemyUnits: "the number of your opponent's units", allUnits: 'the number of units in play',
+  hand: 'the number of cards in your hand', oppHand: "the number of cards in your opponent's hand", grave: 'the number of cards in your discard pile', deck: 'the number of cards in your deck',
+  life: 'your life', oppLife: "your opponent's life", meter: 'the meter', counter: 'the counters on this', stat: "this card's stat", turn: 'the turn number' };
+export function amountText(a: Amount, bp: Blueprint): string {
+  const m = a.of === 'meter' ? bp.meters?.find((q) => q.id === a.meter) : undefined;
+  const base = a.of === 'meter' ? `${!m || m.on === 'game' ? 'the' : m.on === 'unit' ? "this unit's" : 'your'} ${m?.name ?? 'meter'}`
+    : a.of === 'counter' ? `the number of ${nm(bp, 'counters', a.counter) || 'counters'} counters on this` : a.of === 'stat' ? `this card's ${nm(bp, 'stats', a.stat) || 'power'}` : AMOUNT_TEXT[a.of];
+  const t = a.times ?? 1, p = a.plus ?? 0;
+  return `${t === 1 ? '' : t === 0.5 ? 'half ' : `${t} times `}${base}${p > 0 ? ` plus ${p}` : p < 0 ? ` minus ${-p}` : ''}`;
+}
+/** value <op> n, with the kind's default op and n. */
+const cmp = (k: Cond, v: X): X => { const op = k.op ?? COND_OP[k.k] ?? 'ge'; return (op === 'le' ? le : op === 'eq' ? eq : ge)(v, k.n ?? COND_N[k.k] ?? 1); };
 function condExpr(x: Ctx, k: Cond | undefined): X | null {
   if (!k || !k.k) return null;
   switch (k.k) {
-    case 'units': return ge(cnt(units(x, '$me')), k.n ?? 1);
-    case 'life': return x.life ? le(g('$me', 'life'), k.n ?? 5) : le(cnt(cards('$me', 'life')), k.n ?? 2);
-    case 'hand': return le(cnt(cards('$me', 'hand')), k.n ?? 0);
+    case 'units': return cmp(k, cnt(units(x, '$me')));
+    case 'life': return x.life ? cmp(k, g('$me', 'life')) : cmp({ ...k, n: k.n ?? 2 }, cnt(cards('$me', 'life')));
+    case 'hand': return cmp(k, cnt(cards('$me', 'hand')));
     case 'yourTurn': return eq('$active', '$me');
-    case 'res': return ge(resCount(x, '$me'), k.n ?? 1);
-    case 'counter': return ge(g('$self', `c_${k.counter ?? 'x'}`), k.n ?? 1);
-    case 'zone': return ge(cnt(cards('$me', k.zone ?? 'grave')), k.n ?? 1);
-    case 'played': return ge(g('$me', 'plays'), (k.n ?? 1) + 1);
+    case 'res': return cmp(k, resCount(x, '$me'));
+    case 'counter': return cmp(k, g('$self', `c_${k.counter ?? 'x'}`));
+    case 'zone': return cmp(k, cnt(cards('$me', k.zone ?? 'grave')));
+    case 'played': return cmp({ ...k, n: (k.n ?? 1) + 1 }, g('$me', 'plays'));
     case 'oppTurn': return ne('$active', '$me');
     case 'status': return gt(g('$self', `st_${k.status ?? 'x'}`), 0);
     case 'kicked': return eq(g('game', 'kick'), 1);
-    case 'charged': return ge(g('$self', 'chg'), k.n ?? 1);
-    case 'under': return ge(cnt(['linked', '$self', 'host']), k.n ?? 1);
+    case 'charged': return cmp(k, g('$self', 'chg'));
+    case 'under': return cmp(k, cnt(['linked', '$self', 'host']));
     case 'meter': { const m = x.bp.meters?.find((q) => q.id === k.meter); if (!m) return L(false);
       const val = m.on === 'game' ? g('game', meterVar(m)) : m.on === 'player' ? g('$me', meterVar(m)) : g('$self', meterVar(m));
-      return (k.op === 'le' ? le : k.op === 'eq' ? eq : ge)(val, k.n ?? 1); }
+      return cmp(k, val); }
     case 'all': return AND(...(k.of ?? []).map((q) => condExpr(x, q) ?? L(true)));
     case 'any': return (k.of ?? []).length ? OR(...k.of!.map((q) => condExpr(x, q) ?? L(true))) : L(true);
     case 'not': return NOT(condExpr(x, k.of?.[0]) ?? L(true));
@@ -557,8 +622,8 @@ function condExpr(x: Ctx, k: Cond | undefined): X | null {
     case 'defending': return AND(gt(g('game', 'bat'), 0), isObj('$win.attacker'), ne(ctrl('$win.attacker'), '$me'));
     case 'here': return OR(AND(isObj(g('$self', 'at')), eq(g(g('$self', 'at'), 'zone'), 'locations')), ge(cnt(['linked', '$self', 'at']), k.n ?? 1));
     case 'linked': return OR(ANY(allUnits(x), C('points', '$self', '$it')), ANY(allUnits(x), C('points', '$it', '$self')));
-    case 'oppLife': return x.life ? le(g('$opp', 'life'), k.n ?? 2) : le(cnt(cards('$opp', 'life')), k.n ?? 2);
-    case 'attached': return ge(g('$self', 'don'), k.n ?? 1);
+    case 'oppLife': return cmp(k, x.life ? g('$opp', 'life') : cnt(cards('$opp', 'life')));
+    case 'attached': return cmp(k, g('$self', 'don'));
     case 'raw': return k.raw ?? true;
   }
 }
@@ -649,7 +714,7 @@ function compileCard(x: Ctx, k: CardBP): Record<string, X> {
     if (a.when === 'static') {
       for (const e of a.do) {
         const iff = cond ? { if: cond } : {};
-        if (e.k === 'aura') statics.push({ layer: 'add', affects: scopeOf(x, e.target, e.filter), mods: [{ op: 'add', stat: e.stat ?? x.POW, value: e.n ?? 1 }], ...iff });
+        if (e.k === 'aura') statics.push({ layer: 'add', affects: scopeOf(x, e.target, e.filter), mods: [{ op: 'add', stat: e.stat ?? x.POW, value: e.amount ? amountExpr(x, e.amount, ctrl('$self')) : e.n ?? 1 }], ...iff });
         else if (e.k === 'restrict') statics.push({ layer: 'add', affects: scopeOf(x, e.target, e.filter), mods: [{ op: 'grant', kw: e.rule ?? 'noAttack' }], ...iff });
         else if (e.k === 'prevent') replacements.push({ replace: 'damage', text: 'Prevent', if: AND(isObj('$e.target'), ['in', '$e.target', scopeOf(x, e.target ?? 'allOwnUnits', e.filter)], ...(cond ? [cond] : [])),
           modify: { amount: mx(0, sub('$e.amount', e.n ?? 1)) } });
@@ -691,11 +756,13 @@ function compileCard(x: Ctx, k: CardBP): Record<string, X> {
       continue;
     }
     const on = a.when === 'play' ? 'enter' : a.when === 'leave' ? 'destroyed' : a.when === 'attack' || a.when === 'opAttack' ? 'attack' : a.when === 'hit' ? 'hit' : a.when === 'quest' ? 'quest'
-      : a.when === 'block' ? 'blocked' : a.when === 'flip' ? 'flipped' : a.when === 'castSpell' ? 'action' : a.when === 'landfall' ? 'moved' : a.when === 'startTurn' ? 'turnStart' : 'turnEnd';
+      : a.when === 'block' ? 'blocked' : a.when === 'flip' ? 'flipped' : a.when === 'castSpell' ? 'action' : a.when === 'landfall' ? 'moved' : a.when === 'startTurn' ? 'turnStart'
+      : a.when === 'event' ? a.event || 'none' : 'turnEnd';
     const own = a.when === 'castSpell' ? AND(eq('$e.player', '$me'), inl('$e.action', ['cast', 'quick', 'fbSpell', 'fbQuick'])) : a.when === 'landfall' ? AND(eq('$e.to', 'resources'), isObj('$e.newObj'), eq(ctrl('$e.newObj'), '$me'))
       : a.when === 'flip' ? AND(eq('$e.obj', '$self'), eq('$e.up', L(true)))
       : a.when === 'attack' || a.when === 'quest' || a.when === 'block' ? eq('$e.o', '$self') : a.when === 'opAttack' ? ne('$e.p', '$me') : a.when === 'hit' ? eq('$e.src', '$self')
-      : a.when === 'startTurn' || a.when === 'endTurn' ? eq('$e.p', '$me') : null;
+      : a.when === 'startTurn' || a.when === 'endTurn' ? eq('$e.p', '$me')
+      : a.when === 'event' && a.eventWho === 'me' ? eq('$e.p', '$me') : a.when === 'event' && a.eventWho === 'opp' ? AND(isP('$e.p'), ne('$e.p', '$me')) : null;
     const iff = [own, cond].filter(Boolean) as X[];
     abilities.push({ on, do: body, ...(iff.length ? { if: AND(...iff) } : {}), ...lim, text: abilityText(a, bp, role) });
   }
@@ -1143,8 +1210,11 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
   }
   if (bp.comeback) {
     const cb = bp.comeback, OPPm = ['opp', ME];
-    const gap = cb.by === 'life' ? sub(g(OPPm, 'life'), g(ME, 'life')) : cb.by === 'points' ? sub(g(OPPm, 'score'), g(ME, 'score')) : sub(cnt(units(x, OPPm)), cnt(units(x, ME)));
-    const bonus: X[] = cb.bonus === 'resource' && x.pool ? [C('gainRes', ME, 'c', cb.n)] : cb.bonus === 'heal' && x.life ? [INC(ME, 'life', cb.n)] : [['draw', ME, cb.n]];
+    const cm = cb.by === 'meter' ? bp.meters?.find((q) => q.id === cb.meter && q.on === 'player') : undefined;
+    const gap = cb.by === 'life' ? sub(g(OPPm, 'life'), g(ME, 'life')) : cb.by === 'points' ? sub(g(OPPm, 'score'), g(ME, 'score')) : cb.by === 'hand' ? sub(cnt(cards(OPPm, 'hand')), cnt(cards(ME, 'hand')))
+      : cm ? sub(g(OPPm, meterVar(cm)), g(ME, meterVar(cm))) : sub(cnt(units(x, OPPm)), cnt(units(x, ME)));
+    if (cb.bonus === 'effects') proc('comebackDo', ['$cp'], [LET('$me', '$cp'), LET('$opp', ['opp', '$cp']), LET('$self', null), ...effectsAt(x, cb.do ?? [], 800)]);
+    const bonus: X[] = cb.bonus === 'effects' ? [C('comebackDo', ME)] : cb.bonus === 'resource' && x.pool ? [C('gainRes', ME, 'c', cb.n)] : cb.bonus === 'heal' && x.life ? [INC(ME, 'life', cb.n)] : [['draw', ME, cb.n]];
     turnStart.push(IF(ge(gap, Math.max(1, cb.gap)), [...bonus, emit('comeback', { p: ME, n: cb.n, bonus: cb.bonus })]));
   }
   const phases: X[] = bp.turn.map((ph) => {
@@ -1657,6 +1727,7 @@ export function compileBlueprint(bp0: Blueprint): ModuleDef {
         if (m.on !== 'unit' && x.lifeCards) triggers.push({ on: 'lifeLost', do: [call(m.on === 'player' ? '$e.p' : null, n)] });
       }
       if (gn.on === 'attack') triggers.push({ on: 'attack', do: [call(m.on === 'unit' ? '$e.o' : m.on === 'player' ? '$e.p' : null, n)] });
+      if (gn.on === 'event' && gn.event) triggers.push({ on: gn.event, ...(m.on === 'player' ? { if: isP('$e.p') } : m.on === 'unit' ? { if: isObj('$e.o') } : {}), do: [call(m.on === 'player' ? '$e.p' : m.on === 'unit' ? '$e.o' : null, n)] });
       if (gn.on === 'destroyed' && m.on !== 'unit') triggers.push({ on: 'destroyed', if: unitDied, do: [call(m.on === 'player' ? '$e.controller' : null, n)] });
     }
   }
@@ -1812,7 +1883,8 @@ function aiEval(x: Ctx): X {
     ...(x.points ? [mul(c.quest ? 40 : 120, g(p, 'score'))] : []),
     ...(['cards', 'anycard', 'deck'].includes(bp.resource.mode) ? [mul(12, cnt(cards(p, 'resources')))] : []),
     ...(bp.resource.mode === 'ramp' ? [mul(8, g(p, 'cap'))] : []),
-    mul(8, cnt(cards(p, 'support'))));
+    mul(8, cnt(cards(p, 'support'))),
+    ...(bp.meters ?? []).filter((m) => m.ai && m.on !== 'game').map((m) => (m.on === 'player' ? mul(m.ai!, g(p, meterVar(m))) : mul(m.ai!, SUM(units(x, p), g('$it', meterVar(m)))))));
   if (x.runs) {
     const SV = runServers(bp);
     const ices = (p: X) => cat(...SV.map((v) => cards(p, v.ice)));

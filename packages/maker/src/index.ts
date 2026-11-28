@@ -5,7 +5,7 @@ import type { Blueprint, Cond } from './blueprint.ts';
 import { UNIT_ROLES, compileBlueprint, context } from './compile.ts';
 
 export * from './blueprint.ts';
-export { compileBlueprint, cardText, abilityText, effectText, costLabel, costText, filterText, slug, UNIT_ROLES } from './compile.ts';
+export { compileBlueprint, cardText, abilityText, effectText, costLabel, costText, filterText, slug, UNIT_ROLES, COND_OP, COND_N, EVENT_TEXT, eventLabel, amountText } from './compile.ts';
 export { BLUEPRINTS, fromBlueprint, blank } from './presets.ts';
 export { RECIPES, applyRecipe, setRecipeOpt, surpriseRecipes } from './recipes.ts';
 export { WIZARD, THEMES, wizardBuild, optionsFor, randomAnswers } from './wizard.ts';
@@ -39,12 +39,14 @@ export function lint(bp: Blueprint): Problem[] {
     if (meterIds.has(m.id)) bug(`Two meters share the id "${m.id}".`, 'keywords');
     meterIds.add(m.id);
     if (!m.gain.length && !(m.steps ?? []).length && !m.aura && !m.per) tip(`The meter "${m.name}" never changes and does nothing yet.`, 'keywords');
+    for (const q of m.gain) if (q.on === 'event' && !q.event) bug(`The meter "${m.name}" rises on an event but has no event picked.`, 'keywords');
     if (m.wrap && !m.max) bug(`The meter "${m.name}" cycles but has no max.`, 'keywords');
   }
   const condMeters = (q: Cond | undefined): string[] => (!q ? [] : q.k === 'meter' ? [q.meter ?? ''] : (q.of ?? []).flatMap(condMeters));
   for (const k of bp.cards) for (const a of k.abilities) {
     for (const id of condMeters(a.if)) if (!meterIds.has(id)) bug(`${k.name}: its condition uses a meter that doesn't exist ("${id}").`, `card:${k.id}`);
     for (const e of a.do) if (e.k === 'meter' && !meterIds.has(e.meter ?? '')) bug(`${k.name}: "Change a meter" needs a meter (make one under Keywords → Meters).`, `card:${k.id}`);
+    if (a.when === 'event' && !a.event) bug(`${k.name}: a "whenever an event happens" ability needs an event.`, `card:${k.id}`);
     if ((a.if?.k === 'all' || a.if?.k === 'any' || a.if?.k === 'not') && !a.if.of?.length) tip(`${k.name}: a combined condition has nothing in it.`, `card:${k.id}`);
   }
   const ids = new Set<string>();

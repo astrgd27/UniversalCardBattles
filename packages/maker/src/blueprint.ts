@@ -6,7 +6,7 @@
 export type Role = 'unit' | 'spell' | 'fast' | 'permanent' | 'attachment' | 'resource' | 'trap' | 'leader' | 'evolution' | 'extra' | 'token' | 'attack' | 'battlefield' | 'walker' | 'location' | 'ice' | 'agenda';
 export type Pos = 'tl' | 'tr' | 'bl' | 'br' | 'line';
 export type PhaseKind = 'ready' | 'draw' | 'resource' | 'main' | 'combat' | 'end' | 'custom';
-export type When = 'play' | 'leave' | 'attack' | 'hit' | 'quest' | 'startTurn' | 'endTurn' | 'activated' | 'static' | 'opAttack' | 'conquer' | 'hold' | 'block' | 'castSpell' | 'landfall' | 'flip' | 'access';
+export type When = 'play' | 'leave' | 'attack' | 'hit' | 'quest' | 'startTurn' | 'endTurn' | 'activated' | 'static' | 'opAttack' | 'conquer' | 'hold' | 'block' | 'castSpell' | 'landfall' | 'flip' | 'access' | 'event'; // event: whenever a named event happens (see Ability.event)
 export type TargetKind =
   | 'self' | 'enemyUnit' | 'anyUnit' | 'ownUnit' | 'otherOwnUnit' | 'enemyAny' | 'opponent' | 'you' | 'eachPlayer'
   | 'allEnemyUnits' | 'allUnits' | 'allOwnUnits' | 'randomEnemyUnit' | 'attacker' | 'battleTarget' | 'ownLeader' | 'ownAny';
@@ -53,13 +53,15 @@ export interface Meter {
   aura?: { at: number; op?: 'eq' | 'ge'; stat: string; n: number }; // while the meter is (at least) `at`: units get +n stat (game: all units; player: their units; unit: that unit)
   per?: { stat: string; n: number }; // +n stat for each point (unit meters: that unit; player meters: their units)
   hidden?: boolean; // not shown on the battle screen
+  ai?: number; // how much the computer player values each point for its owner (negative: it avoids it, like heat). Default 0
 }
-export type MeterTrigger = 'play' | 'turnStart' | 'turnEnd' | 'damaged' | 'attack' | 'destroyed';
+export type MeterTrigger = 'play' | 'turnStart' | 'turnEnd' | 'damaged' | 'attack' | 'destroyed' | 'event';
 /** play: a card is played (player: by them; unit: by its controller; game: by anyone); turnStart/turnEnd: its owner's turn (game: every turn);
  *  damaged: the player or unit takes damage; attack: the player or unit attacks; destroyed: a unit of the player dies (game: any unit). */
-export interface MeterGain { on: MeterTrigger; n?: number; cost?: boolean } // cost: gain the played card's cost instead of n
+export interface MeterGain { on: MeterTrigger; n?: number; cost?: boolean; event?: string } // event: any named event (player meters go to its player, unit meters to its card) // cost: gain the played card's cost instead of n
 export interface MeterStep { n: number; do: Effect[]; reset?: boolean; say?: string } // say: the battle log line ({p} the player, {o} the unit, {s} verb ending)
-export interface Comeback { by: 'life' | 'points' | 'units'; gap: number; bonus: 'draw' | 'resource' | 'heal'; n: number } // at the start of your turn, if you trail by `gap` or more, get the bonus
+export interface Comeback { by: 'life' | 'points' | 'units' | 'hand' | 'meter'; meter?: string; gap: number; bonus: 'draw' | 'resource' | 'heal' | 'effects'; n: number;
+  do?: Effect[] } // bonus 'effects': run these ability blocks instead (for the trailing player); by 'meter': behind = lower on that player meter // at the start of your turn, if you trail by `gap` or more, get the bonus
 export interface StatDef { id: string; name: string; icon?: string }
 export interface Color { id: string; name: string; hex: string; icon?: string }
 export interface Counter { id: string; name: string; icon?: string; adds?: Record<string, number>; stops?: ('attack' | 'block')[]; expires?: boolean; max?: number } // expires: removed at the end of its controller's turn // +1/+1: adds {power: 1, health: 1}; sleep: stops attack
@@ -167,7 +169,11 @@ export interface Cond { k: 'units' | 'life' | 'hand' | 'yourTurn' | 'res' | 'cou
   of?: Cond[] } // all / any / not: combine other conditions (not uses the first)
 export interface Filter { type?: string; color?: string; keyword?: string; stat?: string; op?: 'le' | 'ge'; val?: number; exhausted?: boolean; zone?: string; name?: string; trait?: string; status?: string;
   adjacent?: boolean; opposite?: boolean; pointed?: boolean; here?: boolean } // here: at this location (locations' abilities) // grid boards: in a neighboring column of this; in the column facing this; pointed at by this card's link arrows
-export interface Effect { k: EffectKind; n?: number; meter?: string; set?: boolean; // meter: add n (or set it to n) on a meter (yours / the opponent's with who, this unit's, or the game's)
+/** A changing amount: X = how many of something there are (your units, cards in hand…), a meter, this card's counters or a stat,
+ *  times `times`, plus `plus` (never below 0). Any effect with an amount can use it instead of a fixed number. */
+export interface Amount { of: 'units' | 'enemyUnits' | 'allUnits' | 'hand' | 'oppHand' | 'grave' | 'deck' | 'life' | 'oppLife' | 'meter' | 'counter' | 'stat' | 'turn';
+  meter?: string; counter?: string; stat?: string; times?: number; plus?: number }
+export interface Effect { k: EffectKind; n?: number; amount?: Amount; meter?: string; set?: boolean; // meter: add n (or set it to n) on a meter (yours / the opponent's with who, this unit's, or the game's)
    kw?: string; target?: TargetKind; filter?: Filter; stat?: string; until?: 'turn' | 'forever' | 'battle'; who?: 'me' | 'opp' | 'each'; card?: string; type?: string; rule?: KeywordRule; to?: 'hand' | 'deck' | 'play'; zone?: string; raw?: unknown[];
   status?: string; // inflict / cure (cure: empty = every status)
   heads?: Effect[]; tails?: Effect[]; perHeads?: boolean; // flip: n coins; heads/tails effects (several coins: heads only if all are heads, or once per heads with perHeads)
@@ -176,6 +182,7 @@ export interface Effect { k: EffectKind; n?: number; meter?: string; set?: boole
 }
 export interface Ability {
   when: When; if?: Cond; do: Effect[]; once?: boolean | 'game'; label?: string;
+  event?: string; eventWho?: 'any' | 'me' | 'opp'; // when 'event': the event type (a meter step mt_<id>_<n>, a named value mv_<id>_<n>, any game or script event) and whose it must be
   loyalty?: number; sacSelf?: boolean;
   quick?: boolean; from?: 'hand' | 'grave'; detach?: number; oncePerName?: boolean; // quick: speed 2, usable on either turn; from: used from hand or discard pile; detach: remove N attached materials; oncePerName: once per turn for all copies // loyalty: walkers' +N / -N cost (once per turn per walker, main phase); sacSelf: sacrifice this card as a cost
   cost?: number; tap?: boolean; discard?: number; sacrifice?: boolean; life?: number; uncount?: { id: string; n: number }; banish?: number; returnRes?: number; // activation costs
@@ -225,6 +232,7 @@ export interface Blueprint {
   counters?: Counter[];
   statuses?: Status[];
   meters?: Meter[]; comeback?: Comeback;
+  opts?: Record<string, unknown>; // Mechanics Shelf sub-option values that can't be read back from the game itself
   zones?: CustomZone[];
   types: CardType[];
   keywords: Keyword[];

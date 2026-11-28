@@ -485,6 +485,14 @@ A survey of about 30 published TCG rulebooks (`docs/COVERAGE.md`, second table) 
 - **Card tags:** sub-options find example cards by tag.
 - **Script library:** saved scripts shared across projects, plus five starter scripts.
 
+## Done: second systemization pass
+- **Sub-options:** every Mechanics Shelf recipe has at least two, 130 in all. 24 recipes gained a second knob, e.g. arena size, deploy threshold, refill timing, a second main phase, fusion materials, evolved strength, which cards carry Trigger, and what the cost reducer covers. `bp.opts` remembers option values that can't be read back from the game.
+- **X amounts:** any effect amount can count something (units, hand, discard, deck, life, a meter, counters, a stat, the turn), with a multiplier and a plus. Auras too.
+- **Comparisons:** at least / at most / exactly on every numeric condition, with the old defaults kept.
+- **Any-event triggers:** abilities and meter gains react to any named event (meter steps, game events, script events).
+- **Comeback:** any effects as the bonus; behind in hand size or a player meter too. It has its own Workshop panel.
+- **Meter AI value:** the computer weighs meters by `ai` per point.
+
 ## Possible next steps
 - NIGHTFALL: the remaining art; human playtests to confirm the AI-tuned numbers.
 - Shadow Earth: card art prompts, a tutorial, human playtests of the 2.0 numbers.

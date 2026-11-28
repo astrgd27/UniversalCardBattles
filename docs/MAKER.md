@@ -402,7 +402,7 @@ Each recipe is a one-click edit that adds a whole mechanic to any game: its stat
 - keyword toolkit; +1/+1 counters; a custom keyword with abilities.
 
 ### Sub-options (◀ ▶ on an added recipe)
-Every recipe has 1–4 sub-options (103 in all, in `OPTS` in `packages/maker/src/recipes.ts`). Once a recipe is added, its box shows each option as a row, *label ◀ value ▶*, and the arrows cycle through the choices. Before a recipe is added, its box lists the option names.
+Every recipe has at least two sub-options (130 in all, in `OPTS` in `packages/maker/src/recipes.ts`). Once a recipe is added, its box shows each option as a row, *label ◀ value ▶*, and the arrows cycle through the choices. Before a recipe is added, its box lists the option names.
 - **Design rule:** no recipe only copies the element from the game it came from. Each one exposes the knobs that turn it into something else: lands per turn and a colour limit, a stun that wears off or lasts until removed, a front line of any size, a resource deck of 6–12, breaker-style "harder per card" skill checks, and so on.
 - A `RecipeOpt` is `{ id, label, values, names?, get(bp), set(bp, v) }`. `setRecipeOpt(bp, opt, v)` applies one value and keeps the starter decks legal: it refits deck sizes, trims off-colour cards when the colour limit drops, and resizes resource decks.
 - `recipe-options.test.ts` checks every value of every option on a blank game:
@@ -416,7 +416,9 @@ Each of these sits in the group it belongs to, next to the borrowed mechanics.
 - **Heat** (Resources): a player meter raised by each card played (or by its cost). At its step you overheat, pay the penalty (damage, discard or exhaust) and reset. It decays each turn. "Cool Down" uses the *Change a meter* block.
 - **Aging** (Keywords & counters): a unit meter that rises each of its owner's turns. A step destroys the unit at a set age, and/or it gets +power per point.
 - **Rage meter** (Keywords & counters): a player meter raised when your units fall or you take damage, which pays off when full. It is the template for any custom meter.
-- **Comeback** (Winning): a player behind by a set gap in life, points or units gets a draw, a resource or healing at the start of each turn until they catch up.
+- **Comeback** (Winning): a player behind by a set gap gets a bonus at the start of each turn until they catch up.
+  - *Behind in* can be life, points, units, cards in hand, or a player meter.
+  - The bonus is a draw, a resource, healing, or **any ability blocks** (edited under Keywords → Comeback).
 - **Zone combat** (Combat): high/mid/low attacks with speed. Blocking from the next zone halves the damage, stops it all or does nothing, and attack speed is tunable.
 
 All of them are in the Game Wizard's optional systems, gated to the combat systems where they make sense.
@@ -482,7 +484,30 @@ A meter is a number kept on each player, each unit or the whole game (`bp.meters
   - the condition *if a meter is at a value* (at least / at most / exactly; named values can be picked by name);
   - the effect *Change a meter* (add, subtract or set; yours or the opponent's).
 - **Compiled form:** one procedure per meter, `mtr_<id>(owner, n)`, which adds, clamps or cycles, runs the steps it crosses and emits `mt_<id>_<step>` / `mv_<id>_<value>`. Triggers call it, and so do the effect blocks.
+- **AI:** each player or unit meter can say how much the computer values a point (`ai`). Heat is negative, so the AI avoids overheating; Rage is positive.
 - **Checks:** lint flags duplicate meter ids, cycles without a max, and conditions or effects naming a missing meter.
+
+## Changing amounts (X)
+Any effect with an amount can use **X** instead of a fixed number (`Effect.amount`). X can be:
+- your units, the opponent's units, or all units;
+- cards in your hand, the opponent's hand, your discard pile or your deck;
+- your life or the opponent's;
+- a meter (this unit's, yours or the game's);
+- counters on this card, or one of this card's stats;
+- the turn number.
+
+It takes a multiplier (½, 2, 3…) and a plus. Auras use it too ("+1 power for every 2 cards in your hand"). The card text adds "…, where X is the number of units you control plus 1".
+
+## Comparisons on every number
+Every numeric condition can compare **at least / at most / exactly**: units, life, hand, resources, counters, cards in a zone, cards played, given resources, opponent's life, charge, cards under, and meters. Each kind keeps its usual default (life "or less", units "or more"…), so existing cards read the same.
+
+## Any-event triggers
+- An ability can be **Whenever a named event happens**, optionally only yours or only your opponent's. Events can be:
+  - a meter step ("Whenever Heat reaches 5") or a named meter value ("Whenever it becomes Night");
+  - a game event (damage, a destroyed card, a quest, a conquest, a coin flip…);
+  - any event your scripts `emit`.
+- Meters can also rise on any named event.
+- Lint flags event abilities and meter gains with no event picked.
 
 ## Combined conditions
 An ability's *If* can be **all of these…**, **any of these…** or **not…**, each holding further conditions (up to four levels), e.g. "if it is Night and not during your turn". The card text reads naturally ("if A and B", "if A or B", "unless A"). In the blueprint: `{k: 'all' | 'any' | 'not', of: Cond[]}`.

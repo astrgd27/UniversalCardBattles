@@ -15,8 +15,8 @@ const play = (mod: Mod, seed: number) => playMatch(createMatch(mod, { decks: dec
 const withRecipes = (ids: string[]) => { const bp = fromBlueprint('blank'); for (const r of ids) applyRecipe(bp, r); return bp; };
 
 test('recipe options: every recipe offers options, each value sticks, changes the compiled game, builds and plays', () => {
-  const none = RECIPES.filter((r) => !r.opts?.length).map((r) => r.id);
-  assert.deepEqual(none, [], 'recipes without options');
+  const few = RECIPES.filter((r) => (r.opts?.length ?? 0) < 2).map((r) => r.id);
+  assert.deepEqual(few, [], 'every recipe has at least two options');
   for (const r of RECIPES) for (const o of r.opts!) {
     const compiled = new Set<string>();
     for (const v of o.values) {
@@ -133,4 +133,39 @@ test('fits: one needs/clashes table drives the shelf, the wizard and Surprise me
       assert.ok(mod, `${name} + ${r.id}: ${problems.filter((p) => p.level === 'bug').map((p) => p.text).join('; ').slice(0, 300)}`);
     }
   }
+});
+
+test('generalized blocks: X amounts, comparisons on every number, event triggers, comeback effects and AI meter values', async () => {
+  const { amountText, COND_OP } = await import('#maker');
+  const bp = withRecipes(['heat', 'comeback']);
+  const pw = bp.combat.power;
+  const u = bp.cards.find((c) => bp.types.find((t) => t.id === c.type)?.role === 'unit')!;
+  // X = your units (+1); an aura that counts cards in hand
+  u.abilities.push({ when: 'play', do: [{ k: 'damage', amount: { of: 'units', plus: 1 }, target: 'enemyAny' }] });
+  u.abilities.push({ when: 'static', do: [{ k: 'aura', amount: { of: 'hand', times: 0.5 }, stat: pw, target: 'self' }] });
+  // comparisons: exactly / at most on kinds that used to be fixed
+  u.abilities.push({ when: 'startTurn', if: { k: 'units', op: 'eq', n: 2 }, do: [{ k: 'draw', n: 1 }] });
+  u.abilities.push({ when: 'startTurn', if: { k: 'hand', op: 'ge', n: 5 }, do: [{ k: 'discard', n: 1 }] });
+  // whenever you overheat (a meter step) and on a script event
+  u.abilities.push({ when: 'event', event: 'mt_heat_0', eventWho: 'me', do: [{ k: 'draw', n: 1 }] });
+  bp.meters!.push({ id: 'zeal', name: 'Zeal', on: 'player', gain: [{ on: 'event', event: 'mt_heat_0', n: 2 }], ai: 5, steps: [{ n: 4, reset: true, do: [{ k: 'draw', n: 1 }] }] });
+  Object.assign(bp.comeback!, { by: 'hand', gap: 1, bonus: 'effects', do: [{ k: 'draw', n: 1 }, { k: 'meter', meter: 'zeal', n: 1 }] });
+  meter(bp, 'heat').steps![0].n = 2;
+  const def = compileBlueprint(bp) as any;
+  const text = def.cards.find((c: any) => c.id === u.id).text;
+  assert.match(text, /where X is the number of units you control plus 1/);
+  assert.match(text, /where X is half the number of cards in your hand/);
+  assert.match(text, /if you control exactly 2 units/i);
+  assert.match(text, /if you have 5 or more cards in hand/i);
+  assert.match(text, /Whenever Heat reaches 2 \(yours\)/);
+  assert.match(def.manifest.theme.log.comeback, /draw a card, then raise your Zeal by 1/);
+  assert.equal(amountText({ of: 'meter', meter: 'heat', times: 2 }, bp), '2 times your Heat');
+  assert.equal(COND_OP.life, 'le');
+  assert.ok(JSON.stringify(def.ai).includes('m_zeal') && JSON.stringify(def.ai).includes('m_heat'), 'the AI weighs meters with a value');
+  const { mod, problems } = build(bp);
+  assert.ok(mod, problems.map((p) => p.text).join('; '));
+  const g = play(mod!, 6);
+  assert.ok(g.s.result, 'finishes');
+  assert.ok(g.s.events.some((e: any) => e.type === 'mt_heat_0'), 'overheats');
+  assert.ok(g.s.events.some((e: any) => e.type === 'comeback'), 'comeback with custom effects');
 });

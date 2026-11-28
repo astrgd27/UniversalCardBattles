@@ -3,7 +3,7 @@
 import type { Mod } from '#engine';
 import {
   type Ability, type Blueprint, type CardBP, type Cond, type Effect, type EffectKind, type Phase, type Role, type TargetKind, type When,
-  KEYWORD_RULES, RECIPES, ROLES, setRecipeOpt, featuresOf, fitIssues, UNIT_ROLES, cardText, costLabel, effectText, rulebook, slug,
+  KEYWORD_RULES, RECIPES, ROLES, setRecipeOpt, featuresOf, fitIssues, COND_OP, EVENT_TEXT, UNIT_ROLES, cardText, costLabel, effectText, rulebook, slug,
   type RecipeOpt, type LibraryScript, STARTER_SCRIPTS, type WizAnswers, type WizStep, WIZARD, optionsFor, wizardBuild,
 } from '#maker';
 import { type MakerUI, type Station, scriptLibrary, BLUEPRINTS, RANKS, STATIONS, newMakerUI, previewMod, problems, profile, projects, published, rankOf } from '../maker.ts';
@@ -552,11 +552,26 @@ function keywords(bp: Blueprint, A: any) {
       h('button', { onclick: () => A.mkEdit((b: Blueprint) => { const list = (b.counters ??= []); let id = 'counter'; let n = 2; while (list.some((x) => x.id === id)) id = `counter${n++}`; list.push({ id, name: 'New Counter', icon: '●' }); }, 'keywords') }, '+ New counter')),
     statusPanel(bp, A),
     meterPanel(bp, A),
+    bp.comeback && comebackPanel(bp, A),
   ];
+}
+/** Comeback: whoever is behind by a gap gets a bonus at the start of their turn (a preset or any ability blocks). */
+function comebackPanel(bp: Blueprint, A: any) {
+  const cb = bp.comeback!;
+  const pm = (bp.meters ?? []).filter((m) => m.on === 'player');
+  return panel('Comeback', hint('A player who is behind by at least the gap gets the bonus at the start of each of their turns, until they catch up.'),
+    row(sel(bp, A, ['comeback', 'by'], [['life', 'life'], ['points', 'points'], ['units', 'units in play'], ['hand', 'cards in hand'], ...(pm.length ? [['meter', 'a meter (lower = behind)'] as [string, string]] : [])], { label: 'Behind in' }),
+      cb.by === 'meter' && sel(bp, A, ['comeback', 'meter'], pm.map((m) => [m.id, m.name] as [string, string]), { label: 'Meter' }),
+      num(bp, A, ['comeback', 'gap'], { label: 'By at least', min: 1, max: 1000 }),
+      sel(bp, A, ['comeback', 'bonus'], [['draw', 'draw cards'], ['resource', 'gain resources'], ['heal', 'heal'], ['effects', 'my own effects']], { label: 'Bonus' }),
+      cb.bonus !== 'effects' && num(bp, A, ['comeback', 'n'], { label: 'Amount', min: 1, max: 100 }),
+      h('button', { class: 'x', onclick: () => A.mkEdit((b: Blueprint) => { delete b.comeback; }), 'aria-label': 'Remove comeback' }, '🗑')),
+    cb.bonus === 'effects' && h('div', { class: 'mk-sub' }, (cb.do ?? []).map((f, fi) => effectRow(bp, A, ['comeback', 'do', fi], f, () => A.mkEdit((b: Blueprint) => { b.comeback!.do!.splice(fi, 1); }))),
+      h('button', { class: 'chip', onclick: () => A.mkEdit((b: Blueprint) => { (b.comeback!.do ??= []).push({ k: 'draw', n: 1 }); }) }, '+ effect')));
 }
 
 const METER_ON: [string, string][] = [['player', 'each player'], ['unit', 'each unit'], ['game', 'the whole game']];
-const METER_GAIN: [string, string][] = [['play', 'a card is played'], ['turnStart', 'its owner\'s turn starts'], ['turnEnd', 'its owner\'s turn ends'], ['damaged', 'it takes damage'], ['attack', 'it attacks'], ['destroyed', 'a unit is destroyed']];
+const METER_GAIN: [string, string][] = [['event', 'a named event happens'], ['play', 'a card is played'], ['turnStart', 'its owner\'s turn starts'], ['turnEnd', 'its owner\'s turn ends'], ['damaged', 'it takes damage'], ['attack', 'it attacks'], ['destroyed', 'a unit is destroyed']];
 /** Meters: numbers on players, units or the game that things raise, that decay or cycle, with steps that fire effects. */
 function meterPanel(bp: Blueprint, A: any) {
   const ms = bp.meters ?? [];
@@ -567,10 +582,12 @@ function meterPanel(bp: Blueprint, A: any) {
       h('strong', {}, 'Goes up when'),
       m.gain.map((q, gi) => row(sel(bp, A, [...mp, 'gain', gi, 'on'], METER_GAIN, { label: 'When' }), num(bp, A, [...mp, 'gain', gi, 'n'], { label: 'By', min: -100, max: 100 }),
         q.on === 'play' && chk(bp, A, [...mp, 'gain', gi, 'cost'], 'by the card\'s cost instead'),
+        q.on === 'event' && eventPicker(bp, A, [...mp, 'gain', gi, 'event'], q.event),
         h('button', { class: 'x', onclick: () => A.mkEdit((b: Blueprint) => { b.meters![i].gain.splice(gi, 1); }), 'aria-label': 'Remove gain' }, '🗑'))),
       h('button', { class: 'chip', onclick: () => A.mkEdit((b: Blueprint) => { b.meters![i].gain.push({ on: 'turnStart', n: 1 }); }) }, '+ way to raise it'),
       row(num(bp, A, [...mp, 'every'], { label: 'Turn gains every N turns', min: 1, max: 20 }), num(bp, A, [...mp, 'decay'], { label: 'Decays per turn', min: 0, max: 100 }),
-        num(bp, A, [...mp, 'max'], { label: 'Max (0 = none)', min: 0, max: 1000 }), chk(bp, A, [...mp, 'wrap'], 'Cycles back to 0 at max'), chk(bp, A, [...mp, 'hidden'], 'Hidden')),
+        num(bp, A, [...mp, 'max'], { label: 'Max (0 = none)', min: 0, max: 1000 }), chk(bp, A, [...mp, 'wrap'], 'Cycles back to 0 at max'), chk(bp, A, [...mp, 'hidden'], 'Hidden'),
+        m.on !== 'game' && num(bp, A, [...mp, 'ai'], { label: 'AI values each point (− avoids)', min: -100, max: 100, title: 'How much the computer player wants this meter to be high for itself' })),
       h('label', { class: 'fld wide' }, h('span', {}, 'Names for its values (comma separated, e.g. Day, Night)'),
         h('input', { type: 'text', value: (m.names ?? []).join(', '), 'aria-label': 'Value names', onchange: (e: Event) => A.mkEdit((b: Blueprint) => {
           const list = (e.target as HTMLInputElement).value.split(',').map((x) => x.trim()).filter(Boolean); const mm = b.meters![i];
@@ -648,12 +665,14 @@ function condEditor(bp: Blueprint, A: any, path: Path, k: Cond | undefined, dept
       k.k !== 'not' && h('button', { class: 'x', onclick: () => A.mkEdit((b: Blueprint) => { get(b, [...path, 'of']).splice(i, 1); }), 'aria-label': 'Remove condition' }, '🗑'))),
     k.k !== 'not' && h('button', { class: 'chip', onclick: () => A.mkEdit((b: Blueprint) => { get(b, path).of.push({ k: 'yourTurn' }); }) }, k.k === 'all' ? '+ and…' : '+ or…')) : null;
   const m = k?.k === 'meter' ? meters.find((q) => q.id === k.meter) : undefined;
+  const shownOp = k?.op ?? (k?.k ? COND_OP[k.k] : undefined); // the kind's usual comparison until one is picked
   return h('div', { class: cls('mk-cond', depth > 0 && 'nested') }, pick,
     k?.k === 'zone' && sel(bp, A, [...path, 'zone'], zoneOpts(bp).filter(([z]) => z !== 'deck' && z !== 'hand'), { label: 'Zone' }),
     k?.k === 'status' && sel(bp, A, [...path, 'status'], (bp.statuses ?? []).map((q) => [q.id, q.name] as [string, string]), { label: 'Status' }),
     k?.k === 'counter' && sel(bp, A, [...path, 'counter'], (bp.counters ?? []).map((q) => [q.id, q.name] as [string, string]), { label: 'Counter' }),
     k?.k === 'meter' && sel(bp, A, [...path, 'meter'], meters.map((q) => [q.id, q.name] as [string, string]), { label: 'Meter' }),
-    k?.k === 'meter' && sel(bp, A, [...path, 'op'], [['ge', 'at least'], ['le', 'at most'], ['eq', 'exactly']], { label: 'Is' }),
+    k?.k && COND_OP[k.k] && h('label', { class: 'fld' }, h('span', {}, 'Is'), h('select', { 'aria-label': 'Comparison', onchange: (e: Event) => A.mkSet([...path, 'op'], (e.target as HTMLSelectElement).value) },
+      [['ge', 'at least'], ['le', 'at most'], ['eq', 'exactly']].map(([v, l]) => h('option', { value: v, selected: shownOp === v }, l)))),
     k?.k === 'meter' && m?.names?.length ? sel(bp, A, [...path, 'n'], m.names.map((nm, i) => [String(i), nm] as [string, string]), { label: 'Value', map: Number })
       : k?.k && !['yourTurn', 'oppTurn', 'status', 'kicked', 'linked', 'attacking', 'defending', 'all', 'any', 'not', 'raw'].includes(k.k) && num(bp, A, [...path, 'n'], { label: 'N', min: 0, max: 100000 }),
     kids);
@@ -662,7 +681,7 @@ function condEditor(bp: Blueprint, A: any, path: Path, k: Cond | undefined, dept
 // ---------------------------------------------------------------- 8. cards and the ability builder
 const WHEN: [When, string][] = [['play', 'When played'], ['leave', 'When destroyed'], ['attack', 'When it attacks'], ['hit', 'When it hits the opponent'], ['quest', 'When it quests'], ['startTurn', 'At the start of your turn'],
   ['endTurn', 'At the end of your turn'], ['activated', 'Activated (exhaust and/or pay)'], ['static', 'Always on (aura)'], ['opAttack', 'When the opponent attacks (traps: spring)'], ['block', 'When it blocks'],
-  ['flip', 'When flipped face up'], ['castSpell', 'Whenever you cast a spell'], ['landfall', 'Whenever a resource enters for you'], ['conquer', 'When it conquers (battlefields: when you conquer here)'], ['hold', 'When you hold its battlefield (battlefields: here)']];
+  ['flip', 'When flipped face up'], ['castSpell', 'Whenever you cast a spell'], ['landfall', 'Whenever a resource enters for you'], ['conquer', 'When it conquers (battlefields: when you conquer here)'], ['hold', 'When you hold its battlefield (battlefields: here)'], ['event', 'Whenever a named event happens (a meter step, a game or script event)']];
 const EFF: [EffectKind, string, string[]][] = [
   ['draw', 'Draw cards', ['n', 'who']], ['damage', 'Deal damage', ['n', 'target']], ['heal', 'Heal', ['n', 'target']], ['buff', 'Boost a stat', ['n', 'stat', 'target', 'until']],
   ['destroy', 'Destroy', ['target']], ['bounce', 'Return to hand', ['target']], ['exhaust', 'Exhaust (tap)', ['target']], ['ready', 'Ready (untap)', ['target']],
@@ -685,6 +704,41 @@ const TGT: [TargetKind, string][] = [['enemyUnit', 'an enemy unit (choose)'], ['
 const SCOPE: [TargetKind, string][] = [['allOwnUnits', 'your units'], ['otherOwnUnit', 'your other units'], ['allEnemyUnits', 'enemy units'], ['allUnits', 'all units'], ['self', 'this card']];
 const zoneOpts = (bp: Blueprint): [string, string][] => [['banished', 'Banished pile'], ['grave', 'Discard pile'], ['hand', 'Hand'], ['deck', 'Deck (bottom)'], ...(bp.zones ?? []).map((z) => [z.id, z.name] as [string, string])];
 const RESTRICT: [string, string][] = [['noAttack', "can't attack"], ['noBlock', "can't block"], ['noBeAttacked', "can't be attacked"], ['unblockable', "can't be blocked"], ['entersExhausted', 'enters exhausted']];
+/** The events an ability or a meter can react to: meter steps and named values, game events, events your scripts name, or any typed name. */
+function eventChoices(bp: Blueprint): [string, string][] {
+  const out: [string, string][] = [];
+  for (const m of bp.meters ?? []) {
+    (m.steps ?? []).forEach((st, i) => out.push([`mt_${m.id}_${i}`, `${m.name} reaches ${st.n}`]));
+    (m.names ?? []).forEach((nm, i) => out.push([`mv_${m.id}_${i}`, `${m.name} becomes ${nm}`]));
+  }
+  for (const k of Object.keys(bp.advanced?.log ?? {})) if (!out.some(([v]) => v === k)) out.push([k, `"${k}" (your event)`]);
+  for (const [k, t] of Object.entries(EVENT_TEXT)) out.push([k, t]);
+  return out;
+}
+function eventPicker(bp: Blueprint, A: any, path: Path, cur: string | undefined) {
+  const ch = eventChoices(bp);
+  const known = !cur || ch.some(([v]) => v === cur);
+  return h('span', { class: 'mk-event' },
+    h('label', { class: 'fld' }, h('span', {}, 'Event'), h('select', { 'aria-label': 'Event', onchange: (e: Event) => { const v = (e.target as HTMLSelectElement).value; A.mkSet(path, v === '*' ? 'myEvent' : v); } },
+      [['', '(pick an event)'], ...ch, ['*', 'another name…']].map(([v, l]) => h('option', { value: v, selected: (known ? cur ?? '' : '*') === v }, l)))),
+    !known && txt(bp, A, path, { label: 'Event name' }));
+}
+const AMOUNT_OF: [string, string][] = [['', 'a fixed number'], ['units', 'X = your units'], ['enemyUnits', "X = the opponent's units"], ['allUnits', 'X = all units in play'],
+  ['hand', 'X = cards in your hand'], ['oppHand', "X = cards in the opponent's hand"], ['grave', 'X = cards in your discard pile'], ['deck', 'X = cards in your deck'],
+  ['life', 'X = your life'], ['oppLife', "X = the opponent's life"], ['meter', 'X = a meter'], ['counter', 'X = counters on this'], ['stat', "X = this card's stat"], ['turn', 'X = the turn number']];
+/** "Amount = a fixed number / X = …": any effect's amount can count something instead. */
+function amountPicker(bp: Blueprint, A: any, ep: Path, e: Effect) {
+  const a = e.amount;
+  return h('span', { class: 'mk-amount' },
+    h('label', { class: 'fld' }, h('span', {}, 'Amount is'), h('select', { 'aria-label': 'Amount is', onchange: (ev: Event) => { const v = (ev.target as HTMLSelectElement).value;
+      A.mkSet([...ep, 'amount'], v ? { of: v, times: 1, ...(v === 'meter' ? { meter: bp.meters?.[0]?.id } : v === 'counter' ? { counter: bp.counters?.[0]?.id } : v === 'stat' ? { stat: bp.combat.power } : {}) } : undefined); } },
+      AMOUNT_OF.filter(([v]) => v !== 'meter' || bp.meters?.length).filter(([v]) => v !== 'counter' || bp.counters?.length).map(([v, l]) => h('option', { value: v, selected: (a?.of ?? '') === v }, l)))),
+    a?.of === 'meter' && sel(bp, A, [...ep, 'amount', 'meter'], (bp.meters ?? []).map((m) => [m.id, m.name] as [string, string]), { label: 'Meter' }),
+    a?.of === 'counter' && sel(bp, A, [...ep, 'amount', 'counter'], (bp.counters ?? []).map((k) => [k.id, k.name] as [string, string]), { label: 'Counter' }),
+    a?.of === 'stat' && sel(bp, A, [...ep, 'amount', 'stat'], bp.stats.map((x) => [x.id, x.name] as [string, string]), { label: 'Stat' }),
+    a && num(bp, A, [...ep, 'amount', 'times'], { label: '× (times)', min: 0, max: 100, step: 0.5 }),
+    a && num(bp, A, [...ep, 'amount', 'plus'], { label: '+ (plus)', min: -100, max: 100 }));
+}
 function effectRow(bp: Blueprint, A: any, ep: Path, e: Effect, onDel: () => void, kwId?: string, isStatic = false): HTMLElement {
   const def = EFF.find((x) => x[0] === e.k)!;
   const P = new Set(def[2]);
@@ -692,7 +746,8 @@ function effectRow(bp: Blueprint, A: any, ep: Path, e: Effect, onDel: () => void
   const tokens = bp.cards.filter((c) => roleOf.get(c.type) === 'token');
   return h('div', { class: 'mk-eff' },
     sel(bp, A, [...ep, 'k'], EFF.map(([k, l]) => [k, l]), { label: 'Do' }),
-    P.has('n') && !e.kw && num(bp, A, [...ep, 'n'], { label: 'Amount', min: -100000, max: 100000 }),
+    P.has('n') && !e.kw && !e.amount && num(bp, A, [...ep, 'n'], { label: 'Amount', min: -100000, max: 100000 }),
+    P.has('n') && !e.kw && !e.fromRoll && amountPicker(bp, A, ep, e),
     P.has('n') && kwId && chk(bp, A, [...ep, 'kw'], 'Amount = keyword N'),
     P.has('n') && e.k !== 'roll' && chk(bp, A, [...ep, 'fromRoll'], 'Amount = the last roll'),
     P.has('counter') && sel(bp, A, [...ep, 'card'], (bp.counters ?? []).length ? bp.counters!.map((k) => [k.id, k.name] as [string, string]) : [['', '(make a counter first)']], { label: 'Counter' }),
@@ -751,6 +806,8 @@ function abilityBox(bp: Blueprint, A: any, cp: Path, a: Ability, ai: number, rol
   return h('div', { class: 'mk-ability' },
     h('div', { class: 'mk-ab-head' },
       sel(bp, A, [...ap, 'when'], WHEN.filter(([w]) => (['conquer', 'hold'].includes(w) ? bp.combat.mode === 'lanes' : true)), { label: 'When', q: 'cards' }),
+      a.when === 'event' && eventPicker(bp, A, [...ap, 'event'], a.event),
+      a.when === 'event' && sel(bp, A, [...ap, 'eventWho'], [['any', 'anyone\'s'], ['me', 'yours'], ['opp', "your opponent's"]], { label: 'Whose' }),
       a.when === 'activated' && [chk(bp, A, [...ap, 'quick'], 'Quick (either turn)'), sel(bp, A, [...ap, 'from'], [['', 'from play'], ['hand', 'from hand'], ['grave', 'from discard pile']], { label: 'Used', map: (v) => v || undefined }),
         num(bp, A, [...ap, 'detach'], { label: 'Detach materials', min: 0, max: 5 }), chk(bp, A, [...ap, 'oncePerName'], 'Once per turn per name'), role === 'walker' && num(bp, A, [...ap, 'loyalty'], { label: 'Loyalty (+/-)', min: -20, max: 20 }), chk(bp, A, [...ap, 'sacSelf'], 'Sacrifice this'), chk(bp, A, [...ap, 'tap'], 'Exhaust this'), num(bp, A, [...ap, 'cost'], { label: 'Pay', min: 0, max: 20 }), num(bp, A, [...ap, 'discard'], { label: 'Discard', min: 0, max: 5 }),
         chk(bp, A, [...ap, 'sacrifice'], 'Sacrifice a unit'), num(bp, A, [...ap, 'banish'], { label: 'Banish from discard', min: 0, max: 10 }),
